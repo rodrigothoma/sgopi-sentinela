@@ -49,6 +49,38 @@ O projeto adota a **Arquitetura Hexagonal** para garantir o isolamento estrito d
 
 ---
 
+## 💻 Stack Tecnológica e Ferramentas
+
+Para garantir a viabilidade técnica do MVP e o alinhamento com a Arquitetura Hexagonal, a infraestrutura e as ferramentas de desenvolvimento foram padronizadas conforme abaixo:
+
+* **Linguagem e Framework Base (Backend):** Java (versão 21+) aliado ao Spring Boot 3. O Spring será restrito às camadas de adaptadores e inicialização (Inversão de Controle), garantindo que o *Core Domain* permaneça em Java puro, sem anotações de framework.
+* **Gestão de Dependências e Build:** A automação da compilação e a gestão de bibliotecas serão conduzidas via Maven ou Gradle, assegurando a padronização do empacotamento (artefatos executáveis) para todos os membros da equipe.
+* **Persistência de Dados (Outbound Adapters):** PostgreSQL como Sistema Gerenciador de Banco de Dados Relacional (SGBDR), manipulado no código através de Spring Data JPA e Hibernate.
+* **Interface Gráfica e Tempo Real (Frontend):** 
+  * *Painel Tático:* Renderização do mapa via biblioteca Leaflet conectada aos tiles do OpenStreetMap.
+  * *Comunicação:* Reativa bidirecional viabilizada via WebSockets (STOMP/SockJS) para atualização das viaturas no mapa sem *refresh*.
+* **Simulador de Telemetria GPS:** Script auxiliar independente (podendo ser desenvolvido em Python) que atuará como cliente, disparando requisições assíncronas periódicas para simular o deslocamento de viaturas e alimentar as portas de entrada do sistema.
+
+---
+
+## ⚙️ Estratégia de Qualidade e Gestão de Configuração
+
+A garantia de qualidade e o fluxo de trabalho colaborativo são pilares para o sucesso no desenvolvimento do software, minimizando falhas de integração durante a disciplina.
+
+### Abordagem de Testes (QA)
+A validação do software ocorrerá em dois níveis distintos para isolar regras de negócio e testar a estabilidade da interface:
+* **Testes de Unidade e Integração (Backend):** O foco central da cobertura de testes (meta superior a 80%) será a camada de Casos de Uso e Entidades de Domínio. Utilizando ferramentas como JUnit e Mockito, a máquina de estados das ocorrências e a geração do número de protocolo serão validadas de forma isolada, sem subir o contexto do servidor web ou do banco de dados relacional.
+* **Testes Automatizados (E2E / Frontend):** Para garantir que os fluxos críticos funcionem de ponta a ponta na visão do usuário, serão implementados scripts de automação *black-box* utilizando o **Selenium WebDriver**. Essa automação validará cenários vitais, como o preenchimento correto dos formulários de registro circunstanciado (UC01), simulando o comportamento real do Agente Policial no navegador.
+
+### Versionamento e Fluxo de Trabalho (Git Workflow)
+Para orquestrar o desenvolvimento em equipe e proteger a estabilidade do código principal, o repositório adotará uma estratégia estruturada de ramificação:
+* **Branches Principais:** 
+  * `main`: Contém exclusivamente o código estável, testado e pronto para implantação.
+  * `dev`: Branch de integração contínua onde as funcionalidades do MVP são unificadas e homologadas.
+* **Gestão de Ambientes:** O projeto fará uso rigoroso do isolamento de ambientes e dependências (arquivos de propriedades locais e variáveis de ambiente) para garantir que a aplicação compile e execute perfeitamente nas máquinas de todos os desenvolvedores envolvidos, sem conflitos de portas ou configurações fixas.
+
+---
+
 ## 📐 Modelagem e Artefatos de Projeto
 
 A modelagem visual está organizada e disponível na documentação técnica e na Wiki:
