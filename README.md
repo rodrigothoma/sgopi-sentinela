@@ -70,9 +70,9 @@ A garantia de qualidade e o fluxo de trabalho colaborativo são pilares para o s
 
 ### Abordagem de Testes (QA)
 A validação do software ocorrerá em dois níveis distintos para isolar regras de negócio e testar a estabilidade da interface:
-* **Testes de Unidade e Integração (Backend):** O foco central da cobertura de testes (meta superior a 80%) será a camada de Casos de Uso e Entidades de Domínio. Utilizando ferramentas como JUnit e Mockito, a máquina de estados das ocorrências e a geração do número de protocolo serão validadas de forma isolada, sem subir o contexto do servidor web ou do banco de dados relacional.
-* **Testes Automatizados (E2E / Frontend):** Para garantir que os fluxos críticos funcionem de ponta a ponta na visão do usuário, serão implementados scripts de automação *black-box* utilizando o **Selenium WebDriver**. Essa automação validará cenários vitais, como o preenchimento correto dos formulários de registro circunstanciado (UC01), simulando o comportamento real do Agente Policial no navegador.
+- **Testes de Unidade e Integração (Backend):** O foco central da cobertura de testes (meta superior a 80%) será a camada de Casos de Uso e Entidades de Domínio. Utilizando ferramentas como **pytest** e **unittest.mock**, a máquina de estados das ocorrências e a geração do número de protocolo serão validadas de forma isolada, sem a necessidade de subir o servidor web ou realizar conexões reais com o banco de dados.
 
+- **Testes Automatizados (E2E / Frontend):** Para garantir que os fluxos críticos funcionem de ponta a ponta na visão do usuário, serão implementados scripts de automação *black-box* utilizando o **Selenium WebDriver**. Essa automação validará cenários vitais, como o preenchimento correto dos formulários de registro circunstanciado (UC01), simulando o comportamento real do Agente Policial no navegador.
 ### Versionamento e Fluxo de Trabalho (Git Workflow)
 Para orquestrar o desenvolvimento em equipe e proteger a estabilidade do código principal, o repositório adotará uma estratégia estruturada de ramificação:
 * **Branches Principais:** 
