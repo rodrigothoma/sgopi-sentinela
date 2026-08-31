@@ -56,10 +56,12 @@ Para garantir a viabilidade técnica do MVP e o alinhamento com a Arquitetura He
 * **Linguagem e Framework Base (Backend):** Java (versão 21+) aliado ao Spring Boot 3. O Spring será restrito às camadas de adaptadores e inicialização (Inversão de Controle), garantindo que o *Core Domain* permaneça em Java puro, sem anotações de framework.
 * **Gestão de Dependências e Build:** A automação da compilação e a gestão de bibliotecas serão conduzidas via Maven ou Gradle, assegurando a padronização do empacotamento (artefatos executáveis) para todos os membros da equipe.
 * **Persistência de Dados (Outbound Adapters):** PostgreSQL como Sistema Gerenciador de Banco de Dados Relacional (SGBDR), manipulado no código através de Spring Data JPA e Hibernate.
-* **Interface Gráfica e Tempo Real (Frontend):** 
-  * *Painel Tático:* Renderização do mapa via biblioteca Leaflet conectada aos tiles do OpenStreetMap.
-  * *Comunicação:* Reativa bidirecional viabilizada via WebSockets (STOMP/SockJS) para atualização das viaturas no mapa sem *refresh*.
-* **Simulador de Telemetria GPS:** Script auxiliar independente (podendo ser desenvolvido em Python) que atuará como cliente, disparando requisições assíncronas periódicas para simular o deslocamento de viaturas e alimentar as portas de entrada do sistema.
+* **Interface Gráfica (Frontend):** Desenvolvida em **JavaScript/TypeScript**.
+
+  * *Painel Tático:* Renderização e interação com o mapa utilizando a biblioteca **Leaflet**, conectada aos *tiles* do **OpenStreetMap**.
+  * *Comunicação:* Comunicação bidirecional e reativa utilizando **WebSockets (STOMP/SockJS)**, permitindo a atualização das viaturas no mapa em tempo real.
+* **Simulador de Telemetria GPS:** Script auxiliar independente, desenvolvido em **Python**, que atuará como cliente, realizando requisições assíncronas periódicas para simular o deslocamento das viaturas e alimentar as portas de entrada do sistema.
+
 
 ---
 
