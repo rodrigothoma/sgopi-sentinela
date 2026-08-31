@@ -96,6 +96,11 @@ Nesta seção, estabelecem-se os requisitos não funcionais que norteiam os dire
 
 A priorização seguiu critérios técnicos de viabilidade, dependência funcional e valor de entrega para a Engenharia de Software:
 
+- **Must Have (MVP atual):** requisitos indispensáveis para o fluxo ponta a ponta da primeira versão.
+- **Should Have (Evolução prioritária):** requisitos importantes para as próximas iterações, mas fora do MVP atual.
+- **Could Have (Evolução futura):** requisitos desejáveis que podem ser implementados posteriormente sem comprometer o fluxo principal.
+- **Won't Have (Fora do escopo deste ciclo):** requisitos não planejados para o MVP atual.
+
 | Categoria | ID | Requisito | Justificativa de Engenharia |
 | :--- | :--- | :--- | :--- |
 | **Must Have** *(MVP Essencial)* | **RF01** | Gestão de Ocorrência Policial | Núcleo de entrada de dados; indispensável para alimentar todo o ecossistema e entidades de domínio. |
@@ -105,9 +110,14 @@ A priorização seguiu critérios técnicos de viabilidade, dependência funcion
 | **Should Have** *(Alta Prioridade)* | **RF05** | Inteligência Criminal e Manchas Criminais | Introduz cálculo georreferenciado e aplicação de inteligência sobre grandes volumes de dados criminais. |
 | **Should Have** *(Alta Prioridade)* | **RF07** | Gestão de Laudos Periciais | Integra a Polícia Científica ao fluxo pericial através de anexação de laudos técnicos assinados digitalmente. |
 | **Could Have** *(Média Prioridade)* | **RF06** | Gestão de Inquéritos e Vinculação | Agrupa ocorrências com identificação automática de padrões criminais complexos. |
-| **Could Have** *(Média Prioridade)* | **RF08** | Autenticação Pública de Documentos | Portal público de consulta via chave alfanumérica/QR Code sem necessidade de login. |
+| **Could Have** *(Média Prioridade)* | **RF08** | Autenticação Pública de Documentos | Portal público de consulta por chave de segurança, sem necessidade de autenticação prévia. |
 | **Could Have** *(Média Prioridade)* | **RF09** | Medidas Protetivas e Restrições | Monitoramento de prazos judiciais e disparador de alertas de vencimento em 72h. |
 | **Won't Have** *(Próximos Ciclos)* | **RF10** | Comunicação Interagências | Canal de mensageria sigilosa entre departamentos, estruturado como módulo de expansão futura. |
+
+> **Observação:** Para o MVP atual, somente os requisitos classificados como **Must Have**
+> (RF01, RF04 e RF02) fazem parte do escopo de implementação.
+> Os requisitos classificados como **Should Have** e **Could Have** representam prioridades
+> de evolução para iterações posteriores e não fazem parte do escopo deste MVP.
 
 ---
 
