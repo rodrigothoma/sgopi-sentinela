@@ -53,16 +53,15 @@ O projeto adota a **Arquitetura Hexagonal** para garantir o isolamento estrito d
 
 Para garantir a viabilidade técnica do MVP e o alinhamento com a Arquitetura Hexagonal, a infraestrutura e as ferramentas de desenvolvimento foram padronizadas conforme abaixo:
 
-* **Linguagem e Framework Base (Backend):** Java (versão 21+) aliado ao Spring Boot 3. O Spring será restrito às camadas de adaptadores e inicialização (Inversão de Controle), garantindo que o *Core Domain* permaneça em Java puro, sem anotações de framework.
-* **Gestão de Dependências e Build:** A automação da compilação e a gestão de bibliotecas serão conduzidas via Maven ou Gradle, assegurando a padronização do empacotamento (artefatos executáveis) para todos os membros da equipe.
-* **Persistência de Dados (Outbound Adapters):** PostgreSQL como Sistema Gerenciador de Banco de Dados Relacional (SGBDR), manipulado no código através de Spring Data JPA e Hibernate.
-* **Interface Gráfica (Frontend):** Desenvolvida em **JavaScript/TypeScript**.
+* **Linguagem e Framework Base (Backend):** **Python** aliado ao **FastAPI**. O FastAPI será utilizado para a criação das APIs e gerenciamento das requisições.
+  
+* **Gestão de Dependências e Execução:** Utilização do **uv**. O uv será responsável por padronizar a instalação das bibliotecas e a configuração do ambiente de desenvolvimento entre os membros da equipe.
 
+* **Persistência de Dados:** **Firebase Cloud Firestore** como banco de dados NoSQL em nuvem, utilizando o **Firebase Admin SDK** para comunicação entre o backend em FastAPI e o banco de dados.
+  
+* **Interface Gráfica (Frontend):** Desenvolvida em **JavaScript/TypeScript**.
   * *Painel Tático:* Renderização e interação com o mapa utilizando a biblioteca **Leaflet**, conectada aos *tiles* do **OpenStreetMap**.
   * *Comunicação:* Comunicação bidirecional e reativa utilizando **WebSockets (STOMP/SockJS)**, permitindo a atualização das viaturas no mapa em tempo real.
-* **Simulador de Telemetria GPS:** Script auxiliar independente, desenvolvido em **Python**, que atuará como cliente, realizando requisições assíncronas periódicas para simular o deslocamento das viaturas e alimentar as portas de entrada do sistema.
-
-
 ---
 
 ## ⚙️ Estratégia de Qualidade e Gestão de Configuração
