@@ -57,7 +57,7 @@ Para garantir a viabilidade técnica do MVP e o alinhamento com a Arquitetura He
   
 * **Gestão de Dependências e Execução:** Utilização do **uv**. O uv será responsável por padronizar a instalação das bibliotecas e a configuração do ambiente de desenvolvimento entre os membros da equipe.
 
-* **Persistência de Dados:** **Firebase Cloud Firestore** como banco de dados NoSQL em nuvem, utilizando o **Firebase Admin SDK** para comunicação entre o backend em FastAPI e o banco de dados.
+* **Persistência de Dados:** **PostgreSQL** como banco de dados relacional (SGBDR), utilizando o **SQLAlchemy** (ou **asyncpg**) para comunicação entre o backend em FastAPI e o banco de dados.
   
 * **Interface Gráfica (Frontend):** Desenvolvida em **JavaScript/TypeScript**.
   * *Painel Tático:* Renderização e interação com o mapa utilizando a biblioteca **Leaflet**, conectada aos *tiles* do **OpenStreetMap**.
