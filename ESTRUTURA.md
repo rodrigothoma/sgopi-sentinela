@@ -24,7 +24,8 @@ tests/                         → Testes unitários (pytest) — usam fakes/moc
 ## O que já está implementado (RF01 — Must Have)
 
 - `domain/ocorrencia.py` — entidade `Ocorrencia` com máquina de estados
-  (REGISTRADA → EM_VALIDACAO → VALIDADA/REJEITADA).
+  (AGUARDANDO_REVISAO → VALIDADA/REJEITADA), vocabulário alinhado à
+  Documentação de Engenharia.
 - `application/ports/outbound/repositorio_ocorrencia.py` — porta de saída
   (interface abstrata do repositório).
 - `application/ports/inbound/interface_registrar_ocorrencia_policial.py` —

@@ -14,9 +14,22 @@ from uuid import UUID, uuid4
 
 
 class StatusOcorrencia(str, Enum):
-    """Máquina de estados da ocorrência (fluxo descrito no MVP do README)."""
-    REGISTRADA = "REGISTRADA"
-    EM_VALIDACAO = "EM_VALIDACAO"
+    """
+    Máquina de estados da ocorrência.
+
+    Vocabulário alinhado à seção 3.2 e ao UC01/UC02/UC04 da Documentação de
+    Engenharia — é o nome oficial usado por código, testes e telas.
+
+    `Rascunho` (formulário ainda não submetido) não é um status persistido:
+    conforme o UC01, a ocorrência só é gravada no banco no momento da
+    submissão, já com o status inicial AGUARDANDO_REVISAO.
+
+    O estado `Em Correção` aparece no cenário alternativo do UC04, mas não
+    faz parte da máquina de estados do MVP (seção 3.2) nem das tarefas de
+    Sprint 2/3 do Planejamento de Desenvolvimento — por isso não está
+    listado aqui; fica em aberto para decisão futura da equipe.
+    """
+    AGUARDANDO_REVISAO = "AGUARDANDO_REVISAO"
     VALIDADA = "VALIDADA"
     REJEITADA = "REJEITADA"
 
@@ -32,7 +45,7 @@ class Ocorrencia:
     localizacao: str
     id: UUID = field(default_factory=uuid4)
     numero_protocolo: str | None = None
-    status: StatusOcorrencia = StatusOcorrencia.REGISTRADA
+    status: StatusOcorrencia = StatusOcorrencia.AGUARDANDO_REVISAO
     criada_em: datetime = field(default_factory=lambda: datetime.now(UTC))
     validada_por_id: UUID | None = None
 
@@ -49,27 +62,19 @@ class Ocorrencia:
         sufixo = str(self.id).split("-")[0].upper()
         return f"SGOPI-{ano}-{sufixo}"
 
-    def enviar_para_validacao(self) -> None:
-        if self.status != StatusOcorrencia.REGISTRADA:
-            raise TransicaoInvalidaError(
-                f"Só é possível enviar para validação a partir de REGISTRADA "
-                f"(status atual: {self.status})."
-            )
-        self.status = StatusOcorrencia.EM_VALIDACAO
-
     def validar(self, delegado_id: UUID) -> None:
-        if self.status != StatusOcorrencia.EM_VALIDACAO:
+        if self.status != StatusOcorrencia.AGUARDANDO_REVISAO:
             raise TransicaoInvalidaError(
-                f"Só é possível validar a partir de EM_VALIDACAO "
+                f"Só é possível validar a partir de AGUARDANDO_REVISAO "
                 f"(status atual: {self.status})."
             )
         self.status = StatusOcorrencia.VALIDADA
         self.validada_por_id = delegado_id
 
     def rejeitar(self, delegado_id: UUID) -> None:
-        if self.status != StatusOcorrencia.EM_VALIDACAO:
+        if self.status != StatusOcorrencia.AGUARDANDO_REVISAO:
             raise TransicaoInvalidaError(
-                f"Só é possível rejeitar a partir de EM_VALIDACAO "
+                f"Só é possível rejeitar a partir de AGUARDANDO_REVISAO "
                 f"(status atual: {self.status})."
             )
         self.status = StatusOcorrencia.REJEITADA
