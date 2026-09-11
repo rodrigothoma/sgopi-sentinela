@@ -8,10 +8,12 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "sqlalchemy>=2.0",
     "asyncpg>=0.30",
+    "pydantic-settings>=2.15.0",
 ]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "pytest-mock>=3.14",
