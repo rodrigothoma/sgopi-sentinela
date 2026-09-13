@@ -41,6 +41,7 @@
      - [5.3.2 Diagrama de Componentes (Módulos Lógicos na Arq. Hexagonal)](#532-diagrama-de-componentes-módulos-lógicos-na-arquitetura-hexagonal)
    - [5.4 Diagrama de Classes de Domínio](#54-diagrama-de-classes-de-domínio)
    - [5.5 Diagrama de Implantação e Topologia](#55-diagrama-de-implantação-e-topologia)
+   - [5.6 Mapeamento Objeto-Relacional (Esquema do Banco de Dados)](#56-mapeamento-objeto-relacional-esquema-do-banco-de-dados)
 6. [Especificação Detalhada dos Casos de Uso & Diagramas de Sequência](#6-especificação-detalhada-dos-casos-de-uso--diagramas-de-sequência)
    - [UC01 — Registrar Ocorrência Policial](#uc01--registrar-ocorrência-policial-rf01)
    - [UC02 — Despachar Viatura Tática](#uc02--despachar-viatura-tática-rf02)
@@ -288,6 +289,14 @@ O Diagrama de Classes de Domínio detalha o modelo conceitual orientado a objeto
 Apresenta a distribuição física e lógica dos nós de processamento, servidores de aplicação, banco de dados, mensageria e terminais de usuários:
 
 ![Diagrama de Implantação](diagramas/diagrama-implantacao-arquitetura-hexagonal.png)
+
+---
+
+### 5.6 Mapeamento Objeto-Relacional (Esquema do Banco de Dados)
+
+Esquema físico e relacional das tabelas, chaves primárias, estrangeiras e relacionamentos no banco de dados relacional (PostgreSQL):
+
+![Mapeamento Relacional](diagramas/mapeamento-relacional.png)
 
 ---
 
