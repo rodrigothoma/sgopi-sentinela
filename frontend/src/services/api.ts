@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import i18n from '../i18n';
 import type { ErroApi } from '../types/api';
 import { sessao } from './sessao';
 
@@ -31,11 +32,12 @@ api.interceptors.response.use(
 );
 
 /** Extrai a mensagem i18n padronizada do backend ({detail, code, request_id}). */
-export function mensagemDeErro(error: unknown, fallback = 'Erro inesperado'): string {
+export function mensagemDeErro(error: unknown, fallback?: string): string {
+  const defaultFallback = fallback ?? i18n.t('errors.unexpected', 'Erro inesperado');
   if (axios.isAxiosError<ErroApi>(error)) {
     const corpo = error.response?.data;
     if (corpo?.detail) return corpo.request_id ? `${corpo.detail} (ref. ${corpo.request_id.slice(0, 8)})` : corpo.detail;
-    if (!error.response) return 'Servidor indisponível';
+    if (!error.response) return i18n.t('errors.unavailable', 'Servidor indisponível');
   }
-  return fallback;
+  return defaultFallback;
 }
