@@ -48,6 +48,7 @@ class SimuladorTelemetria:
         self._tarefa: asyncio.Task | None = None
         self.ticks = 0
         self.posicoes_emitidas = 0
+        self._parar_event = asyncio.Event()
 
     @property
     def ligado(self) -> bool:
@@ -59,27 +60,39 @@ class SimuladorTelemetria:
     def ligar(self) -> None:
         if self.ligado:
             return
+        self._parar_event.clear()
         self._tarefa = asyncio.create_task(self._loop(), name="simulador-telemetria")
         log.info("simulador ligado (%.1fs, raio %.0fm)", self.intervalo, self.raio)
 
     async def desligar(self) -> None:
         if self._tarefa is None:
             return
-        self._tarefa.cancel()
-        try:
-            await self._tarefa
-        except asyncio.CancelledError:
-            pass
+        self._parar_event.set()
+        if not self._tarefa.done():
+            try:
+                await asyncio.wait_for(asyncio.shield(self._tarefa), timeout=2.0)
+            except asyncio.TimeoutError:
+                self._tarefa.cancel()
+                try:
+                    await self._tarefa
+                except asyncio.CancelledError:
+                    pass
         self._tarefa = None
         log.info("simulador desligado após %d ticks", self.ticks)
 
+
     async def _loop(self) -> None:
-        while True:
+        while not self._parar_event.is_set():
             try:
                 await self.tick()
             except Exception:  # noqa: BLE001 — o simulador nunca derruba a API
                 log.exception("tick do simulador falhou")
-            await asyncio.sleep(self.intervalo)
+            try:
+                await asyncio.wait_for(self._parar_event.wait(), timeout=self.intervalo)
+                break
+            except asyncio.TimeoutError:
+                pass
+
 
     async def tick(self) -> int:
         """Um ciclo de emissão; devolve quantas posições foram aceitas."""
