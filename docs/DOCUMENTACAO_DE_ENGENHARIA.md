@@ -41,6 +41,7 @@
      - [5.3.2 Diagrama de Componentes (Módulos Lógicos na Arq. Hexagonal)](#532-diagrama-de-componentes-módulos-lógicos-na-arquitetura-hexagonal)
    - [5.4 Diagrama de Classes de Domínio](#54-diagrama-de-classes-de-domínio)
    - [5.5 Diagrama de Implantação e Topologia](#55-diagrama-de-implantação-e-topologia)
+   - [5.6 Mapeamento Objeto-Relacional (Esquema do Banco de Dados)](#56-mapeamento-objeto-relacional-esquema-do-banco-de-dados)
 6. [Especificação Detalhada dos Casos de Uso & Diagramas de Sequência](#6-especificação-detalhada-dos-casos-de-uso--diagramas-de-sequência)
    - [UC01 — Registrar Ocorrência Policial](#uc01--registrar-ocorrência-policial-rf01)
    - [UC02 — Despachar Viatura Tática](#uc02--despachar-viatura-tática-rf02)
@@ -237,14 +238,15 @@ O padrão adotado é a **Arquitetura Hexagonal (*Ports & Adapters*)**. Essa esco
 
 Para garantir a viabilidade técnica do MVP e o alinhamento com a Arquitetura Hexagonal, a infraestrutura e as ferramentas de desenvolvimento foram padronizadas conforme abaixo:
 
-*   **Linguagem e Framework Base (Backend):** Java (versão 21+) aliado ao Spring Boot 3. O Spring será restrito às camadas de adaptadores e inicialização (Inversão de Controle), garantindo que o *Core Domain* permaneça em Java puro, sem anotações de framework.
-*   **Gestão de Dependências e Build:** A automação da compilação e a gestão de bibliotecas serão conduzidas via Maven ou Gradle, assegurando a padronização do empacotamento (artefatos executáveis) para todos os membros da equipe.
-*   **Persistência de Dados (Outbound Adapters):** PostgreSQL como Sistema Gerenciador de Banco de Dados Relacional (SGBDR), manipulado no código através de Spring Data JPA e Hibernate.
-*   **Interface Gráfica e Tempo Real (Frontend):** 
-    *   Painel Tático: Renderização do mapa via biblioteca Leaflet conectada aos tiles do OpenStreetMap.
-    *   Comunicação reativa bidirecional viabilizada via WebSockets (STOMP/SockJS) para atualização das viaturas no mapa sem *refresh*.
-*   **Simulador de Telemetria GPS:** Script auxiliar independente (podendo ser desenvolvido em Python) que atuará como cliente, disparando requisições assíncronas periódicas para simular o deslocamento de viaturas e alimentar as portas de entrada do sistema.
----
+* **Linguagem e Framework Base (Backend):** **Python** aliado ao **FastAPI**. O FastAPI será utilizado para a criação das APIs e gerenciamento das requisições.
+  
+* **Gestão de Dependências e Execução:** Utilização do **uv**. O uv será responsável por padronizar a instalação das bibliotecas e a configuração do ambiente de desenvolvimento entre os membros da equipe.
+
+* **Persistência de Dados:** **Firebase Cloud Firestore** como banco de dados NoSQL em nuvem, utilizando o **Firebase Admin SDK** para comunicação entre o backend em FastAPI e o banco de dados.
+  
+* **Interface Gráfica (Frontend):** Desenvolvida em **JavaScript/TypeScript**.
+  * *Painel Tático:* Renderização e interação com o mapa utilizando a biblioteca **Leaflet**, conectada aos *tiles* do **OpenStreetMap**.
+  * *Comunicação:* Comunicação bidirecional e reativa utilizando **WebSockets (STOMP/SockJS)**, permitindo a atualização das viaturas no mapa em tempo real.
 
 ## 5. Projeto do Software
 
@@ -297,6 +299,14 @@ O Diagrama de Classes de Domínio detalha o modelo conceitual orientado a objeto
 Apresenta a distribuição física e lógica dos nós de processamento, servidores de aplicação, banco de dados, mensageria e terminais de usuários:
 
 ![Diagrama de Implantação](diagramas/diagrama-implantacao-arquitetura-hexagonal.png)
+
+---
+
+### 5.6 Mapeamento Objeto-Relacional (Esquema do Banco de Dados)
+
+Esquema físico e relacional das tabelas, chaves primárias, estrangeiras e relacionamentos no banco de dados relacional (PostgreSQL):
+
+![Mapeamento Relacional](diagramas/mapeamento-relacional.png)
 
 ---
 
@@ -745,9 +755,9 @@ A garantia de qualidade e o fluxo de trabalho colaborativo são pilares para o s
 
 A validação do software ocorrerá em dois níveis distintos para isolar regras de negócio e testar a estabilidade da interface:
 
-*   **Testes de Unidade e Integração (Backend):** O foco central da cobertura de testes (meta superior a 80%) será a camada de Casos de Uso e Entidades de Domínio. Utilizando ferramentas como JUnit e Mockito, a máquina de estados das ocorrências e a geração do número de protocolo serão validadas de forma isolada, sem subir o contexto do servidor web ou do banco de dados relacional.
-*   **Testes Automatizados (E2E / Frontend):** Para garantir que os fluxos críticos funcionem de ponta a ponta na visão do usuário, serão implementados scripts de automação *black-box* utilizando o **Selenium WebDriver**. Essa automação validará cenários vitais, como o preenchimento correto dos formulários de registro circunstanciado (UC01), simulando o comportamento real do Agente Policial no navegador.
+- **Testes de Unidade e Integração (Backend):** O foco central da cobertura de testes (meta superior a 80%) será a camada de Casos de Uso e Entidades de Domínio. Utilizando ferramentas como **pytest** e **unittest.mock**, a máquina de estados das ocorrências e a geração do número de protocolo serão validadas de forma isolada, sem a necessidade de subir o servidor web ou realizar conexões reais com o banco de dados.
 
+- **Testes Automatizados (E2E / Frontend):** Para garantir que os fluxos críticos funcionem de ponta a ponta na visão do usuário, serão implementados scripts de automação *black-box* utilizando o **Selenium WebDriver**. Essa automação validará cenários vitais, como o preenchimento correto dos formulários de registro circunstanciado (UC01), simulando o comportamento real do Agente Policial no navegador.
 ### 7.2 Versionamento e Fluxo de Trabalho (Git Workflow)
 
 Para orquestrar o desenvolvimento em equipe e proteger a estabilidade do código principal, o repositório adotará uma estratégia estruturada de ramificação:

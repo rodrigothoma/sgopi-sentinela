@@ -1,0 +1,37 @@
+{
+  "page_title": "Register Occurrence",
+  "form": {
+    "natureza_label": "Nature", "natureza_placeholder": "E.g. Theft, Robbery, Homicide...",
+    "descricao_label": "Detailed description", "descricao_placeholder": "Describe the facts in detail (at least 20 characters)...",
+    "localizacao_label": "Address", "localizacao_placeholder": "Street, number, district, city",
+    "coordenada_label": "Geographic coordinate", "coordenada_ajuda": "click the map or drag the marker",
+    "data_hora_fato_label": "Date/time of the fact",
+    "envolvidos_label": "Involved persons", "add_envolvido": "Add person",
+    "tipificacoes_label": "Criminal classification", "add_tipificacao": "Add classification"
+  },
+  "envolvido": { "nome_label": "Name", "tipo_label": "Type", "documento_label": "Document (CPF/ID)", "VITIMA": "Victim", "TESTEMUNHA": "Witness", "SUSPEITO": "Suspect" },
+  "tipificacao": { "artigo_label": "Article", "artigo_placeholder": "E.g. Art. 155 CP", "descricao_label": "Description", "descricao_placeholder": "Description of the offense" },
+  "erros": {
+    "campos_obrigatorios": "Fill in nature and address", "descricao_curta": "Description must have at least 20 characters",
+    "sem_coordenada": "Mark the coordinate on the map", "data_futura": "Date/time cannot be in the future",
+    "sem_envolvidos": "Add at least one involved person"
+  },
+  "registro": { "aguardando": "the occurrence is in the Chief's review queue." },
+  "toast": { "success": "Occurrence registered! Protocol: {{protocolo}}", "error_server": "Error registering occurrence. Try again." },
+  "detalhe": {
+    "versao": "version", "registrada_em": "registered at", "integra": "Narrative intact since validation", "adulterada": "WARNING: narrative changed after validation",
+    "justificativa": "Chief's justification", "desfecho": "Outcome", "historico": "Status history"
+  },
+  "minhas": { "titulo": "My occurrences", "vazio": "No occurrences yet.", "selecione": "Select an occurrence to see details." },
+  "correcao": { "titulo": "Correct {{protocolo}}", "editar": "Edit", "reenviar": "Resubmit for review", "salvar": "Save correction", "salva": "Correction saved.", "reenviada": "Occurrence resubmitted for review." },
+  "fila": {
+    "titulo": "Review queue", "vazia": "Nothing in this filter.", "selecione": "Select an occurrence from the queue.",
+    "filtro_0": "Awaiting review", "filtro_1": "Needs correction", "filtro_2": "Validated / in progress", "filtro_3": "Rejected / closed"
+  },
+  "revisao": {
+    "justificativa_label": "Justification (required to return or reject, at least 10 characters)", "justificativa_placeholder": "Explain the reason...",
+    "justificativa_curta": "Provide a justification with at least 10 characters", "confirmar_rejeicao": "Rejecting is final. Confirm?",
+    "validar": "Validate", "devolver": "Return for correction", "rejeitar": "Reject",
+    "ok_validar": "Occurrence validated — available on the tactical panel.", "ok_devolver": "Occurrence returned to the agent.", "ok_rejeitar": "Occurrence rejected."
+  }
+}
