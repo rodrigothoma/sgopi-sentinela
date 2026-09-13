@@ -44,16 +44,19 @@ async def test_token_adulterado_401(client):
 
 
 async def test_token_expirado_401(app, client):
+    from infrastructure.config.settings import settings
     from infrastructure.di import get_relogio
     from tests.fakes.portas_fake import RelogioFake
 
     token = await token_de(client, "agente")
-    app.dependency_overrides[get_relogio] = lambda: RelogioFake(datetime.now(UTC) + timedelta(hours=9))
+    horas = settings.jwt_expires_in_hours + 1
+    app.dependency_overrides[get_relogio] = lambda: RelogioFake(datetime.now(UTC) + timedelta(hours=horas))
     r = await client.get("/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 401
 
 
 async def test_delegado_nao_registra_ocorrencia_403_auditado(client, session):
+
     r = await client.post("/v1/ocorrencias", json=corpo_ocorrencia(), headers=await auth(client, "delegado"))
     assert r.status_code == 403
     assert r.json()["code"] == "auth.forbidden" and r.json()["extra"]["exigido"] == ["AGENTE"]
