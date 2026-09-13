@@ -6,5 +6,6 @@
   "papel": { "AGENTE": "Agente", "DELEGADO": "Delegado", "OPERADOR_CENTRAL": "Operador da Central", "SUPERVISOR": "Supervisor", "PERITO": "Perito", "ESCRIVAO": "Escrivão" },
   "status": { "AGUARDANDO_REVISAO": "Aguardando revisão", "EM_CORRECAO": "Em correção", "REJEITADA": "Rejeitada", "VALIDADA": "Validada", "EM_ATENDIMENTO": "Em atendimento", "ENCERRADA": "Encerrada" },
   "situacao": { "DISPONIVEL": "Disponível", "EM_DESLOCAMENTO": "Em deslocamento", "OPERANDO": "Operando", "INDISPONIVEL": "Indisponível" },
+  "errors": { "unexpected": "Erro inesperado", "unavailable": "Servidor indisponível" },
   "sinal": { "OK": "GPS OK", "SEM_SINAL": "Sem sinal", "SEM_POSICAO": "Sem posição" }
 }
