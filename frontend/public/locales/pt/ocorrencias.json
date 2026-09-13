@@ -1,0 +1,35 @@
+{
+  "page_title": "Registrar Ocorrência",
+  "form": {
+    "natureza_label": "Natureza da Ocorrência",
+    "natureza_placeholder": "Ex: Furto, Roubo, Homicídio...",
+    "descricao_label": "Descrição Circunstanciada",
+    "descricao_placeholder": "Descreva os fatos com detalhes...",
+    "localizacao_label": "Localização",
+    "localizacao_placeholder": "Endereço completo ou coordenadas",
+    "envolvidos_label": "Envolvidos",
+    "add_envolvido": "Adicionar Envolvido",
+    "tipificacoes_label": "Tipificações Penais",
+    "add_tipificacao": "Adicionar Tipificação"
+  },
+  "envolvido": {
+    "nome_label": "Nome",
+    "tipo_label": "Tipo",
+    "documento_label": "Documento (CPF/RG)",
+    "VITIMA": "Vítima",
+    "TESTEMUNHA": "Testemunha",
+    "SUSPEITO": "Suspeito"
+  },
+  "tipificacao": {
+    "artigo_label": "Artigo",
+    "artigo_placeholder": "Ex: Art. 155 CP",
+    "descricao_label": "Descrição",
+    "descricao_placeholder": "Descrição do tipo penal"
+  },
+  "toast": {
+    "success": "Ocorrência registrada! Protocolo: {{protocolo}}",
+    "error_validation": "Verifique os campos obrigatórios",
+    "error_server": "Erro ao registrar ocorrência. Tente novamente.",
+    "error_not_found": "Ocorrência não encontrada"
+  }
+}

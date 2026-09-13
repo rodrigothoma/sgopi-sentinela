@@ -1,2 +1,9 @@
-// Ponto de entrada do React — não implementar aqui, apenas boilerplate
-// TODO: configurar roteamento e providers globais
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);

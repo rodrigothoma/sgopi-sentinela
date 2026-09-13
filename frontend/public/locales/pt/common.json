@@ -1,0 +1,15 @@
+{
+  "app": { "title": "SGOPI Sentinela" },
+  "actions": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "loading": "Carregando...",
+    "submit": "Enviar"
+  },
+  "status": {
+    "REGISTRADA": "Registrada",
+    "EM_VALIDACAO": "Em Validação",
+    "VALIDADA": "Validada",
+    "REJEITADA": "Rejeitada"
+  }
+}

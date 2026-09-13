@@ -1,0 +1,35 @@
+{
+  "page_title": "Register Occurrence",
+  "form": {
+    "natureza_label": "Nature of Occurrence",
+    "natureza_placeholder": "e.g. Theft, Robbery, Homicide...",
+    "descricao_label": "Detailed Description",
+    "descricao_placeholder": "Describe the facts in detail...",
+    "localizacao_label": "Location",
+    "localizacao_placeholder": "Full address or coordinates",
+    "envolvidos_label": "Involved Parties",
+    "add_envolvido": "Add Involved Party",
+    "tipificacoes_label": "Legal Classifications",
+    "add_tipificacao": "Add Classification"
+  },
+  "envolvido": {
+    "nome_label": "Name",
+    "tipo_label": "Type",
+    "documento_label": "Document (ID)",
+    "VITIMA": "Victim",
+    "TESTEMUNHA": "Witness",
+    "SUSPEITO": "Suspect"
+  },
+  "tipificacao": {
+    "artigo_label": "Article",
+    "artigo_placeholder": "e.g. Art. 155 CP",
+    "descricao_label": "Description",
+    "descricao_placeholder": "Legal classification description"
+  },
+  "toast": {
+    "success": "Occurrence registered! Protocol: {{protocolo}}",
+    "error_validation": "Please check required fields",
+    "error_server": "Error registering occurrence. Please try again.",
+    "error_not_found": "Occurrence not found"
+  }
+}
