@@ -1,6 +1,7 @@
 # ETAPA 06 — Despacho tático atômico e encerramento (RF18, RF19, RNF11)
 
-**Data:** 13/09/2026 · **Branch:** `matheus-Fastapi` · **Prioridade:** 🔴 (Must Have — Verificação 3: MVP ponta a ponta)
+**Data:** 13/09/2026 · **Prioridade:** 🔴 (Must Have — Verificação 3: MVP ponta a ponta)
+
 **Origem:** `ETAPA-04` §4 (RF18, RF19), §5 (RNF11), DEC-05; `ETAPA-05` NEXT-14; RF-P09, RF-P10, RF-P11, RNF-P13 (fallback tabular/manual).
 
 ## 1. Objetivo

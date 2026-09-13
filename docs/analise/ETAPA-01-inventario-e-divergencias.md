@@ -21,7 +21,8 @@
 | Mapeamento relacional | ~25 tabelas | Consistente com o diagrama de classes; **não** com o código |
 | Sequência sq01–sq11 | Padrão BCE (boundary/control/entity) | Nenhum diagrama mostra porta, caso de uso ou repositório |
 
-### 1.2 Código (branch `matheus-Fastapi`)
+### 1.2 Código
+
 
 | Camada | O que existe | Cobertura de UC |
 | :--- | :--- | :--- |

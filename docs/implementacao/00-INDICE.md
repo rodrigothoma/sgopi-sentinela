@@ -1,6 +1,7 @@
 # 🛠️ Rastreabilidade da Implementação do MVP — Índice
 
-**Projeto:** SGOPI Sentinela · **Branch:** `matheus-Fastapi` · **Data:** 13/09/2026
+**Projeto:** SGOPI Sentinela · **Data:** 13/09/2026
+
 **Origem:** as correções e requisitos apontados em [`docs/analise/`](../analise/00-INDICE-E-METODO.md) (Etapas 1–5) e no `README.md`.
 **Método:** cada etapa implementa um bloco de requisitos por ordem de criticidade (bloqueantes primeiro), é testada, e gera um documento com *o que foi feito, decisões, testes e rastreabilidade* (IDs `DIV`, `RF-P`, `RNF-P`, `HEX`, `DEC`, `NEXT` da análise).
 
