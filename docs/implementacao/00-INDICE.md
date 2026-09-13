@@ -15,9 +15,10 @@
 | 5 | [Frota, telemetria e tempo real](ETAPA-05-frota-telemetria-tempo-real.md) | RF15, RF16, RF17, RNF01\*, RNF04\*, DEC-06 | 156 |
 | 6 | [Despacho e encerramento](ETAPA-06-despacho-e-encerramento.md) | RF18, RF19, RNF11 | 176 |
 | 7 | [Frontend do MVP](ETAPA-07-frontend-mvp.md) | UI de RF01\*/04\*/11/13/14/15/16/17/18/19, RNF04\*, RNF08 | 176 (+ tsc/build + smoke ao vivo) |
-| 8 | [Qualidade, observabilidade e documentação](ETAPA-08-qualidade-e-documentacao.md) | RNF05\*, RNF06, RNF09, RNF10, RNF12 | **240** · cobertura 98 % |
+| 8 | [Qualidade, observabilidade e documentação](ETAPA-08-qualidade-e-documentacao.md) | RNF05\*, RNF06, RNF09, RNF10, RNF12 | **243** · cobertura 98 % |
 
 Complemento: [Nota LGPD / base legal](NOTA-LGPD-BASE-LEGAL.md).
+
 
 ## Status por requisito (visão consolidada)
 
