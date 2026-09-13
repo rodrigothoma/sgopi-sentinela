@@ -61,6 +61,8 @@ async def test_simulador_liga_desliga_via_api(app, client, session_factory):
     r = await client.post("/v1/simulador/desligar", headers=ho)
     assert r.json()["ligado"] is False and r.json()["ticks"] >= 2
     r = await client.get("/v1/viaturas", headers=ho)
+    assert r.status_code == 200
     assert all(v["sinal"] == "OK" and v["latitude"] is not None for v in r.json())
+
     r = await client.post("/v1/simulador/ligar", headers=await auth(client, "agente"))
     assert r.status_code == 403
