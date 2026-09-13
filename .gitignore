@@ -27,3 +27,9 @@ Thumbs.db
 # DB
 *.sqlite3
 pgdata/
+
+# Testes / cobertura / bancos locais
+.pytest_cache/
+.coverage
+htmlcov/
+*.db

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TipificacaoDTO } from '../../types/ocorrencia';
+import type { TipificacaoDTO } from '../../types/api';
 
 interface Props {
   onAdd: (tipificacao: TipificacaoDTO) => void;

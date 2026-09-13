@@ -14,52 +14,48 @@ O projeto e a arquitetura foram concebidos e modelados inicialmente na disciplin
 
 ```
 sgopi-sentinela/
-├── backend/                   # API Python (FastAPI) — Arquitetura Hexagonal
+├── backend/                       # API Python (FastAPI) — Arquitetura Hexagonal
 │   ├── src/
-│   │   ├── domain/            # Entidades e regras de negócio puras (sem libs)
-│   │   │   ├── ocorrencia/
-│   │   │   └── shared/        # Exceções base do domínio
+│   │   ├── domain/                # Entidades, VOs e serviços de domínio puros (sem libs)
+│   │   │   ├── ocorrencia/        # Ocorrencia (agregado), StatusOcorrencia + transições, eventos
+│   │   │   ├── viatura/           # Viatura, SituacaoViatura, Posicao
+│   │   │   ├── despacho/          # OrdemDeDespacho, serviço de proximidade (Haversine)
+│   │   │   ├── usuario/           # Usuario, Papel
+│   │   │   ├── auditoria/         # RegistroAuditoria
+│   │   │   └── shared/            # Exceções (com chave i18n), Coordenada, CPF, eventos
 │   │   ├── application/
-│   │   │   ├── ports/
-│   │   │   │   ├── inbound/   # Contratos que os controllers implementam
-│   │   │   │   └── outbound/  # Contratos que os repositórios implementam
-│   │   │   └── use_cases/
-│   │   │       └── ocorrencia/
+│   │   │   ├── ports/inbound/     # Interface* + DTOs + Ator (um arquivo por caso de uso)
+│   │   │   ├── ports/outbound/    # Repositorio*, UnidadeDeTrabalho, Relogio, GeradorProtocolo,
+│   │   │   │                      # PortaAuditoria, PublicadorEventos, HasherSenha, ProvedorToken
+│   │   │   └── use_cases/         # auth/, ocorrencia/, viatura/, despacho/, auditoria/
 │   │   ├── adapters/
-│   │   │   ├── inbound/http/v1/   # Routers FastAPI (REST)
-│   │   │   └── outbound/persistence/  # Implementações SQLAlchemy
+│   │   │   ├── inbound/http/      # deps (JWT/RBAC), erros, middleware, v1/*_router.py
+│   │   │   ├── inbound/websocket/ # WS /v1/tempo-real + GerenciadorConexoes
+│   │   │   ├── inbound/simulador/ # SimuladorTelemetria (driving adapter de GPS)
+│   │   │   └── outbound/          # persistence/ (SQLAlchemy), seguranca/ (argon2, jose),
+│   │   │                          # eventos/ (fan-out em memória), relogio/
 │   │   ├── infrastructure/
-│   │   │   ├── config/        # Settings (pydantic-settings)
-│   │   │   └── database/      # Engine, sessão, migrations (Alembic)
-│   │   └── main.py            # Composition Root / FastAPI app
-│   ├── tests/
-│   │   ├── fakes/             # Repositórios in-memory para testes unitários
-│   │   ├── unit/              # Testes de domínio e use cases (sem banco)
-│   │   └── integration/       # Testes com banco real
-│   ├── db/
-│   │   └── seed.sql           # Dados de teste compartilhados pela equipe
-│   ├── .env.example           # Template de variáveis de ambiente
-│   └── pyproject.toml
-├── frontend/                  # SPA React + Leaflet (painel tático)
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/          # Clients HTTP e WebSocket
-│   │   ├── hooks/
-│   │   └── types/
-│   ├── .env.example
-│   └── package.json
+│   │   │   ├── config/            # Settings (pydantic-settings, .env)
+│   │   │   ├── database/          # engine, models, migrations/ (Alembic)
+│   │   │   ├── i18n/              # mensagens pt/en
+│   │   │   ├── logging.py         # logs JSON com request_id + máscara de CPF
+│   │   │   └── di.py              # Composition Root (única ponte portas ↔ adapters)
+│   │   └── main.py                # criar_app(): middleware, handlers, routers, /health
+│   ├── scripts/seed.py            # Seed reproduzível (usuários + frota fictícia)
+│   ├── tests/                     # fakes/, unit/, integration/ (SQLite em memória)
+│   ├── alembic.ini · pyproject.toml · .env.example
+├── frontend/                      # SPA React + TypeScript + Leaflet
+│   └── src/ {components, pages, services, hooks, types}
 ├── docs/
-│   ├── DOCUMENTACAO_DE_ENGENHARIA.md
-│   ├── PLANEJAMENTO_DESENVOLVIMENTO.md
+│   ├── DOCUMENTACAO_DE_ENGENHARIA.md · PLANEJAMENTO_DESENVOLVIMENTO.md
+│   ├── analise/                   # Análise de requisitos (5 etapas)
+│   ├── implementacao/             # Rastreabilidade da implementação do MVP (8 etapas)
 │   └── diagramas/
-│       ├── sequencia/         # sq01-... a sq11-... (PNG)
-│       └── *.png              # Casos de uso, classes, componentes, etc.
-├── docker-compose.yml         # PostgreSQL local para desenvolvimento
+├── docker-compose.yml             # PostgreSQL 16 local
 └── README.md
 ```
 
-> **Regra de ouro:** `domain/` e `application/` **nunca** importam FastAPI, SQLAlchemy ou qualquer lib externa. Apenas `adapters/` e `infrastructure/` podem.
+> **Regra de ouro:** `domain/` e `application/` **nunca** importam FastAPI, SQLAlchemy ou qualquer lib externa. Apenas `adapters/` e `infrastructure/` podem. Verificado por `import-linter` e por um teste da suíte.
 
 ---
 
@@ -82,15 +78,17 @@ docker compose -f ../docker-compose.yml up -d
 uv sync
 
 # 3. Configure o ambiente
-cp .env.example .env
-# Edite .env: deixe DATABASE_URL local descomentada
+cp .env.example .env            # ajuste JWT_SECRET_KEY e CORS_ORIGINS se necessário
 
-# 4. Rode o servidor
+# 4. Crie o esquema e os dados de demonstração
+uv run alembic upgrade head
+uv run python -m scripts.seed   # usuários agente/delegado/operador (senha Senha@123) + 5 viaturas
+
+# 5. Rode o servidor (Swagger em http://localhost:8000/docs)
 uv run uvicorn --app-dir src main:app --reload
-
-# 5. Testes (sem banco)
-uv run pytest tests/unit
 ```
+
+> Sem Docker? Aponte `DATABASE_URL=sqlite+aiosqlite:///./sgopi.db` no `.env` — o esquema e os testes são portáveis.
 
 ### Frontend
 
@@ -98,7 +96,22 @@ uv run pytest tests/unit
 cd frontend
 npm install
 cp .env.example .env
-npm run dev
+npm run dev                     # http://localhost:3000 (proxy /v1 e WebSocket para o backend)
+```
+
+### Fluxo de demonstração do MVP
+1. **agente** → *Registrar ocorrência* (clique no mapa para a coordenada) → protocolo `SGOPI-AAAA-NNNNNN`.
+2. **delegado** → *Fila de revisão* → *Validar* (ou devolver/rejeitar com justificativa).
+3. **operador** → *Painel tático* → *Ligar simulador GPS* → selecionar a ocorrência → *Despachar* uma das 3 viaturas mais próximas → *Encerrar atendimento*.
+
+### Qualidade
+
+```bash
+cd backend
+uv run pytest -q                                   # 240 testes (unitários + integração em SQLite em memória)
+uv run pytest --cov                                # cobertura ≥ 80 % em domain/ + application/ (atual ≈ 98 %)
+PYTHONPATH=src uv run lint-imports --config pyproject.toml   # contratos da Arquitetura Hexagonal
+cd ../frontend && npx tsc --noEmit && npm run build
 ```
 
 ---
@@ -110,6 +123,8 @@ npm run dev
 | 📄 **Especificação Completa de Engenharia** | [**docs/DOCUMENTACAO_DE_ENGENHARIA.md**](docs/DOCUMENTACAO_DE_ENGENHARIA.md) | Requisitos (RF01–RF10, RNF01–RNF05), matriz MoSCoW, proposta de MVP, padrões de projeto e os 11 casos de uso com diagramas de sequência. |
 | 🌐 **Wiki Oficial do Projeto** | [**GitHub Wiki**](https://github.com/rodrigothoma/sgopi-sentinela/wiki) | Base de conhecimento da equipe com guias, modelagem UML navegável e detalhamento arquitetural. |
 | 📊 **Artefatos e Diagramas** | [**docs/diagramas/**](docs/diagramas/) | Todos os diagramas UML em alta definição. |
+| 🔎 **Análise de Requisitos e Prontidão do MVP** | [**docs/analise/**](docs/analise/00-INDICE-E-METODO.md) | Divergências doc × código, problemas em RF/RNF, requisitos novos (RF11–RF22, RNF06–RNF12), lacunas hexagonais e próximos passos, em 5 etapas rastreáveis. |
+| 🛠️ **Rastreabilidade da Implementação do MVP** | [**docs/implementacao/**](docs/implementacao/00-INDICE.md) | O que foi implementado em cada etapa (domínio, infraestrutura, auth, revisão, frota/tempo real, despacho, frontend, qualidade), decisões, testes e status por requisito. |
 
 ---
 
@@ -123,7 +138,7 @@ npm run dev
 ```
 
 ### Matriz de Priorização (MoSCoW)
-- **Must Have (MVP Essencial):** RF01 (Gestão de Ocorrência Policial), RF04 (Fluxo de Validação pelo Delegado), RF02 (Monitoramento GPS e Despacho Tático).
+- **Must Have (MVP Essencial):** RF01 (Gestão de Ocorrência Policial), RF04 (Fluxo de Validação pelo Delegado), RF02 (Monitoramento GPS e Despacho Tático) — **implementados** junto com os requisitos transversais RF11–RF20 (autenticação, papéis, consulta, correção, frota, telemetria, tempo real, despacho, encerramento, auditoria). Ver [docs/implementacao](docs/implementacao/00-INDICE.md).
 - **Should Have (Alta Prioridade):** RF03 (Inventário de Apreensões), RF05 (Manchas Criminais e Alertas), RF07 (Laudos Periciais).
 - **Could Have (Média Prioridade):** RF06 (Vinculação a Inquéritos), RF08 (Autenticação Pública de Documentos), RF09 (Medidas Protetivas).
 - **Won't Have (Próximos Ciclos):** RF10 (Comunicação Interagências).
@@ -161,16 +176,17 @@ O projeto adota a **Arquitetura Hexagonal** para garantir o isolamento estrito d
 
 O projeto usa **duas configurações de banco**, selecionáveis via `.env`:
 
-- **Desenvolvimento local:** Docker Compose sobe um PostgreSQL 16 com `seed.sql` compartilhado entre a equipe. Nenhum dado real é consumido.
+- **Desenvolvimento local:** Docker Compose sobe um PostgreSQL 16; o esquema é versionado por **Alembic** (`alembic upgrade head`) e os dados de demonstração vêm de `scripts/seed.py` (idempotente, dados fictícios). Nenhum dado real é consumido.
 - **Apresentação/Demo:** Supabase (PostgreSQL gerenciado). Basta comentar/descomentar a `DATABASE_URL` no `.env`.
 
 ---
 
 ## ⚙️ Estratégia de Qualidade
 
-- **Testes unitários** (pytest): cobertura ≥ 80% sobre domínio e use cases — sem banco, sem servidor.
-- **Testes de integração**: com banco real (via Docker ou Supabase).
-- **Testes E2E** (Selenium): fluxos críticos do frontend.
+- **Testes unitários** (pytest): cobertura ≥ 80% sobre domínio e use cases — sem banco, sem servidor (fakes de todas as portas em `tests/fakes/`).
+- **Testes de integração**: adapters e API (HTTP + WebSocket) contra SQLite em memória; esquema Postgres validado por `alembic check`.
+- **Aderência hexagonal**: `import-linter` (3 contratos) + teste da regra de ouro na suíte.
+- **Testes E2E** (Selenium): fluxos críticos do frontend — *previsto para a Sprint 5*.
 
 ---
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { EnvolvidoDTO, TipoEnvolvido } from '../../types/ocorrencia';
+import type { EnvolvidoDTO, TipoEnvolvido } from '../../types/api';
 
 interface Props {
   onAdd: (envolvido: EnvolvidoDTO) => void;
