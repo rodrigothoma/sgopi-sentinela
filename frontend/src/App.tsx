@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './i18n';
 import './styles.css';
@@ -18,9 +19,14 @@ const Inicio = () => {
   return <Navigate to={usuario ? rotaInicial(usuario.papel) : '/login'} replace />;
 };
 
+const Carregando = () => {
+  const { t } = useTranslation();
+  return <div style={{ padding: 24 }}>{t('actions.loading')}</div>;
+};
+
 export default function App() {
   return (
-    <Suspense fallback={<div style={{ padding: 24 }}>Carregando...</div>}>
+    <Suspense fallback={<Carregando />}>
       <AuthProvider>
         <ToastProvider>
           <BrowserRouter>
