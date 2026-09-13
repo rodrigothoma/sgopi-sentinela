@@ -86,7 +86,7 @@ cp .env.example .env
 # Edite .env: deixe DATABASE_URL local descomentada
 
 # 4. Rode o servidor
-uv run uvicorn src.main:app --reload
+uv run uvicorn --app-dir src main:app --reload
 
 # 5. Testes (sem banco)
 uv run pytest tests/unit
