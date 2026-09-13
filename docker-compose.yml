@@ -11,7 +11,13 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./backend/db/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sgopi"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
+# O esquema é criado por `uv run alembic upgrade head` e os dados de demonstração
+# por `uv run python -m scripts.seed` (DIV-23: o seed.sql rodava antes das tabelas existirem).
 volumes:
   pgdata:

@@ -1,35 +1,37 @@
 {
   "page_title": "Registrar Ocorrência",
   "form": {
-    "natureza_label": "Natureza da Ocorrência",
-    "natureza_placeholder": "Ex: Furto, Roubo, Homicídio...",
-    "descricao_label": "Descrição Circunstanciada",
-    "descricao_placeholder": "Descreva os fatos com detalhes...",
-    "localizacao_label": "Localização",
-    "localizacao_placeholder": "Endereço completo ou coordenadas",
-    "envolvidos_label": "Envolvidos",
-    "add_envolvido": "Adicionar Envolvido",
-    "tipificacoes_label": "Tipificações Penais",
-    "add_tipificacao": "Adicionar Tipificação"
+    "natureza_label": "Natureza da ocorrência", "natureza_placeholder": "Ex: Furto, Roubo, Homicídio...",
+    "descricao_label": "Descrição circunstanciada", "descricao_placeholder": "Descreva os fatos com detalhes (mínimo 20 caracteres)...",
+    "localizacao_label": "Endereço", "localizacao_placeholder": "Rua, número, bairro, cidade",
+    "coordenada_label": "Coordenada geográfica", "coordenada_ajuda": "clique no mapa ou arraste o marcador",
+    "data_hora_fato_label": "Data/hora do fato",
+    "envolvidos_label": "Envolvidos", "add_envolvido": "Adicionar envolvido",
+    "tipificacoes_label": "Tipificações penais", "add_tipificacao": "Adicionar tipificação"
   },
-  "envolvido": {
-    "nome_label": "Nome",
-    "tipo_label": "Tipo",
-    "documento_label": "Documento (CPF/RG)",
-    "VITIMA": "Vítima",
-    "TESTEMUNHA": "Testemunha",
-    "SUSPEITO": "Suspeito"
+  "envolvido": { "nome_label": "Nome", "tipo_label": "Tipo", "documento_label": "Documento (CPF/RG)", "VITIMA": "Vítima", "TESTEMUNHA": "Testemunha", "SUSPEITO": "Suspeito" },
+  "tipificacao": { "artigo_label": "Artigo", "artigo_placeholder": "Ex: Art. 155 CP", "descricao_label": "Descrição", "descricao_placeholder": "Descrição do tipo penal" },
+  "erros": {
+    "campos_obrigatorios": "Preencha natureza e endereço", "descricao_curta": "A descrição deve ter ao menos 20 caracteres",
+    "sem_coordenada": "Marque a coordenada do fato no mapa", "data_futura": "A data/hora do fato não pode ser futura",
+    "sem_envolvidos": "Qualifique ao menos um envolvido"
   },
-  "tipificacao": {
-    "artigo_label": "Artigo",
-    "artigo_placeholder": "Ex: Art. 155 CP",
-    "descricao_label": "Descrição",
-    "descricao_placeholder": "Descrição do tipo penal"
+  "registro": { "aguardando": "a ocorrência está na fila de revisão do Delegado." },
+  "toast": { "success": "Ocorrência registrada! Protocolo: {{protocolo}}", "error_server": "Erro ao registrar ocorrência. Tente novamente." },
+  "detalhe": {
+    "versao": "versão", "registrada_em": "registrada em", "integra": "Narrativa íntegra desde a validação", "adulterada": "ATENÇÃO: narrativa alterada após a validação",
+    "justificativa": "Justificativa do Delegado", "desfecho": "Desfecho", "historico": "Histórico de status"
   },
-  "toast": {
-    "success": "Ocorrência registrada! Protocolo: {{protocolo}}",
-    "error_validation": "Verifique os campos obrigatórios",
-    "error_server": "Erro ao registrar ocorrência. Tente novamente.",
-    "error_not_found": "Ocorrência não encontrada"
+  "minhas": { "titulo": "Minhas ocorrências", "vazio": "Nenhuma ocorrência registrada.", "selecione": "Selecione uma ocorrência para ver o detalhe." },
+  "correcao": { "titulo": "Corrigir {{protocolo}}", "editar": "Editar", "reenviar": "Reenviar para revisão", "salvar": "Salvar correção", "salva": "Correção salva.", "reenviada": "Ocorrência reenviada para revisão." },
+  "fila": {
+    "titulo": "Fila de revisão", "vazia": "Nenhuma ocorrência neste filtro.", "selecione": "Selecione uma ocorrência da fila.",
+    "filtro_0": "Aguardando revisão", "filtro_1": "Em correção", "filtro_2": "Validadas / em atendimento", "filtro_3": "Rejeitadas / encerradas"
+  },
+  "revisao": {
+    "justificativa_label": "Justificativa (obrigatória para devolver ou rejeitar, mínimo 10 caracteres)", "justificativa_placeholder": "Explique o motivo...",
+    "justificativa_curta": "Informe uma justificativa com ao menos 10 caracteres", "confirmar_rejeicao": "Rejeitar é definitivo. Confirmar?",
+    "validar": "Validar", "devolver": "Devolver para correção", "rejeitar": "Rejeitar",
+    "ok_validar": "Ocorrência validada — disponível no painel tático.", "ok_devolver": "Ocorrência devolvida ao agente.", "ok_rejeitar": "Ocorrência rejeitada."
   }
 }

@@ -1,12 +1,15 @@
 """
-Porta de entrada: InterfaceRegistrarOcorrenciaPolicial
+Porta de entrada: InterfaceRegistrarOcorrenciaPolicial (RF01*)
 
 Contratos (ABCs e DTOs) que o adapter HTTP usa para acionar o caso de uso
-sem conhecer sua implementação concreta.
+sem conhecer sua implementação concreta. O ator vem do token (nunca do body).
 """
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from datetime import datetime
 from uuid import UUID
+
+from application.ports.inbound.ator import Ator
 
 
 @dataclass(frozen=True)
@@ -24,10 +27,12 @@ class TipificacaoInputDTO:
 
 @dataclass(frozen=True)
 class RegistrarOcorrenciaInput:
-    agente_policial_id: UUID
     natureza: str
     descricao: str
     localizacao: str
+    latitude: float
+    longitude: float
+    data_hora_fato: datetime
     tipificacoes: tuple[TipificacaoInputDTO, ...] = field(default_factory=tuple)
     envolvidos: tuple[EnvolvidoInputDTO, ...] = field(default_factory=tuple)
 
@@ -41,9 +46,5 @@ class RegistrarOcorrenciaOutput:
 
 
 class InterfaceRegistrarOcorrenciaPolicial(ABC):
-
     @abstractmethod
-    async def executar(
-        self, input_dto: RegistrarOcorrenciaInput
-    ) -> RegistrarOcorrenciaOutput:
-        ...
+    async def executar(self, ator: Ator, input_dto: RegistrarOcorrenciaInput) -> RegistrarOcorrenciaOutput: ...
