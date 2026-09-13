@@ -5,6 +5,7 @@ Registra routers e configura exception handlers globais com mensagens i18n.
 """
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from adapters.inbound.http.v1.ocorrencias_router import router as ocorrencias_router
@@ -26,6 +27,14 @@ app = FastAPI(
     description="Sistema de Gestão de Ocorrências Policiais Integradas",
     version="0.1.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(ocorrencias_router)
