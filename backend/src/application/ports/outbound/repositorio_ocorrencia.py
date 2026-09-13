@@ -1,9 +1,8 @@
 """
 Porta de saída: RepositorioOcorrencia
 
-Contrato (ABC) que define o que qualquer implementação de persistência
-precisa fornecer para os casos de uso de ocorrência. O adapter concreto
-(SQLAlchemy, in-memory para testes, etc.) fica em adapters/outbound/persistence/.
+Contrato (ABC) que isola os casos de uso de qualquer detalhe de persistência.
+A implementação concreta (SQLAlchemy) fica em adapters/outbound/persistence/.
 """
 from abc import ABC, abstractmethod
 from uuid import UUID
@@ -25,6 +24,6 @@ class RepositorioOcorrencia(ABC):
         ...
 
     @abstractmethod
-    async def listar(self) -> list[Ocorrencia]:
-        """Retorna todas as ocorrências (paginação será adicionada depois)."""
+    async def listar(self, status: str | None = None) -> list[Ocorrencia]:
+        """Retorna ocorrências, com filtro opcional por status."""
         ...

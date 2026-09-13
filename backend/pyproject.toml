@@ -10,6 +10,7 @@ dependencies = [
     "asyncpg>=0.30",
     "alembic>=1.14",
     "pydantic-settings>=2.6",
+    "python-jose[cryptography]>=3.3",
 ]
 
 [dependency-groups]
@@ -23,6 +24,7 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = ["src", "tests"]
 
 [tool.uv]
 package = false

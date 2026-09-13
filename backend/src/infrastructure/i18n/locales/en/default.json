@@ -1,0 +1,17 @@
+{
+  "ocorrencia": {
+    "created": "Occurrence registered successfully",
+    "not_found": "Occurrence not found",
+    "invalid_transition": "Invalid state transition",
+    "descricao_vazia": "Description cannot be empty",
+    "localizacao_vazia": "Location is required"
+  },
+  "auth": {
+    "unauthorized": "Unauthorized",
+    "forbidden": "Access denied"
+  },
+  "generic": {
+    "internal_error": "Internal server error",
+    "validation_error": "Invalid data"
+  }
+}

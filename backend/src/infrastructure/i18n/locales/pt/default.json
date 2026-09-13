@@ -1,0 +1,17 @@
+{
+  "ocorrencia": {
+    "created": "Ocorrência registrada com sucesso",
+    "not_found": "Ocorrência não encontrada",
+    "invalid_transition": "Transição de estado inválida",
+    "descricao_vazia": "A descrição não pode ser vazia",
+    "localizacao_vazia": "A localização é obrigatória"
+  },
+  "auth": {
+    "unauthorized": "Não autorizado",
+    "forbidden": "Acesso negado"
+  },
+  "generic": {
+    "internal_error": "Erro interno do servidor",
+    "validation_error": "Dados inválidos"
+  }
+}
