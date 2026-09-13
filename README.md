@@ -64,6 +64,21 @@ Para garantir a viabilidade técnica do MVP e o alinhamento com a Arquitetura He
   * *Comunicação:* Comunicação bidirecional e reativa utilizando **WebSockets (STOMP/SockJS)**, permitindo a atualização das viaturas no mapa em tempo real.
 ---
 
+## 🚀 MVP Implementado — Como Executar
+
+O MVP (RF01, RF04, RF02 + RNF01–RNF05) está implementado em **React + Next.js (TypeScript)** seguindo a Arquitetura Hexagonal. A documentação de implementação, análise de complexidade, plano de passos e problemas encontrados está em [**docs/mvp/**](docs/mvp/README.md).
+
+```bash
+npm install
+npm run dev            # http://localhost:3000  (contas: agente / delegado / operador / supervisor — senha sgopi123)
+npm test               # 46 testes do núcleo hexagonal (sem servidor, sem banco)
+npm run build && SESSION_SECRET=troque npm start
+```
+
+> **Nota:** a stack de implementação (Next.js/TypeScript) diverge da Seção 4.3 da especificação (Python/FastAPI). Ver [docs/mvp/03-problemas-encontrados.md](docs/mvp/03-problemas-encontrados.md#p01) — decisão pendente de alinhamento pela equipe.
+
+---
+
 ## ⚙️ Estratégia de Qualidade e Gestão de Configuração
 
 A garantia de qualidade e o fluxo de trabalho colaborativo são pilares para o sucesso no desenvolvimento do software, minimizando falhas de integração durante a disciplina.
