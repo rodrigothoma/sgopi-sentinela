@@ -3,17 +3,29 @@ Composition Root — ponto de entrada da aplicação FastAPI.
 
 Registra routers e configura exception handlers globais com mensagens i18n.
 """
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from adapters.inbound.http.v1.ocorrencias_router import router as ocorrencias_router
 from domain.shared.exceptions import EntidadeNaoEncontradaError, TransicaoInvalidaError
+from infrastructure.database.connection import Base, engine
+import infrastructure.database.models
 from infrastructure.i18n.translator import get_message
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
 
 app = FastAPI(
     title="SGOPI Sentinela",
     description="Sistema de Gestão de Ocorrências Policiais Integradas",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.include_router(ocorrencias_router)
