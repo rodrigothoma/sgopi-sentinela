@@ -2,9 +2,11 @@
 Settings centralizados via pydantic-settings (RNF07: nada fixo em código).
 Carrega variáveis de ambiente do arquivo .env na raiz de backend/.
 """
+from __future__ import annotations
+
 from typing import Annotated
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -45,6 +47,18 @@ class Settings(BaseSettings):
                 return json.loads(v)
             return [o.strip() for o in v.split(",") if o.strip()]
         return v
+
+    @model_validator(mode="after")
+    def _validar_seguranca(self) -> Settings:
+        if not self.jwt_secret_key or not self.jwt_secret_key.strip():
+            self.jwt_secret_key = "dev-secret-insecure-change-me"
+        if self.is_production:
+            if self.jwt_secret_key == "dev-secret-insecure-change-me" or len(self.jwt_secret_key) < 32:
+                raise ValueError(
+                    "Em ambiente de produção (app_env=production), a chave jwt_secret_key deve ser uma secret forte "
+                    "com pelo menos 32 caracteres (RNF02)."
+                )
+        return self
 
     @property
     def is_production(self) -> bool:
