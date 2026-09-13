@@ -5,6 +5,10 @@ __pycache__/
 *.egg-info/
 dist/
 .uv/
+.coverage
+htmlcov/
+.pytest_cache/
+.import_linter_cache/
 
 # Env
 .env
