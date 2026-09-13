@@ -31,7 +31,8 @@ Tornar verificáveis as metas que a documentação declarava sem instrumento (co
 ## 4. Verificação
 
 ```
-uv run pytest -q --cov          →  240 passed · cobertura domain+application = 98,47 % (fail_under 80)
+uv run pytest -q --cov          →  243 passed · cobertura domain+application = 98,58 % (fail_under 80)
+
 PYTHONPATH=src uv run lint-imports --config pyproject.toml
                                 →  Analyzed 134 files, 485 dependencies · Contracts: 3 kept, 0 broken
 cd frontend && npx tsc --noEmit && npx vite build   →  OK
