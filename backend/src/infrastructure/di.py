@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
 from adapters.inbound.websocket.gerenciador_conexoes import GerenciadorConexoes
 
+from adapters.outbound.arquivos.armazenamento_disco import ArmazenamentoDisco
 from adapters.outbound.eventos.publicador_em_memoria import PublicadorEventosEmMemoria
 from adapters.outbound.persistence.auditoria_sqlalchemy import AuditoriaSQLAlchemy
 from adapters.outbound.persistence.gerador_protocolo_sqlalchemy import GeradorProtocoloSQLAlchemy
@@ -31,6 +32,7 @@ from adapters.outbound.relogio.relogio_sistema import RelogioSistema
 from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
 from adapters.outbound.seguranca.provedor_token_jose import ProvedorTokenJose
 from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
+from application.ports.inbound.interface_anexar_evidencia import InterfaceAnexarEvidencia
 from application.ports.inbound.interface_consultar_auditoria import InterfaceConsultarAuditoria
 from application.ports.inbound.interface_despachar_viatura import (
     InterfaceDespacharViatura,
@@ -57,6 +59,7 @@ from application.ports.inbound.interface_revisar_ocorrencia import (
 )
 from application.ports.inbound.interface_registrar_ocorrencia_policial import InterfaceRegistrarOcorrenciaPolicial
 from application.ports.outbound.gerador_numero_ordem import GeradorNumeroOrdem
+from application.ports.outbound.armazenamento_arquivos import ArmazenamentoArquivos
 from application.ports.outbound.gerador_protocolo import GeradorProtocolo
 from application.ports.outbound.hasher_senha import HasherSenha
 from application.ports.outbound.porta_auditoria import PortaAuditoria
@@ -71,6 +74,7 @@ from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.auditoria.consultar_auditoria import ConsultarAuditoria
 from application.use_cases.auth.autenticar_usuario import AutenticarUsuario
 from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
+from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
 from application.use_cases.ocorrencia.corrigir_ocorrencia import CorrigirOcorrencia, ReenviarOcorrencia
 from application.use_cases.despacho.despachar_viatura import DespacharViatura, ListarOrdensDespacho, SugerirViaturasProximas
 from application.use_cases.despacho.encerrar_ocorrencia import EncerrarOcorrencia
@@ -92,6 +96,7 @@ hasher_argon2 = HasherArgon2()
 gerenciador_conexoes = GerenciadorConexoes()
 publicador_eventos.assinar(gerenciador_conexoes.transmitir)  # RF17: fan-out para os painéis
 provedor_token_jose = ProvedorTokenJose(settings.jwt_secret_key, settings.jwt_algorithm, settings.jwt_expires_in_hours)
+armazenamento_evidencias = ArmazenamentoDisco(settings.evidencias_diretorio)
 
 
 # ------------------------------------------------------------ portas de saída
@@ -109,6 +114,10 @@ def get_hasher() -> HasherSenha:
 
 def get_provedor_token() -> ProvedorToken:
     return provedor_token_jose
+
+
+def get_armazenamento_arquivos() -> ArmazenamentoArquivos:
+    return armazenamento_evidencias
 
 
 def get_repositorio_usuario(session: AsyncSession = Depends(get_session)) -> RepositorioUsuario:
@@ -156,6 +165,23 @@ def get_registrar_ocorrencia(
     auditoria: PortaAuditoria = Depends(get_auditoria),
 ) -> InterfaceRegistrarOcorrenciaPolicial:
     return RegistrarOcorrenciaPolicial(repositorio, uow, relogio, gerador, auditoria)
+
+
+def get_anexar_evidencia(
+    repositorio: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    armazenamento: ArmazenamentoArquivos = Depends(get_armazenamento_arquivos),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    relogio: Relogio = Depends(get_relogio),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+) -> InterfaceAnexarEvidencia:
+    return AnexarEvidencia(
+        repositorio,
+        armazenamento,
+        uow,
+        relogio,
+        auditoria,
+        settings.evidencias_tamanho_maximo_bytes,
+    )
 
 
 def get_autenticar_usuario(
