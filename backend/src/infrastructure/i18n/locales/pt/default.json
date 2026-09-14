@@ -1,0 +1,88 @@
+{
+  "ocorrencia": {
+    "created": "Ocorrência registrada com sucesso",
+    "not_found": "Ocorrência não encontrada",
+    "invalid_transition": "Transição de estado inválida",
+    "natureza_vazia": "A natureza da ocorrência é obrigatória",
+    "descricao_vazia": "A descrição não pode ser vazia",
+    "descricao_curta": "A descrição deve ter ao menos 20 caracteres",
+    "localizacao_vazia": "A localização é obrigatória",
+    "sem_envolvidos": "É obrigatória a qualificação de ao menos um envolvido",
+    "protocolo_vazio": "Número de protocolo é obrigatório",
+    "data_fato_futura": "A data/hora do fato não pode ser futura",
+    "data_sem_fuso": "A data/hora deve informar o fuso horário",
+    "justificativa_curta": "A justificativa deve ter ao menos 10 caracteres",
+    "desfecho_vazio": "O desfecho do atendimento é obrigatório",
+    "nao_e_autor": "Somente o agente autor pode alterar esta ocorrência",
+    "status_invalido": "Status de ocorrência inválido"
+  },
+  "envolvido": {
+    "nome_vazio": "O nome do envolvido é obrigatório",
+    "tipo_invalido": "Tipo de envolvido inválido",
+    "cpf_invalido": "CPF inválido",
+    "duplicado": "Envolvido já adicionado a esta ocorrência"
+  },
+  "tipificacao": {
+    "artigo_vazio": "O artigo da tipificação é obrigatório",
+    "descricao_vazia": "A descrição da tipificação é obrigatória"
+  },
+  "evidencia": {
+    "nome_vazio": "O nome do arquivo é obrigatório",
+    "chave_vazia": "A chave de armazenamento é obrigatória",
+    "arquivo_vazio": "O arquivo de evidência não pode estar vazio",
+    "hash_invalido": "O hash da evidência é inválido",
+    "data_sem_fuso": "A data do upload deve informar o fuso horário",
+    "formato_invalido": "Formato não permitido; envie PDF, JPG, JPEG ou PNG",
+    "conteudo_invalido": "O conteúdo do arquivo não corresponde ao formato informado",
+    "tamanho_excedido": "O arquivo excede o limite de 10 MB",
+    "status_invalido": "A ocorrência não aceita novas evidências neste status",
+    "limite_atingido": "A ocorrência já atingiu o limite de 10 evidências",
+    "duplicada": "A evidência já está vinculada à ocorrência"
+  },
+  "geo": {
+    "coordenada_invalida": "Coordenada inválida",
+    "latitude_fora_da_faixa": "Latitude deve estar entre -90 e 90",
+    "longitude_fora_da_faixa": "Longitude deve estar entre -180 e 180"
+  },
+  "usuario": {
+    "nome_vazio": "O nome do usuário é obrigatório",
+    "login_vazio": "O login é obrigatório",
+    "senha_vazia": "A senha é obrigatória"
+  },
+  "auth": {
+    "unauthorized": "Não autorizado",
+    "forbidden": "Acesso negado",
+    "credenciais_invalidas": "Login ou senha inválidos",
+    "usuario_inativo": "Usuário inativo",
+    "token_invalido": "Token inválido ou expirado"
+  },
+  "generic": {
+    "internal_error": "Erro interno do servidor",
+    "validation_error": "Dados inválidos",
+    "campo_obrigatorio": "Campo obrigatório",
+    "valor_invalido": "Valor inválido",
+    "not_found": "Recurso não encontrado",
+    "conflict": "Conflito com o estado atual do recurso",
+    "versao_desatualizada": "O registro foi alterado por outro usuário; recarregue e tente novamente",
+    "http_error": "Erro na requisição"
+  },
+  "viatura": {
+    "not_found": "Viatura não encontrada",
+    "prefixo_vazio": "Prefixo é obrigatório",
+    "placa_vazia": "Placa é obrigatória",
+    "prefixo_duplicado": "Prefixo já cadastrado",
+    "placa_duplicada": "Placa já cadastrada",
+    "transicao_invalida": "Transição de situação da viatura inválida",
+    "situacao_manual_invalida": "Somente DISPONIVEL ou INDISPONIVEL podem ser definidas manualmente"
+  },
+  "telemetria": {
+    "timestamp_sem_fuso": "Timestamp sem fuso horário",
+    "timestamp_fora_da_janela": "Timestamp da posição fora da janela aceita",
+    "posicao_retroativa": "Posição mais antiga que a última registrada"
+  },
+  "despacho": {
+    "numero_vazio": "Número da ordem é obrigatório",
+    "ordem_ja_encerrada": "Ordem de despacho já encerrada",
+    "viatura_indisponivel": "A viatura não está disponível para despacho"
+  }
+}

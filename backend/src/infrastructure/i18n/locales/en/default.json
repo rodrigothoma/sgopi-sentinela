@@ -1,0 +1,88 @@
+{
+  "ocorrencia": {
+    "created": "Occurrence registered successfully",
+    "not_found": "Occurrence not found",
+    "invalid_transition": "Invalid state transition",
+    "natureza_vazia": "Occurrence nature is required",
+    "descricao_vazia": "Description cannot be empty",
+    "descricao_curta": "Description must have at least 20 characters",
+    "localizacao_vazia": "Location is required",
+    "sem_envolvidos": "At least one involved person is required",
+    "protocolo_vazio": "Protocol number is required",
+    "data_fato_futura": "Fact date/time cannot be in the future",
+    "data_sem_fuso": "Date/time must include a timezone",
+    "justificativa_curta": "Justification must have at least 10 characters",
+    "desfecho_vazio": "Outcome is required",
+    "nao_e_autor": "Only the authoring agent can change this occurrence",
+    "status_invalido": "Invalid occurrence status"
+  },
+  "envolvido": {
+    "nome_vazio": "Involved person name is required",
+    "tipo_invalido": "Invalid involved person type",
+    "cpf_invalido": "Invalid CPF",
+    "duplicado": "Involved person already added to this occurrence"
+  },
+  "tipificacao": {
+    "artigo_vazio": "Article is required",
+    "descricao_vazia": "Description is required"
+  },
+  "evidencia": {
+    "nome_vazio": "File name is required",
+    "chave_vazia": "Storage key is required",
+    "arquivo_vazio": "Evidence file cannot be empty",
+    "hash_invalido": "Evidence hash is invalid",
+    "data_sem_fuso": "Upload date must include a timezone",
+    "formato_invalido": "Unsupported format; upload PDF, JPG, JPEG or PNG",
+    "conteudo_invalido": "File content does not match the declared format",
+    "tamanho_excedido": "File exceeds the 10 MB limit",
+    "status_invalido": "This occurrence does not accept new evidence in its current status",
+    "limite_atingido": "This occurrence has reached the 10 evidence limit",
+    "duplicada": "Evidence is already linked to the occurrence"
+  },
+  "geo": {
+    "coordenada_invalida": "Invalid coordinate",
+    "latitude_fora_da_faixa": "Latitude must be between -90 and 90",
+    "longitude_fora_da_faixa": "Longitude must be between -180 and 180"
+  },
+  "usuario": {
+    "nome_vazio": "User name is required",
+    "login_vazio": "Login is required",
+    "senha_vazia": "Password is required"
+  },
+  "auth": {
+    "unauthorized": "Unauthorized",
+    "forbidden": "Access denied",
+    "credenciais_invalidas": "Invalid login or password",
+    "usuario_inativo": "Inactive user",
+    "token_invalido": "Invalid or expired token"
+  },
+  "generic": {
+    "internal_error": "Internal server error",
+    "validation_error": "Invalid data",
+    "campo_obrigatorio": "Required field",
+    "valor_invalido": "Invalid value",
+    "not_found": "Resource not found",
+    "conflict": "Conflict with the current state of the resource",
+    "versao_desatualizada": "The record was changed by another user; reload and try again",
+    "http_error": "Request error"
+  },
+  "viatura": {
+    "not_found": "Vehicle not found",
+    "prefixo_vazio": "Prefix is required",
+    "placa_vazia": "Plate is required",
+    "prefixo_duplicado": "Prefix already registered",
+    "placa_duplicada": "Plate already registered",
+    "transicao_invalida": "Invalid vehicle status transition",
+    "situacao_manual_invalida": "Only DISPONIVEL or INDISPONIVEL can be set manually"
+  },
+  "telemetria": {
+    "timestamp_sem_fuso": "Timestamp without timezone",
+    "timestamp_fora_da_janela": "Position timestamp outside accepted window",
+    "posicao_retroativa": "Position older than the last registered one"
+  },
+  "despacho": {
+    "numero_vazio": "Order number is required",
+    "ordem_ja_encerrada": "Dispatch order already closed",
+    "viatura_indisponivel": "Vehicle is not available for dispatch"
+  }
+}

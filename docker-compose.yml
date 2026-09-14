@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sgopi_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: sgopi
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sgopi"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+# O esquema é criado por `uv run alembic upgrade head` e os dados de demonstração
+# por `uv run python -m scripts.seed` (DIV-23: o seed.sql rodava antes das tabelas existirem).
+volumes:
+  pgdata:
