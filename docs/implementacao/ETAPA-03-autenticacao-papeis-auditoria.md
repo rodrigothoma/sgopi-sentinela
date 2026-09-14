@@ -1,6 +1,7 @@
 # ETAPA 03 — Autenticação, papéis e auditoria (RF11, RF12, RF20, RNF02\*)
 
-**Data:** 13/09/2026 · **Branch:** `matheus-Fastapi` · **Prioridade:** 🔴 bloqueante (critério de aceite 2 do MVP: "somente Delegado valida")
+**Data:** 13/09/2026 · **Prioridade:** 🔴 bloqueante (critério de aceite 2 do MVP: "somente Delegado valida")
+
 **Origem:** `ETAPA-04` §4 (RF11, RF12, RF20), §5 (RNF02\*); `ETAPA-05` NEXT-06, NEXT-07; DIV-20, RNF-P04, RNF-P05, RNF-P06, HEX-14 (parte backend).
 
 ## 1. Objetivo

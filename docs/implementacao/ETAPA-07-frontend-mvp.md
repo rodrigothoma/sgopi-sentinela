@@ -1,6 +1,7 @@
 # ETAPA 07 — Frontend do MVP (login, registro, fila do Delegado, correção, painel tático)
 
-**Data:** 13/09/2026 · **Branch:** `matheus-Fastapi` · **Prioridade:** 🔴 (Verificações 2 e 3 são demonstradas pela UI)
+**Data:** 13/09/2026 · **Prioridade:** 🔴 (Verificações 2 e 3 são demonstradas pela UI)
+
 **Origem:** `ETAPA-04` RF01\*, RF04\*, RF11, RF13, RF14, RF15, RF16, RF17 (cliente), RF18, RF19, RNF04\*, RNF08, RNF12; `ETAPA-05` NEXT-06/07/08/09/11/13/14 (parte de UI); HEX-14; DIV-30.
 
 ## 1. Objetivo

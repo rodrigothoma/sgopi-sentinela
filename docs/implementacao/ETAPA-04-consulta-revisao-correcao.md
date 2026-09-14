@@ -1,6 +1,7 @@
 # ETAPA 04 — Consulta, revisão pelo Delegado e correção pelo Agente (RF13, RF04\*, RF14, RF20)
 
-**Data:** 13/09/2026 · **Branch:** `matheus-Fastapi` · **Prioridade:** 🔴 (Must Have — Verificação 2: "registrar + validar ao vivo")
+**Data:** 13/09/2026 · **Prioridade:** 🔴 (Must Have — Verificação 2: "registrar + validar ao vivo")
+
 **Origem:** `ETAPA-04` §3 (RF04\*), §4 (RF13, RF14, RF20); `ETAPA-05` NEXT-08, NEXT-09; HEX-01; DIV-13; RF-P07, RF-P15, RF-P17, RF-P18, RF-P20; RNF10 (parcial).
 
 ## 1. Objetivo

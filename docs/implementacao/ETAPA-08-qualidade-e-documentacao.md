@@ -1,6 +1,7 @@
 # ETAPA 08 — Qualidade, observabilidade e documentação (RNF05\*, RNF06, RNF09, RNF10, RNF12)
 
-**Data:** 13/09/2026 · **Branch:** `matheus-Fastapi` · **Prioridade:** 🟡 (Sprint 5 — F3, T1 pendente, F5 parcial)
+**Data:** 13/09/2026 · **Prioridade:** 🟡 (Sprint 5 — F3, T1 pendente, F5 parcial)
+
 **Origem:** `ETAPA-04` §5 (RNF05\*, RNF06, RNF09, RNF10); `ETAPA-05` NEXT-15, NEXT-16, NEXT-17, NEXT-18 (parte do README); DIV-09, RNF-P07, RNF-P11, RNF-P16, HEX-13.
 
 ## 1. Objetivo

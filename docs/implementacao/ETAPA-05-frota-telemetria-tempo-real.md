@@ -1,6 +1,7 @@
 # ETAPA 05 — Frota, telemetria com simulador e canal de tempo real (RF15, RF16, RF17)
 
-**Data:** 13/09/2026 · **Branch:** `matheus-Fastapi` · **Prioridade:** 🔴 (Must Have — Sprint 4 / critérios de aceite 3 e 4 do MVP)
+**Data:** 13/09/2026 · **Prioridade:** 🔴 (Must Have — Sprint 4 / critérios de aceite 3 e 4 do MVP)
+
 **Origem:** `ETAPA-04` §2 (máquina de estados da viatura), §4 (RF15, RF16, RF17), §5 (RNF01\*, RNF04\*), DEC-06; `ETAPA-05` NEXT-11, NEXT-12, NEXT-13; RF-P08, RF-P12, RNF-P02, RNF-P13, RNF-P15.
 
 ## 1. Objetivo

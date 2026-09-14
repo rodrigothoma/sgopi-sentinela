@@ -1,6 +1,7 @@
 # ETAPA 01 — Fundação do domínio (máquina de estados, geolocalização, invariantes)
 
-**Data:** 13/09/2026 · **Branch:** `matheus-Fastapi` · **Prioridade:** 🔴 bloqueante
+**Data:** 13/09/2026 · **Prioridade:** 🔴 bloqueante
+
 **Origem:** `docs/analise/ETAPA-04` §1–2 (DEC-02, DEC-03, DEC-04, DEC-05, DEC-09) e §6 (HEX-03…HEX-08); `ETAPA-05` NEXT-01, NEXT-02 (parte de domínio), NEXT-05.
 
 ## 1. Objetivo

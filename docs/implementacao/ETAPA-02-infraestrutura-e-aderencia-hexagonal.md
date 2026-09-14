@@ -1,6 +1,7 @@
 # ETAPA 02 — Infraestrutura e aderência hexagonal (persistência, transação, migrations, app base)
 
-**Data:** 13/09/2026 · **Branch:** `matheus-Fastapi` · **Prioridade:** 🟠 alta (pré-requisito de todas as fatias)
+**Data:** 13/09/2026 · **Prioridade:** 🟠 alta (pré-requisito de todas as fatias)
+
 **Origem:** `ETAPA-04` §5 (RNF03\*, RNF05\*, RNF07, RNF09, RNF11) e §6 (HEX-02, HEX-09, HEX-11, HEX-12); `ETAPA-05` NEXT-02 (CORS/seed), NEXT-03, NEXT-04, NEXT-16; DIV-21, DIV-22, DIV-23, DIV-24, DIV-25.
 
 ## 1. Objetivo
