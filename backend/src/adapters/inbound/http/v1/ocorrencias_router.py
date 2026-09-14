@@ -5,12 +5,18 @@ Só este arquivo (e os demais routers) importa FastAPI — domain e application 
 da sua existência. Toda rota exige token; o ator vem do JWT, nunca do body.
 """
 from datetime import datetime
+from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel, Field
 
 from adapters.inbound.http.deps import exigir_papel
 from application.ports.inbound.ator import Ator
+from application.ports.inbound.interface_anexar_evidencia import (
+    AnexarEvidenciaInput,
+    EvidenciaOutput,
+    InterfaceAnexarEvidencia,
+)
 from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     EnvolvidoInputDTO,
     InterfaceRegistrarOcorrenciaPolicial,
@@ -18,7 +24,8 @@ from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     TipificacaoInputDTO,
 )
 from domain.usuario.entity import Papel
-from infrastructure.di import get_registrar_ocorrencia
+from infrastructure.config.settings import settings
+from infrastructure.di import get_anexar_evidencia, get_registrar_ocorrencia
 
 router = APIRouter(prefix="/v1/ocorrencias", tags=["ocorrencias"])
 
@@ -53,6 +60,15 @@ class OcorrenciaResponse(BaseModel):
     criada_em: str
 
 
+class EvidenciaSchema(BaseModel):
+    id: UUID
+    nome_original: str
+    formato: str
+    tamanho: int
+    hash_sha256: str
+    enviada_em: str
+
+
 # -------------------------------------------------------------------- rotas
 @router.post("", response_model=OcorrenciaResponse, status_code=201)
 @router.post("/", response_model=OcorrenciaResponse, status_code=201, include_in_schema=False)
@@ -78,9 +94,31 @@ async def registrar_ocorrencia(
     )
 
 
-# ------------------------------------------------ consulta (RF13) e revisão (RF04*, RF14)
-from uuid import UUID  # noqa: E402
+@router.post("/{ocorrencia_id}/evidencias", response_model=EvidenciaSchema, status_code=201)
+async def anexar_evidencia(
+    ocorrencia_id: UUID,
+    arquivo: UploadFile = File(...),
+    ator: Ator = Depends(exigir_papel(Papel.AGENTE)),
+    use_case: InterfaceAnexarEvidencia = Depends(get_anexar_evidencia),
+) -> EvidenciaSchema:
+    """Anexa PDF/JPEG/PNG de até 10 MB à ocorrência do agente autor (RF22)."""
+    try:
+        conteudo = await arquivo.read(settings.evidencias_tamanho_maximo_bytes + 1)
+    finally:
+        await arquivo.close()
+    out = await use_case.executar(
+        ator,
+        AnexarEvidenciaInput(
+            ocorrencia_id=ocorrencia_id,
+            nome_arquivo=arquivo.filename or "",
+            tipo_mime=arquivo.content_type or "",
+            conteudo=conteudo,
+        ),
+    )
+    return EvidenciaSchema(**out.__dict__)
 
+
+# ------------------------------------------------ consulta (RF13) e revisão (RF04*, RF14)
 from fastapi import Query  # noqa: E402
 
 from application.ports.inbound.interface_consultar_ocorrencias import (  # noqa: E402
@@ -151,6 +189,7 @@ class OcorrenciaDetalheSchema(OcorrenciaResumoSchema):
     narrativa_integra: bool | None
     envolvidos: list[EnvolvidoDetalheSchema]
     tipificacoes: list[TipificacaoSchema]
+    evidencias: list[EvidenciaSchema]
     historico_status: list[HistoricoStatusSchema]
 
 
@@ -192,6 +231,7 @@ def _detalhe(o: OcorrenciaDetalheOutput) -> OcorrenciaDetalheSchema:
         narrativa_integra=o.narrativa_integra,
         envolvidos=[EnvolvidoDetalheSchema(id=e.id, nome=e.nome, tipo=e.tipo, documento=e.documento) for e in o.envolvidos],
         tipificacoes=[TipificacaoSchema(artigo=t.artigo, descricao=t.descricao) for t in o.tipificacoes],
+        evidencias=[EvidenciaSchema(**e.__dict__) for e in o.evidencias],
         historico_status=[HistoricoStatusSchema(**h.__dict__) for h in o.historico_status],
     )
 

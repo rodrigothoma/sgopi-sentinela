@@ -11,6 +11,11 @@
   },
   "envolvido": { "nome_label": "Name", "tipo_label": "Type", "documento_label": "Document (CPF/ID)", "VITIMA": "Victim", "TESTEMUNHA": "Witness", "SUSPEITO": "Suspect" },
   "tipificacao": { "artigo_label": "Article", "artigo_placeholder": "E.g. Art. 155 CP", "descricao_label": "Description", "descricao_placeholder": "Description of the offense" },
+  "evidencias": {
+    "titulo": "Digital evidence", "selecionar": "Select files", "ajuda": "PDF, JPG, JPEG or PNG; up to 10 MB per file and 10 files per occurrence.",
+    "formato_invalido": "Select only PDF, JPG, JPEG or PNG files", "tamanho_excedido": "Each evidence file must be at most 10 MB",
+    "limite": "Select at most 10 evidence files", "erro_upload": "The occurrence was registered, but one evidence file could not be uploaded."
+  },
   "erros": {
     "campos_obrigatorios": "Fill in nature and address", "descricao_curta": "Description must have at least 20 characters",
     "sem_coordenada": "Mark the coordinate on the map", "data_futura": "Date/time cannot be in the future",

@@ -59,6 +59,18 @@ export const OcorrenciaDetalheView: React.FC<{ o: Detalhe }> = ({ o }) => {
           </ul>
         </>
       )}
+      {o.evidencias.length > 0 && (
+        <>
+          <h4>{t('ocorrencias:evidencias.titulo')}</h4>
+          <ul className="lista">
+            {o.evidencias.map((e) => (
+              <li key={e.id}>
+                <strong>{e.nome_original}</strong> · {e.formato.toUpperCase()} · {(e.tamanho / 1024).toFixed(1)} KB · {fmt(e.enviada_em)}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       <h4>{t('ocorrencias:detalhe.historico')}</h4>
       <ol className="historico">
         {o.historico_status.map((h, i) => (

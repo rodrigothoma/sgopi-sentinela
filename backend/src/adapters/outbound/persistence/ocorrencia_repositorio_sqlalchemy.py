@@ -20,6 +20,7 @@ from adapters.outbound.persistence._datas import aware
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
 from domain.ocorrencia.entity import (
     Envolvido,
+    Evidencia,
     Ocorrencia,
     RegistroHistoricoStatus,
     TipificacaoPenal,
@@ -30,6 +31,7 @@ from domain.shared.exceptions import ConflitoError
 from domain.shared.geo import Coordenada
 from infrastructure.database.models import (
     EnvolvidoModel,
+    EvidenciaModel,
     HistoricoStatusModel,
     OcorrenciaModel,
     TipificacaoModel,
@@ -39,6 +41,7 @@ _CARREGAR_FILHOS = (
     selectinload(OcorrenciaModel.envolvidos),
     selectinload(OcorrenciaModel.tipificacoes),
     selectinload(OcorrenciaModel.historico),
+    selectinload(OcorrenciaModel.evidencias),
 )
 
 
@@ -131,6 +134,18 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
         model.tipificacoes = [
             TipificacaoModel(artigo=t.artigo, descricao=t.descricao, ativo=True) for t in ocorrencia.tipificacoes
         ]
+        model.evidencias = [
+            EvidenciaModel(
+                id=e.id,
+                nome_original=e.nome_original,
+                formato=e.formato,
+                tamanho=e.tamanho,
+                hash_sha256=e.hash_sha256,
+                chave_armazenamento=e.chave_armazenamento,
+                enviada_em=e.enviada_em,
+            )
+            for e in ocorrencia.evidencias
+        ]
         model.historico = [self._historico_model(ocorrencia.id, i, h) for i, h in enumerate(ocorrencia.historico_status)]
         return model
 
@@ -161,6 +176,22 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
                 presentes.add(chave)
         for artigo, descricao in desejadas - presentes:
             model.tipificacoes.append(TipificacaoModel(artigo=artigo, descricao=descricao, ativo=True))
+
+        # evidências são append-only: nunca removemos nem alteramos registros existentes
+        ids_gravados = {e.id for e in model.evidencias}
+        for e in ocorrencia.evidencias:
+            if e.id not in ids_gravados:
+                model.evidencias.append(
+                    EvidenciaModel(
+                        id=e.id,
+                        nome_original=e.nome_original,
+                        formato=e.formato,
+                        tamanho=e.tamanho,
+                        hash_sha256=e.hash_sha256,
+                        chave_armazenamento=e.chave_armazenamento,
+                        enviada_em=e.enviada_em,
+                    )
+                )
 
         # histórico: append-only
         ja_gravados = len(model.historico)
@@ -205,6 +236,18 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
         ]
         ocorrencia.tipificacoes = [
             TipificacaoPenal(artigo=t.artigo, descricao=t.descricao) for t in model.tipificacoes if t.ativo
+        ]
+        ocorrencia.evidencias = [
+            Evidencia(
+                id=e.id,
+                nome_original=e.nome_original,
+                formato=e.formato,
+                tamanho=e.tamanho,
+                hash_sha256=e.hash_sha256,
+                chave_armazenamento=e.chave_armazenamento,
+                enviada_em=aware(e.enviada_em),
+            )
+            for e in model.evidencias
         ]
         ocorrencia.historico_status = [
             RegistroHistoricoStatus(

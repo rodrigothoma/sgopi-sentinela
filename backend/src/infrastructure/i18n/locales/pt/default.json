@@ -26,6 +26,19 @@
     "artigo_vazio": "O artigo da tipificação é obrigatório",
     "descricao_vazia": "A descrição da tipificação é obrigatória"
   },
+  "evidencia": {
+    "nome_vazio": "O nome do arquivo é obrigatório",
+    "chave_vazia": "A chave de armazenamento é obrigatória",
+    "arquivo_vazio": "O arquivo de evidência não pode estar vazio",
+    "hash_invalido": "O hash da evidência é inválido",
+    "data_sem_fuso": "A data do upload deve informar o fuso horário",
+    "formato_invalido": "Formato não permitido; envie PDF, JPG, JPEG ou PNG",
+    "conteudo_invalido": "O conteúdo do arquivo não corresponde ao formato informado",
+    "tamanho_excedido": "O arquivo excede o limite de 10 MB",
+    "status_invalido": "A ocorrência não aceita novas evidências neste status",
+    "limite_atingido": "A ocorrência já atingiu o limite de 10 evidências",
+    "duplicada": "A evidência já está vinculada à ocorrência"
+  },
   "geo": {
     "coordenada_invalida": "Coordenada inválida",
     "latitude_fora_da_faixa": "Latitude deve estar entre -90 e 90",

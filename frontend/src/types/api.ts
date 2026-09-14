@@ -10,6 +10,9 @@ export interface LoginResponse { access_token: string; token_type: string; expir
 
 export interface EnvolvidoDTO { nome: string; tipo: TipoEnvolvido; documento?: string }
 export interface TipificacaoDTO { artigo: string; descricao: string }
+export interface Evidencia {
+  id: string; nome_original: string; formato: string; tamanho: number; hash_sha256: string; enviada_em: string;
+}
 
 export interface RegistrarOcorrenciaRequest {
   natureza: string; descricao: string; localizacao: string;
@@ -30,7 +33,7 @@ export interface HistoricoStatus { de: string | null; para: StatusOcorrencia; em
 export interface OcorrenciaDetalhe extends OcorrenciaResumo {
   descricao: string; validada_por_id: string | null; justificativa_revisao: string | null; desfecho: string | null;
   hash_narrativa: string | null; narrativa_integra: boolean | null;
-  envolvidos: EnvolvidoDetalhe[]; tipificacoes: TipificacaoDTO[]; historico_status: HistoricoStatus[];
+  envolvidos: EnvolvidoDetalhe[]; tipificacoes: TipificacaoDTO[]; evidencias: Evidencia[]; historico_status: HistoricoStatus[];
 }
 export interface Pagina<T> { itens: T[]; total: number; limit: number; offset: number }
 
