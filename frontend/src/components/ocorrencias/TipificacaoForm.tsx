@@ -23,10 +23,10 @@ export const TipificacaoForm: React.FC<Props> = ({ onAdd }) => {
   };
 
   return (
-    <div style={{ border: '1px solid #ddd', padding: '12px', borderRadius: '6px', marginBottom: '12px' }}>
+    <div className="subform">
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: '8px', alignItems: 'flex-end' }}>
         <div>
-          <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>
+          <label>
             {t('tipificacao.artigo_label')}
           </label>
           <input
@@ -34,11 +34,10 @@ export const TipificacaoForm: React.FC<Props> = ({ onAdd }) => {
             placeholder={t('tipificacao.artigo_placeholder')}
             value={artigo}
             onChange={(e) => setArtigo(e.target.value)}
-            style={{ width: '100%', padding: '6px' }}
           />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>
+          <label>
             {t('tipificacao.descricao_label')}
           </label>
           <input
@@ -46,13 +45,12 @@ export const TipificacaoForm: React.FC<Props> = ({ onAdd }) => {
             placeholder={t('tipificacao.descricao_placeholder')}
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
-            style={{ width: '100%', padding: '6px' }}
           />
         </div>
         <button
           type="button"
+          className="btn btn-primary"
           onClick={handleSubmit}
-          style={{ padding: '6px 12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
         >
           {t('form.add_tipificacao')}
         </button>
