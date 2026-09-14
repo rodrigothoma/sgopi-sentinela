@@ -26,6 +26,19 @@
     "artigo_vazio": "Article is required",
     "descricao_vazia": "Description is required"
   },
+  "evidencia": {
+    "nome_vazio": "File name is required",
+    "chave_vazia": "Storage key is required",
+    "arquivo_vazio": "Evidence file cannot be empty",
+    "hash_invalido": "Evidence hash is invalid",
+    "data_sem_fuso": "Upload date must include a timezone",
+    "formato_invalido": "Unsupported format; upload PDF, JPG, JPEG or PNG",
+    "conteudo_invalido": "File content does not match the declared format",
+    "tamanho_excedido": "File exceeds the 10 MB limit",
+    "status_invalido": "This occurrence does not accept new evidence in its current status",
+    "limite_atingido": "This occurrence has reached the 10 evidence limit",
+    "duplicada": "Evidence is already linked to the occurrence"
+  },
   "geo": {
     "coordenada_invalida": "Invalid coordinate",
     "latitude_fora_da_faixa": "Latitude must be between -90 and 90",

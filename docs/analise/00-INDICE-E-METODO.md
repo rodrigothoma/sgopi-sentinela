@@ -19,6 +19,8 @@
 | 3 | [`ETAPA-03-analise-requisitos-nao-funcionais.md`](ETAPA-03-analise-requisitos-nao-funcionais.md) | Problemas em RNF01–RNF05 e RNFs ausentes |
 | 4 | [`ETAPA-04-novos-requisitos-mvp-hexagonal.md`](ETAPA-04-novos-requisitos-mvp-hexagonal.md) | Requisitos novos/reescritos necessários ao MVP, com mapeamento em portas/adaptadores e gap do código atual |
 | 5 | [`ETAPA-05-consolidacao-escopo-e-proximos-passos.md`](ETAPA-05-consolidacao-escopo-e-proximos-passos.md) | Consolidação: encontrado / fora de escopo / próximas implementações sugeridas, com ordem recomendada |
+| — | [`DECISOES.md`](DECISOES.md) | **Ata de decisões técnicas** (`DEC-01`…`DEC-15`), máquina de estados ratificada e estratégia de mapeamento das generalizações. Fonte de verdade sobre *por que* o código é como é |
+| — | [`NEXT-18-ajustes-nos-diagramas.md`](NEXT-18-ajustes-nos-diagramas.md) | Checklist executável de correções nos diagramas UML (tarefa F5 da Sprint 5) |
 
 Cada arquivo de etapa termina com a seção **"O que foi feito nesta etapa"**, que registra as ações executadas e os artefatos gerados, para rastreabilidade.
 

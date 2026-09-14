@@ -59,6 +59,9 @@ class OcorrenciaModel(Base):
     historico: Mapped[list[HistoricoStatusModel]] = relationship(
         "HistoricoStatusModel", order_by="HistoricoStatusModel.ordem"
     )
+    evidencias: Mapped[list[EvidenciaModel]] = relationship(
+        "EvidenciaModel", order_by="EvidenciaModel.enviada_em", back_populates="ocorrencia"
+    )
 
 
 class EnvolvidoModel(Base):
@@ -104,6 +107,23 @@ class HistoricoStatusModel(Base):
     em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     por_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     justificativa: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class EvidenciaModel(Base):
+    """Metadados append-only de uma evidência armazenada fora do banco."""
+
+    __tablename__ = "evidencias"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    ocorrencia_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("ocorrencias.id"), nullable=False, index=True)
+    nome_original: Mapped[str] = mapped_column(String(255), nullable=False)
+    formato: Mapped[str] = mapped_column(String(10), nullable=False)
+    tamanho: Mapped[int] = mapped_column(Integer, nullable=False)
+    hash_sha256: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    chave_armazenamento: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    enviada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+
+    ocorrencia: Mapped[OcorrenciaModel] = relationship("OcorrenciaModel", back_populates="evidencias")
 
 
 class RegistroAuditoriaModel(Base):

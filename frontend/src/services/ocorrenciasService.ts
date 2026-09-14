@@ -1,12 +1,17 @@
 import { api } from './api';
 import type {
-  CorrigirOcorrenciaRequest, OcorrenciaCriada, OcorrenciaDetalhe, OcorrenciaResumo, Pagina,
+  CorrigirOcorrenciaRequest, Evidencia, OcorrenciaCriada, OcorrenciaDetalhe, OcorrenciaResumo, Pagina,
   RegistrarOcorrenciaRequest, StatusOcorrencia,
 } from '../types/api';
 
 export const ocorrenciasService = {
   async registrar(data: RegistrarOcorrenciaRequest): Promise<OcorrenciaCriada> {
     return (await api.post<OcorrenciaCriada>('/v1/ocorrencias', data)).data;
+  },
+  async anexarEvidencia(id: string, arquivo: File): Promise<Evidencia> {
+    const body = new FormData();
+    body.append('arquivo', arquivo);
+    return (await api.post<Evidencia>(`/v1/ocorrencias/${id}/evidencias`, body)).data;
   },
   async listar(status: StatusOcorrencia[] = [], limit = 50, offset = 0): Promise<Pagina<OcorrenciaResumo>> {
     const params = new URLSearchParams();

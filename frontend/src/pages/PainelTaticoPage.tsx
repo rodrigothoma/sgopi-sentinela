@@ -161,6 +161,29 @@ export const PainelTaticoPage: React.FC = () => {
         <button className="btn btn-ghost" onClick={carregar}>{t('common:actions.atualizar')}</button>
       </div>
 
+      <div className="kpi-grid">
+        <div className="kpi-card">
+          <span className="kpi-label">{t('painel:kpi.ativas')}</span>
+          <span className="kpi-val">{ocorrencias.length}</span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-label">{t('painel:kpi.em_atendimento')}</span>
+          <span className="kpi-val" style={{ color: 'var(--primary)' }}>
+            {ocorrencias.filter((o) => o.status === 'EM_ATENDIMENTO').length}
+          </span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-label">{t('painel:frota.titulo')}</span>
+          <span className="kpi-val">{viaturas.length}</span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-label">{t('painel:kpi.sem_sinal')}</span>
+          <span className="kpi-val" style={{ color: semSinal.length > 0 ? 'var(--warn)' : 'var(--ok)' }}>
+            {semSinal.length}
+          </span>
+        </div>
+      </div>
+
       <div className="painel-grid">
         <div className="painel-mapa">
           <MapaTatico viaturas={viaturas} ocorrencias={ocorrencias} selecionada={selecionada} onSelecionarOcorrencia={selecionar} />

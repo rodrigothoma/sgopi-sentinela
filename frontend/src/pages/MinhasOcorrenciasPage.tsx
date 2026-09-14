@@ -38,7 +38,7 @@ export const MinhasOcorrenciasPage: React.FC = () => {
     natureza: o.natureza, descricao: o.descricao, localizacao: o.localizacao, latitude: o.latitude, longitude: o.longitude,
     dataHoraFatoLocal: paraInputLocal(new Date(o.data_hora_fato)),
     envolvidos: o.envolvidos.map((e) => ({ nome: e.nome, tipo: e.tipo, documento: e.documento ?? undefined })),
-    tipificacoes: o.tipificacoes,
+    tipificacoes: o.tipificacoes, evidencias: [],
   });
 
   const reenviar = async () => {

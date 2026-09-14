@@ -8,12 +8,12 @@ import type { EnvolvidoDTO, RegistrarOcorrenciaRequest, TipificacaoDTO } from '.
 export interface ValoresOcorrencia {
   natureza: string; descricao: string; localizacao: string;
   latitude: number | null; longitude: number | null; dataHoraFatoLocal: string;
-  envolvidos: EnvolvidoDTO[]; tipificacoes: TipificacaoDTO[];
+  envolvidos: EnvolvidoDTO[]; tipificacoes: TipificacaoDTO[]; evidencias: File[];
 }
 
 export const valoresVazios = (): ValoresOcorrencia => ({
   natureza: '', descricao: '', localizacao: '', latitude: null, longitude: null,
-  dataHoraFatoLocal: paraInputLocal(new Date()), envolvidos: [], tipificacoes: [],
+  dataHoraFatoLocal: paraInputLocal(new Date()), envolvidos: [], tipificacoes: [], evidencias: [],
 });
 
 export function paraInputLocal(d: Date): string {
@@ -35,9 +35,13 @@ interface Props {
   onSubmit: (v: ValoresOcorrencia) => Promise<void>;
   rotuloEnviar: string;
   ocupado: boolean;
+  permitirEvidencias?: boolean;
 }
 
-export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnviar, ocupado }) => {
+const FORMATOS_EVIDENCIA = ['application/pdf', 'image/jpeg', 'image/png'];
+const TAMANHO_MAXIMO_EVIDENCIA = 10 * 1024 * 1024;
+
+export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnviar, ocupado, permitirEvidencias = false }) => {
   const { t } = useTranslation(['ocorrencias', 'common']);
   const [v, setV] = useState<ValoresOcorrencia>(inicial);
   const [erro, setErro] = useState<string | null>(null);
@@ -49,6 +53,9 @@ export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnvia
     if (v.latitude === null || v.longitude === null) return t('ocorrencias:erros.sem_coordenada');
     if (new Date(v.dataHoraFatoLocal).getTime() > Date.now()) return t('ocorrencias:erros.data_futura');
     if (v.envolvidos.length === 0) return t('ocorrencias:erros.sem_envolvidos');
+    if (v.evidencias.length > 10) return t('ocorrencias:evidencias.limite');
+    if (v.evidencias.some((arquivo) => !FORMATOS_EVIDENCIA.includes(arquivo.type))) return t('ocorrencias:evidencias.formato_invalido');
+    if (v.evidencias.some((arquivo) => arquivo.size > TAMANHO_MAXIMO_EVIDENCIA)) return t('ocorrencias:evidencias.tamanho_excedido');
     return null;
   };
 
@@ -111,6 +118,30 @@ export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnvia
           ))}
         </ul>
       </fieldset>
+
+      {permitirEvidencias && (
+        <fieldset>
+          <legend>{t('ocorrencias:evidencias.titulo')}</legend>
+          <label>
+            {t('ocorrencias:evidencias.selecionar')}
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+              multiple
+              onChange={(e) => set('evidencias', [...v.evidencias, ...Array.from(e.target.files ?? [])])}
+            />
+          </label>
+          <small className="muted">{t('ocorrencias:evidencias.ajuda')}</small>
+          <ul className="lista">
+            {v.evidencias.map((arquivo, idx) => (
+              <li key={`${arquivo.name}-${idx}`}>
+                <span>{arquivo.name} · {(arquivo.size / 1024).toFixed(1)} KB</span>
+                <button type="button" className="btn btn-link" onClick={() => set('evidencias', v.evidencias.filter((_, i) => i !== idx))}>{t('common:actions.remover')}</button>
+              </li>
+            ))}
+          </ul>
+        </fieldset>
+      )}
 
       <button type="submit" className="btn btn-primary" disabled={ocupado}>
         {ocupado ? t('common:actions.loading') : rotuloEnviar}

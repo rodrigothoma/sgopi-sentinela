@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 
-from infrastructure.database.models import OcorrenciaModel, RegistroAuditoriaModel
+from infrastructure.database.models import EvidenciaModel, OcorrenciaModel, RegistroAuditoriaModel
 from tests.integration.conftest import IDS
 from tests.integration.helpers import auth, corpo_ocorrencia, registrar
 
@@ -68,3 +68,43 @@ async def test_protocolos_sao_sequenciais(client):
     h = await auth(client, "agente")
     p = [(await registrar(client, h))["numero_protocolo"] for _ in range(3)]
     assert [x[-6:] for x in p] == ["000001", "000002", "000003"]
+
+
+async def test_anexar_evidencia_persiste_e_aparece_no_detalhe(app, client, session, tmp_path):
+    from adapters.outbound.arquivos.armazenamento_disco import ArmazenamentoDisco
+    from infrastructure.di import get_armazenamento_arquivos
+
+    app.dependency_overrides[get_armazenamento_arquivos] = lambda: ArmazenamentoDisco(tmp_path)
+    h = await auth(client, "agente")
+    ocorrencia = await registrar(client, h)
+    conteudo = b"%PDF-1.7\nevidencia"
+    r = await client.post(
+        f"/v1/ocorrencias/{ocorrencia['ocorrencia_id']}/evidencias",
+        files={"arquivo": ("laudo.pdf", conteudo, "application/pdf")},
+        headers=h,
+    )
+    assert r.status_code == 201, r.text
+    evidencia = r.json()
+    assert evidencia["nome_original"] == "laudo.pdf" and evidencia["tamanho"] == len(conteudo)
+    model = (await session.execute(select(EvidenciaModel))).scalar_one()
+    assert str(model.ocorrencia_id) == ocorrencia["ocorrencia_id"]
+    assert (tmp_path / model.chave_armazenamento).read_bytes() == conteudo
+    detalhe = (await client.get(f"/v1/ocorrencias/{ocorrencia['ocorrencia_id']}", headers=h)).json()
+    assert detalhe["evidencias"][0]["hash_sha256"] == evidencia["hash_sha256"]
+
+
+async def test_anexar_evidencia_rejeita_formato_e_ocorrencia_inexistente(client):
+    h = await auth(client, "agente")
+    r = await client.post(
+        f"/v1/ocorrencias/{__import__('uuid').uuid4()}/evidencias",
+        files={"arquivo": ("x.pdf", b"%PDF-1.7", "application/pdf")},
+        headers=h,
+    )
+    assert r.status_code == 404 and r.json()["code"] == "ocorrencia.not_found"
+    ocorrencia = await registrar(client, h)
+    r = await client.post(
+        f"/v1/ocorrencias/{ocorrencia['ocorrencia_id']}/evidencias",
+        files={"arquivo": ("script.exe", b"MZ", "application/octet-stream")},
+        headers=h,
+    )
+    assert r.status_code == 422 and r.json()["code"] == "evidencia.formato_invalido"

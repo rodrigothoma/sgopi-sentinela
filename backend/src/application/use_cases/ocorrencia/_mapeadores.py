@@ -1,5 +1,6 @@
 """Conversão entidade → DTO de saída (com máscara de CPF por papel — RNF10)."""
 from application.ports.inbound.ator import Ator
+from application.ports.inbound.interface_anexar_evidencia import EvidenciaOutput
 from application.ports.inbound.interface_consultar_ocorrencias import (
     EnvolvidoOutput,
     HistoricoStatusOutput,
@@ -50,6 +51,17 @@ def para_detalhe(o: Ocorrencia, ator: Ator) -> OcorrenciaDetalheOutput:
             for e in o.envolvidos
         ),
         tipificacoes=tuple(TipificacaoOutput(artigo=t.artigo, descricao=t.descricao) for t in o.tipificacoes),
+        evidencias=tuple(
+            EvidenciaOutput(
+                id=e.id,
+                nome_original=e.nome_original,
+                formato=e.formato,
+                tamanho=e.tamanho,
+                hash_sha256=e.hash_sha256,
+                enviada_em=e.enviada_em.isoformat(),
+            )
+            for e in o.evidencias
+        ),
         historico_status=tuple(
             HistoricoStatusOutput(de=h.de.value if h.de else None, para=h.para.value, em=h.em.isoformat(), por_id=h.por_id, justificativa=h.justificativa)
             for h in o.historico_status

@@ -34,6 +34,7 @@ from domain.shared.geo import Coordenada
 
 TAMANHO_MINIMO_DESCRICAO = 20
 TAMANHO_MINIMO_JUSTIFICATIVA = 10
+MAXIMO_EVIDENCIAS_POR_OCORRENCIA = 10
 
 
 class TipoEnvolvido(str, Enum):
@@ -77,6 +78,36 @@ class TipificacaoPenal:
 
 
 @dataclass(frozen=True)
+class Evidencia:
+    """Metadados imutáveis de um arquivo permanentemente vinculado à ocorrência."""
+
+    nome_original: str
+    formato: str
+    tamanho: int
+    hash_sha256: str
+    chave_armazenamento: str
+    enviada_em: datetime
+    id: UUID = field(default_factory=uuid4)
+
+    def __post_init__(self) -> None:
+        nome = self.nome_original.strip() if self.nome_original else ""
+        formato = self.formato.lower().lstrip(".") if self.formato else ""
+        if not nome:
+            raise CampoObrigatorioError("Nome original da evidência é obrigatório.", chave="evidencia.nome_vazio")
+        if not self.chave_armazenamento:
+            raise CampoObrigatorioError("Chave de armazenamento é obrigatória.", chave="evidencia.chave_vazia")
+        if self.tamanho <= 0:
+            raise ValorInvalidoError("A evidência não pode estar vazia.", chave="evidencia.arquivo_vazio")
+        if len(self.hash_sha256) != 64 or any(c not in "0123456789abcdef" for c in self.hash_sha256.lower()):
+            raise ValorInvalidoError("Hash SHA-256 inválido.", chave="evidencia.hash_invalido")
+        if self.enviada_em.tzinfo is None:
+            raise ValorInvalidoError("Data do upload deve ter fuso horário.", chave="evidencia.data_sem_fuso")
+        object.__setattr__(self, "nome_original", nome)
+        object.__setattr__(self, "formato", formato)
+        object.__setattr__(self, "hash_sha256", self.hash_sha256.lower())
+
+
+@dataclass(frozen=True)
 class RegistroHistoricoStatus:
     """Entrada append-only do histórico de transições (RNF03)."""
 
@@ -112,6 +143,7 @@ class Ocorrencia:
     hash_narrativa: str | None = None
     tipificacoes: list[TipificacaoPenal] = field(default_factory=list)
     envolvidos: list[Envolvido] = field(default_factory=list)
+    evidencias: list[Evidencia] = field(default_factory=list)
     historico_status: list[RegistroHistoricoStatus] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -192,6 +224,30 @@ class Ocorrencia:
                 chave="envolvido.duplicado",
             )
         self.envolvidos.append(envolvido)
+
+    # --------------------------------------------------------------- evidências
+    def exigir_anexo_permitido(self, agente_id: UUID) -> None:
+        """Evidências só podem ser anexadas pelo autor enquanto o registro é editável."""
+        self._exigir_autor(agente_id)
+        if self.status not in (StatusOcorrencia.AGUARDANDO_REVISAO, StatusOcorrencia.EM_CORRECAO):
+            raise TransicaoInvalidaError(
+                f"Ocorrência em {self.status.value} não aceita novas evidências.",
+                chave="evidencia.status_invalido",
+                status_atual=self.status.value,
+            )
+        if len(self.evidencias) >= MAXIMO_EVIDENCIAS_POR_OCORRENCIA:
+            raise ValorInvalidoError(
+                f"Limite de {MAXIMO_EVIDENCIAS_POR_OCORRENCIA} evidências atingido.",
+                chave="evidencia.limite_atingido",
+                maximo=MAXIMO_EVIDENCIAS_POR_OCORRENCIA,
+            )
+
+    def adicionar_evidencia(self, evidencia: Evidencia, agente_id: UUID, em: datetime) -> None:
+        self.exigir_anexo_permitido(agente_id)
+        if any(item.id == evidencia.id for item in self.evidencias):
+            raise ValorInvalidoError("Evidência já vinculada à ocorrência.", chave="evidencia.duplicada")
+        self.evidencias.append(evidencia)
+        self._tocar(em)
 
     # --------------------------------------------------------------- transições
     def _transicionar(self, operacao: str, por_id: UUID, em: datetime, justificativa: str | None = None) -> None:
