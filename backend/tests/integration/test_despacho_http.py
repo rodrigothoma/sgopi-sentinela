@@ -107,3 +107,34 @@ async def test_encerrar_exige_desfecho_e_papel(client):
     assert r.status_code == 422 and r.json()["code"] == "ocorrencia.desfecho_vazio"
     r = await client.post(f"/v1/ocorrencias/{oid}/encerrar", json={"desfecho": "ok"}, headers=await auth(client, "agente"))
     assert r.status_code == 403
+
+
+async def test_telemetria_no_local_marca_viatura_operando_e_audita(client, session):
+    """Despachada, a viatura vira OPERANDO quando a telemetria a coloca a ≤ 50 m da ocorrência (RF18/RF19)."""
+    from infrastructure.database.models import RegistroAuditoriaModel
+
+    ho = await auth(client, "operador")
+    frota = await _frota(client, ho)
+    oid = await _validada(client)
+    r = await client.post("/v1/despachos", json={"ocorrencia_id": oid, "viatura_id": frota["VTR-01"]}, headers=ho)
+    assert r.status_code == 201, r.text
+    numero_ordem = r.json()["numero"]
+
+    # ainda a ~1 km: continua em deslocamento
+    r = await client.post("/v1/telemetria/posicoes", json={"viatura_id": frota["VTR-01"], "latitude": -29.79, "longitude": -55.79, "registrada_em": datetime.now(UTC).isoformat()}, headers=ho)
+    assert r.status_code == 200 and r.json()["situacao"] == "EM_DESLOCAMENTO"
+
+    # no endereço da ocorrência (helpers.corpo_ocorrencia: -29.7833, -55.7919)
+    r = await client.post("/v1/telemetria/posicoes", json={"viatura_id": frota["VTR-01"], "latitude": -29.7834, "longitude": -55.7919, "registrada_em": datetime.now(UTC).isoformat()}, headers=ho)
+    assert r.status_code == 200 and r.json()["situacao"] == "OPERANDO"
+    r = await client.get("/v1/viaturas", headers=ho)
+    assert next(v for v in r.json() if v["id"] == frota["VTR-01"])["situacao"] == "OPERANDO"
+
+    aud = (await session.execute(select(RegistroAuditoriaModel).where(RegistroAuditoriaModel.operacao == "viatura.chegada_ao_local"))).scalars().all()
+    assert len(aud) == 1 and aud[0].dados_depois["numero_ordem"] == numero_ordem and aud[0].dados_depois["ocorrencia_id"] == oid
+
+    # encerrar o atendimento libera a viatura normalmente (OPERANDO → DISPONIVEL)
+    r = await client.post(f"/v1/ocorrencias/{oid}/encerrar", json={"desfecho": "Atendimento concluído sem intercorrências."}, headers=ho)
+    assert r.status_code == 200, r.text
+    r = await client.get("/v1/viaturas", headers=ho)
+    assert next(v for v in r.json() if v["id"] == frota["VTR-01"])["situacao"] == "DISPONIVEL"

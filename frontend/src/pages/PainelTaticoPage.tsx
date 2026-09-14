@@ -29,6 +29,8 @@ export const PainelTaticoPage: React.FC = () => {
   const [desfecho, setDesfecho] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [ultimoEvento, setUltimoEvento] = useState<string>('');
+  // comunicados operacionais (chegada ao local etc.) — ficam listados, não só no toast
+  const [comunicados, setComunicados] = useState<{ id: string; em: string; texto: string }[]>([]);
 
   const carregar = useCallback(async () => {
     try {
@@ -67,13 +69,22 @@ export const PainelTaticoPage: React.FC = () => {
   const onEvento = useCallback((e: EventoTempoReal) => {
     setUltimoEvento(`${e.tipo} ${new Date(e.ocorrido_em).toLocaleTimeString()}`);
     const d = e.dados as Record<string, string | number | null>;
+    const atualizarViatura = () => setViaturas((vs) => vs.map((v) => v.id === d.viatura_id
+      ? { ...v, situacao: (d.situacao as Viatura['situacao']) ?? v.situacao, latitude: (d.latitude as number) ?? v.latitude, longitude: (d.longitude as number) ?? v.longitude, posicao_registrada_em: (d.registrada_em as string) ?? v.posicao_registrada_em, sinal: d.latitude != null ? 'OK' : v.sinal }
+      : v));
     switch (e.tipo) {
       case 'PosicaoAtualizada':
       case 'ViaturaSituacaoAlterada':
-        setViaturas((vs) => vs.map((v) => v.id === d.viatura_id
-          ? { ...v, situacao: (d.situacao as Viatura['situacao']) ?? v.situacao, latitude: (d.latitude as number) ?? v.latitude, longitude: (d.longitude as number) ?? v.longitude, posicao_registrada_em: (d.registrada_em as string) ?? v.posicao_registrada_em, sinal: d.latitude != null ? 'OK' : v.sinal }
-          : v));
+        atualizarViatura();
         break;
+      case 'ViaturaChegouAoLocal': {
+        // RF18/RF19: a viatura chegou à ocorrência e iniciou os procedimentos de atendimento
+        atualizarViatura();
+        const texto = t('painel:chegada.mensagem', { prefixo: d.prefixo, protocolo: d.numero_protocolo, ordem: d.numero_ordem });
+        avisar(texto, 'sucesso');
+        setComunicados((cs) => [{ id: `${d.viatura_id}-${e.ocorrido_em}`, em: e.ocorrido_em, texto }, ...cs].slice(0, 20));
+        break;
+      }
       case 'OcorrenciaValidada':
         ocorrenciasService.listar(['VALIDADA', 'EM_ATENDIMENTO'], 200).then((p) => setOcorrencias(p.itens)).catch(() => undefined);
         break;
@@ -82,15 +93,18 @@ export const PainelTaticoPage: React.FC = () => {
         despachoService.listar(true).then(setOrdens).catch(() => undefined);
         break;
       case 'OcorrenciaEncerrada':
+      case 'OcorrenciaArquivada':
+      case 'OcorrenciaExcluida':
         setOcorrencias((os) => os.filter((o) => o.ocorrencia_id !== d.ocorrencia_id));
         despachoService.listar(true).then(setOrdens).catch(() => undefined);
         break;
       default:
         break;
     }
-  }, []);
+  }, [t, avisar]);
 
   const conexao = useTempoReal(onEvento, carregar);
+  const viaturasEmDeslocamento = viaturas.filter((v) => v.situacao === 'EM_DESLOCAMENTO');
 
   const ocorrenciaSel = useMemo(() => ocorrencias.find((o) => o.ocorrencia_id === selecionada) ?? null, [ocorrencias, selecionada]);
   const semSinal = viaturas.filter((v) => v.sinal !== 'OK');
@@ -186,7 +200,7 @@ export const PainelTaticoPage: React.FC = () => {
 
       <div className="painel-grid">
         <div className="painel-mapa">
-          <MapaTatico viaturas={viaturas} ocorrencias={ocorrencias} selecionada={selecionada} onSelecionarOcorrencia={selecionar} />
+          <MapaTatico viaturas={viaturas} ocorrencias={ocorrencias} ordens={ordens} selecionada={selecionada} onSelecionarOcorrencia={selecionar} />
           {semSinal.length > 0 && (
             <div className="alerta aviso">
               ⚠ {t('painel:sem_sinal.alerta', { n: semSinal.length })}
@@ -207,6 +221,21 @@ export const PainelTaticoPage: React.FC = () => {
         </div>
 
         <aside className="painel-lateral">
+          {(comunicados.length > 0 || viaturasEmDeslocamento.length > 0) && (
+            <section className="card comunicados">
+              <h3>{t('painel:chegada.titulo')}</h3>
+              {viaturasEmDeslocamento.length > 0 && (
+                <p className="muted small">
+                  {t('painel:chegada.a_caminho', { n: viaturasEmDeslocamento.length, prefixos: viaturasEmDeslocamento.map((v) => v.prefixo).join(', ') })}
+                </p>
+              )}
+              <ul className="lista">
+                {comunicados.map((c) => (
+                  <li key={c.id}><span>🚓 {c.texto}<br /><small className="muted">{new Date(c.em).toLocaleTimeString()}</small></span></li>
+                ))}
+              </ul>
+            </section>
+          )}
           <section className="card">
             <h3>{t('painel:ocorrencias.titulo')} <span className="muted">({ocorrencias.length})</span></h3>
             {ocorrencias.length === 0 && <p className="muted">{t('painel:ocorrencias.vazio')}</p>}

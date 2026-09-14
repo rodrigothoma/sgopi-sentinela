@@ -50,6 +50,11 @@ class OcorrenciaModel(Base):
     justificativa_revisao: Mapped[str | None] = mapped_column(Text, nullable=True)
     desfecho: Mapped[str | None] = mapped_column(Text, nullable=True)
     hash_narrativa: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # RF20: arquivamento / exclusão lógica autorizados pelo Delegado, sempre com motivo
+    arquivada_por_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True)
+    motivo_arquivamento: Mapped[str | None] = mapped_column(Text, nullable=True)
+    excluida_por_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True)
+    motivo_exclusao: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # optimistic locking (RNF11): ``versao`` é controlada pelo domínio e verificada
     # explicitamente pelo repositório (SELECT … FOR UPDATE + comparação).

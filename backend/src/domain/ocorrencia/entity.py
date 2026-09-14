@@ -34,6 +34,7 @@ from domain.shared.geo import Coordenada
 
 TAMANHO_MINIMO_DESCRICAO = 20
 TAMANHO_MINIMO_JUSTIFICATIVA = 10
+TAMANHO_MINIMO_MOTIVO = 10
 MAXIMO_EVIDENCIAS_POR_OCORRENCIA = 10
 
 
@@ -57,6 +58,8 @@ class Envolvido:
     def __post_init__(self) -> None:
         if not self.nome or not self.nome.strip():
             raise CampoObrigatorioError("Nome do envolvido é obrigatório.", chave="envolvido.nome_vazio")
+        if any(c.isdigit() for c in self.nome):
+            raise ValorInvalidoError("Nome do envolvido não pode conter números.", chave="envolvido.nome_invalido")
         self.nome = self.nome.strip()
         self.documento = validar_documento(self.documento)
 
@@ -141,6 +144,10 @@ class Ocorrencia:
     justificativa_revisao: str | None = None
     desfecho: str | None = None
     hash_narrativa: str | None = None
+    arquivada_por_id: UUID | None = None
+    motivo_arquivamento: str | None = None
+    excluida_por_id: UUID | None = None
+    motivo_exclusao: str | None = None
     tipificacoes: list[TipificacaoPenal] = field(default_factory=list)
     envolvidos: list[Envolvido] = field(default_factory=list)
     evidencias: list[Evidencia] = field(default_factory=list)
@@ -349,6 +356,21 @@ class Ocorrencia:
         self._transicionar("encerrar", ator_id, em, desfecho.strip())
         self.desfecho = desfecho.strip()
 
+    # ------------------------------------------- atos administrativos do Delegado
+    def arquivar(self, delegado_id: UUID, motivo: str, em: datetime) -> None:
+        """→ ARQUIVADA com motivo obrigatório (RF20). Não permitido em EM_ATENDIMENTO."""
+        self._exigir_motivo(motivo)
+        self._transicionar("arquivar", delegado_id, em, motivo.strip())
+        self.arquivada_por_id = delegado_id
+        self.motivo_arquivamento = motivo.strip()
+
+    def excluir(self, delegado_id: UUID, motivo: str, em: datetime) -> None:
+        """→ EXCLUIDA (exclusão lógica, terminal) com motivo obrigatório (RF20, RNF03*)."""
+        self._exigir_motivo(motivo)
+        self._transicionar("excluir", delegado_id, em, motivo.strip())
+        self.excluida_por_id = delegado_id
+        self.motivo_exclusao = motivo.strip()
+
     # ------------------------------------------------------------------ apoio
     def _exigir_autor(self, agente_id: UUID) -> None:
         if agente_id != self.agente_policial_id:
@@ -363,6 +385,15 @@ class Ocorrencia:
                 f"Justificativa deve ter ao menos {TAMANHO_MINIMO_JUSTIFICATIVA} caracteres.",
                 chave="ocorrencia.justificativa_curta",
                 minimo=TAMANHO_MINIMO_JUSTIFICATIVA,
+            )
+
+    @staticmethod
+    def _exigir_motivo(motivo: str | None) -> None:
+        if not motivo or len(motivo.strip()) < TAMANHO_MINIMO_MOTIVO:
+            raise ValorInvalidoError(
+                f"O motivo deve ter ao menos {TAMANHO_MINIMO_MOTIVO} caracteres.",
+                chave="ocorrencia.motivo_curto",
+                minimo=TAMANHO_MINIMO_MOTIVO,
             )
 
     def calcular_hash_narrativa(self) -> str:

@@ -1,5 +1,6 @@
 {
   "ocorrencia": {
+    "motivo_curto": "Reason must have at least 10 characters",
     "created": "Occurrence registered successfully",
     "not_found": "Occurrence not found",
     "invalid_transition": "Invalid state transition",
@@ -17,10 +18,13 @@
     "status_invalido": "Invalid occurrence status"
   },
   "envolvido": {
+    "documento_tamanho_invalido": "Invalid document length: ID with 10 digits or CPF with 11 digits",
+    "documento_nao_numerico": "Document must contain digits only",
     "nome_vazio": "Involved person name is required",
     "tipo_invalido": "Invalid involved person type",
     "cpf_invalido": "Invalid CPF",
-    "duplicado": "Involved person already added to this occurrence"
+    "duplicado": "Involved person already added to this occurrence",
+    "nome_invalido": "Involved person name must contain letters only"
   },
   "tipificacao": {
     "artigo_vazio": "Article is required",

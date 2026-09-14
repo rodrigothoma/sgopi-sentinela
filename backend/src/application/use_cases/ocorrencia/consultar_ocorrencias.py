@@ -12,7 +12,7 @@ from application.ports.inbound.interface_consultar_ocorrencias import (
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
 from application.use_cases.ocorrencia._mapeadores import para_detalhe, para_resumo
 from domain.ocorrencia.entity import Ocorrencia
-from domain.ocorrencia.status import StatusOcorrencia
+from domain.ocorrencia.status import ESTADOS_VISIVEIS_POR_PADRAO, StatusOcorrencia
 from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.entity import Papel
 
@@ -21,6 +21,9 @@ LIMITE_MAXIMO = 200
 
 
 def _status(valores: tuple[str, ...]) -> tuple[StatusOcorrencia, ...]:
+    """Sem filtro explícito, excluídas (exclusão lógica) não aparecem — RNF03*."""
+    if not valores:
+        return ESTADOS_VISIVEIS_POR_PADRAO
     try:
         return tuple(StatusOcorrencia(v) for v in valores)
     except ValueError as exc:

@@ -62,6 +62,10 @@ class OcorrenciaDetalheOutput(OcorrenciaResumoOutput):
     desfecho: str | None = None
     hash_narrativa: str | None = None
     narrativa_integra: bool | None = None
+    arquivada_por_id: UUID | None = None
+    motivo_arquivamento: str | None = None
+    excluida_por_id: UUID | None = None
+    motivo_exclusao: str | None = None
     envolvidos: tuple[EnvolvidoOutput, ...] = field(default_factory=tuple)
     tipificacoes: tuple[TipificacaoOutput, ...] = field(default_factory=tuple)
     evidencias: tuple[EvidenciaOutput, ...] = field(default_factory=tuple)

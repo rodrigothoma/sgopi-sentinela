@@ -449,6 +449,8 @@ dl.grid2 dd { margin: 0 0 8px; }
 .badge-EM_ATENDIMENTO { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); }
 .badge-REJEITADA { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
 .badge-ENCERRADA { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.3); }
+.badge-ARQUIVADA { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border-color: rgba(100, 116, 139, 0.3); }
+.badge-EXCLUIDA { background: rgba(127, 29, 29, 0.25); color: #fca5a5; border-color: rgba(127, 29, 29, 0.5); text-decoration: line-through; }
 
 .badge-DISPONIVEL { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
 .badge-EM_DESLOCAMENTO { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); }
@@ -640,3 +642,27 @@ dl.grid2 dd { margin: 0 0 8px; }
   margin-top: 4px;
 }
 
+
+/* --- Formulário de ocorrência: local do fato (endereço × mapa) --- */
+.local-fato .modo-local { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0 4px; }
+.local-fato .dica { font-size: .85rem; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.local-fato .dica .btn-link { color: var(--primary); padding: 0; }
+.local-fato .coordenada-resumo { font-size: .85rem; margin: 6px 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.local-fato .coordenada-resumo.ok { color: #34d399; }
+.local-fato .coordenada-resumo.pendente { color: #fbbf24; }
+.local-fato details { margin: 6px 0; }
+.local-fato summary { cursor: pointer; font-size: .82rem; color: var(--muted); }
+.campo-erro { color: #f87171; font-size: .8rem; margin: 4px 0 0; }
+.obrigatorio { color: #f87171; }
+.contador { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.form .secao { margin: 22px 0; }
+.form .secao h3 { margin: 0 0 4px; font-size: 1rem; }
+.form .secao p.muted { margin: 0 0 8px; font-size: .85rem; }
+.documento-campo { display: grid; grid-template-columns: 110px 1fr; gap: 6px; }
+.painel-admin { margin-top: 20px; border-top: 1px dashed var(--line); padding-top: 16px; }
+.painel-admin .aviso-autorizacao { font-size: .82rem; color: var(--muted); margin: 0 0 8px; }
+@media (max-width: 640px) { .documento-campo { grid-template-columns: 1fr; } }
+
+/* --- Painel tático: comunicados de campo (chegada ao local) --- */
+.comunicados { border-left: 4px solid var(--ok); }
+.comunicados .lista li { display: block; }

@@ -40,6 +40,18 @@ export const OcorrenciaDetalheView: React.FC<{ o: Detalhe }> = ({ o }) => {
           <strong>{t('ocorrencias:detalhe.desfecho')}:</strong> {o.desfecho}
         </div>
       )}
+      {o.motivo_arquivamento && (
+        <div className="callout">
+          <strong>{t('ocorrencias:detalhe.arquivada')}</strong> — {t('ocorrencias:detalhe.motivo')}: {o.motivo_arquivamento}
+          {o.arquivada_por_id && <small className="muted"> · {t('ocorrencias:detalhe.por')} {o.arquivada_por_id.slice(0, 8)}</small>}
+        </div>
+      )}
+      {o.motivo_exclusao && (
+        <div className="alerta erro">
+          <strong>{t('ocorrencias:detalhe.excluida')}</strong> — {t('ocorrencias:detalhe.motivo')}: {o.motivo_exclusao}
+          {o.excluida_por_id && <small> · {t('ocorrencias:detalhe.por')} {o.excluida_por_id.slice(0, 8)}</small>}
+        </div>
+      )}
       <h4>{t('ocorrencias:form.envolvidos_label')}</h4>
       <ul className="lista">
         {o.envolvidos.map((e) => (

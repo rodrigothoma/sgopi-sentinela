@@ -50,6 +50,16 @@ class OrdemDespachoRepositorioSQLAlchemy(RepositorioOrdemDespacho):
             stmt = stmt.where(OrdemDespachoModel.ativa.is_(True))
         return [self._to_domain(m) for m in (await self._session.execute(stmt)).scalars().all()]
 
+    async def buscar_ativa_por_viatura(self, viatura_id: UUID) -> OrdemDeDespacho | None:
+        stmt = (
+            select(OrdemDespachoModel)
+            .where(OrdemDespachoModel.viatura_id == viatura_id, OrdemDespachoModel.ativa.is_(True))
+            .order_by(OrdemDespachoModel.criada_em.desc())
+            .limit(1)
+        )
+        m = (await self._session.execute(stmt)).scalar_one_or_none()
+        return self._to_domain(m) if m else None
+
     @staticmethod
     def _to_domain(m: OrdemDespachoModel) -> OrdemDeDespacho:
         return OrdemDeDespacho(

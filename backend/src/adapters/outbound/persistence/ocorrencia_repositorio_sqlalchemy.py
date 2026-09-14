@@ -123,6 +123,10 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             justificativa_revisao=ocorrencia.justificativa_revisao,
             desfecho=ocorrencia.desfecho,
             hash_narrativa=ocorrencia.hash_narrativa,
+            arquivada_por_id=ocorrencia.arquivada_por_id,
+            motivo_arquivamento=ocorrencia.motivo_arquivamento,
+            excluida_por_id=ocorrencia.excluida_por_id,
+            motivo_exclusao=ocorrencia.motivo_exclusao,
         )
 
     def _to_model(self, ocorrencia: Ocorrencia) -> OcorrenciaModel:
@@ -228,6 +232,10 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             justificativa_revisao=model.justificativa_revisao,
             desfecho=model.desfecho,
             hash_narrativa=model.hash_narrativa,
+            arquivada_por_id=model.arquivada_por_id,
+            motivo_arquivamento=model.motivo_arquivamento,
+            excluida_por_id=model.excluida_por_id,
+            motivo_exclusao=model.motivo_exclusao,
         )
         ocorrencia.envolvidos = [
             Envolvido(id=e.id, nome=e.nome, tipo=TipoEnvolvido(e.tipo), documento=e.documento)

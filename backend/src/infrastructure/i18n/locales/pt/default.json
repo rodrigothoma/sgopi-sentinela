@@ -1,5 +1,6 @@
 {
   "ocorrencia": {
+    "motivo_curto": "O motivo deve ter ao menos 10 caracteres",
     "created": "Ocorrência registrada com sucesso",
     "not_found": "Ocorrência não encontrada",
     "invalid_transition": "Transição de estado inválida",
@@ -17,10 +18,13 @@
     "status_invalido": "Status de ocorrência inválido"
   },
   "envolvido": {
+    "documento_tamanho_invalido": "Documento com tamanho inválido: RG com 10 dígitos ou CPF com 11 dígitos",
+    "documento_nao_numerico": "O documento deve conter apenas números",
     "nome_vazio": "O nome do envolvido é obrigatório",
     "tipo_invalido": "Tipo de envolvido inválido",
     "cpf_invalido": "CPF inválido",
-    "duplicado": "Envolvido já adicionado a esta ocorrência"
+    "duplicado": "Envolvido já adicionado a esta ocorrência",
+    "nome_invalido": "O nome do envolvido deve conter apenas letras"
   },
   "tipificacao": {
     "artigo_vazio": "O artigo da tipificação é obrigatório",

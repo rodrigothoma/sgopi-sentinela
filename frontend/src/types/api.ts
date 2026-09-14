@@ -1,7 +1,10 @@
 // Contratos espelhados do OpenAPI do backend (RNF12). Manter sincronizado por revisão.
 export type Papel = 'AGENTE' | 'DELEGADO' | 'OPERADOR_CENTRAL' | 'SUPERVISOR' | 'PERITO' | 'ESCRIVAO';
 export type TipoEnvolvido = 'VITIMA' | 'TESTEMUNHA' | 'SUSPEITO';
-export type StatusOcorrencia = 'AGUARDANDO_REVISAO' | 'EM_CORRECAO' | 'REJEITADA' | 'VALIDADA' | 'EM_ATENDIMENTO' | 'ENCERRADA';
+export type StatusOcorrencia = 'AGUARDANDO_REVISAO' | 'EM_CORRECAO' | 'REJEITADA' | 'VALIDADA' | 'EM_ATENDIMENTO' | 'ENCERRADA' | 'ARQUIVADA' | 'EXCLUIDA';
+/** Atos administrativos do Delegado (RF20): não permitidos em EM_ATENDIMENTO; EXCLUIDA é terminal. */
+export const STATUS_ARQUIVAVEIS: readonly StatusOcorrencia[] = ['AGUARDANDO_REVISAO', 'EM_CORRECAO', 'REJEITADA', 'VALIDADA', 'ENCERRADA'];
+export const STATUS_EXCLUIVEIS: readonly StatusOcorrencia[] = [...STATUS_ARQUIVAVEIS, 'ARQUIVADA'];
 export type SituacaoViatura = 'DISPONIVEL' | 'EM_DESLOCAMENTO' | 'OPERANDO' | 'INDISPONIVEL';
 export type Sinal = 'OK' | 'SEM_SINAL' | 'SEM_POSICAO';
 
@@ -33,6 +36,8 @@ export interface HistoricoStatus { de: string | null; para: StatusOcorrencia; em
 export interface OcorrenciaDetalhe extends OcorrenciaResumo {
   descricao: string; validada_por_id: string | null; justificativa_revisao: string | null; desfecho: string | null;
   hash_narrativa: string | null; narrativa_integra: boolean | null;
+  arquivada_por_id: string | null; motivo_arquivamento: string | null;
+  excluida_por_id: string | null; motivo_exclusao: string | null;
   envolvidos: EnvolvidoDetalhe[]; tipificacoes: TipificacaoDTO[]; evidencias: Evidencia[]; historico_status: HistoricoStatus[];
 }
 export interface Pagina<T> { itens: T[]; total: number; limit: number; offset: number }
@@ -47,7 +52,7 @@ export interface OrdemDespacho {
   id: string; numero: string; ocorrencia_id: string; viatura_id: string; operador_id: string;
   criada_em: string; observacoes: string | null; ativa: boolean; encerrada_em: string | null;
 }
-export interface StatusSimulador { ligado: boolean; intervalo_segundos: number; raio_metros: number; ticks: number; posicoes_emitidas: number }
+export interface StatusSimulador { ligado: boolean; intervalo_segundos: number; raio_metros: number; velocidade_kmh?: number; ticks: number; posicoes_emitidas: number }
 
 export interface EventoTempoReal { tipo: string; ocorrido_em: string; dados: Record<string, unknown> }
 

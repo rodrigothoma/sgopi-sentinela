@@ -33,6 +33,10 @@ from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
 from adapters.outbound.seguranca.provedor_token_jose import ProvedorTokenJose
 from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
 from application.ports.inbound.interface_anexar_evidencia import InterfaceAnexarEvidencia
+from application.ports.inbound.interface_arquivar_ocorrencia import (
+    InterfaceArquivarOcorrencia,
+    InterfaceExcluirOcorrencia,
+)
 from application.ports.inbound.interface_consultar_auditoria import InterfaceConsultarAuditoria
 from application.ports.inbound.interface_despachar_viatura import (
     InterfaceDespacharViatura,
@@ -71,10 +75,12 @@ from application.ports.outbound.repositorio_ordem_despacho import RepositorioOrd
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.shared.geo import Coordenada
 from application.use_cases.auditoria.consultar_auditoria import ConsultarAuditoria
 from application.use_cases.auth.autenticar_usuario import AutenticarUsuario
 from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
 from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
+from application.use_cases.ocorrencia.arquivar_ocorrencia import ArquivarOcorrencia, ExcluirOcorrencia
 from application.use_cases.ocorrencia.corrigir_ocorrencia import CorrigirOcorrencia, ReenviarOcorrencia
 from application.use_cases.despacho.despachar_viatura import DespacharViatura, ListarOrdensDespacho, SugerirViaturasProximas
 from application.use_cases.despacho.encerrar_ocorrencia import EncerrarOcorrencia
@@ -234,6 +240,14 @@ def get_reenviar_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceRe
     return ReenviarOcorrencia(*deps)
 
 
+def get_arquivar_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceArquivarOcorrencia:
+    return ArquivarOcorrencia(*deps)
+
+
+def get_excluir_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceExcluirOcorrencia:
+    return ExcluirOcorrencia(*deps)
+
+
 def get_consultar_auditoria(auditoria: PortaAuditoria = Depends(get_auditoria)) -> InterfaceConsultarAuditoria:
     return ConsultarAuditoria(auditoria)
 
@@ -264,13 +278,25 @@ def get_listar_viaturas(
     return ListarViaturas(repositorio, relogio, settings.telemetria_max_idade_segundos)
 
 
+def _registrar_posicao(session: AsyncSession, relogio: Relogio) -> RegistrarPosicaoViatura:
+    """Telemetria (HTTP ou simulador) com detecção de chegada ao local da ocorrência (RF18/RF19)."""
+    return RegistrarPosicaoViatura(
+        ViaturaRepositorioSQLAlchemy(session),
+        UnidadeDeTrabalhoSQLAlchemy(session),
+        relogio,
+        publicador_eventos,
+        settings.telemetria_max_idade_segundos,
+        ordens=OrdemDespachoRepositorioSQLAlchemy(session),
+        ocorrencias=OcorrenciaRepositorioSQLAlchemy(session),
+        auditoria=AuditoriaSQLAlchemy(session),
+        raio_chegada_metros=settings.despacho_raio_chegada_metros,
+    )
+
+
 def get_registrar_posicao_viatura(
-    repositorio: RepositorioViatura = Depends(get_repositorio_viatura),
-    uow: UnidadeDeTrabalho = Depends(get_uow),
-    relogio: Relogio = Depends(get_relogio),
-    publicador: PublicadorEventos = Depends(get_publicador),
+    session: AsyncSession = Depends(get_session), relogio: Relogio = Depends(get_relogio)
 ) -> InterfaceRegistrarPosicaoViatura:
-    return RegistrarPosicaoViatura(repositorio, uow, relogio, publicador, settings.telemetria_max_idade_segundos)
+    return _registrar_posicao(session, relogio)
 
 
 # ----------------------------------------------------------------- simulador
@@ -279,13 +305,19 @@ def montar_simulador(session_factory: async_sessionmaker, relogio: Relogio | Non
     relogio = relogio or relogio_sistema
 
     @asynccontextmanager
-    async def contexto() -> AsyncIterator[tuple[RepositorioViatura, InterfaceRegistrarPosicaoViatura]]:
+    async def contexto() -> AsyncIterator[tuple]:
         async with session_factory() as session:
-            repo = ViaturaRepositorioSQLAlchemy(session)
-            uc = RegistrarPosicaoViatura(
-                repo, UnidadeDeTrabalhoSQLAlchemy(session), relogio, publicador_eventos, settings.telemetria_max_idade_segundos
-            )
-            yield repo, uc
+            ordens = OrdemDespachoRepositorioSQLAlchemy(session)
+            ocorrencias = OcorrenciaRepositorioSQLAlchemy(session)
+
+            async def destino_de(viatura_id) -> Coordenada | None:
+                ordem = await ordens.buscar_ativa_por_viatura(viatura_id)
+                if ordem is None:
+                    return None
+                ocorrencia = await ocorrencias.buscar_por_id(ordem.ocorrencia_id)
+                return ocorrencia.coordenada if ocorrencia else None
+
+            yield ViaturaRepositorioSQLAlchemy(session), _registrar_posicao(session, relogio), destino_de
 
     return SimuladorTelemetria(
         contexto,
@@ -293,6 +325,7 @@ def montar_simulador(session_factory: async_sessionmaker, relogio: Relogio | Non
         intervalo_segundos=kw.get("intervalo_segundos", settings.simulador_intervalo_segundos),
         raio_metros=kw.get("raio_metros", settings.simulador_raio_metros),
         semente=kw.get("semente"),
+        velocidade_kmh=kw.get("velocidade_kmh", settings.simulador_velocidade_kmh),
     )
 
 
