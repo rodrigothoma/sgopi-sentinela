@@ -9,6 +9,7 @@ dist/
 htmlcov/
 .pytest_cache/
 .import_linter_cache/
+backend/storage/
 
 # Env
 .env

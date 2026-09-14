@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     # RF18: quantidade de sugestões de viatura
     despacho_qtd_sugestoes: int = 3
 
+    # RF22: evidências digitais armazenadas localmente atrás de uma porta
+    evidencias_diretorio: str = "storage/evidencias"
+    evidencias_tamanho_maximo_bytes: int = 10 * 1024 * 1024
+
     log_json: bool = True
     log_level: str = "INFO"
 
