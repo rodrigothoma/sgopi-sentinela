@@ -6,6 +6,7 @@ import pytest
 
 from domain.ocorrencia.entity import (
     Envolvido,
+    Evidencia,
     Ocorrencia,
     RegistroHistoricoStatus,
     TipificacaoPenal,
@@ -152,6 +153,45 @@ def test_envolvido_cpf_valido():
 def test_tipificacao_campos_obrigatorios():
     with pytest.raises(CampoObrigatorioError):
         TipificacaoPenal(artigo="", descricao="x")
+
+
+# --------------------------------------------------------------- evidências
+
+def _evidencia(**kw) -> Evidencia:
+    defaults = dict(
+        nome_original="foto.png",
+        formato="png",
+        tamanho=8,
+        hash_sha256="a" * 64,
+        chave_armazenamento="abc.png",
+        enviada_em=AGORA,
+    )
+    defaults.update(kw)
+    return Evidencia(**defaults)
+
+
+def test_adicionar_evidencia_e_append_only():
+    o = _registrar()
+    o.adicionar_evidencia(_evidencia(), AGENTE, AGORA + timedelta(minutes=1))
+    assert [e.nome_original for e in o.evidencias] == ["foto.png"]
+    assert o.versao == 2
+
+
+def test_evidencia_exige_autor_e_status_editavel():
+    o = _registrar()
+    with pytest.raises(AcessoNegadoError):
+        o.adicionar_evidencia(_evidencia(), uuid4(), AGORA)
+    o.validar(DELEGADO, AGORA)
+    with pytest.raises(TransicaoInvalidaError) as exc:
+        o.adicionar_evidencia(_evidencia(), AGENTE, AGORA)
+    assert exc.value.chave == "evidencia.status_invalido"
+
+
+def test_evidencia_valida_metadados():
+    with pytest.raises(ValorInvalidoError):
+        _evidencia(tamanho=0)
+    with pytest.raises(ValorInvalidoError):
+        _evidencia(hash_sha256="invalido")
 
 
 # --------------------------------------------------------------- transições
