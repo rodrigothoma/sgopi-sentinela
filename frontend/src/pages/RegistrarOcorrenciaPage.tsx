@@ -25,11 +25,20 @@ export const RegistrarOcorrenciaPage: React.FC = () => {
         inicial={valoresVazios()}
         rotuloEnviar={t('common:actions.submit')}
         ocupado={ocupado}
+        permitirEvidencias
         onSubmit={async (v) => {
           setOcupado(true);
           try {
             const r = await ocorrenciasService.registrar(paraRequest(v));
             setProtocolo(r.numero_protocolo);
+            try {
+              for (const arquivo of v.evidencias) {
+                await ocorrenciasService.anexarEvidencia(r.ocorrencia_id, arquivo);
+              }
+            } catch (err) {
+              avisar(mensagemDeErro(err, t('ocorrencias:evidencias.erro_upload')), 'erro');
+              return;
+            }
             setChave((k) => k + 1);
             avisar(t('ocorrencias:toast.success', { protocolo: r.numero_protocolo }), 'sucesso');
             window.scrollTo({ top: 0, behavior: 'smooth' });

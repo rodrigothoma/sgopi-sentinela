@@ -11,6 +11,11 @@
   },
   "envolvido": { "nome_label": "Nome", "tipo_label": "Tipo", "documento_label": "Documento (CPF/RG)", "VITIMA": "Vítima", "TESTEMUNHA": "Testemunha", "SUSPEITO": "Suspeito" },
   "tipificacao": { "artigo_label": "Artigo", "artigo_placeholder": "Ex: Art. 155 CP", "descricao_label": "Descrição", "descricao_placeholder": "Descrição do tipo penal" },
+  "evidencias": {
+    "titulo": "Evidências digitais", "selecionar": "Selecionar arquivos", "ajuda": "PDF, JPG, JPEG ou PNG; máximo de 10 MB por arquivo e 10 arquivos por ocorrência.",
+    "formato_invalido": "Selecione apenas arquivos PDF, JPG, JPEG ou PNG", "tamanho_excedido": "Cada evidência deve ter no máximo 10 MB",
+    "limite": "Selecione no máximo 10 evidências", "erro_upload": "A ocorrência foi registrada, mas uma evidência não pôde ser enviada."
+  },
   "erros": {
     "campos_obrigatorios": "Preencha natureza e endereço", "descricao_curta": "A descrição deve ter ao menos 20 caracteres",
     "sem_coordenada": "Marque a coordenada do fato no mapa", "data_futura": "A data/hora do fato não pode ser futura",
