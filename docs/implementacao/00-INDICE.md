@@ -39,7 +39,7 @@ Complemento: [Nota LGPD / base legal](NOTA-LGPD-BASE-LEGAL.md).
 | RF19 Encerramento e liberação de viaturas | ✅ | Etapas 6, 7 |
 | RF20 Auditoria append-only + consulta | ✅ | Etapas 2, 3, 4 |
 | RF21 Notificação in-app (*Should*) | ⏳ | eventos já publicados; adapter pendente |
-| RF22 Evidências digitais (*Should*) | ⏳ | não iniciado |
+| RF22 / S6 Evidências digitais (*Should*) | ✅ | upload e listagem integrados ao RF01 |
 | RNF01\* Tempo real p95 < 1 s | ◐ | entrega sem *refresh* comprovada; **latência não medida** |
 | RNF02\* Controle de acesso (argon2, JWT, CORS por lista) | ✅ | Etapas 2, 3 (HTTPS = deploy) |
 | RNF03\* Imutabilidade (sem cascata, soft delete, trigger append-only, versão) | ✅ | Etapa 2 |
@@ -55,6 +55,10 @@ Complemento: [Nota LGPD / base legal](NOTA-LGPD-BASE-LEGAL.md).
 
 Legenda: ✅ implementado e testado · ◐ parcial · ⏳ pendente (fora do Must do MVP)
 
+### Complemento S6 — Evidências digitais
+
+Implementado upload `multipart/form-data` de arquivos PDF, JPG, JPEG e PNG, com limite de 10 MB por arquivo e máximo de 10 evidências por ocorrência. Os arquivos são mantidos em armazenamento local atrás da porta `ArmazenamentoArquivos`; metadados e hash SHA-256 são persistidos com vínculo permanente ao RF01. Apenas o Agente autor pode anexar enquanto a ocorrência estiver em `AGUARDANDO_REVISAO` ou `EM_CORRECAO`. Foram adicionados testes de domínio, caso de uso e integração HTTP para vínculo, persistência, autorização, ocorrência inexistente e rejeição de arquivos inválidos.
+
 ## O que ficou fora (e por quê)
 
 | Item | Motivo | Retomar em |
@@ -62,6 +66,6 @@ Legenda: ✅ implementado e testado · ◐ parcial · ⏳ pendente (fora do Must
 | Execução contra **PostgreSQL real** | Docker inacessível neste ambiente; esquema validado por `alembic upgrade/check/downgrade` em SQLite e todos os tipos são portáveis | primeira execução com `docker compose up` |
 | **Testes E2E em navegador** | sem navegador/Playwright disponível; frontend validado por `tsc`, `vite build` e smoke test do fluxo completo via proxy | Sprint 5 (F1/F2) |
 | **Medição de latência p95** do WebSocket | precisa de rede e vários painéis | apresentação / Sprint 5 |
-| RF21, RF22 (*Should*) | prioridade abaixo dos Must; portas e eventos já preparados | Sprint 3/5 se houver folga |
+| RF21 Notificação in-app (*Should*) | prioridade abaixo dos Must; eventos já publicados e adapter pendente | Sprint 3/5 se houver folga |
 | Alinhar `DOCUMENTACAO_DE_ENGENHARIA.md` e diagramas (NEXT-18) | tarefa F5 da Sprint 5; as decisões e a máquina de estados estão registradas na Etapa 1 e na análise | Sprint 5 |
 | Revogação de token antes da expiração | token stateless no MVP | pós-MVP |

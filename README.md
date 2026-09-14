@@ -108,7 +108,7 @@ npm run dev                     # http://localhost:3000 (proxy /v1 e WebSocket p
 
 ```bash
 cd backend
-uv run pytest -q                                   # 243 testes (unitários + integração em SQLite em memória)
+uv run pytest -q                                   # 258 testes (unitários + integração em SQLite em memória)
 uv run pytest --cov                                # cobertura ≥ 80 % em domain/ + application/ (atual ≈ 98 %)
 
 PYTHONPATH=src uv run lint-imports --config pyproject.toml   # contratos da Arquitetura Hexagonal
