@@ -17,6 +17,7 @@
 | 6 | [Despacho e encerramento](ETAPA-06-despacho-e-encerramento.md) | RF18, RF19, RNF11 | 176 |
 | 7 | [Frontend do MVP](ETAPA-07-frontend-mvp.md) | UI de RF01\*/04\*/11/13/14/15/16/17/18/19, RNF04\*, RNF08 | 176 (+ tsc/build + smoke ao vivo) |
 | 8 | [Qualidade, observabilidade e documentação](ETAPA-08-qualidade-e-documentacao.md) | RNF05\*, RNF06, RNF09, RNF10, RNF12 | **243** · cobertura 98 % |
+| 9 | [Testes E2E (issues #21, #22)](ETAPA-09-testes-e2e.md) | RF01\*, RF04\*, RF02, RNF01\*, RNF04\* | **12** API + **18** Cypress |
 
 Complemento: [Nota LGPD / base legal](NOTA-LGPD-BASE-LEGAL.md).
 
@@ -60,7 +61,6 @@ Legenda: ✅ implementado e testado · ◐ parcial · ⏳ pendente (fora do Must
 | Item | Motivo | Retomar em |
 | :--- | :--- | :--- |
 | Execução contra **PostgreSQL real** | Docker inacessível neste ambiente; esquema validado por `alembic upgrade/check/downgrade` em SQLite e todos os tipos são portáveis | primeira execução com `docker compose up` |
-| **Testes E2E em navegador** | sem navegador/Playwright disponível; frontend validado por `tsc`, `vite build` e smoke test do fluxo completo via proxy | Sprint 5 (F1/F2) |
 | **Medição de latência p95** do WebSocket | precisa de rede e vários painéis | apresentação / Sprint 5 |
 | RF21, RF22 (*Should*) | prioridade abaixo dos Must; portas e eventos já preparados | Sprint 3/5 se houver folga |
 | Alinhar `DOCUMENTACAO_DE_ENGENHARIA.md` e diagramas (NEXT-18) | tarefa F5 da Sprint 5; as decisões e a máquina de estados estão registradas na Etapa 1 e na análise | Sprint 5 |
