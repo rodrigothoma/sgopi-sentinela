@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ToastProvider } from './hooks/useToast';
 import { FilaDelegadoPage } from './pages/FilaDelegadoPage';
 import { FrotaPage } from './pages/FrotaPage';
+import { InicioPage } from './pages/InicioPage';
 import { LoginPage } from './pages/LoginPage';
 import { MinhasOcorrenciasPage } from './pages/MinhasOcorrenciasPage';
 import { PainelTaticoPage } from './pages/PainelTaticoPage';
@@ -34,6 +35,7 @@ export default function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route element={<RequireRole><AppShell /></RequireRole>}>
                 <Route path="/" element={<Inicio />} />
+                <Route path="/inicio" element={<InicioPage />} />
                 <Route path="/registrar" element={<RequireRole papeis={['AGENTE']}><RegistrarOcorrenciaPage /></RequireRole>} />
                 <Route path="/minhas" element={<RequireRole papeis={['AGENTE']}><MinhasOcorrenciasPage /></RequireRole>} />
                 <Route path="/fila" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><FilaDelegadoPage /></RequireRole>} />

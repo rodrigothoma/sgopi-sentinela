@@ -15,7 +15,7 @@ i18n
   .init({
     lng: idiomaInicial,
     fallbackLng: 'pt',
-    ns: ['common', 'auth', 'ocorrencias', 'painel'],
+    ns: ['common', 'auth', 'ocorrencias', 'painel', 'inicio'],
     defaultNS: 'common',
     backend: { loadPath: '/locales/{{lng}}/{{ns}}.json' },
     interpolation: { escapeValue: false },

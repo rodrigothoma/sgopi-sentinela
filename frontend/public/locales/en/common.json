@@ -4,6 +4,7 @@
   },
   "idioma": "Language",
   "nav": {
+    "inicio": "Home",
     "registrar": "Register occurrence",
     "minhas": "My occurrences",
     "fila": "Review queue",

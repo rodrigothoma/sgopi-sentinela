@@ -22,6 +22,7 @@ export const AppShell: React.FC = () => {
       <header className="topbar">
         <div className="brand">🛡️ {t('app.title')}</div>
         <nav>
+          <NavLink to="/inicio">{t('nav.inicio')}</NavLink>
           {tem('AGENTE') && <NavLink to="/registrar">{t('nav.registrar')}</NavLink>}
           {tem('AGENTE') && <NavLink to="/minhas">{t('nav.minhas')}</NavLink>}
           {tem('DELEGADO', 'SUPERVISOR') && <NavLink to="/fila">{t('nav.fila')}</NavLink>}

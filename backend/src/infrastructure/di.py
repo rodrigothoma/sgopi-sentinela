@@ -32,6 +32,7 @@ from adapters.outbound.relogio.relogio_sistema import RelogioSistema
 from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
 from adapters.outbound.seguranca.provedor_token_jose import ProvedorTokenJose
 from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
+from application.ports.inbound.interface_listar_usuarios import InterfaceListarUsuarios
 from application.ports.inbound.interface_anexar_evidencia import InterfaceAnexarEvidencia
 from application.ports.inbound.interface_arquivar_ocorrencia import (
     InterfaceArquivarOcorrencia,
@@ -78,6 +79,7 @@ from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.shared.geo import Coordenada
 from application.use_cases.auditoria.consultar_auditoria import ConsultarAuditoria
 from application.use_cases.auth.autenticar_usuario import AutenticarUsuario
+from application.use_cases.usuario.listar_usuarios import ListarUsuarios
 from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
 from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
 from application.use_cases.ocorrencia.arquivar_ocorrencia import ArquivarOcorrencia, ExcluirOcorrencia
@@ -199,6 +201,10 @@ def get_autenticar_usuario(
     uow: UnidadeDeTrabalho = Depends(get_uow),
 ) -> InterfaceAutenticarUsuario:
     return AutenticarUsuario(repositorio, hasher, provedor, relogio, auditoria, uow)
+
+
+def get_listar_usuarios(repositorio: RepositorioUsuario = Depends(get_repositorio_usuario)) -> InterfaceListarUsuarios:
+    return ListarUsuarios(repositorio)
 
 
 def get_listar_ocorrencias(repositorio: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia)) -> InterfaceListarOcorrencias:

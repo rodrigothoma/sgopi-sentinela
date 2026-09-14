@@ -172,7 +172,6 @@ export const PainelTaticoPage: React.FC = () => {
             {simulador.ligado ? t('painel:simulador.desligar') : t('painel:simulador.ligar')} ({simulador.ticks})
           </button>
         )}
-        <button className="btn btn-ghost" onClick={carregar}>{t('common:actions.atualizar')}</button>
       </div>
 
       <div className="kpi-grid">
