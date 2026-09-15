@@ -31,6 +31,7 @@ from adapters.outbound.persistence.viatura_repositorio_sqlalchemy import Viatura
 from adapters.outbound.relogio.relogio_sistema import RelogioSistema
 from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
 from adapters.outbound.seguranca.provedor_token_jose import ProvedorTokenJose
+from application.ports.inbound.interface_autenticar_documento import InterfaceAutenticarDocumento
 from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
 from application.ports.inbound.interface_anexar_evidencia import InterfaceAnexarEvidencia
 from application.ports.inbound.interface_consultar_auditoria import InterfaceConsultarAuditoria
@@ -73,6 +74,7 @@ from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.auditoria.consultar_auditoria import ConsultarAuditoria
 from application.use_cases.auth.autenticar_usuario import AutenticarUsuario
+from application.use_cases.documento.autenticar_documento import AutenticarDocumento
 from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
 from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
 from application.use_cases.ocorrencia.corrigir_ocorrencia import CorrigirOcorrencia, ReenviarOcorrencia
@@ -236,6 +238,16 @@ def get_reenviar_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceRe
 
 def get_consultar_auditoria(auditoria: PortaAuditoria = Depends(get_auditoria)) -> InterfaceConsultarAuditoria:
     return ConsultarAuditoria(auditoria)
+
+
+# ------------------------------------------------------------ documento (RF08)
+def get_autenticar_documento(
+    repositorio: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    relogio: Relogio = Depends(get_relogio),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+) -> InterfaceAutenticarDocumento:
+    return AutenticarDocumento(repositorio, uow, relogio, auditoria)
 
 
 # ------------------------------------------------------------------ viaturas

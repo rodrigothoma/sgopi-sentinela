@@ -47,9 +47,11 @@ async def main() -> None:
     await semear_usuarios()
     try:
         from scripts.seed_viaturas import semear_viaturas  # Etapa 5
+        from scripts.seed_documento_demo import semear_documento_demo  # Etapa 9 (RF08)
     except ImportError:
         return
     await semear_viaturas()
+    await semear_documento_demo()
 
 
 if __name__ == "__main__":

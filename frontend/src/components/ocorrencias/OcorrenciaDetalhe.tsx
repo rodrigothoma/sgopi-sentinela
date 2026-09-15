@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { OcorrenciaDetalhe as Detalhe } from '../../types/api';
 import { StatusBadge } from '../StatusBadge';
+import { DocumentoEmitido } from './DocumentoEmitido';
 
 const fmt = (iso: string) => new Date(iso).toLocaleString();
 
@@ -30,6 +31,7 @@ export const OcorrenciaDetalheView: React.FC<{ o: Detalhe }> = ({ o }) => {
           {o.narrativa_integra ? t('ocorrencias:detalhe.integra') : t('ocorrencias:detalhe.adulterada')} · SHA-256 {o.hash_narrativa?.slice(0, 12)}…
         </p>
       )}
+      {o.chave_autenticidade && <DocumentoEmitido chave={o.chave_autenticidade} />}
       {o.justificativa_revisao && (
         <div className="callout">
           <strong>{t('ocorrencias:detalhe.justificativa')}:</strong> {o.justificativa_revisao}

@@ -25,7 +25,8 @@
   "toast": { "success": "Ocorrência registrada! Protocolo: {{protocolo}}", "error_server": "Erro ao registrar ocorrência. Tente novamente." },
   "detalhe": {
     "versao": "versão", "registrada_em": "registrada em", "integra": "Narrativa íntegra desde a validação", "adulterada": "ATENÇÃO: narrativa alterada após a validação",
-    "justificativa": "Justificativa do Delegado", "desfecho": "Desfecho", "historico": "Histórico de status"
+    "justificativa": "Justificativa do Delegado", "desfecho": "Desfecho", "historico": "Histórico de status",
+    "documento_emitido": "Documento oficial emitido — chave pública de autenticidade", "abrir_portal": "Abrir no portal público de autenticação ↗", "qr_alt": "QR Code para conferência pública do documento"
   },
   "minhas": { "titulo": "Minhas ocorrências", "vazio": "Nenhuma ocorrência registrada.", "selecione": "Selecione uma ocorrência para ver o detalhe." },
   "correcao": { "titulo": "Corrigir {{protocolo}}", "editar": "Editar", "reenviar": "Reenviar para revisão", "salvar": "Salvar correção", "salva": "Correção salva.", "reenviada": "Ocorrência reenviada para revisão." },

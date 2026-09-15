@@ -8,6 +8,7 @@ from application.ports.inbound.interface_consultar_ocorrencias import (
     OcorrenciaResumoOutput,
     TipificacaoOutput,
 )
+from domain.ocorrencia.autenticidade import formatar_chave
 from domain.ocorrencia.entity import Ocorrencia
 from domain.shared.documentos import mascarar_cpf
 from domain.usuario.entity import Papel
@@ -46,6 +47,7 @@ def para_detalhe(o: Ocorrencia, ator: Ator) -> OcorrenciaDetalheOutput:
         desfecho=o.desfecho,
         hash_narrativa=o.hash_narrativa,
         narrativa_integra=o.narrativa_integra(),
+        chave_autenticidade=formatar_chave(o.chave_autenticidade) if o.chave_autenticidade else None,
         envolvidos=tuple(
             EnvolvidoOutput(id=e.id, nome=e.nome, tipo=e.tipo.value, documento=e.documento if mostrar_doc else mascarar_cpf(e.documento))
             for e in o.envolvidos

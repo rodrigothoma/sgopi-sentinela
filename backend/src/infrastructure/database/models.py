@@ -50,6 +50,8 @@ class OcorrenciaModel(Base):
     justificativa_revisao: Mapped[str | None] = mapped_column(Text, nullable=True)
     desfecho: Mapped[str | None] = mapped_column(Text, nullable=True)
     hash_narrativa: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # RF08: chave pública do documento emitido; única entre as ocorrências validadas
+    chave_autenticidade: Mapped[str | None] = mapped_column(String(24), nullable=True, index=True, unique=True)
 
     # optimistic locking (RNF11): ``versao`` é controlada pelo domínio e verificada
     # explicitamente pelo repositório (SELECT … FOR UPDATE + comparação).

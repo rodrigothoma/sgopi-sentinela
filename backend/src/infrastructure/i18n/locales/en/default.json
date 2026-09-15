@@ -84,5 +84,9 @@
     "numero_vazio": "Order number is required",
     "ordem_ja_encerrada": "Dispatch order already closed",
     "viatura_indisponivel": "Vehicle is not available for dispatch"
+  },
+  "documento": {
+    "not_found": "Document not found; check the key or contact the issuing precinct",
+    "chave_invalida": "Invalid authenticity key; enter the 24 characters printed on the document"
   }
 }

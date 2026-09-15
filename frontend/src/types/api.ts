@@ -32,8 +32,16 @@ export interface EnvolvidoDetalhe { id: string; nome: string; tipo: TipoEnvolvid
 export interface HistoricoStatus { de: string | null; para: StatusOcorrencia; em: string; por_id: string; justificativa: string | null }
 export interface OcorrenciaDetalhe extends OcorrenciaResumo {
   descricao: string; validada_por_id: string | null; justificativa_revisao: string | null; desfecho: string | null;
-  hash_narrativa: string | null; narrativa_integra: boolean | null;
+  hash_narrativa: string | null; narrativa_integra: boolean | null; chave_autenticidade: string | null;
   envolvidos: EnvolvidoDetalhe[]; tipificacoes: TipificacaoDTO[]; evidencias: Evidencia[]; historico_status: HistoricoStatus[];
+}
+
+/** RF08: espelho público de conferência — sem dados pessoais. */
+export type SituacaoDocumento = 'VALIDO' | 'ADULTERADO';
+export interface DocumentoAutenticado {
+  numero_protocolo: string; situacao: SituacaoDocumento; emitido_em: string; consultado_em: string;
+  natureza: string; data_hora_fato: string; status_ocorrencia: StatusOcorrencia; hash_integridade: string;
+  tipificacoes: TipificacaoDTO[]; envolvidos_por_tipo: Partial<Record<TipoEnvolvido, number>>; quantidade_evidencias: number;
 }
 export interface Pagina<T> { itens: T[]; total: number; limit: number; offset: number }
 

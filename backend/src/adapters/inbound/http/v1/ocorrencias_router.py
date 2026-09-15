@@ -187,6 +187,7 @@ class OcorrenciaDetalheSchema(OcorrenciaResumoSchema):
     desfecho: str | None
     hash_narrativa: str | None
     narrativa_integra: bool | None
+    chave_autenticidade: str | None
     envolvidos: list[EnvolvidoDetalheSchema]
     tipificacoes: list[TipificacaoSchema]
     evidencias: list[EvidenciaSchema]
@@ -229,6 +230,7 @@ def _detalhe(o: OcorrenciaDetalheOutput) -> OcorrenciaDetalheSchema:
         desfecho=o.desfecho,
         hash_narrativa=o.hash_narrativa,
         narrativa_integra=o.narrativa_integra,
+        chave_autenticidade=o.chave_autenticidade,
         envolvidos=[EnvolvidoDetalheSchema(id=e.id, nome=e.nome, tipo=e.tipo, documento=e.documento) for e in o.envolvidos],
         tipificacoes=[TipificacaoSchema(artigo=t.artigo, descricao=t.descricao) for t in o.tipificacoes],
         evidencias=[EvidenciaSchema(**e.__dict__) for e in o.evidencias],

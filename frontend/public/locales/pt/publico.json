@@ -1,0 +1,36 @@
+{
+  "titulo": "Autenticação de documento",
+  "subtitulo": "Confira a autenticidade e a integridade de um Boletim de Ocorrência emitido pelo SGOPI Sentinela. Não é necessário login.",
+  "chave_label": "Chave de segurança (24 caracteres, impressa no documento ou lida pelo QR Code)",
+  "chave_placeholder": "XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",
+  "consultar": "Conferir autenticidade",
+  "consultando": "Conferindo...",
+  "voltar_inicio": "Retornar ao início",
+  "lgpd": "Em respeito à LGPD, o portal público exibe apenas os dados de conferência do documento — nunca nomes, documentos, endereços ou a narrativa dos fatos.",
+  "resultado": {
+    "VALIDO": "Documento autêntico e íntegro",
+    "ADULTERADO": "ATENÇÃO: documento adulterado",
+    "explicacao_VALIDO": "A chave corresponde a um documento emitido pelo sistema e o conteúdo não foi alterado desde a validação pelo Delegado.",
+    "explicacao_ADULTERADO": "A chave existe, mas o conteúdo atual não confere com o hash registrado na validação. A ocorrência foi sinalizada para apuração de fraude.",
+    "protocolo": "Número do BO",
+    "emitido_em": "Emitido em",
+    "consultado_em": "Conferido em",
+    "natureza": "Natureza",
+    "data_fato": "Data/hora do fato",
+    "status": "Situação da ocorrência",
+    "tipificacoes": "Tipificação penal",
+    "envolvidos": "Envolvidos qualificados",
+    "evidencias": "Evidências anexadas",
+    "hash": "Hash de integridade (SHA-256)",
+    "nova_consulta": "Conferir outro documento"
+  },
+  "erro": {
+    "chave_vazia": "Informe a chave impressa no documento"
+  },
+  "demo": {
+    "rotulo": "Ambiente de demonstração, experimente com esta chave:",
+    "copiar": "Copiar",
+    "copiado": "Copiado!",
+    "preencher": "Clique para preencher o campo"
+  }
+}

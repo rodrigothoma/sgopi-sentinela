@@ -1,0 +1,36 @@
+{
+  "titulo": "Document authentication",
+  "subtitulo": "Verify the authenticity and integrity of a Police Report issued by SGOPI Sentinela. No login required.",
+  "chave_label": "Security key (24 characters, printed on the document or read from the QR Code)",
+  "chave_placeholder": "XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",
+  "consultar": "Verify authenticity",
+  "consultando": "Verifying...",
+  "voltar_inicio": "Back to home",
+  "lgpd": "In compliance with data protection law, the public portal shows only the document's verification data — never names, IDs, addresses or the narrative of the facts.",
+  "resultado": {
+    "VALIDO": "Authentic and intact document",
+    "ADULTERADO": "WARNING: tampered document",
+    "explicacao_VALIDO": "The key matches a document issued by the system and its content has not changed since the Chief's validation.",
+    "explicacao_ADULTERADO": "The key exists, but the current content does not match the hash recorded at validation. The occurrence has been flagged for fraud investigation.",
+    "protocolo": "Report number",
+    "emitido_em": "Issued at",
+    "consultado_em": "Verified at",
+    "natureza": "Nature",
+    "data_fato": "Date/time of the facts",
+    "status": "Occurrence status",
+    "tipificacoes": "Criminal classification",
+    "envolvidos": "Qualified parties",
+    "evidencias": "Attached evidence",
+    "hash": "Integrity hash (SHA-256)",
+    "nova_consulta": "Verify another document"
+  },
+  "erro": {
+    "chave_vazia": "Enter the key printed on the document"
+  },
+  "demo": {
+    "rotulo": "Demo environment, try this key:",
+    "copiar": "Copy",
+    "copiado": "Copied!",
+    "preencher": "Click to fill the field"
+  }
+}

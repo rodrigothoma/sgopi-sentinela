@@ -7,6 +7,7 @@ import { AppShell } from './components/layout/AppShell';
 import { RequireRole, rotaInicial } from './components/RequireRole';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ToastProvider } from './hooks/useToast';
+import { AutenticarDocumentoPage } from './pages/AutenticarDocumentoPage';
 import { FilaDelegadoPage } from './pages/FilaDelegadoPage';
 import { FrotaPage } from './pages/FrotaPage';
 import { LoginPage } from './pages/LoginPage';
@@ -32,6 +33,9 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              {/* RF08: portal público — fora do RequireRole por definição (UC08 regra 1) */}
+              <Route path="/autenticar" element={<AutenticarDocumentoPage />} />
+              <Route path="/autenticar/:chave" element={<AutenticarDocumentoPage />} />
               <Route element={<RequireRole><AppShell /></RequireRole>}>
                 <Route path="/" element={<Inicio />} />
                 <Route path="/registrar" element={<RequireRole papeis={['AGENTE']}><RegistrarOcorrenciaPage /></RequireRole>} />

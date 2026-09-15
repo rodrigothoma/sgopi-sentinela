@@ -84,5 +84,9 @@
     "numero_vazio": "Número da ordem é obrigatório",
     "ordem_ja_encerrada": "Ordem de despacho já encerrada",
     "viatura_indisponivel": "A viatura não está disponível para despacho"
+  },
+  "documento": {
+    "not_found": "Documento não localizado; confira a chave ou procure a delegacia emissora",
+    "chave_invalida": "Chave de autenticidade inválida; informe os 24 caracteres impressos no documento"
   }
 }

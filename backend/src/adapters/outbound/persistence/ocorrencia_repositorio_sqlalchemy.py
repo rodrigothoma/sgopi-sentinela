@@ -84,6 +84,14 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
         self._versoes_carregadas[model.id] = model.versao
         return self._to_domain(model)
 
+    async def buscar_por_chave_autenticidade(self, chave: str) -> Ocorrencia | None:
+        stmt = select(OcorrenciaModel).where(OcorrenciaModel.chave_autenticidade == chave).options(*_CARREGAR_FILHOS)
+        model = (await self._session.execute(stmt)).scalar_one_or_none()
+        if model is None:
+            return None
+        self._versoes_carregadas[model.id] = model.versao
+        return self._to_domain(model)
+
     def _aplicar_filtro(self, stmt, filtro: FiltroOcorrencias):
         if filtro.status:
             stmt = stmt.where(OcorrenciaModel.status.in_([s.value for s in filtro.status]))
@@ -123,6 +131,7 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             justificativa_revisao=ocorrencia.justificativa_revisao,
             desfecho=ocorrencia.desfecho,
             hash_narrativa=ocorrencia.hash_narrativa,
+            chave_autenticidade=ocorrencia.chave_autenticidade,
         )
 
     def _to_model(self, ocorrencia: Ocorrencia) -> OcorrenciaModel:
@@ -228,6 +237,7 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             justificativa_revisao=model.justificativa_revisao,
             desfecho=model.desfecho,
             hash_narrativa=model.hash_narrativa,
+            chave_autenticidade=model.chave_autenticidade,
         )
         ocorrencia.envolvidos = [
             Envolvido(id=e.id, nome=e.nome, tipo=TipoEnvolvido(e.tipo), documento=e.documento)

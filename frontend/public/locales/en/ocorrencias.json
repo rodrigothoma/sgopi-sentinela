@@ -25,7 +25,8 @@
   "toast": { "success": "Occurrence registered! Protocol: {{protocolo}}", "error_server": "Error registering occurrence. Try again." },
   "detalhe": {
     "versao": "version", "registrada_em": "registered at", "integra": "Narrative intact since validation", "adulterada": "WARNING: narrative changed after validation",
-    "justificativa": "Chief's justification", "desfecho": "Outcome", "historico": "Status history"
+    "justificativa": "Chief's justification", "desfecho": "Outcome", "historico": "Status history",
+    "documento_emitido": "Official document issued — public authenticity key", "abrir_portal": "Open in the public authentication portal ↗", "qr_alt": "QR Code for public verification of the document"
   },
   "minhas": { "titulo": "My occurrences", "vazio": "No occurrences yet.", "selecione": "Select an occurrence to see details." },
   "correcao": { "titulo": "Correct {{protocolo}}", "editar": "Edit", "reenviar": "Resubmit for review", "salvar": "Save correction", "salva": "Correction saved.", "reenviada": "Occurrence resubmitted for review." },
