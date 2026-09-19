@@ -22,6 +22,9 @@ class ArmazenamentoFake(ArmazenamentoArquivos):
         self.arquivos[chave] = conteudo
         return chave
 
+    async def ler(self, chave: str) -> bytes | None:
+        return self.arquivos.get(chave)
+
 
 @pytest.fixture
 def armazenamento():
