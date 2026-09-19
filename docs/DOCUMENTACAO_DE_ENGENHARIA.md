@@ -126,27 +126,17 @@ A priorização seguiu critérios técnicos de viabilidade, dependência funcion
 
 ### 3.1 Visão Geral e Objetivo Principal
 
-O objetivo do MVP do **SGOPI Sentinela** é validar o fluxo técnico e operacional ponta a ponta: desde a captura estruturada dos dados de uma ocorrência, sua validação pelo Delegado, até a exibição de viaturas no mapa e execução do despacho tático com coordenadas simuladas em tempo real.
+O objetivo do MVP do **SGOPI Sentinela** é validar o fluxo técnico e operacional ponta a ponta através de uma **Arquitetura Dual (Portal Público do Cidadão + Painel Operacional Policial)**: desde a captura estruturada dos dados de uma ocorrência (pela população via Delegacia Eletrônica ou pelo Agente em campo), sua validação técnica pelo Delegado, até a exibição de viaturas no mapa e execução do despacho tático com coordenadas simuladas em tempo real.
 
 ```
-[Agente Policial]
-       │ (1. Registra Ocorrência)
-       ▼
-[Núcleo SGOPI - Core Domain] ─── (Persistência: 'Aguardando Revisão')
-       │
-       ▼
-[Delegado de Polícia]
-       │ (2. Revisa e Valida Ocorrência)
-       ▼
-[Status: 'Validada'] ─── (Notificação em Tempo Real via WebSocket)
-       │
-       ▼
-[Operador de Central]
-       │ (3. Visualiza Viaturas em Tempo Real no Mapa Tático)
-       │ (4. Despacha Viatura mais Próxima calculada pelo Sistema)
-       ▼
-[Ordem de Despacho Gerada] ─── (Viatura Em Deslocamento)
+[ Cidadão (Portal Web Público) ] ──(Registro Online)──┐
+                                                      ├──► [ Núcleo SGOPI ] ◄──(Revisão/Validação)── [ Delegado ]
+[ Agente Policial (Delegacia) ]  ──(Reg. Circunst.)───┘            │
+                                                                   ▼ (Status: Validada / WS Broadcast)
+[ Viatura Policial ] ◄──────────(Despacho Tático)───────── [ Operador Central (Mapa GPS Real-Time) ]
 ```
+
+As fatias de desenvolvimento e a rastreabilidade das tarefas estão organizadas no [**Kanban Oficial do GitHub Projects #2**](https://github.com/users/rodrigothoma/projects/2).
 
 ### 3.2 Hipótese Técnica e Escopo da Primeira Iteração
 
