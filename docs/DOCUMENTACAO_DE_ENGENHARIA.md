@@ -143,7 +143,7 @@ As fatias de desenvolvimento e a rastreabilidade das tarefas estão organizadas 
 * **Hipótese Técnica:** Uma arquitetura baseada em portas e adaptadores (*Hexagonal*) associada a WebSockets permite que o núcleo de domínio permaneça desacoplado, suportando atualizações contínuas de telemetria GPS sem comprometer a integridade transacional do banco de dados relacional.
 * **Escopo Incluído no MVP:**
   - Registro completo de ocorrência com múltiplos envolvidos e tipificação de crime;
-  - Máquina de estados da ocorrência (`Rascunho` -> `Aguardando Revisão` -> `Validada` / `Rejeitada` -> `Em Despacho` -> `Concluída`);
+  - Máquina de estados da ocorrência (`Aguardando Revisão` -> `Validada` / `Rejeitada` / `Em Correção` -> `Em Atendimento` -> `Encerrada`);
   - Módulo de revisão exclusiva para Delegado;
   - Painel tático em tempo real com mapa interativo (Leaflet / OpenStreetMap);
   - Serviço de simulação de telemetria GPS emitindo coordenadas periódicas para as viaturas ativas;
@@ -303,41 +303,41 @@ O diagrama abaixo representa a **modelagem conceitual relacional** elaborada ori
 Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQLAlchemy 2.0 (async)** e **Alembic** (`backend/src/infrastructure/database/models.py`), o esquema físico de dados foi consolidado em **11 tabelas relacionais**:
 
 1. **`usuarios`**: Armazena as credenciais e o controle de acesso dos operadores policiais.
-   - *Colunas:* `id` (UUID PK), `nome` (String 150), `login` (String 50 Unique), `senha_hash` (String 255), `papel` (Enum `AGENTE`, `DELEGADO`, `OPERADOR_CENTRAL`), `ativo` (Boolean), `criado_em` (Timestamp), `atualizado_em` (Timestamp).
-   - *Estratégia:* Mapeamento de generalização via *Single Table Inheritance* com coluna discriminadora (`papel`), preservando integridade referencial estável nas chaves estrangeiras.
+   - *Colunas:* `id` (UUID PK), `nome` (String 255), `login` (String 100 Unique), `senha_hash` (String 255), `papel` (String 30 — Enum `AGENTE`, `DELEGADO`, `OPERADOR_CENTRAL`, `SUPERVISOR`, `PERITO`, `ESCRIVAO`), `ativo` (Boolean).
+   - *Estratégia:* Mapeamento de perfis via coluna discriminadora (`papel`), preservando integridade referencial nas chaves estrangeiras.
 
 2. **`ocorrencias`**: Entidade central de registro de fatos delituosos.
-   - *Colunas:* `id` (UUID PK), `numero_protocolo` (String 50 Unique), `relato` (Text), `natureza` (String 100), `data_hora_fato` (Timestamp), `latitude` (Float), `longitude` (Float), `endereco` (String 255), `status` (String 30), `hash_narrativa` (String 64), `agente_policial_id` (UUID FK nullable), `validada_por_id` (UUID FK nullable), `versao` (Integer), `ativo` (Boolean), `criada_em` (Timestamp), `atualizada_em` (Timestamp).
+   - *Colunas:* `id` (UUID PK), `numero_protocolo` (String 50 Unique), `natureza` (String 255), `descricao` (Text), `localizacao` (String 500), `latitude` (Float), `longitude` (Float), `data_hora_fato` (Timestamp com timezone), `status` (String 30), `versao` (Integer), `criada_em` (Timestamp com timezone), `atualizada_em` (Timestamp com timezone), `agente_policial_id` (UUID FK `usuarios.id`), `validada_por_id` (UUID FK `usuarios.id` nullable), `justificativa_revisao` (Text nullable), `desfecho` (Text nullable), `hash_narrativa` (String 64 nullable).
    - *Integridade:* `numero_protocolo` gerado no padrão oficial `SGOPI-AAAA-NNNNNN`. A coluna `versao` implementa bloqueio otimista (*optimistic locking*) para controle de concorrência.
 
 3. **`envolvidos`**: Qualificação das partes envolvidas em uma ocorrência (vítimas, testemunhas, suspeitos).
-   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `tipo` (Enum `VITIMA`, `TESTEMUNHA`, `SUSPEITO`), `nome` (String 150), `documento` (String 30), `ativo` (Boolean), `criado_em` (Timestamp).
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `nome` (String 255), `tipo` (String 20 — Enum `VITIMA`, `TESTEMUNHA`, `SUSPEITO`), `documento` (String 50 nullable), `ativo` (Boolean).
 
-4. **`tipificacoes_penais`**: Artigos da legislação penal associados à ocorrência.
-   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `artigo` (String 50), `descricao` (String 255), `ativo` (Boolean), `criada_em` (Timestamp).
+4. **`tipificacoes_ocorrencia`**: Artigos da legislação penal associados à ocorrência.
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `artigo` (String 100), `descricao` (String 500), `ativo` (Boolean).
 
 5. **`historico_status_ocorrencia`**: Tabela *append-only* de rastreabilidade temporal das ocorrências.
-   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `status_anterior` (String 30), `novo_status` (String 30), `justificativa` (Text), `usuario_id` (UUID FK `usuarios.id`), `data_hora` (Timestamp).
-   - *Regra:* Não permite `UPDATE` ou `DELETE`, garantindo imutabilidade histórica das decisões tomadas.
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `ordem` (Integer), `de` (String 30 nullable), `para` (String 30), `em` (Timestamp com timezone), `por_id` (UUID), `justificativa` (Text nullable).
+   - *Regra & Integridade:* Restrição de unicidade composta `(ocorrencia_id, ordem)`. Não permite `UPDATE` ou `DELETE` (protegido por trigger no PostgreSQL), garantindo imutabilidade histórica das decisões tomadas.
 
-6. **`evidencias_digitais`**: Metadados e integridade criptográfica dos arquivos anexados.
-   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `nome_original` (String 255), `formato` (String 50), `tamanho` (Integer), `hash_sha256` (String 64), `chave_armazenamento` (String 255), `ativo` (Boolean), `data_upload` (Timestamp).
+6. **`evidencias`**: Metadados e integridade criptográfica dos arquivos anexados.
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `nome_original` (String 255), `formato` (String 10), `tamanho` (Integer), `hash_sha256` (String 64), `chave_armazenamento` (String 255 Unique), `enviada_em` (Timestamp com timezone).
 
 7. **`registros_auditoria`**: Trilha de conformidade e auditoria de ações sensíveis (RNF03).
-   - *Colunas:* `id` (UUID PK), `quem` (String 100), `quando` (Timestamp), `operacao` (String 50), `entidade` (String 50), `entidade_id` (String 50), `dados_antes` (JSONB/Text), `dados_depois` (JSONB/Text), `ip` (String 45).
+   - *Colunas:* `id` (UUID PK), `quem` (UUID nullable), `quando` (Timestamp com timezone), `operacao` (String 100), `entidade` (String 100), `entidade_id` (String 100 nullable), `dados_antes` (JSON), `dados_depois` (JSON), `ip` (String 64 nullable).
 
 8. **`sequencias_protocolo`**: Tabela de controle de concorrência e atomicidade na geração sequencial de protocolos anuais.
-   - *Colunas:* `ano` (Integer PK), `ultimo_numero` (Integer).
+   - *Colunas:* `ano` (Integer PK), `ultimo` (Integer).
 
 9. **`viaturas`**: Frota tática monitorada pela central de despacho.
-   - *Colunas:* `id` (UUID PK), `prefixo` (String 20 Unique), `placa` (String 10 Unique), `situacao` (String 30), `ultima_latitude` (Float), `ultima_longitude` (Float), `ultima_atualizacao` (Timestamp), `ativo` (Boolean), `criada_em` (Timestamp), `atualizada_em` (Timestamp).
+   - *Colunas:* `id` (UUID PK), `prefixo` (String 20 Unique), `placa` (String 10 Unique), `situacao` (String 20), `latitude` (Float nullable), `longitude` (Float nullable), `posicao_registrada_em` (Timestamp com timezone nullable), `versao` (Integer), `atualizada_em` (Timestamp com timezone nullable).
 
 10. **`ordens_despacho`**: Formalização de despacho tático de viaturas para atendimento.
-    - *Colunas:* `id` (UUID PK), `numero` (String 50 Unique), `ocorrencia_id` (UUID FK `ocorrencias.id`), `viatura_id` (UUID FK `viaturas.id`), `operador_id` (UUID FK `usuarios.id`), `emitida_em` (Timestamp), `status` (String 30), `observacoes` (Text), `versao` (Integer), `ativo` (Boolean).
+    - *Colunas:* `id` (UUID PK), `numero` (String 30 Unique), `ocorrencia_id` (UUID FK `ocorrencias.id`), `viatura_id` (UUID FK `viaturas.id`), `operador_id` (UUID FK `usuarios.id`), `criada_em` (Timestamp com timezone), `observacoes` (Text nullable), `ativa` (Boolean), `encerrada_em` (Timestamp com timezone nullable).
     - *Formato:* `numero` padronizado como `OD-AAAA-NNNNNN`.
 
 11. **`sequencias_ordem_despacho`**: Gerador sequencial controlado para emissão atômica de números de ordem de despacho por ano.
-    - *Colunas:* `ano` (Integer PK), `ultimo_numero` (Integer).
+    - *Colunas:* `ano` (Integer PK), `ultimo` (Integer).
 
 #### 5.6.2 Princípios de Engenharia do Modelo Físico
 - **Identificadores UUIDv4:** Chaves primárias universais e opacas geradas na camada de aplicação/domínio, prevenindo ataques de enumeração na API e garantindo que entidades nasçam identificadas em testes unitários sem dependência prévia de persistência.
