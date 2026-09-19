@@ -1269,6 +1269,24 @@ dl.grid2 dd { margin: 0 0 8px; }
   padding-top: 16px;
 }
 
+.evidencia-item {
+  display: grid;
+  gap: 8px;
+}
+
+.evidencia-hash {
+  overflow-wrap: anywhere;
+  font-size: .82rem;
+  color: var(--muted);
+}
+
+.evidencia-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 /* KPI Summary Cards Grid */
 .kpi-grid {
   display: grid;
@@ -1300,4 +1318,3 @@ dl.grid2 dd { margin: 0 0 8px; }
   color: var(--ink);
   margin-top: 4px;
 }
-

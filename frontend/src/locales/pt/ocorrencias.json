@@ -14,7 +14,10 @@
   "evidencias": {
     "titulo": "Evidências digitais", "selecionar": "Selecionar arquivos", "ajuda": "PDF, JPG, JPEG ou PNG; máximo de 10 MB por arquivo e 10 arquivos por ocorrência.",
     "formato_invalido": "Selecione apenas arquivos PDF, JPG, JPEG ou PNG", "tamanho_excedido": "Cada evidência deve ter no máximo 10 MB",
-    "limite": "Selecione no máximo 10 evidências", "erro_upload": "A ocorrência foi registrada, mas uma evidência não pôde ser enviada."
+    "limite": "Selecione no máximo 10 evidências", "erro_upload": "A ocorrência foi registrada, mas uma evidência não pôde ser enviada.",
+    "integridade_carregando": "Verificando integridade…", "integridade_integra": "Arquivo íntegro", "integridade_divergente": "Arquivo divergente",
+    "integridade_indisponivel": "Arquivo indisponível", "integridade_erro": "Não foi possível verificar a integridade", "download": "Baixar",
+    "baixando": "Baixando…", "download_erro": "Não foi possível baixar a evidência"
   },
   "erros": {
     "campos_obrigatorios": "Preencha natureza e endereço", "descricao_curta": "A descrição deve ter ao menos 20 caracteres",

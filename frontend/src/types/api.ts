@@ -13,6 +13,8 @@ export interface TipificacaoDTO { artigo: string; descricao: string }
 export interface Evidencia {
   id: string; nome_original: string; formato: string; tamanho: number; hash_sha256: string; enviada_em: string;
 }
+export type EstadoIntegridadeEvidencia = 'INTEGRA' | 'DIVERGENTE';
+export interface IntegridadeEvidencia { evidencia_id: string; estado: EstadoIntegridadeEvidencia }
 
 export interface RegistrarOcorrenciaRequest {
   natureza: string; descricao: string; localizacao: string;
