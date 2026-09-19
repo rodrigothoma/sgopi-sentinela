@@ -5,6 +5,7 @@ import { CENTRO_PADRAO } from '../components/painel/leaflet';
 import { paraInputLocal } from '../components/ocorrencias/OcorrenciaForm';
 import { mensagemDeErro, registrarOcorrenciaPublica } from '../services/api';
 import { Button } from '../components/common/Button';
+import { GlideSelect, GlideSelectOption } from '../components/common/GlideSelect';
 
 const NATUREZAS_COMUNS = [
   'Furto',
@@ -15,6 +16,12 @@ const NATUREZAS_COMUNS = [
   'Dano ao Patrimônio',
   'Outro Fato Circunstanciado'
 ];
+
+const OPCOES_NATUREZA: GlideSelectOption[] = NATUREZAS_COMUNS.map((n) => ({
+  value: n,
+  label: n,
+}));
+
 
 export const RegistroCidadaoPage: React.FC = () => {
   const [nome, setNome] = useState('');
@@ -194,16 +201,19 @@ export const RegistroCidadaoPage: React.FC = () => {
             <fieldset>
               <legend>2. Natureza e Circunstância do Fato</legend>
               <div className="grid2">
-                <label>
-                  Tipo da Ocorrência *
-                  <select value={natureza} onChange={(e) => setNatureza(e.target.value)}>
-                    {NATUREZAS_COMUNS.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Tipo da Ocorrência *
+                  </label>
+                  <GlideSelect
+                    options={OPCOES_NATUREZA}
+                    value={natureza}
+                    onChange={(val) => setNatureza(val)}
+                    size="md"
+                    menuWidth="100%"
+                    ariaLabel="Tipo da Ocorrência"
+                  />
+                </div>
                 <label>
                   Data e Hora do Fato *
                   <input
