@@ -17,8 +17,12 @@ const resolveCharset = (charset: string) => {
 };
 
 const normalizePhrase = (phrase: unknown, width: number) => {
-  const safe = String(phrase ?? '');
-  return safe.padEnd(width, ' ').slice(0, width);
+  const safe = String(phrase ?? '').trim();
+  if (safe.length >= width) return safe.slice(0, width);
+  const padTotal = width - safe.length;
+  const padLeft = Math.floor(padTotal / 2);
+  const padRight = padTotal - padLeft;
+  return ' '.repeat(padLeft) + safe + ' '.repeat(padRight);
 };
 
 interface TileState {
@@ -171,6 +175,11 @@ export const SplitFlapText: React.FC<SplitFlapTextProps> = ({
     const activeCharset = resolveCharset(charset);
 
     const animateTo = (targetPhrase: string): number => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+
       if (prefersReducedMotion) {
         currentTextRef.current = targetPhrase;
         setTiles(createTiles(targetPhrase));
@@ -231,6 +240,21 @@ export const SplitFlapText: React.FC<SplitFlapTextProps> = ({
         if (cancelled) return;
 
         const elapsed = now - startedAt;
+
+        // Se a aba foi minimizada/desfocada e o tempo decorrido ultrapassou a duração total
+        if (elapsed > totalDuration + 50) {
+          const finalUpdates: TileUpdate[] = plans.map(plan => ({
+            index: plan.index,
+            current: plan.target,
+            next: plan.target,
+            done: true
+          }));
+          updateTiles(finalUpdates);
+          currentTextRef.current = targetPhrase;
+          rafRef.current = null;
+          return;
+        }
+
         const updates: TileUpdate[] = [];
         let shouldContinue = false;
 
@@ -295,10 +319,28 @@ export const SplitFlapText: React.FC<SplitFlapTextProps> = ({
       }, delay);
     };
 
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        clearAnimation();
+        const currentTarget = normalizedPhrases[phraseIndex] || '';
+        currentTextRef.current = currentTarget;
+        setTiles(createTiles(currentTarget));
+      } else {
+        clearAnimation();
+        const currentTarget = normalizedPhrases[phraseIndex] || '';
+        currentTextRef.current = currentTarget;
+        setTiles(createTiles(currentTarget));
+        scheduleNext(safeCycleDelay);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     scheduleNext(safeCycleDelay);
 
     return () => {
       cancelled = true;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearAnimation();
     };
   }, [normalizedPhrases, width, loop, cycleDelay, flipDuration, stagger, flipsPerChar, charset, prefersReducedMotion]);
