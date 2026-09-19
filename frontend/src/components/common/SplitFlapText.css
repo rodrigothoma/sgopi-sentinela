@@ -6,7 +6,7 @@
   align-items: center;
   /* sem gap entre letras — o espaço vem do próprio monospace + letter-spacing */
   gap: 0;
-  color: var(--split-flap-text-color, #f0f0f0);
+  color: var(--split-flap-text-color, var(--ink));
   font-family: 'SFMono-Regular', 'Roboto Mono', 'Cascadia Code', 'Liberation Mono', Menlo, monospace;
   font-size: var(--split-flap-font-size, 52px);
   font-weight: 700;
@@ -69,7 +69,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--split-flap-text-color, #f0f0f0);
+  color: var(--split-flap-text-color, var(--ink));
 }
 
 .split-flap-text__half--top .split-flap-text__char,
