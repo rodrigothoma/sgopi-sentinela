@@ -139,6 +139,8 @@ Formato: **Descrição** · **Rastreabilidade** · **Critérios de aceite** · *
 - **Rastreabilidade:** A12; RF01; UC01 passo 5 e exc. II; Planejamento S6; RNF03.
 - **Hexagonal:** porta `ArmazenamentoArquivos.salvar(bytes, nome) -> chave`; adapter `ArmazenamentoDisco` (MVP) / S3 (futuro); `InterfaceAnexarEvidencia` → `AnexarEvidencia` → `RepositorioOcorrencia`, `ArmazenamentoArquivos`, `PortaAuditoria`.
 
+> **Adendo de implementação — 19/09/2026 (issue #41):** o detalhe da ocorrência passou a exibir o SHA-256 da evidência. A integridade é verificada pela releitura dos bytes armazenados por `ArmazenamentoArquivos.ler(...)` e pelo recálculo do hash, produzindo os estados `INTEGRA` ou `DIVERGENTE`. O download exige autenticação e autorização pela mesma política da consulta de ocorrência, repete a conferência no momento do acesso e é bloqueado com conflito quando o estado é `DIVERGENTE`. Verificações, downloads e ausência do arquivo físico são auditados. O fluxo é exposto por `VerificarIntegridadeEvidencia` e `ObterEvidenciaParaDownload`, com endpoints `GET /v1/ocorrencias/{ocorrencia_id}/evidencias/{evidencia_id}/integridade` e `GET /v1/ocorrencias/{ocorrencia_id}/evidencias/{evidencia_id}/download`. O schema existente já possuía os metadados e a chave de armazenamento; nenhuma migration nova foi necessária.
+
 ### Resumo MoSCoW do MVP (revisado)
 
 | Must | Should | Could (fora do MVP) |

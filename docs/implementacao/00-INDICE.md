@@ -18,7 +18,10 @@
 | 7 | [Frontend do MVP](ETAPA-07-frontend-mvp.md) | UI de RF01\*/04\*/11/13/14/15/16/17/18/19, RNF04\*, RNF08 | 176 (+ tsc/build + smoke ao vivo) |
 | 8 | [Qualidade, observabilidade e documentação](ETAPA-08-qualidade-e-documentacao.md) | RNF05\*, RNF06, RNF09, RNF10, RNF12 | **243** · cobertura 98 % |
 
-Complemento: [Nota LGPD / base legal](NOTA-LGPD-BASE-LEGAL.md).
+Complementos:
+
+- [Nota LGPD / base legal](NOTA-LGPD-BASE-LEGAL.md).
+- [RF22 — Integridade e download seguro de evidências digitais](COMPLEMENTO-RF22-integridade-download-evidencias.md) (issue #41).
 
 
 ## Status por requisito (visão consolidada)
@@ -39,7 +42,7 @@ Complemento: [Nota LGPD / base legal](NOTA-LGPD-BASE-LEGAL.md).
 | RF19 Encerramento e liberação de viaturas | ✅ | Etapas 6, 7 |
 | RF20 Auditoria append-only + consulta | ✅ | Etapas 2, 3, 4 |
 | RF21 Notificação in-app (*Should*) | ⏳ | eventos já publicados; adapter pendente |
-| RF22 / S6 Evidências digitais (*Should*) | ✅ | upload e listagem integrados ao RF01 |
+| RF22 / S6 Evidências digitais (*Should*) | ✅ | upload, vínculo, metadados, SHA-256, verificação de integridade, download autorizado, auditoria e bloqueio por divergência; ver complemento RF22 |
 | RNF01\* Tempo real p95 < 1 s | ◐ | entrega sem *refresh* comprovada; **latência não medida** |
 | RNF02\* Controle de acesso (argon2, JWT, CORS por lista) | ✅ | Etapas 2, 3 (HTTPS = deploy) |
 | RNF03\* Imutabilidade (sem cascata, soft delete, trigger append-only, versão) | ✅ | Etapa 2 |
@@ -57,7 +60,7 @@ Legenda: ✅ implementado e testado · ◐ parcial · ⏳ pendente (fora do Must
 
 ### Complemento S6 — Evidências digitais
 
-Implementado upload `multipart/form-data` de arquivos PDF, JPG, JPEG e PNG, com limite de 10 MB por arquivo e máximo de 10 evidências por ocorrência. Os arquivos são mantidos em armazenamento local atrás da porta `ArmazenamentoArquivos`; metadados e hash SHA-256 são persistidos com vínculo permanente ao RF01. Apenas o Agente autor pode anexar enquanto a ocorrência estiver em `AGUARDANDO_REVISAO` ou `EM_CORRECAO`. Foram adicionados testes de domínio, caso de uso e integração HTTP para vínculo, persistência, autorização, ocorrência inexistente e rejeição de arquivos inválidos.
+Implementado upload `multipart/form-data` de arquivos PDF, JPG, JPEG e PNG, com limite de 10 MB por arquivo e máximo de 10 evidências por ocorrência. Os arquivos são mantidos em armazenamento local atrás da porta `ArmazenamentoArquivos`; metadados e hash SHA-256 são persistidos com vínculo permanente ao RF01. Apenas o Agente autor pode anexar enquanto a ocorrência estiver em `AGUARDANDO_REVISAO` ou `EM_CORRECAO`. A issue #41 acrescentou exibição do hash, verificação por releitura do arquivo, estados `INTEGRA`/`DIVERGENTE`, download autorizado, auditoria e bloqueio do download divergente. Detalhes arquiteturais e verificações estão no [complemento RF22](COMPLEMENTO-RF22-integridade-download-evidencias.md).
 
 ## O que ficou fora (e por quê)
 

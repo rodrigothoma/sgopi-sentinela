@@ -19,7 +19,7 @@ Este documento é a **fonte de verdade** sobre *por que* o código é como é. T
 | **DEC-04** | **Envolvido permanece 1:N com a ocorrência no MVP** (não é pessoa reutilizável). Campos: `nome`, `tipo`, `documento` (CPF opcional, validado se presente). Ver §3 para a estratégia de mapeamento da generalização. | DIV-17 | ✅ | `domain/ocorrencia/entity.py:Envolvido` |
 | **DEC-05** | **Distância = Haversine** sobre a última posição válida com idade ≤ 60 s (parametrizável). | DIV-07 | ✅ | `domain/despacho/servico_proximidade.py` |
 | **DEC-06** | **Tempo real = WebSocket nativo do FastAPI**; eventos internos via porta `PublicadorEventos` com adapter em memória. Broker é evolução pós-MVP. | RNF-P02 | ✅ | `adapters/inbound/websocket/`, `adapters/outbound/eventos/` |
-| **DEC-07** | **Evidências no MVP:** `pdf, jpg, jpeg, png`, ≤ 10 MB/arquivo, ≤ 10 arquivos/ocorrência, em disco local atrás da porta `ArmazenamentoArquivos`. | DIV-08 | ⏳ | RF22 não iniciado (*Should Have*) |
+| **DEC-07** | **Evidências no MVP:** `pdf, jpg, jpeg, png`, ≤ 10 MB/arquivo, ≤ 10 arquivos/ocorrência, em disco local atrás da porta `ArmazenamentoArquivos`; integridade por SHA-256 e download somente após conferência autorizada. | DIV-08 | ✅ | `application/ports/outbound/armazenamento_arquivos.py`; `adapters/outbound/arquivos/armazenamento_disco.py`; `application/use_cases/ocorrencia/acessar_evidencia.py`; endpoints no `ocorrencias_router.py`; testes unitários, de adapter e HTTP |
 | **DEC-08** | **Papéis do MVP:** `AGENTE`, `DELEGADO`, `OPERADOR_CENTRAL`. `SUPERVISOR`, `PERITO`, `ESCRIVAO` ficam no enum sem UC. Não há acesso anônimo. Ver §3. | DIV-06 | ✅ | `domain/usuario/entity.py:Papel` |
 | **DEC-09** | **Sem assinatura digital, PDF ou ICP-Brasil no MVP.** "Validação" = transição de estado + `validada_por_id` + auditoria + hash SHA-256 da narrativa. | RF-P18, RF-P20 | ✅ | `Ocorrencia.calcular_hash_narrativa()` |
 
@@ -126,7 +126,7 @@ Checklist executável: [`NEXT-18-ajustes-nos-diagramas.md`](NEXT-18-ajustes-nos-
 | # | Questão | Prazo | Quem decide |
 | :--- | :--- | :--- | :--- |
 | A1 | Expor `chegar_ao_local()` (EM_DESLOCAMENTO → OPERANDO) ou remover `OPERANDO` do enum? | Antes da apresentação | Equipe |
-| A2 | RF21 (notificação in-app) e RF22 (evidências) entram na Sprint 5 ou ficam pós-MVP? | Sprint 5 | Equipe |
+| A2 | RF21 (notificação in-app) entra na Sprint 5 ou fica pós-MVP? RF22 foi concluído na issue #41. | Sprint 5 | Equipe |
 | A3 | Reavaliar DEC-12 (N:N ordem↔viatura) se o pós-MVP exigir despacho em bloco | Pós-MVP | Equipe |
 | A4 | Reavaliar DEC-14 (PostGIS) ao iniciar RF05 (manchas criminais) | Pós-MVP | Equipe |
 
@@ -137,3 +137,4 @@ Checklist executável: [`NEXT-18-ajustes-nos-diagramas.md`](NEXT-18-ajustes-nos-
 | Data | O que mudou |
 | :--- | :--- |
 | 14/09/2026 | Criação. Ratificação de DEC-01…DEC-09, formalização de DEC-10…DEC-15, registro da estratégia de mapeamento das generalizações (§3) e das quatro decisões em aberto. |
+| 19/09/2026 | DEC-07 atualizada após a conclusão de RF22 na issue #41; A2 mantida aberta somente para RF21. |
