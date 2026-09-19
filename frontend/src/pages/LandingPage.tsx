@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { NavbarPublica } from '../components/layout/NavbarPublica';
 import { SplitFlapText } from '../components/common/SplitFlapText';
 import { LogoSgopi } from '../components/common/LogoSgopi';
@@ -37,13 +38,22 @@ const IconShield: React.FC = () => (
 );
 
 export const LandingPage: React.FC = () => {
+  const { t } = useTranslation('common');
+
+  const splitWords = [
+    t('landing.split_word_1'),
+    t('landing.split_word_2'),
+    t('landing.split_word_3'),
+    t('landing.split_word_4'),
+  ];
+
   return (
     <div className="portal-wrap">
       <NavbarPublica />
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <main className="landing-hero" style={{ position: 'relative', overflow: 'hidden' }}>
-        {/* Fundo dinâmico WebThreads */}
+        {/* Fundo dinâmico WebThreads oficial React Bits via OGL */}
         <div
           style={{
             position: 'absolute',
@@ -51,7 +61,7 @@ export const LandingPage: React.FC = () => {
             width: '100%',
             height: '100%',
             zIndex: 0,
-            opacity: 0.75,
+            opacity: 0.85,
             pointerEvents: 'none',
             maskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
@@ -62,33 +72,33 @@ export const LandingPage: React.FC = () => {
             color1="#0515d3"
             color2="#0b4aaf"
             color3="#FFFFFF"
-            speed={0.2}
+            speed={0.22}
             threadCount={6}
-            frequency={5.0}
-            spread={0.18}
-            taper={1.0}
-            position={0.5}
+            frequency={4.2}
+            spread={0.36}
+            taper={0.9}
+            position={0.48}
             fanMode="center"
-            glow={0.02}
-            falloff={0.6}
-            thickness={1.1}
-            brightness={0.6}
-            opacity={1.0}
+            glow={0.035}
+            falloff={0.52}
+            thickness={1.6}
+            brightness={0.75}
+            opacity={0.92}
             mirror={true}
-            shimmer={false}
+            shimmer={true}
             grain={true}
             grainIntensity={0.05}
             mouseInteraction={true}
-            mouseStrength={0.3}
+            mouseStrength={0.35}
           />
         </div>
 
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-          <p className="hero-label">SISTEMA OFICIAL — UNIPAMPA / ALEGRETE</p>
+          <p className="hero-label">{t('landing.hero_label')}</p>
 
           <div className="hero-flap-wrapper">
             <SplitFlapText
-              words={['SENTINELA ONLINE', 'PORTAL CIDADAO', 'PRONTIDAO TOTAL', 'SISTEMA INTEGRADO']}
+              words={splitWords}
               padTo={16}
               fontSize={52}
               flipsPerChar={6}
@@ -97,17 +107,14 @@ export const LandingPage: React.FC = () => {
             />
           </div>
 
-          <p className="hero-subtitle">
-            Canal oficial e unificado para registro de ocorrências pelo cidadão,
-            triagem técnica pela autoridade policial e monitoramento de viaturas em tempo real.
-          </p>
+          <p className="hero-subtitle">{t('landing.hero_subtitle')}</p>
 
           <div className="hero-actions">
             <Button to="/registrar-cidadao" variant="primary" size="lg">
-              Registrar Ocorrência
+              {t('landing.cta_register')}
             </Button>
             <Button to="/consulta" variant="secondary" size="lg">
-              Consultar Protocolo
+              {t('landing.cta_lookup')}
             </Button>
           </div>
         </div>
@@ -116,22 +123,22 @@ export const LandingPage: React.FC = () => {
       {/* ── Como funciona ─────────────────────────────────────────────── */}
       <section className="landing-section landing-section--alt">
         <div className="section-inner">
-          <h2 className="section-title">Como Funciona</h2>
+          <h2 className="section-title">{t('landing.how_it_works.title')}</h2>
           <div className="steps-grid">
             <div className="step-card">
               <span className="step-number">01</span>
-              <h3>Registre sua Ocorrência</h3>
-              <p>Preencha o formulário online com os detalhes do fato — sem precisar ir até a delegacia. Disponível 24 horas por dia.</p>
+              <h3>{t('landing.how_it_works.step1_title')}</h3>
+              <p>{t('landing.how_it_works.step1_desc')}</p>
             </div>
             <div className="step-card">
               <span className="step-number">02</span>
-              <h3>Receba seu Protocolo</h3>
-              <p>Após o envio, você recebe imediatamente um número de protocolo oficial. Guarde-o para acompanhar o andamento do seu caso.</p>
+              <h3>{t('landing.how_it_works.step2_title')}</h3>
+              <p>{t('landing.how_it_works.step2_desc')}</p>
             </div>
             <div className="step-card">
               <span className="step-number">03</span>
-              <h3>Acompanhe o Andamento</h3>
-              <p>Use o número de protocolo para consultar, a qualquer momento, em qual etapa da triagem policial sua ocorrência se encontra.</p>
+              <h3>{t('landing.how_it_works.step3_title')}</h3>
+              <p>{t('landing.how_it_works.step3_desc')}</p>
             </div>
           </div>
         </div>
@@ -140,20 +147,17 @@ export const LandingPage: React.FC = () => {
       {/* ── Cards de ação principais ──────────────────────────────────── */}
       <section className="landing-section">
         <div className="section-inner">
-          <h2 className="section-title">Acesse os Serviços</h2>
+          <h2 className="section-title">{t('landing.services.title')}</h2>
           <div className="action-cards-grid">
 
             <Link to="/registrar-cidadao" className="action-card">
               <div className="action-card-icon">
                 <IconDocument />
               </div>
-              <h3>Registrar Ocorrência</h3>
-              <p>
-                Comunique furtos, extravios, ameaças e outros fatos de forma rápida,
-                sem filas e com localização no mapa.
-              </p>
+              <h3>{t('landing.services.card_register_title')}</h3>
+              <p>{t('landing.services.card_register_desc')}</p>
               <div className="action-card-footer">
-                Registrar agora <span aria-hidden="true">→</span>
+                {t('landing.services.card_register_action')} <span aria-hidden="true">→</span>
               </div>
             </Link>
 
@@ -161,13 +165,10 @@ export const LandingPage: React.FC = () => {
               <div className="action-card-icon">
                 <IconSearch />
               </div>
-              <h3>Consultar Protocolo</h3>
-              <p>
-                Acompanhe a situação e o andamento da sua ocorrência em tempo real
-                utilizando o código do protocolo oficial.
-              </p>
+              <h3>{t('landing.services.card_lookup_title')}</h3>
+              <p>{t('landing.services.card_lookup_desc')}</p>
               <div className="action-card-footer">
-                Verificar status <span aria-hidden="true">→</span>
+                {t('landing.services.card_lookup_action')} <span aria-hidden="true">→</span>
               </div>
             </Link>
 
@@ -175,13 +176,10 @@ export const LandingPage: React.FC = () => {
               <div className="action-card-icon">
                 <IconShield />
               </div>
-              <h3>Painel Operacional</h3>
-              <p>
-                Acesso restrito para Agentes de campo, Delegados de triagem
-                e Operadores da Central de Despacho.
-              </p>
+              <h3>{t('landing.services.card_operational_title')}</h3>
+              <p>{t('landing.services.card_operational_desc')}</p>
               <div className="action-card-footer">
-                Entrar no sistema <span aria-hidden="true">→</span>
+                {t('landing.services.card_operational_action')} <span aria-hidden="true">→</span>
               </div>
             </Link>
 
@@ -192,19 +190,16 @@ export const LandingPage: React.FC = () => {
       {/* ── O que pode ser registrado ─────────────────────────────────── */}
       <section className="landing-section landing-section--alt">
         <div className="section-inner">
-          <h2 className="section-title">O que pode ser registrado online?</h2>
-          <p className="section-subtitle">
-            O sistema aceita registros de fatos que não configurem situação de emergência imediata.
-            Para emergências, ligue <strong>190</strong>.
-          </p>
+          <h2 className="section-title">{t('landing.types.title')}</h2>
+          <p className="section-subtitle">{t('landing.types.subtitle')}</p>
           <div className="types-grid">
             {[
-              { titulo: 'Furto ou Roubo', desc: 'Subtração de bens pessoais, eletrônicos, veículos ou outros objetos de valor.' },
-              { titulo: 'Perda ou Extravio', desc: 'Documentos, carteiras, chaves, celulares e outros objetos pessoais extraviados.' },
-              { titulo: 'Acidente de Trânsito sem Vítima', desc: 'Colisões, abalroamentos ou danos a veículos sem lesionados.' },
-              { titulo: 'Ameaça', desc: 'Declarações, mensagens ou gestos que configurem ameaça à integridade física ou psicológica.' },
-              { titulo: 'Perturbação do Sossego', desc: 'Som excessivo, barulho perturbador em horários inadequados.' },
-              { titulo: 'Dano ao Patrimônio', desc: 'Destruição, pichação ou dano doloso a bens públicos ou privados.' },
+              { titulo: t('landing.types.item1_title'), desc: t('landing.types.item1_desc') },
+              { titulo: t('landing.types.item2_title'), desc: t('landing.types.item2_desc') },
+              { titulo: t('landing.types.item3_title'), desc: t('landing.types.item3_desc') },
+              { titulo: t('landing.types.item4_title'), desc: t('landing.types.item4_desc') },
+              { titulo: t('landing.types.item5_title'), desc: t('landing.types.item5_desc') },
+              { titulo: t('landing.types.item6_title'), desc: t('landing.types.item6_desc') },
             ].map(({ titulo, desc }) => (
               <div key={titulo} className="type-card">
                 <h4>{titulo}</h4>
@@ -218,28 +213,26 @@ export const LandingPage: React.FC = () => {
       {/* ── Exemplos de registros ─────────────────────────────────────── */}
       <section className="landing-section">
         <div className="section-inner">
-          <h2 className="section-title">Exemplos de Registros Recentes</h2>
-          <p className="section-subtitle">
-            Os dados abaixo são fictícios e utilizados apenas para ilustração do sistema.
-          </p>
+          <h2 className="section-title">{t('landing.recent.title')}</h2>
+          <p className="section-subtitle">{t('landing.recent.subtitle')}</p>
           <div className="table-wrap">
             <table className="tabela">
               <thead>
                 <tr>
-                  <th>Protocolo</th>
-                  <th>Natureza</th>
-                  <th>Local</th>
-                  <th>Data</th>
-                  <th>Status</th>
+                  <th>{t('landing.recent.th_protocol')}</th>
+                  <th>{t('landing.recent.th_nature')}</th>
+                  <th>{t('landing.recent.th_location')}</th>
+                  <th>{t('landing.recent.th_date')}</th>
+                  <th>{t('landing.recent.th_status')}</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  { proto: 'SGOPI-2026-000140', nat: 'Furto', local: 'Centro, Alegrete/RS', data: '19/09/2026', status: 'Aguardando Revisão', cor: 'var(--warn)' },
-                  { proto: 'SGOPI-2026-000137', nat: 'Ameaça', local: 'Bairro Piola', data: '19/09/2026', status: 'Validada', cor: 'var(--ok)' },
-                  { proto: 'SGOPI-2026-000133', nat: 'Perturbação do Sossego', local: 'Av. Brasil', data: '18/09/2026', status: 'Em Atendimento', cor: 'var(--primary)' },
-                  { proto: 'SGOPI-2026-000120', nat: 'Dano ao Patrimônio', local: 'Praça da República', data: '18/09/2026', status: 'Encerrada', cor: 'var(--muted)' },
-                  { proto: 'SGOPI-2026-000115', nat: 'Extravio de Documento', local: 'Bairro São Roque', data: '17/09/2026', status: 'Validada', cor: 'var(--ok)' },
+                  { proto: 'SGOPI-2026-000140', nat: 'Furto', local: 'Centro, Alegrete/RS', data: '19/09/2026', status: t('status.AGUARDANDO_REVISAO'), cor: 'var(--warn)' },
+                  { proto: 'SGOPI-2026-000137', nat: 'Ameaça', local: 'Bairro Piola', data: '19/09/2026', status: t('status.VALIDADA'), cor: 'var(--ok)' },
+                  { proto: 'SGOPI-2026-000133', nat: 'Perturbação do Sossego', local: 'Av. Brasil', data: '18/09/2026', status: t('status.EM_ATENDIMENTO'), cor: 'var(--primary)' },
+                  { proto: 'SGOPI-2026-000120', nat: 'Dano ao Patrimônio', local: 'Praça da República', data: '18/09/2026', status: t('status.ENCERRADA'), cor: 'var(--muted)' },
+                  { proto: 'SGOPI-2026-000115', nat: 'Extravio de Documento', local: 'Bairro São Roque', data: '17/09/2026', status: t('status.VALIDADA'), cor: 'var(--ok)' },
                 ].map((row) => (
                   <tr key={row.proto}>
                     <td><code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{row.proto}</code></td>
@@ -258,10 +251,8 @@ export const LandingPage: React.FC = () => {
       {/* ── Consulta integrada ───────────────────────────────────────── */}
       <section className="landing-section landing-section--alt">
         <div className="section-inner" style={{ textAlign: 'center' }}>
-          <h2 className="section-title">Já registrou uma ocorrência?</h2>
-          <p className="section-subtitle">
-            Digite seu número de protocolo para consultar o status atual.
-          </p>
+          <h2 className="section-title">{t('landing.search.title')}</h2>
+          <p className="section-subtitle">{t('landing.search.subtitle')}</p>
           <form
             className="hero-search-form"
             onSubmit={(e) => {
@@ -273,14 +264,14 @@ export const LandingPage: React.FC = () => {
             <input
               name="protocolo"
               type="text"
-              placeholder="SGOPI-2026-000001"
+              placeholder={t('landing.search.placeholder')}
               style={{ fontFamily: 'monospace', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}
-              aria-label="Número do protocolo"
+              aria-label={t('landing.search.title')}
             />
-            <Button type="submit" variant="primary">Consultar</Button>
+            <Button type="submit" variant="primary">{t('landing.search.button')}</Button>
           </form>
           <p className="muted small" style={{ marginTop: 12 }}>
-            Exemplo de protocolo: SGOPI-2026-000137
+            {t('landing.search.hint')}
           </p>
         </div>
       </section>
@@ -288,33 +279,15 @@ export const LandingPage: React.FC = () => {
       {/* ── FAQ ──────────────────────────────────────────────────────── */}
       <section className="landing-section">
         <div className="section-inner">
-          <h2 className="section-title">Perguntas Frequentes</h2>
+          <h2 className="section-title">{t('landing.faq.title')}</h2>
           <div className="faq-list">
             {[
-              {
-                q: 'Preciso ter conta para registrar uma ocorrência?',
-                a: 'Não. O Portal do Cidadão é totalmente aberto. Você não precisa criar cadastro nem fazer login para registrar uma ocorrência ou consultar seu protocolo.',
-              },
-              {
-                q: 'Qual a diferença entre este sistema e ligar para o 190?',
-                a: 'O 190 é para emergências em andamento. Este sistema é para registro de fatos não emergenciais, como furtos já ocorridos, extravios e perturbações. Se houver risco imediato, ligue 190.',
-              },
-              {
-                q: 'Quanto tempo leva para minha ocorrência ser analisada?',
-                a: 'O prazo de triagem pode variar. Você pode acompanhar em tempo real pelo número de protocolo. Geralmente ocorrências de menor complexidade são analisadas em até 72 horas.',
-              },
-              {
-                q: 'Posso registrar em nome de outra pessoa?',
-                a: 'Sim, desde que você informe os dados do real solicitante. O campo de identificação do solicitante aceita o nome de quem está comunicando o fato.',
-              },
-              {
-                q: 'O que significa "Em Correção"?',
-                a: 'Significa que o Delegado solicitou ajustes na descrição ou nos dados da ocorrência. Acompanhe pelo protocolo e retorne à delegacia se necessário.',
-              },
-              {
-                q: 'Minha ocorrência foi rejeitada. O que fazer?',
-                a: 'A rejeição pode ocorrer quando o fato não configura ocorrência registrável pelo sistema ou está fora da jurisdição. Nesse caso, recomendamos ir pessoalmente à delegacia mais próxima.',
-              },
+              { q: t('landing.faq.q1'), a: t('landing.faq.a1') },
+              { q: t('landing.faq.q2'), a: t('landing.faq.a2') },
+              { q: t('landing.faq.q3'), a: t('landing.faq.a3') },
+              { q: t('landing.faq.q4'), a: t('landing.faq.a4') },
+              { q: t('landing.faq.q5'), a: t('landing.faq.a5') },
+              { q: t('landing.faq.q6'), a: t('landing.faq.a6') },
             ].map(({ q, a }) => (
               <details key={q} className="faq-item">
                 <summary className="faq-question">{q}</summary>
@@ -332,49 +305,51 @@ export const LandingPage: React.FC = () => {
           <div className="footer-col">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               <LogoSgopi size={22} color="var(--primary)" />
-              <strong>SGOPI SENTINELA</strong>
+              <strong>{t('app.title').toUpperCase()}</strong>
             </div>
-            <p>Sistema de Gestão de Ocorrências Policiais Integradas</p>
-            <p>Universidade Federal do Pampa — Campus Alegrete</p>
-            <p className="muted small">Resolução de Problemas IV (AL0343) — 2026/1</p>
+            <p>{t('landing.footer.subtitle')}</p>
+            <p>{t('landing.footer.institution')}</p>
+            <p className="muted small">{t('landing.footer.course')}</p>
           </div>
 
           <div className="footer-col">
-            <h4>Links Rápidos</h4>
+            <h4>{t('landing.footer.quick_links')}</h4>
             <ul className="footer-links">
-              <li><Link to="/">Início</Link></li>
-              <li><Link to="/registrar-cidadao">Registrar Ocorrência</Link></li>
-              <li><Link to="/consulta">Consultar Protocolo</Link></li>
-              <li><Link to="/login">Acesso Policial</Link></li>
+              <li><Link to="/">{t('nav.home')}</Link></li>
+              <li><Link to="/registrar-cidadao">{t('nav.registrar')}</Link></li>
+              <li><Link to="/consulta">{t('nav.lookup')}</Link></li>
+              <li><Link to="/login">{t('nav.police_access')}</Link></li>
             </ul>
           </div>
 
           <div className="footer-col">
-            <h4>Emergências</h4>
+            <h4>{t('landing.footer.emergencies')}</h4>
             <ul className="footer-links footer-emergency">
-              <li><strong>190</strong> — Polícia Militar</li>
-              <li><strong>192</strong> — SAMU</li>
-              <li><strong>193</strong> — Corpo de Bombeiros</li>
-              <li><strong>156</strong> — Defesa Civil</li>
+              <li><strong>190</strong> — {t('landing.footer.police')}</li>
+              <li><strong>192</strong> — {t('landing.footer.samu')}</li>
+              <li><strong>193</strong> — {t('landing.footer.firefighters')}</li>
+              <li><strong>156</strong> — {t('landing.footer.civil_defense')}</li>
             </ul>
           </div>
 
           <div className="footer-col">
-            <h4>Contato Institucional</h4>
+            <h4>{t('landing.footer.support')}</h4>
             <address className="footer-address">
-              <p>Delegacia de Polícia Civil — Alegrete/RS</p>
-              <p>Rua Barão do Triunfo, 100 — Centro</p>
-              <p>Tel: (55) 3422-0000</p>
-              <p>sgopi@unipampa.edu.br</p>
-              <p className="muted small">Seg a Sex, 08h–18h</p>
+              <p>{t('landing.footer.police_dept')}</p>
+              <p>{t('landing.footer.address')}</p>
+              <p>{t('landing.footer.phone')}</p>
+              <p>{t('landing.footer.email')}</p>
+              <p className="muted small">{t('landing.footer.hours')}</p>
             </address>
           </div>
 
         </div>
         <div className="footer-bottom">
-          SGOPI Sentinela — Desenvolvido pela Equipe de Engenharia de Software — Unipampa Alegrete — 2026
+          {t('landing.footer.copyright')}
         </div>
       </footer>
     </div>
   );
 };
+
+export default LandingPage;
