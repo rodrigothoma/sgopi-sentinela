@@ -1,27 +1,27 @@
 :root,
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #090d16;
-  --bg-surface: #111827;
-  --card: #151f33;
-  --card-hover: #1c2a45;
-  --ink: #f8fafc;
-  --muted: #94a3b8;
-  --line: #22314d;
-  --line-soft: #182338;
+  --bg: #121214;
+  --bg-surface: #18181b;
+  --card: #202024;
+  --card-hover: #27272a;
+  --ink: #f4f4f5;
+  --muted: #a1a1aa;
+  --line: #2e2e33;
+  --line-soft: #232327;
   --primary: #3b82f6;
   --primary-hover: #2563eb;
-  --primary-glow: rgba(59, 130, 246, 0.35);
+  --primary-glow: rgba(59, 130, 246, 0.25);
   --ok: #10b981;
   --warn: #f59e0b;
-  --warn-glow: rgba(245, 158, 11, 0.35);
+  --warn-glow: rgba(245, 158, 11, 0.25);
   --danger: #ef4444;
-  --danger-glow: rgba(239, 68, 68, 0.35);
-  --topbar-bg: rgba(9, 13, 22, 0.88);
-  --login-bg: radial-gradient(circle at center, #17243d 0%, #090d16 100%);
-  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.35);
-  --shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.6);
-  --hero-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 130, 246, 0.18), transparent 70%);
+  --danger-glow: rgba(239, 68, 68, 0.25);
+  --topbar-bg: #121214;
+  --login-bg: #121214;
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --hero-glow: none;
 }
 
 [data-theme="light"] {
@@ -34,22 +34,37 @@
   --muted: #64748b;
   --line: #e2e8f0;
   --line-soft: #cbd5e1;
-  --primary: #1d4ed8;
-  --primary-hover: #1e40af;
-  --primary-glow: rgba(29, 78, 216, 0.2);
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-glow: rgba(37, 99, 235, 0.15);
   --ok: #059669;
   --warn: #d97706;
-  --warn-glow: rgba(217, 119, 6, 0.2);
+  --warn-glow: rgba(217, 119, 6, 0.15);
   --danger: #dc2626;
-  --danger-glow: rgba(220, 38, 38, 0.2);
-  --topbar-bg: rgba(255, 255, 255, 0.92);
-  --login-bg: radial-gradient(circle at center, #e0e7ff 0%, #f1f5f9 100%);
-  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
-  --shadow-pop: 0 12px 32px rgba(15, 23, 42, 0.12);
-  --hero-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(37, 99, 235, 0.12), transparent 70%);
+  --danger-glow: rgba(220, 38, 38, 0.15);
+  --topbar-bg: #ffffff;
+  --login-bg: #f8fafc;
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.05);
+  --shadow-pop: 0 12px 32px rgba(15, 23, 42, 0.08);
+  --hero-glow: none;
 }
 
 * { box-sizing: border-box; }
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+.btn,
+a.btn,
+button.btn {
+  text-decoration: none !important;
+}
 
 body {
   margin: 0;
