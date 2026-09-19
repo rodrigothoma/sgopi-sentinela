@@ -61,7 +61,7 @@ export const LandingPage: React.FC = () => {
             width: '100%',
             height: '100%',
             zIndex: 0,
-            opacity: 0.85,
+            opacity: 0.38,
             pointerEvents: 'none',
             maskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
@@ -71,25 +71,25 @@ export const LandingPage: React.FC = () => {
           <WebThreads
             color1="#0515d3"
             color2="#0b4aaf"
-            color3="#FFFFFF"
-            speed={0.22}
+            color3="#70a5ff"
+            speed={0.18}
             threadCount={6}
             frequency={4.2}
             spread={0.36}
             taper={0.9}
             position={0.48}
             fanMode="center"
-            glow={0.035}
+            glow={0.015}
             falloff={0.52}
-            thickness={1.6}
-            brightness={0.75}
-            opacity={0.92}
+            thickness={1.5}
+            brightness={0.42}
+            opacity={0.65}
             mirror={true}
             shimmer={true}
             grain={true}
-            grainIntensity={0.05}
+            grainIntensity={0.03}
             mouseInteraction={true}
-            mouseStrength={0.35}
+            mouseStrength={0.3}
           />
         </div>
 
