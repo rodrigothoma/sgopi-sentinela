@@ -251,19 +251,32 @@ textarea { resize: vertical; }
 
 fieldset {
   border: 1px solid var(--line);
-  border-radius: 10px;
-  margin: 20px 0;
-  padding: 16px;
-  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin: 24px 0;
+  padding: 20px;
+  background: var(--bg-surface);
+}
+
+[data-theme="light"] fieldset {
+  border-color: #cbd5e1;
+  background: #ffffff;
 }
 
 legend {
+  display: block;
+  width: 100%;
   font-weight: 600;
-  padding: 0 8px;
-  color: var(--primary);
+  padding: 0 0 10px 0;
+  margin-bottom: 16px;
+  color: var(--ink);
   text-transform: uppercase;
   font-size: 0.85rem;
   letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--line);
+}
+
+[data-theme="light"] legend {
+  border-bottom-color: #e2e8f0;
 }
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
