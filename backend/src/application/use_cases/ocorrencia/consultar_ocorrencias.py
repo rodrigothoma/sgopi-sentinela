@@ -34,6 +34,20 @@ async def carregar_ou_404(repositorio: RepositorioOcorrencia, ocorrencia_id: UUI
     return ocorrencia
 
 
+async def carregar_autorizada(
+    repositorio: RepositorioOcorrencia, ator: Ator, ocorrencia_id: UUID
+) -> Ocorrencia:
+    """Aplica a política única de consulta usada por detalhe e evidências."""
+    ator.exigir_papel(*PAPEIS_CONSULTA)
+    ocorrencia = await carregar_ou_404(repositorio, ocorrencia_id)
+    if ator.papel == Papel.AGENTE and ocorrencia.agente_policial_id != ator.id:
+        raise AcessoNegadoError(
+            "Somente o agente autor pode consultar esta ocorrência.",
+            chave="ocorrencia.nao_e_autor",
+        )
+    return ocorrencia
+
+
 class ListarOcorrencias(InterfaceListarOcorrencias):
     def __init__(self, repositorio: RepositorioOcorrencia) -> None:
         self._repositorio = repositorio
@@ -55,8 +69,5 @@ class ObterDetalheOcorrencia(InterfaceObterDetalheOcorrencia):
         self._repositorio = repositorio
 
     async def executar(self, ator: Ator, ocorrencia_id: UUID) -> OcorrenciaDetalheOutput:
-        ator.exigir_papel(*PAPEIS_CONSULTA)
-        ocorrencia = await carregar_ou_404(self._repositorio, ocorrencia_id)
-        if ator.papel == Papel.AGENTE and ocorrencia.agente_policial_id != ator.id:
-            raise AcessoNegadoError("Somente o agente autor pode consultar esta ocorrência.", chave="ocorrencia.nao_e_autor")
+        ocorrencia = await carregar_autorizada(self._repositorio, ator, ocorrencia_id)
         return para_detalhe(ocorrencia, ator)
