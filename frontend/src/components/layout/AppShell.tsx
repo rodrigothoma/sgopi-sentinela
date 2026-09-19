@@ -1,11 +1,14 @@
 import React from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
+import { LogoSgopi } from '../common/LogoSgopi';
 
 export const AppShell: React.FC = () => {
   const { t, i18n } = useTranslation('common');
   const { usuario, sair, tem } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const trocarIdioma = (lng: string) => {
@@ -20,7 +23,10 @@ export const AppShell: React.FC = () => {
   return (
     <div className="shell">
       <header className="topbar">
-        <div className="brand">🛡️ {t('app.title')}</div>
+        <Link to="/" className="brand" title="Voltar ao Portal Público">
+          <LogoSgopi size={28} color="var(--primary)" />
+          <span>{t('app.title')}</span>
+        </Link>
         <nav>
           {tem('AGENTE') && <NavLink to="/registrar">{t('nav.registrar')}</NavLink>}
           {tem('AGENTE') && <NavLink to="/minhas">{t('nav.minhas')}</NavLink>}
@@ -30,9 +36,18 @@ export const AppShell: React.FC = () => {
         </nav>
         <div className="userbox">
           <select aria-label={t('idioma')} value={i18n.language.slice(0, 2)} onChange={(e) => trocarIdioma(e.target.value)}>
-            <option value="pt">PT</option>
-            <option value="en">EN</option>
+            <option value="pt">🇧🇷 PT</option>
+            <option value="en">🇺🇸 EN</option>
           </select>
+          <button
+            type="button"
+            className="btn-icon"
+            onClick={toggleTheme}
+            title={`Alternar para tema ${theme === 'dark' ? 'claro' : 'escuro'}`}
+            aria-label="Alternar tema"
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
           {usuario && (
             <span className="user">
               <strong>{usuario.nome}</strong> · <span className="pill">{t(`papel.${usuario.papel}`)}</span>
