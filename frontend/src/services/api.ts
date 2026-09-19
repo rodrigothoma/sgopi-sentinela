@@ -41,3 +41,40 @@ export function mensagemDeErro(error: unknown, fallback?: string): string {
   }
   return defaultFallback;
 }
+
+export interface RegistrarOcorrenciaPublicaPayload {
+  nome_solicitante: string;
+  natureza: string;
+  descricao: string;
+  localizacao: string;
+  latitude: number;
+  longitude: number;
+  data_hora_fato: string;
+  documento?: string;
+}
+
+export interface OcorrenciaPublicaResponse {
+  ocorrencia_id: string;
+  numero_protocolo: string;
+  status: string;
+  criada_em: string;
+}
+
+export interface ConsultaPublicaResponse {
+  numero_protocolo: string;
+  status: string;
+  natureza: string;
+  localizacao: string;
+  criada_em: string;
+  desfecho?: string | null;
+}
+
+export async function registrarOcorrenciaPublica(payload: RegistrarOcorrenciaPublicaPayload): Promise<OcorrenciaPublicaResponse> {
+  const { data } = await api.post<OcorrenciaPublicaResponse>('/v1/ocorrencias/publico', payload);
+  return data;
+}
+
+export async function consultarOcorrenciaPublica(protocolo: string): Promise<ConsultaPublicaResponse> {
+  const { data } = await api.get<ConsultaPublicaResponse>(`/v1/ocorrencias/publico/${encodeURIComponent(protocolo.trim())}`);
+  return data;
+}
