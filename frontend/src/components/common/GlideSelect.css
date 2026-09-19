@@ -1,0 +1,199 @@
+/* ─── GlideSelect Component ─────────────────────────────────────────── */
+
+.glide-select-root {
+  --glide-surface-default: var(--card, #202024);
+  --glide-highlight-default: var(--card-hover, #2e2e33);
+  --glide-text-default: var(--ink, #f4f4f5);
+  --glide-accent-default: var(--primary, #3b82f6);
+  --glide-border-default: var(--line, #2e2e33);
+
+  position: relative;
+  display: inline-block;
+  font-family: inherit;
+  user-select: none;
+}
+
+/* ── Trigger Button ── */
+.glide-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background-color: var(--glide-surface, var(--glide-surface-default));
+  color: var(--glide-text, var(--glide-text-default));
+  border: 1px solid var(--glide-border-default);
+  border-radius: var(--glide-radius, 8px);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+}
+
+.glide-select-trigger:hover:not(:disabled) {
+  border-color: var(--muted, #a1a1aa);
+}
+
+.glide-select-trigger:focus-visible {
+  outline: 2px solid var(--glide-accent, var(--glide-accent-default));
+  outline-offset: 2px;
+}
+
+.glide-select--open .glide-select-trigger {
+  border-color: var(--glide-accent, var(--glide-accent-default));
+}
+
+.glide-select-trigger__content {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.glide-select-trigger__icon {
+  display: inline-flex;
+  font-size: 1.1em;
+}
+
+.glide-select-trigger__chevron {
+  display: inline-flex;
+  color: var(--muted, #a1a1aa);
+  transition: transform var(--glide-pop-duration, 180ms) ease;
+}
+
+.glide-select--open .glide-select-trigger__chevron {
+  transform: rotate(180deg);
+  color: var(--glide-text, var(--glide-text-default));
+}
+
+/* ── Tamanhos ── */
+.glide-select--sm .glide-select-trigger {
+  padding: 5px 10px;
+  font-size: 0.82rem;
+}
+
+.glide-select--md .glide-select-trigger {
+  padding: 8px 14px;
+  font-size: 0.9rem;
+}
+
+.glide-select--lg .glide-select-trigger {
+  padding: 11px 18px;
+  font-size: 1rem;
+}
+
+/* ── Menu Popover ── */
+.glide-select-menu {
+  position: absolute;
+  z-index: 1200;
+  min-width: var(--glide-menu-width, 100%);
+  width: max-content;
+  background-color: var(--glide-surface, var(--glide-surface-default));
+  border: 1px solid var(--glide-border-default);
+  border-radius: var(--glide-radius, 8px);
+  padding: 4px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  animation: glide-menu-appear var(--glide-pop-duration, 180ms) cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes glide-menu-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.glide-select-menu--bottom {
+  top: calc(100% + 4px);
+}
+
+.glide-select-menu--top {
+  bottom: calc(100% + 4px);
+}
+
+.glide-select-menu--left {
+  left: 0;
+}
+
+.glide-select-menu--right {
+  right: 0;
+}
+
+/* ── Gliding Pill ── */
+.glide-select-pill {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 0;
+  background-color: var(--glide-highlight, var(--glide-highlight-default));
+  border-radius: calc(var(--glide-radius, 8px) - 2px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Opções / Itens ── */
+.glide-select-item {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  color: var(--glide-text, var(--glide-text-default));
+  border: none;
+  border-radius: calc(var(--glide-radius, 8px) - 2px);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: left;
+  transition: color 0.1s ease;
+}
+
+.glide-select-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.glide-select-item--selected {
+  font-weight: 600;
+  color: var(--glide-accent, var(--glide-accent-default));
+}
+
+.glide-select-item__icon {
+  margin-right: 2px;
+}
+
+.glide-select-item__label {
+  flex: 1;
+}
+
+.glide-select-item__check {
+  display: inline-flex;
+  color: var(--glide-accent, var(--glide-accent-default));
+}
+
+/* ── Tags / Badges ── */
+.glide-select-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--muted, #a1a1aa);
+  letter-spacing: 0.02em;
+}
+
+.glide-select-tag--item {
+  margin-left: auto;
+}
