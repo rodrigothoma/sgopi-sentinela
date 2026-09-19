@@ -23,9 +23,12 @@ from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     RegistrarOcorrenciaInput,
     TipificacaoInputDTO,
 )
+from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from domain.usuario.entity import Papel
 from infrastructure.config.settings import settings
-from infrastructure.di import get_anexar_evidencia, get_registrar_ocorrencia
+from infrastructure.database.connection import get_session
+from infrastructure.di import get_anexar_evidencia, get_registrar_ocorrencia, get_repositorio_usuario
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/v1/ocorrencias", tags=["ocorrencias"])
 
@@ -69,7 +72,86 @@ class EvidenciaSchema(BaseModel):
     enviada_em: str
 
 
+class RegistrarOcorrenciaPublicaRequest(BaseModel):
+    nome_solicitante: str = Field(max_length=255)
+    natureza: str = Field(max_length=255)
+    descricao: str
+    localizacao: str = Field(max_length=500)
+    latitude: float
+    longitude: float
+    data_hora_fato: datetime
+    documento: str | None = Field(default=None, max_length=50)
+
+
+class ConsultaPublicaResponse(BaseModel):
+    numero_protocolo: str
+    status: str
+    natureza: str
+    localizacao: str
+    criada_em: str
+    desfecho: str | None = None
+
+
 # -------------------------------------------------------------------- rotas
+@router.post("/publico", response_model=OcorrenciaResponse, status_code=201)
+async def registrar_ocorrencia_publica(
+    body: RegistrarOcorrenciaPublicaRequest,
+    use_case: InterfaceRegistrarOcorrenciaPolicial = Depends(get_registrar_ocorrencia),
+    usuario_repo: RepositorioUsuario = Depends(get_repositorio_usuario),
+) -> OcorrenciaResponse:
+    """Permite ao cidadão registrar uma ocorrência pública sem autenticação prévia."""
+    agente = await usuario_repo.buscar_por_login("agente")
+    if not agente:
+        from uuid import uuid4
+        ator = Ator(id=uuid4(), login="cidadao_web", papel=Papel.AGENTE)
+    else:
+        ator = Ator(id=agente.id, login="cidadao_web", papel=Papel.AGENTE)
+
+    descricao_completa = f"[REGISTRO CIDADÃO VIA WEB]\nComunicante: {body.nome_solicitante.strip()}\n\n{body.descricao.strip()}"
+    input_dto = RegistrarOcorrenciaInput(
+        natureza=body.natureza,
+        descricao=descricao_completa,
+        localizacao=body.localizacao,
+        latitude=body.latitude,
+        longitude=body.longitude,
+        data_hora_fato=body.data_hora_fato,
+        tipificacoes=(),
+        envolvidos=(EnvolvidoInputDTO(nome=body.nome_solicitante, tipo="VITIMA", documento=body.documento),),
+    )
+    out = await use_case.executar(ator, input_dto)
+    return OcorrenciaResponse(
+        ocorrencia_id=str(out.ocorrencia_id),
+        numero_protocolo=out.numero_protocolo,
+        status=out.status,
+        criada_em=out.criada_em,
+    )
+
+
+@router.get("/publico/{protocolo}", response_model=ConsultaPublicaResponse)
+async def consultar_ocorrencia_publica(
+    protocolo: str,
+    session: AsyncSession = Depends(get_session),
+) -> ConsultaPublicaResponse:
+    """Permite ao cidadão consultar o status simplificado de sua ocorrência por protocolo."""
+    from fastapi import HTTPException
+    from infrastructure.database.models import OcorrenciaModel
+    from sqlalchemy import select
+
+    stmt = select(OcorrenciaModel).where(OcorrenciaModel.numero_protocolo == protocolo.strip())
+    model = (await session.execute(stmt)).scalar_one_or_none()
+    if not model:
+        raise HTTPException(status_code=404, detail="Ocorrência não encontrada com o protocolo informado.")
+
+    return ConsultaPublicaResponse(
+        numero_protocolo=model.numero_protocolo,
+        status=model.status,
+        natureza=model.natureza,
+        localizacao=model.localizacao,
+        criada_em=model.criada_em.isoformat() if hasattr(model.criada_em, "isoformat") else str(model.criada_em),
+        desfecho=model.desfecho,
+    )
+
+
 @router.post("", response_model=OcorrenciaResponse, status_code=201)
 @router.post("/", response_model=OcorrenciaResponse, status_code=201, include_in_schema=False)
 async def registrar_ocorrencia(
