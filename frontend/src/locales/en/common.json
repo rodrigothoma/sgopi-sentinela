@@ -1,0 +1,11 @@
+{
+  "app": { "title": "SGOPI Sentinela" },
+  "idioma": "Language",
+  "nav": { "registrar": "Register occurrence", "minhas": "My occurrences", "fila": "Review queue", "painel": "Tactical panel", "frota": "Fleet" },
+  "actions": { "save": "Save", "cancel": "Cancel", "loading": "Loading...", "submit": "Register occurrence", "remover": "Remove", "sair": "Sign out", "atualizar": "Refresh" },
+  "papel": { "AGENTE": "Agent", "DELEGADO": "Chief", "OPERADOR_CENTRAL": "Dispatch Operator", "SUPERVISOR": "Supervisor", "PERITO": "Forensic expert", "ESCRIVAO": "Clerk" },
+  "status": { "AGUARDANDO_REVISAO": "Awaiting review", "EM_CORRECAO": "Needs correction", "REJEITADA": "Rejected", "VALIDADA": "Validated", "EM_ATENDIMENTO": "In progress", "ENCERRADA": "Closed" },
+  "situacao": { "DISPONIVEL": "Available", "EM_DESLOCAMENTO": "En route", "OPERANDO": "On scene", "INDISPONIVEL": "Unavailable" },
+  "errors": { "unexpected": "Unexpected error", "unavailable": "Server unavailable" },
+  "sinal": { "OK": "GPS OK", "SEM_SINAL": "No signal", "SEM_POSICAO": "No position" }
+}
