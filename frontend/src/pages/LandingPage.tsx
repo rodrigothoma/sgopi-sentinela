@@ -64,7 +64,7 @@ export const LandingPage: React.FC = () => {
             width: '100%',
             height: '100%',
             zIndex: 0,
-            opacity: isDark ? 0.38 : 0.38,
+            opacity: isDark ? 0.52 : 0.38,
             pointerEvents: 'none',
             maskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
@@ -72,9 +72,9 @@ export const LandingPage: React.FC = () => {
           aria-hidden="true"
         >
           <WebThreads
-            color1={isDark ? '#52525b' : '#0515d3'}
-            color2={isDark ? '#94a3b8' : '#0b4aaf'}
-            color3={isDark ? '#e2e8f0' : '#70a5ff'}
+            color1={isDark ? '#cbd5e1' : '#0515d3'}
+            color2={isDark ? '#e2e8f0' : '#0b4aaf'}
+            color3={isDark ? '#ffffff' : '#70a5ff'}
             speed={0.18}
             threadCount={6}
             frequency={4.2}
@@ -82,11 +82,11 @@ export const LandingPage: React.FC = () => {
             taper={0.9}
             position={0.48}
             fanMode="center"
-            glow={isDark ? 0.012 : 0.015}
+            glow={isDark ? 0.024 : 0.015}
             falloff={0.52}
-            thickness={isDark ? 1.4 : 1.4}
-            brightness={isDark ? 0.45 : 0.42}
-            opacity={0.65}
+            thickness={isDark ? 1.7 : 1.4}
+            brightness={isDark ? 0.72 : 0.42}
+            opacity={isDark ? 0.85 : 0.65}
             mirror={true}
             shimmer={true}
             grain={true}
