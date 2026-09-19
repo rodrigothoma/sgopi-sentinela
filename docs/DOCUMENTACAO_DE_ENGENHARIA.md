@@ -219,8 +219,8 @@ O padrão adotado é a **Arquitetura Hexagonal (*Ports & Adapters*)**. Essa esco
                                                  ▼
                     ┌─────────────────────────────────────────────────────────┐
                     │                  ADAPTADORES DE SAÍDA                   │
-                    │     (JPA / Hibernate / PostgreSQL, ServicoMapasOSM,     │
-                    │          SimuladorGPS, AssinaturaDigitalPDF)            │
+                    │   (PostgreSQL / SQLAlchemy, ServicoMapasOSM, Relógio,   │
+                    │          ArmazenamentoDisco, ProvedorToken)             │
                     └─────────────────────────────────────────────────────────┘
 ```
 
@@ -232,11 +232,11 @@ Para garantir a viabilidade técnica do MVP e o alinhamento com a Arquitetura He
   
 * **Gestão de Dependências e Execução:** Utilização do **uv**. O uv será responsável por padronizar a instalação das bibliotecas e a configuração do ambiente de desenvolvimento entre os membros da equipe.
 
-* **Persistência de Dados:** **Firebase Cloud Firestore** como banco de dados NoSQL em nuvem, utilizando o **Firebase Admin SDK** para comunicação entre o backend em FastAPI e o banco de dados.
+* **Persistência de Dados:** **PostgreSQL 16** como banco de dados relacional, utilizando **SQLAlchemy 2.0 (async)** para mapeamento objeto-relacional e **Alembic** para versionamento de migrações de esquema.
   
 * **Interface Gráfica (Frontend):** Desenvolvida em **JavaScript/TypeScript**.
   * *Painel Tático:* Renderização e interação com o mapa utilizando a biblioteca **Leaflet**, conectada aos *tiles* do **OpenStreetMap**.
-  * *Comunicação:* Comunicação bidirecional e reativa utilizando **WebSockets (STOMP/SockJS)**, permitindo a atualização das viaturas no mapa em tempo real.
+  * *Comunicação:* Comunicação bidirecional e reativa utilizando **WebSockets nativos do FastAPI**, permitindo a atualização das viaturas no mapa em tempo real.
 
 ## 5. Projeto do Software
 
@@ -294,9 +294,55 @@ Apresenta a distribuição física e lógica dos nós de processamento, servidor
 
 ### 5.6 Mapeamento Objeto-Relacional (Esquema do Banco de Dados)
 
-Esquema físico e relacional das tabelas, chaves primárias, estrangeiras e relacionamentos no banco de dados relacional (PostgreSQL):
+O diagrama abaixo representa a **modelagem conceitual relacional** elaborada originalmente na disciplina de Análise e Projeto de Software (APS), contemplando a visão corporativa alvo de ~28 tabelas para o ciclo completo do ecossistema policial (incluindo tabelas especializadas por subtipo, inquéritos, laudos periciais e comunicações interagências):
 
-![Mapeamento Relacional](diagramas/mapeamento-relacional.png)
+![Mapeamento Relacional Conceitual](diagramas/mapeamento-relacional.png)
+
+#### 5.6.1 Esquema Físico do MVP Implementado no PostgreSQL (11 Tabelas)
+
+Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQLAlchemy 2.0 (async)** e **Alembic** (`backend/src/infrastructure/database/models.py`), o esquema físico de dados foi consolidado em **11 tabelas relacionais**:
+
+1. **`usuarios`**: Armazena as credenciais e o controle de acesso dos operadores policiais.
+   - *Colunas:* `id` (UUID PK), `nome` (String 150), `login` (String 50 Unique), `senha_hash` (String 255), `papel` (Enum `AGENTE`, `DELEGADO`, `OPERADOR_CENTRAL`), `ativo` (Boolean), `criado_em` (Timestamp), `atualizado_em` (Timestamp).
+   - *Estratégia:* Mapeamento de generalização via *Single Table Inheritance* com coluna discriminadora (`papel`), preservando integridade referencial estável nas chaves estrangeiras.
+
+2. **`ocorrencias`**: Entidade central de registro de fatos delituosos.
+   - *Colunas:* `id` (UUID PK), `numero_protocolo` (String 50 Unique), `relato` (Text), `natureza` (String 100), `data_hora_fato` (Timestamp), `latitude` (Float), `longitude` (Float), `endereco` (String 255), `status` (String 30), `hash_narrativa` (String 64), `agente_policial_id` (UUID FK nullable), `validada_por_id` (UUID FK nullable), `versao` (Integer), `ativo` (Boolean), `criada_em` (Timestamp), `atualizada_em` (Timestamp).
+   - *Integridade:* `numero_protocolo` gerado no padrão oficial `SGOPI-AAAA-NNNNNN`. A coluna `versao` implementa bloqueio otimista (*optimistic locking*) para controle de concorrência.
+
+3. **`envolvidos`**: Qualificação das partes envolvidas em uma ocorrência (vítimas, testemunhas, suspeitos).
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `tipo` (Enum `VITIMA`, `TESTEMUNHA`, `SUSPEITO`), `nome` (String 150), `documento` (String 30), `ativo` (Boolean), `criado_em` (Timestamp).
+
+4. **`tipificacoes_penais`**: Artigos da legislação penal associados à ocorrência.
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `artigo` (String 50), `descricao` (String 255), `ativo` (Boolean), `criada_em` (Timestamp).
+
+5. **`historico_status_ocorrencia`**: Tabela *append-only* de rastreabilidade temporal das ocorrências.
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `status_anterior` (String 30), `novo_status` (String 30), `justificativa` (Text), `usuario_id` (UUID FK `usuarios.id`), `data_hora` (Timestamp).
+   - *Regra:* Não permite `UPDATE` ou `DELETE`, garantindo imutabilidade histórica das decisões tomadas.
+
+6. **`evidencias_digitais`**: Metadados e integridade criptográfica dos arquivos anexados.
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `nome_original` (String 255), `formato` (String 50), `tamanho` (Integer), `hash_sha256` (String 64), `chave_armazenamento` (String 255), `ativo` (Boolean), `data_upload` (Timestamp).
+
+7. **`registros_auditoria`**: Trilha de conformidade e auditoria de ações sensíveis (RNF03).
+   - *Colunas:* `id` (UUID PK), `quem` (String 100), `quando` (Timestamp), `operacao` (String 50), `entidade` (String 50), `entidade_id` (String 50), `dados_antes` (JSONB/Text), `dados_depois` (JSONB/Text), `ip` (String 45).
+
+8. **`sequencias_protocolo`**: Tabela de controle de concorrência e atomicidade na geração sequencial de protocolos anuais.
+   - *Colunas:* `ano` (Integer PK), `ultimo_numero` (Integer).
+
+9. **`viaturas`**: Frota tática monitorada pela central de despacho.
+   - *Colunas:* `id` (UUID PK), `prefixo` (String 20 Unique), `placa` (String 10 Unique), `situacao` (String 30), `ultima_latitude` (Float), `ultima_longitude` (Float), `ultima_atualizacao` (Timestamp), `ativo` (Boolean), `criada_em` (Timestamp), `atualizada_em` (Timestamp).
+
+10. **`ordens_despacho`**: Formalização de despacho tático de viaturas para atendimento.
+    - *Colunas:* `id` (UUID PK), `numero` (String 50 Unique), `ocorrencia_id` (UUID FK `ocorrencias.id`), `viatura_id` (UUID FK `viaturas.id`), `operador_id` (UUID FK `usuarios.id`), `emitida_em` (Timestamp), `status` (String 30), `observacoes` (Text), `versao` (Integer), `ativo` (Boolean).
+    - *Formato:* `numero` padronizado como `OD-AAAA-NNNNNN`.
+
+11. **`sequencias_ordem_despacho`**: Gerador sequencial controlado para emissão atômica de números de ordem de despacho por ano.
+    - *Colunas:* `ano` (Integer PK), `ultimo_numero` (Integer).
+
+#### 5.6.2 Princípios de Engenharia do Modelo Físico
+- **Identificadores UUIDv4:** Chaves primárias universais e opacas geradas na camada de aplicação/domínio, prevenindo ataques de enumeração na API e garantindo que entidades nasçam identificadas em testes unitários sem dependência prévia de persistência.
+- **Governança e Imutabilidade (RNF03):** Eliminação de exclusões físicas (`DELETE`) na camada de dados operacionais, com adoção de desativação lógica (`ativo = false`) e tabelas estritamente *append-only* para auditoria e histórico de decisões.
+- **Rastreabilidade de Ator:** Vínculos relacionais preservados entre operadores (`usuarios`), ocorrências (`agente_policial_id`, `validada_por_id`) e despachos (`operador_id`).
 
 ---
 
