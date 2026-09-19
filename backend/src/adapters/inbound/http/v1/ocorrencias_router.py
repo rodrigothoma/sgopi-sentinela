@@ -6,8 +6,10 @@ da sua existência. Toda rota exige token; o ator vem do JWT, nunca do body.
 """
 from datetime import datetime
 from uuid import UUID
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from adapters.inbound.http.deps import exigir_papel
@@ -16,6 +18,11 @@ from application.ports.inbound.interface_anexar_evidencia import (
     AnexarEvidenciaInput,
     EvidenciaOutput,
     InterfaceAnexarEvidencia,
+)
+from application.ports.inbound.interface_acessar_evidencia import (
+    EstadoIntegridadeEvidencia,
+    InterfaceObterEvidenciaParaDownload,
+    InterfaceVerificarIntegridadeEvidencia,
 )
 from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     EnvolvidoInputDTO,
@@ -27,7 +34,13 @@ from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from domain.usuario.entity import Papel
 from infrastructure.config.settings import settings
 from infrastructure.database.connection import get_session
-from infrastructure.di import get_anexar_evidencia, get_registrar_ocorrencia, get_repositorio_usuario
+from infrastructure.di import (
+    get_anexar_evidencia,
+    get_obter_evidencia_para_download,
+    get_registrar_ocorrencia,
+    get_repositorio_usuario,
+    get_verificar_integridade_evidencia,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/v1/ocorrencias", tags=["ocorrencias"])
@@ -70,6 +83,11 @@ class EvidenciaSchema(BaseModel):
     tamanho: int
     hash_sha256: str
     enviada_em: str
+
+
+class IntegridadeEvidenciaSchema(BaseModel):
+    evidencia_id: UUID
+    estado: EstadoIntegridadeEvidencia
 
 
 class RegistrarOcorrenciaPublicaRequest(BaseModel):
@@ -200,6 +218,49 @@ async def anexar_evidencia(
     return EvidenciaSchema(**out.__dict__)
 
 
+PAPEIS_CONSULTA = (Papel.AGENTE, Papel.DELEGADO, Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
+MIME_EVIDENCIA = {
+    "pdf": "application/pdf",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+}
+
+
+@router.get(
+    "/{ocorrencia_id}/evidencias/{evidencia_id}/integridade",
+    response_model=IntegridadeEvidenciaSchema,
+)
+async def verificar_integridade_evidencia(
+    ocorrencia_id: UUID,
+    evidencia_id: UUID,
+    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    use_case: InterfaceVerificarIntegridadeEvidencia = Depends(get_verificar_integridade_evidencia),
+) -> IntegridadeEvidenciaSchema:
+    out = await use_case.executar(ator, ocorrencia_id, evidencia_id)
+    return IntegridadeEvidenciaSchema(**out.__dict__)
+
+
+@router.get("/{ocorrencia_id}/evidencias/{evidencia_id}/download")
+async def download_evidencia(
+    ocorrencia_id: UUID,
+    evidencia_id: UUID,
+    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    use_case: InterfaceObterEvidenciaParaDownload = Depends(get_obter_evidencia_para_download),
+) -> Response:
+    out = await use_case.executar(ator, ocorrencia_id, evidencia_id)
+    nome_codificado = quote(out.nome_original, safe="")
+    return Response(
+        content=out.conteudo,
+        media_type=MIME_EVIDENCIA[out.formato],
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{nome_codificado}",
+            "Content-Length": str(len(out.conteudo)),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 # ------------------------------------------------ consulta (RF13) e revisão (RF04*, RF14)
 from fastapi import Query  # noqa: E402
 
@@ -228,9 +289,6 @@ from infrastructure.di import (  # noqa: E402
     get_rejeitar_ocorrencia,
     get_validar_ocorrencia,
 )
-
-PAPEIS_CONSULTA = (Papel.AGENTE, Papel.DELEGADO, Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
-
 
 class OcorrenciaResumoSchema(BaseModel):
     ocorrencia_id: UUID
