@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { NavbarPublica } from '../components/layout/NavbarPublica';
 import { SplitFlapText } from '../components/common/SplitFlapText';
 import { LogoSgopi } from '../components/common/LogoSgopi';
+import { WebThreads } from '../components/common/WebThreads';
+import { Button } from '../components/common/Button';
 
 /* Ícones SVG simples para os cards — sem emojis */
 const IconDocument: React.FC = () => (
@@ -40,32 +42,74 @@ export const LandingPage: React.FC = () => {
       <NavbarPublica />
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <main className="landing-hero">
-        <p className="hero-label">SISTEMA OFICIAL — UNIPAMPA / ALEGRETE</p>
-
-        <div className="hero-flap-wrapper">
-          <SplitFlapText
-            words={['SENTINELA ONLINE', 'PORTAL CIDADAO', 'PRONTIDAO TOTAL', 'SISTEMA INTEGRADO']}
-            padTo={16}
-            fontSize={52}
-            flipsPerChar={6}
-            cycleDelay={2800}
-            charset="alpha"
+      <main className="landing-hero" style={{ position: 'relative', overflow: 'hidden' }}>
+        {/* Fundo dinâmico WebThreads */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 0,
+            opacity: 0.75,
+            pointerEvents: 'none',
+            maskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
+          }}
+          aria-hidden="true"
+        >
+          <WebThreads
+            color1="#0515d3"
+            color2="#0b4aaf"
+            color3="#FFFFFF"
+            speed={0.2}
+            threadCount={6}
+            frequency={5.0}
+            spread={0.18}
+            taper={1.0}
+            position={0.5}
+            fanMode="center"
+            glow={0.02}
+            falloff={0.6}
+            thickness={1.1}
+            brightness={0.6}
+            opacity={1.0}
+            mirror={true}
+            shimmer={false}
+            grain={true}
+            grainIntensity={0.05}
+            mouseInteraction={true}
+            mouseStrength={0.3}
           />
         </div>
 
-        <p className="hero-subtitle">
-          Canal oficial e unificado para registro de ocorrências pelo cidadão,
-          triagem técnica pela autoridade policial e monitoramento de viaturas em tempo real.
-        </p>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+          <p className="hero-label">SISTEMA OFICIAL — UNIPAMPA / ALEGRETE</p>
 
-        <div className="hero-actions">
-          <Link to="/registrar-cidadao" className="btn btn-primary">
-            Registrar Ocorrência
-          </Link>
-          <Link to="/consulta" className="btn btn-secondary">
-            Consultar Protocolo
-          </Link>
+          <div className="hero-flap-wrapper">
+            <SplitFlapText
+              words={['SENTINELA ONLINE', 'PORTAL CIDADAO', 'PRONTIDAO TOTAL', 'SISTEMA INTEGRADO']}
+              padTo={16}
+              fontSize={52}
+              flipsPerChar={6}
+              cycleDelay={2800}
+              charset="alpha"
+            />
+          </div>
+
+          <p className="hero-subtitle">
+            Canal oficial e unificado para registro de ocorrências pelo cidadão,
+            triagem técnica pela autoridade policial e monitoramento de viaturas em tempo real.
+          </p>
+
+          <div className="hero-actions">
+            <Button to="/registrar-cidadao" variant="primary" size="lg">
+              Registrar Ocorrência
+            </Button>
+            <Button to="/consulta" variant="secondary" size="lg">
+              Consultar Protocolo
+            </Button>
+          </div>
         </div>
       </main>
 
@@ -233,7 +277,7 @@ export const LandingPage: React.FC = () => {
               style={{ fontFamily: 'monospace', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}
               aria-label="Número do protocolo"
             />
-            <button type="submit" className="btn btn-primary">Consultar</button>
+            <Button type="submit" variant="primary">Consultar</Button>
           </form>
           <p className="muted small" style={{ marginTop: 12 }}>
             Exemplo de protocolo: SGOPI-2026-000137

@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { NavbarPublica } from '../components/layout/NavbarPublica';
 import { SeletorCoordenada } from '../components/painel/SeletorCoordenada';
 import { CENTRO_PADRAO } from '../components/painel/leaflet';
 import { paraInputLocal } from '../components/ocorrencias/OcorrenciaForm';
 import { mensagemDeErro, registrarOcorrenciaPublica } from '../services/api';
+import { Button } from '../components/common/Button';
 
 const NATUREZAS_COMUNS = [
   'Furto',
@@ -18,7 +17,6 @@ const NATUREZAS_COMUNS = [
 ];
 
 export const RegistroCidadaoPage: React.FC = () => {
-  const { t } = useTranslation('common');
   const [nome, setNome] = useState('');
   const [documento, setDocumento] = useState('');
   const [natureza, setNatureza] = useState(NATUREZAS_COMUNS[0]);
@@ -94,7 +92,23 @@ export const RegistroCidadaoPage: React.FC = () => {
       <main className="pagina" style={{ maxWidth: 860, padding: '40px 20px' }}>
         {protocoloGerado ? (
           <div className="card" style={{ textAlign: 'center', padding: '40px 24px' }}>
-            <div style={{ fontSize: '3rem', marginBottom: 16 }}>✅</div>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                background: 'rgba(16, 185, 129, 0.15)',
+                color: 'var(--ok)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16,
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
             <h2>Ocorrência Registrada com Sucesso!</h2>
             <p className="muted">
               Sua ocorrência foi enviada para a central do SGOPI Sentinela e já se encontra na fila de
@@ -104,27 +118,28 @@ export const RegistroCidadaoPage: React.FC = () => {
             <div className="protocolo-banner">
               <span className="small muted">NÚMERO DO SEU PROTOCOLO:</span>
               <span className="protocolo-codigo">{protocoloGerado}</span>
-              <button
+              <Button
                 type="button"
-                className="btn btn-secondary"
+                variant="outline"
+                size="sm"
                 onClick={copiarProtocolo}
                 style={{ marginTop: 8 }}
               >
-                {copiado ? '✓ Protocolo Copiado!' : '📋 Copiar Protocolo'}
-              </button>
+                {copiado ? 'Protocolo Copiado!' : 'Copiar Protocolo'}
+              </Button>
             </div>
 
             <p className="muted small">
               Guarde este número para acompanhar o andamento ou apresentar quando solicitado.
             </p>
 
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24 }}>
-              <Link to={`/consulta?protocolo=${protocoloGerado}`} className="btn btn-primary">
-                🔍 Acompanhar Status Agora
-              </Link>
-              <button
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24, flexWrap: 'wrap' }}>
+              <Button to={`/consulta?protocolo=${protocoloGerado}`} variant="primary">
+                Acompanhar Status
+              </Button>
+              <Button
                 type="button"
-                className="btn btn-ghost"
+                variant="ghost"
                 onClick={() => {
                   setProtocoloGerado(null);
                   setNome('');
@@ -133,7 +148,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                 }}
               >
                 Novo Registro
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
@@ -254,16 +269,17 @@ export const RegistroCidadaoPage: React.FC = () => {
             </fieldset>
 
             <div style={{ display: 'flex', gap: 14, justifyContent: 'flex-end', marginTop: 28 }}>
-              <Link to="/" className="btn btn-ghost">
+              <Button to="/" variant="ghost">
                 Cancelar
-              </Link>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="btn btn-primary"
-                disabled={ocupado || !nome.trim() || descricao.trim().length < 20}
+                variant="primary"
+                loading={ocupado}
+                disabled={!nome.trim() || descricao.trim().length < 20}
               >
-                {ocupado ? t('actions.loading') : '🛡️ Confirmar e Registrar Ocorrência'}
-              </button>
+                Confirmar e Registrar Ocorrência
+              </Button>
             </div>
           </form>
         )}

@@ -6,6 +6,14 @@ import { mensagemDeErro } from '../services/api';
 import { rotaInicial } from '../components/RequireRole';
 import { LogoSgopi } from '../components/common/LogoSgopi';
 import { ThemeToggle } from '../components/common/ThemeToggle';
+import { GlideSelect, GlideSelectOption } from '../components/common/GlideSelect';
+import { Button } from '../components/common/Button';
+import { trocarIdiomaGlobal } from '../i18n';
+
+const OPCOES_IDIOMA: GlideSelectOption[] = [
+  { value: 'pt', label: 'PT', tag: 'Português' },
+  { value: 'en', label: 'EN', tag: 'English' },
+];
 
 export const LoginPage: React.FC = () => {
   const { t, i18n } = useTranslation(['auth', 'common']);
@@ -37,14 +45,7 @@ export const LoginPage: React.FC = () => {
     setErro(null);
   };
 
-  const trocarIdioma = (lng: string) => {
-    i18n.changeLanguage(lng);
-    try {
-      localStorage.setItem('sgopi.idioma', lng);
-    } catch {
-      /* sem persistencia */
-    }
-  };
+  const idiomaAtual = i18n.language ? i18n.language.slice(0, 2) : 'pt';
 
   return (
     <div className="login-wrap">
@@ -53,15 +54,15 @@ export const LoginPage: React.FC = () => {
       </Link>
 
       <div className="login-header-controls">
-        <select
-          aria-label={t('common:idioma')}
-          value={i18n.language.slice(0, 2)}
-          onChange={(e) => trocarIdioma(e.target.value)}
-          style={{ width: 'auto', padding: '4px 8px', fontSize: '0.85rem' }}
-        >
-          <option value="pt">PT</option>
-          <option value="en">EN</option>
-        </select>
+        <GlideSelect
+          options={OPCOES_IDIOMA}
+          value={idiomaAtual}
+          onChange={(val) => trocarIdiomaGlobal(val)}
+          size="sm"
+          menuWidth={140}
+          showTags
+          ariaLabel={t('common:idioma')}
+        />
 
         <ThemeToggle />
       </div>
@@ -100,9 +101,17 @@ export const LoginPage: React.FC = () => {
           />
         </label>
 
-        <button className="btn btn-primary" disabled={ocupado || !login || !senha}>
+        <Button
+          type="submit"
+          variant="primary"
+          size="md"
+          fullWidth
+          loading={ocupado}
+          disabled={!login || !senha}
+          style={{ marginTop: 20 }}
+        >
           {ocupado ? t('common:actions.loading') : 'Entrar no Sistema'}
-        </button>
+        </Button>
 
         <div className="demo-presets">
           <div className="demo-presets-title">Atalhos de Demonstração (Seed)</div>
@@ -137,3 +146,5 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
+
+export default LoginPage;

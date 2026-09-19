@@ -4,21 +4,21 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 import { LogoSgopi } from '../common/LogoSgopi';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { GlideSelect, GlideSelectOption } from '../common/GlideSelect';
+import { Button } from '../common/Button';
+import { trocarIdiomaGlobal } from '../../i18n';
+
+const OPCOES_IDIOMA: GlideSelectOption[] = [
+  { value: 'pt', label: 'PT', tag: 'Português' },
+  { value: 'en', label: 'EN', tag: 'English' },
+];
 
 export const AppShell: React.FC = () => {
   const { t, i18n } = useTranslation('common');
   const { usuario, sair, tem } = useAuth();
   const navigate = useNavigate();
 
-
-  const trocarIdioma = (lng: string) => {
-    i18n.changeLanguage(lng);
-    try {
-      localStorage.setItem('sgopi.idioma', lng);
-    } catch {
-      /* sem persistência */
-    }
-  };
+  const idiomaAtual = i18n.language ? i18n.language.slice(0, 2) : 'pt';
 
   return (
     <div className="shell">
@@ -35,25 +35,31 @@ export const AppShell: React.FC = () => {
           {tem('OPERADOR_CENTRAL', 'SUPERVISOR') && <NavLink to="/frota">{t('nav.frota')}</NavLink>}
         </nav>
         <div className="userbox">
-          <select aria-label={t('idioma')} value={i18n.language.slice(0, 2)} onChange={(e) => trocarIdioma(e.target.value)}>
-            <option value="pt">🇧🇷 PT</option>
-            <option value="en">🇺🇸 EN</option>
-          </select>
+          <GlideSelect
+            options={OPCOES_IDIOMA}
+            value={idiomaAtual}
+            onChange={(val) => trocarIdiomaGlobal(val)}
+            size="sm"
+            menuWidth={140}
+            showTags
+            ariaLabel={t('idioma')}
+          />
           <ThemeToggle />
           {usuario && (
             <span className="user">
               <strong>{usuario.nome}</strong> · <span className="pill">{t(`papel.${usuario.papel}`)}</span>
             </span>
           )}
-          <button
-            className="btn btn-ghost"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               sair();
               navigate('/login');
             }}
           >
             {t('actions.sair')}
-          </button>
+          </Button>
         </div>
       </header>
       <main className="content">
@@ -62,3 +68,5 @@ export const AppShell: React.FC = () => {
     </div>
   );
 };
+
+export default AppShell;
