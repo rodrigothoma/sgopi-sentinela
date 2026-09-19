@@ -2,14 +2,14 @@ import React from 'react';
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
-import { useTheme } from '../../hooks/useTheme';
 import { LogoSgopi } from '../common/LogoSgopi';
+import { ThemeToggle } from '../common/ThemeToggle';
 
 export const AppShell: React.FC = () => {
   const { t, i18n } = useTranslation('common');
   const { usuario, sair, tem } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+
 
   const trocarIdioma = (lng: string) => {
     i18n.changeLanguage(lng);
@@ -39,15 +39,7 @@ export const AppShell: React.FC = () => {
             <option value="pt">🇧🇷 PT</option>
             <option value="en">🇺🇸 EN</option>
           </select>
-          <button
-            type="button"
-            className="btn-icon"
-            onClick={toggleTheme}
-            title={`Alternar para tema ${theme === 'dark' ? 'claro' : 'escuro'}`}
-            aria-label="Alternar tema"
-          >
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
+          <ThemeToggle />
           {usuario && (
             <span className="user">
               <strong>{usuario.nome}</strong> · <span className="pill">{t(`papel.${usuario.papel}`)}</span>

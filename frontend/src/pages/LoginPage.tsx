@@ -5,12 +5,11 @@ import { useAuth } from '../hooks/useAuth';
 import { mensagemDeErro } from '../services/api';
 import { rotaInicial } from '../components/RequireRole';
 import { LogoSgopi } from '../components/common/LogoSgopi';
-import { useTheme } from '../hooks/useTheme';
+import { ThemeToggle } from '../components/common/ThemeToggle';
 
 export const LoginPage: React.FC = () => {
   const { t, i18n } = useTranslation(['auth', 'common']);
   const { entrar } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const [login, setLogin] = useState('');
@@ -64,15 +63,7 @@ export const LoginPage: React.FC = () => {
           <option value="en">EN</option>
         </select>
 
-        <button
-          type="button"
-          className="btn-icon"
-          onClick={toggleTheme}
-          title={`Alternar para tema ${theme === 'dark' ? 'claro' : 'escuro'}`}
-          aria-label="Alternar tema"
-        >
-          {theme === 'dark' ? '☀️' : '🌙'}
-        </button>
+        <ThemeToggle />
       </div>
 
       <form className="card login" onSubmit={submit}>
@@ -121,7 +112,7 @@ export const LoginPage: React.FC = () => {
               className="btn-preset"
               onClick={() => preencherDemo('agente')}
             >
-              <span>👮 Agente</span>
+              <span>Agente</span>
               <span className="small muted">agente</span>
             </button>
             <button
@@ -129,7 +120,7 @@ export const LoginPage: React.FC = () => {
               className="btn-preset"
               onClick={() => preencherDemo('delegado')}
             >
-              <span>⚖️ Delegada</span>
+              <span>Delegada</span>
               <span className="small muted">delegado</span>
             </button>
             <button
@@ -137,7 +128,7 @@ export const LoginPage: React.FC = () => {
               className="btn-preset"
               onClick={() => preencherDemo('operador')}
             >
-              <span>🛰️ Operador</span>
+              <span>Operador</span>
               <span className="small muted">operador</span>
             </button>
           </div>

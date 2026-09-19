@@ -1,0 +1,110 @@
+/* ─── ThemeToggle — pílula deslizante estilo toggle ─────────────────────── */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  /* foco acessível */
+  border-radius: 999px;
+  outline-offset: 3px;
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--primary, #4a7aff);
+}
+
+/* Trilho */
+.theme-toggle__track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 52px;
+  height: 28px;
+  border-radius: 999px;
+  /* borda fina visível */
+  border: 1.5px solid var(--line, #3a3a3a);
+  background-color: var(--card, #2b2b2b);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+  overflow: hidden;
+}
+
+/* Tema claro: trilho mais claro */
+.theme-toggle--light .theme-toggle__track {
+  background-color: #d8e0f0;
+  border-color: #b0bcd8;
+}
+
+/* Ícones fixos dentro do trilho (ficam nas extremidades) */
+.theme-toggle__track-icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.theme-toggle__track-icon--sun {
+  left: 4px;
+  color: #f59e0b;
+}
+
+.theme-toggle__track-icon--moon {
+  right: 4px;
+  color: #94a3b8;
+}
+
+/* No tema escuro, o sol fica apagado; a lua fica visível */
+.theme-toggle--dark  .theme-toggle__track-icon--sun  { opacity: 0.3; }
+.theme-toggle--dark  .theme-toggle__track-icon--moon { opacity: 1;   }
+
+/* No tema claro, a lua fica apagada; o sol fica visível */
+.theme-toggle--light .theme-toggle__track-icon--sun  { opacity: 1;   }
+.theme-toggle--light .theme-toggle__track-icon--moon { opacity: 0.3; }
+
+/* Polegar (círculo deslizante) */
+.theme-toggle__thumb {
+  position: absolute;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* sombra sutil no polegar */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s ease;
+  pointer-events: none;
+  color: #1a1a1a;
+}
+
+/* Tema escuro: polegar à direita */
+.theme-toggle--dark .theme-toggle__thumb {
+  left: calc(100% - 23px);
+  background-color: #2b2b2b;
+  color: #94a3b8;
+}
+
+/* Tema claro: polegar à esquerda */
+.theme-toggle--light .theme-toggle__thumb {
+  left: 3px;
+  background-color: #ffffff;
+  color: #f59e0b;
+}
+
+/* Label opcional */
+.theme-toggle__label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--muted, #9a9a9a);
+  white-space: nowrap;
+  user-select: none;
+}
