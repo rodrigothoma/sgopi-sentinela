@@ -2,7 +2,7 @@
 Fixtures de integração: SQLite em memória (aiosqlite) com o esquema dos models.
 
 Docker/Postgres não é exigido para a suíte; o esquema Postgres é validado por
-``alembic check`` (ver docs/implementacao/ETAPA-02).
+``alembic check``.
 """
 from __future__ import annotations
 
