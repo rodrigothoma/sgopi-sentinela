@@ -44,13 +44,16 @@ export function mensagemDeErro(error: unknown, fallback?: string): string {
 
 export interface RegistrarOcorrenciaPublicaPayload {
   nome_solicitante: string;
+  documento: string;
+  email: string;
+  telefone: string;
+  declaracao_maioridade: boolean;
   natureza: string;
   descricao: string;
   localizacao: string;
   latitude: number;
   longitude: number;
   data_hora_fato: string;
-  documento?: string;
 }
 
 export interface OcorrenciaPublicaResponse {

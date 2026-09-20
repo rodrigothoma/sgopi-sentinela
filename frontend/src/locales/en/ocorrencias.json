@@ -9,7 +9,7 @@
     "envolvidos_label": "Involved persons", "add_envolvido": "Add person",
     "tipificacoes_label": "Criminal classification", "add_tipificacao": "Add classification"
   },
-  "envolvido": { "nome_label": "Name", "tipo_label": "Type", "documento_label": "Document (CPF/ID)", "VITIMA": "Victim", "TESTEMUNHA": "Witness", "SUSPEITO": "Suspect" },
+  "envolvido": { "nome_label": "Name", "tipo_label": "Type", "documento_label": "Document (CPF/ID)", "VITIMA": "Victim", "TESTEMUNHA": "Witness", "SUSPEITO": "Suspect", "COMUNICANTE": "Reporting Citizen" },
   "tipificacao": { "artigo_label": "Article", "artigo_placeholder": "E.g. Art. 155 CP", "descricao_label": "Description", "descricao_placeholder": "Description of the offense" },
   "evidencias": {
     "titulo": "Digital evidence", "selecionar": "Select files", "ajuda": "PDF, JPG, JPEG or PNG; up to 10 MB per file and 10 files per occurrence.",
@@ -27,8 +27,9 @@
   "registro": { "aguardando": "the occurrence is in the Chief's review queue." },
   "toast": { "success": "Occurrence registered! Protocol: {{protocolo}}", "error_server": "Error registering occurrence. Try again." },
   "detalhe": {
-    "versao": "version", "registrada_em": "registered at", "integra": "Narrative intact since validation", "adulterada": "WARNING: narrative changed after validation",
-    "justificativa": "Chief's justification", "desfecho": "Outcome", "historico": "Status history"
+    "versao": "version", "registrada_em": "registered at", "integra": "Narrativa intact since validation", "adulterada": "WARNING: narrative changed after validation",
+    "justificativa": "Chief's justification", "desfecho": "Outcome", "historico": "Status history",
+    "canal_online": "Channel: Online Police Station (Citizen)", "canal_presencial": "Channel: Internal Police Registration"
   },
   "minhas": { "titulo": "My occurrences", "vazio": "No occurrences yet.", "selecione": "Select an occurrence to see details." },
   "correcao": { "titulo": "Correct {{protocolo}}", "editar": "Edit", "reenviar": "Resubmit for review", "salvar": "Save correction", "salva": "Correction saved.", "reenviada": "Occurrence resubmitted for review." },

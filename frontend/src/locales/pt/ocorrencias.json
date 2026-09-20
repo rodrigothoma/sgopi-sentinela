@@ -9,7 +9,7 @@
     "envolvidos_label": "Envolvidos", "add_envolvido": "Adicionar envolvido",
     "tipificacoes_label": "Tipificações penais", "add_tipificacao": "Adicionar tipificação"
   },
-  "envolvido": { "nome_label": "Nome", "tipo_label": "Tipo", "documento_label": "Documento (CPF/RG)", "VITIMA": "Vítima", "TESTEMUNHA": "Testemunha", "SUSPEITO": "Suspeito" },
+  "envolvido": { "nome_label": "Nome", "tipo_label": "Tipo", "documento_label": "Documento (CPF/RG)", "VITIMA": "Vítima", "TESTEMUNHA": "Testemunha", "SUSPEITO": "Suspeito", "COMUNICANTE": "Comunicante" },
   "tipificacao": { "artigo_label": "Artigo", "artigo_placeholder": "Ex: Art. 155 CP", "descricao_label": "Descrição", "descricao_placeholder": "Descrição do tipo penal" },
   "evidencias": {
     "titulo": "Evidências digitais", "selecionar": "Selecionar arquivos", "ajuda": "PDF, JPG, JPEG ou PNG; máximo de 10 MB por arquivo e 10 arquivos por ocorrência.",
@@ -28,7 +28,8 @@
   "toast": { "success": "Ocorrência registrada! Protocolo: {{protocolo}}", "error_server": "Erro ao registrar ocorrência. Tente novamente." },
   "detalhe": {
     "versao": "versão", "registrada_em": "registrada em", "integra": "Narrativa íntegra desde a validação", "adulterada": "ATENÇÃO: narrativa alterada após a validação",
-    "justificativa": "Justificativa do Delegado", "desfecho": "Desfecho", "historico": "Histórico de status"
+    "justificativa": "Justificativa do Delegado", "desfecho": "Desfecho", "historico": "Histórico de status",
+    "canal_online": "Canal: Delegacia Online (Cidadão)", "canal_presencial": "Canal: Registro Policial Presencial"
   },
   "minhas": { "titulo": "Minhas ocorrências", "vazio": "Nenhuma ocorrência registrada.", "selecione": "Selecione uma ocorrência para ver o detalhe." },
   "correcao": { "titulo": "Corrigir {{protocolo}}", "editar": "Editar", "reenviar": "Reenviar para revisão", "salvar": "Salvar correção", "salva": "Correção salva.", "reenviada": "Ocorrência reenviada para revisão." },

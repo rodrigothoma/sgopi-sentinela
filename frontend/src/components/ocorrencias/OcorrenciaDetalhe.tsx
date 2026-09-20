@@ -66,6 +66,8 @@ const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = 
 
 export const OcorrenciaDetalheView: React.FC<{ o: Detalhe }> = ({ o }) => {
   const { t } = useTranslation(['ocorrencias', 'common']);
+  const isOnline = o.envolvidos.some((e) => e.tipo === 'COMUNICANTE');
+
   return (
     <div className="detalhe">
       <div className="detalhe-cabecalho">
@@ -73,7 +75,10 @@ export const OcorrenciaDetalheView: React.FC<{ o: Detalhe }> = ({ o }) => {
           {o.numero_protocolo} <StatusBadge status={o.status} />
         </h2>
         <span className="muted">
-          {t('ocorrencias:detalhe.versao')} {o.versao} · {t('ocorrencias:detalhe.registrada_em')} {fmt(o.criada_em)}
+          <span style={{ fontWeight: 600, color: isOnline ? 'var(--primary)' : 'inherit' }}>
+            {isOnline ? t('ocorrencias:detalhe.canal_online') : t('ocorrencias:detalhe.canal_presencial')}
+          </span>{' '}
+          · {t('ocorrencias:detalhe.versao')} {o.versao} · {t('ocorrencias:detalhe.registrada_em')} {fmt(o.criada_em)}
         </span>
       </div>
       <dl className="grid2">
@@ -103,8 +108,10 @@ export const OcorrenciaDetalheView: React.FC<{ o: Detalhe }> = ({ o }) => {
       <ul className="lista">
         {o.envolvidos.map((e) => (
           <li key={e.id}>
-            <strong>{e.nome}</strong> · {t(`ocorrencias:envolvido.${e.tipo}`)}
+            <strong>{e.nome}</strong> · {t(`ocorrencias:envolvido.${e.tipo}`, e.tipo)}
             {e.documento ? ` · ${e.documento}` : ''}
+            {e.email ? ` · ${e.email}` : ''}
+            {e.telefone ? ` · ${e.telefone}` : ''}
           </li>
         ))}
       </ul>

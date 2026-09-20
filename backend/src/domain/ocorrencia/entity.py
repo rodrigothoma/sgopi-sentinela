@@ -43,22 +43,29 @@ class TipoEnvolvido(str, Enum):
     VITIMA = "VITIMA"
     TESTEMUNHA = "TESTEMUNHA"
     SUSPEITO = "SUSPEITO"
+    COMUNICANTE = "COMUNICANTE"
 
 
 @dataclass
 class Envolvido:
-    """Pessoa relacionada à ocorrência (vítima, testemunha ou suspeito)."""
+    """Pessoa relacionada à ocorrência (vítima, testemunha, suspeito ou comunicante)."""
 
     nome: str
     tipo: TipoEnvolvido
     id: UUID = field(default_factory=uuid4)
     documento: str | None = None
+    email: str | None = None
+    telefone: str | None = None
 
     def __post_init__(self) -> None:
         if not self.nome or not self.nome.strip():
             raise CampoObrigatorioError("Nome do envolvido é obrigatório.", chave="envolvido.nome_vazio")
         self.nome = self.nome.strip()
         self.documento = validar_documento(self.documento)
+        if self.email:
+            self.email = self.email.strip()
+        if self.telefone:
+            self.telefone = self.telefone.strip()
 
 
 @dataclass

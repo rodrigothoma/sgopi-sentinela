@@ -54,8 +54,10 @@ class TipificacaoSchema(BaseModel):
 
 class EnvolvidoSchema(BaseModel):
     nome: str = Field(max_length=255)
-    tipo: str  # VITIMA | TESTEMUNHA | SUSPEITO
+    tipo: str  # VITIMA | TESTEMUNHA | SUSPEITO | COMUNICANTE
     documento: str | None = Field(default=None, max_length=50)
+    email: str | None = Field(default=None, max_length=255)
+    telefone: str | None = Field(default=None, max_length=30)
 
 
 class RegistrarOcorrenciaRequest(BaseModel):
@@ -91,14 +93,17 @@ class IntegridadeEvidenciaSchema(BaseModel):
 
 
 class RegistrarOcorrenciaPublicaRequest(BaseModel):
-    nome_solicitante: str = Field(max_length=255)
+    nome_solicitante: str = Field(min_length=3, max_length=255)
     natureza: str = Field(max_length=255)
-    descricao: str
+    descricao: str = Field(min_length=20, max_length=500)
     localizacao: str = Field(max_length=500)
     latitude: float
     longitude: float
     data_hora_fato: datetime
-    documento: str | None = Field(default=None, max_length=50)
+    documento: str = Field(min_length=5, max_length=50)
+    email: str = Field(min_length=5, max_length=255)
+    telefone: str = Field(min_length=8, max_length=30)
+    declaracao_maioridade: bool = True
 
 
 class ConsultaPublicaResponse(BaseModel):
@@ -118,6 +123,22 @@ async def registrar_ocorrencia_publica(
     usuario_repo: RepositorioUsuario = Depends(get_repositorio_usuario),
 ) -> OcorrenciaResponse:
     """Permite ao cidadão registrar uma ocorrência pública sem autenticação prévia."""
+    from fastapi import HTTPException
+    from domain.shared.documentos import cpf_valido, normalizar_cpf
+
+    if not body.declaracao_maioridade:
+        raise HTTPException(
+            status_code=422,
+            detail="É obrigatório confirmar a declaração de maioridade (+18 anos) e veracidade dos fatos.",
+        )
+
+    doc_limpo = normalizar_cpf(body.documento)
+    if len(doc_limpo) == 11 and not cpf_valido(doc_limpo):
+        raise HTTPException(
+            status_code=422,
+            detail="O CPF informado é inválido. Por favor, confira os números digitados.",
+        )
+
     agente = await usuario_repo.buscar_por_login("agente")
     if not agente:
         from uuid import uuid4
@@ -125,16 +146,23 @@ async def registrar_ocorrencia_publica(
     else:
         ator = Ator(id=agente.id, login="cidadao_web", papel=Papel.AGENTE)
 
-    descricao_completa = f"[REGISTRO CIDADÃO VIA WEB]\nComunicante: {body.nome_solicitante.strip()}\n\n{body.descricao.strip()}"
     input_dto = RegistrarOcorrenciaInput(
         natureza=body.natureza,
-        descricao=descricao_completa,
+        descricao=body.descricao.strip(),
         localizacao=body.localizacao,
         latitude=body.latitude,
         longitude=body.longitude,
         data_hora_fato=body.data_hora_fato,
         tipificacoes=(),
-        envolvidos=(EnvolvidoInputDTO(nome=body.nome_solicitante, tipo="VITIMA", documento=body.documento),),
+        envolvidos=(
+            EnvolvidoInputDTO(
+                nome=body.nome_solicitante.strip(),
+                tipo="COMUNICANTE",
+                documento=body.documento.strip(),
+                email=body.email.strip(),
+                telefone=body.telefone.strip(),
+            ),
+        ),
     )
     out = await use_case.executar(ator, input_dto)
     return OcorrenciaResponse(
@@ -309,7 +337,9 @@ class EnvolvidoDetalheSchema(BaseModel):
     id: UUID
     nome: str
     tipo: str
-    documento: str | None
+    documento: str | None = None
+    email: str | None = None
+    telefone: str | None = None
 
 
 class HistoricoStatusSchema(BaseModel):
@@ -369,7 +399,17 @@ def _detalhe(o: OcorrenciaDetalheOutput) -> OcorrenciaDetalheSchema:
         desfecho=o.desfecho,
         hash_narrativa=o.hash_narrativa,
         narrativa_integra=o.narrativa_integra,
-        envolvidos=[EnvolvidoDetalheSchema(id=e.id, nome=e.nome, tipo=e.tipo, documento=e.documento) for e in o.envolvidos],
+        envolvidos=[
+            EnvolvidoDetalheSchema(
+                id=e.id,
+                nome=e.nome,
+                tipo=e.tipo,
+                documento=e.documento,
+                email=e.email,
+                telefone=e.telefone,
+            )
+            for e in o.envolvidos
+        ],
         tipificacoes=[TipificacaoSchema(artigo=t.artigo, descricao=t.descricao) for t in o.tipificacoes],
         evidencias=[EvidenciaSchema(**e.__dict__) for e in o.evidencias],
         historico_status=[HistoricoStatusSchema(**h.__dict__) for h in o.historico_status],
