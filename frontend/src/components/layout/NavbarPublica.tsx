@@ -28,13 +28,13 @@ export const NavbarPublica: React.FC = () => {
 
       <nav>
         <Link to="/" className={isActive('/')}>
-          Início
+          {t('nav.home')}
         </Link>
         <Link to="/registrar-cidadao" className={isActive('/registrar-cidadao')}>
-          Registrar Ocorrência
+          {t('nav.registrar')}
         </Link>
         <Link to="/consulta" className={isActive('/consulta')}>
-          Consultar Protocolo
+          {t('nav.lookup')}
         </Link>
       </nav>
 
@@ -52,7 +52,7 @@ export const NavbarPublica: React.FC = () => {
         <ThemeToggle />
 
         <Button to="/login" variant="outline" size="sm">
-          Acesso Policial
+          {t('nav.police_access')}
         </Button>
       </div>
     </header>

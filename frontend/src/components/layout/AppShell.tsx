@@ -46,9 +46,10 @@ export const AppShell: React.FC = () => {
           />
           <ThemeToggle />
           {usuario && (
-            <span className="user">
-              <strong>{usuario.nome}</strong> · <span className="pill">{t(`papel.${usuario.papel}`)}</span>
-            </span>
+            <div className="user-profile-header">
+              <span className="user-name">{usuario.nome}</span>
+              <span className="user-role">{t(`papel.${usuario.papel}`)}</span>
+            </div>
           )}
           <Button
             variant="ghost"

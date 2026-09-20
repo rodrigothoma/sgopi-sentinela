@@ -1,0 +1,71 @@
+{
+  "registro": {
+    "titulo": "Online Incident Registration",
+    "subtitulo": "Fill in the incident details. The information will be forwarded for official review by police authorities and tactical dispatch.",
+    "comunicante_titulo": "1. Complainant / Requester Information",
+    "nome_label": "Full Name *",
+    "nome_placeholder": "E.g.: John Doe",
+    "documento_label": "Identification (National ID / SSN)",
+    "documento_placeholder": "Optional (digits only)",
+    "fato_titulo": "2. Incident Nature and Circumstances",
+    "natureza_label": "Incident Category *",
+    "data_hora_label": "Date and Time of Occurrence *",
+    "natureza_especificar_label": "Specify Nature",
+    "natureza_especificar_placeholder": "E.g.: Lost vehicle license plate",
+    "relato_label": "Detailed Incident Statement * (minimum 20 characters)",
+    "relato_placeholder": "Describe in detail what happened, suspect traits, or involved items...",
+    "caracteres_contagem": "{{atual}}/20 characters",
+    "caracteres_faltam": "(missing {{restantes}})",
+    "localizacao_titulo": "3. Incident Location",
+    "endereco_label": "Approximate Address / Landmark *",
+    "endereco_placeholder": "E.g.: 123 Main Street, Downtown, near city square",
+    "mapa_label": "Map Positioning (click to adjust exact coordinates)",
+    "botao_cancelar": "Cancel",
+    "botao_enviar": "Confirm and Submit Incident",
+    "sucesso_titulo": "Incident Registered Successfully!",
+    "sucesso_mensagem": "Your report was submitted to the SGOPI Sentinela dispatch center and is now in the triage queue for police review.",
+    "protocolo_label": "YOUR PROTOCOL NUMBER:",
+    "copiar_protocolo": "Copy Protocol",
+    "protocolo_copiado": "Protocol Copied!",
+    "guardar_aviso": "Keep this number to track progress or present when requested.",
+    "acompanhar_status": "Track Status",
+    "novo_registro": "New Report",
+    "erros": {
+      "nome_obrigatorio": "Please enter your full name.",
+      "localizacao_obrigatoria": "Please enter the approximate address or landmark.",
+      "descricao_curta": "Incident description must have at least 20 characters.",
+      "data_futura": "Incident date and time cannot be in the future.",
+      "falha_registro": "Could not register incident. Please try again."
+    },
+    "naturezas": {
+      "furto": "Theft / Larceny",
+      "perda_extravio": "Lost Document / Property",
+      "acidente_sem_vitima": "Traffic Accident (Non-Injury)",
+      "ameaca": "Threat",
+      "perturbacao_sossego": "Disturbance of the Peace",
+      "dano_patrimonio": "Property Damage / Vandalism",
+      "outro": "Other Circumstanced Incident"
+    }
+  },
+  "consulta": {
+    "titulo": "Public Incident Status Inquiry",
+    "subtitulo": "Enter the official protocol number (e.g.: SGOPI-2026-000001) to check the status and progress of your police report.",
+    "placeholder": "SGOPI-YYYY-NNNNNN",
+    "botao_consultar": "Inquire",
+    "protocolo_rotulo": "PROTOCOL:",
+    "etapas": {
+      "triagem": "Police Screening",
+      "validada": "Validated",
+      "atendimento": "In Progress",
+      "finalizada": "Concluded"
+    },
+    "detalhes": {
+      "natureza": "Category:",
+      "local": "Incident Location:",
+      "data_abertura": "Registration Date:",
+      "desfecho": "Police Resolution:",
+      "voltar_inicio": "Back to Home"
+    },
+    "erro_nao_encontrada": "Incident report not found with the provided protocol number. Please verify and try again."
+  }
+}

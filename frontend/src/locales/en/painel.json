@@ -1,5 +1,5 @@
 {
-  "conexao": { "conectando": "connecting", "conectado": "live", "reconectando": "reconnecting...", "desconectado": "disconnected" },
+  "conexao": { "conectando": "Connecting...", "conectado": "Live", "reconectando": "Reconnecting...", "desconectado": "Disconnected" },
   "simulador": { "ligar": "Start GPS simulator", "desligar": "Stop simulator" },
   "viatura": "Vehicle", "situacao": "Status", "sinal": "Signal", "ultima_posicao": "Last position",
   "sem_sinal": { "alerta": "{{n}} vehicle(s) without GPS signal — last known position in table", "nunca": "never reported a position" },

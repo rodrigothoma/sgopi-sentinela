@@ -2,17 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { NavbarPublica } from '../components/layout/NavbarPublica';
+import { StatusBadge } from '../components/StatusBadge';
 import { ConsultaPublicaResponse, consultarOcorrenciaPublica, mensagemDeErro } from '../services/api';
 
 const STATUS_ETAPAS = [
-  { id: 'AGUARDANDO_REVISAO', rotulo: 'Triagem Policial' },
-  { id: 'VALIDADA', rotulo: 'Validada' },
-  { id: 'EM_ATENDIMENTO', rotulo: 'Em Atendimento' },
-  { id: 'ENCERRADA', rotulo: 'Finalizada' }
+  { id: 'AGUARDANDO_REVISAO', rotuloChave: 'triagem' },
+  { id: 'VALIDADA', rotuloChave: 'validada' },
+  { id: 'EM_ATENDIMENTO', rotuloChave: 'atendimento' },
+  { id: 'ENCERRADA', rotuloChave: 'finalizada' },
 ];
 
 export const ConsultaProtocoloPage: React.FC = () => {
-  const { t } = useTranslation('common');
+  const { t, i18n } = useTranslation(['publico', 'common']);
   const [searchParams] = useSearchParams();
   const [protocoloInput, setProtocoloInput] = useState(searchParams.get('protocolo') ?? '');
   const [resultado, setResultado] = useState<ConsultaPublicaResponse | null>(null);
@@ -29,7 +30,7 @@ export const ConsultaProtocoloPage: React.FC = () => {
       setResultado(dados);
     } catch (err) {
       setResultado(null);
-      setErro(mensagemDeErro(err, 'Ocorrência não encontrada com o protocolo informado. Verifique os dígitos e tente novamente.'));
+      setErro(mensagemDeErro(err, t('publico:consulta.erro_nao_encontrada')));
     } finally {
       setOcupado(false);
     }
@@ -55,22 +56,21 @@ export const ConsultaProtocoloPage: React.FC = () => {
     return 0;
   };
 
+  const localeData = i18n.language && i18n.language.startsWith('en') ? 'en-US' : 'pt-BR';
+
   return (
     <div className="portal-wrap">
       <NavbarPublica />
 
       <main className="pagina" style={{ maxWidth: 760, padding: '40px 20px' }}>
         <div className="card" style={{ padding: '32px' }}>
-          <h2>Consulta Pública de Ocorrência</h2>
-          <p className="muted">
-            Digite o número de protocolo oficial (ex: <code>SGOPI-2026-000001</code>) para consultar
-            o status e a tramitação do seu atendimento policial.
-          </p>
+          <h2>{t('publico:consulta.titulo')}</h2>
+          <p className="muted">{t('publico:consulta.subtitulo')}</p>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 10, marginTop: 20 }}>
             <input
               type="text"
-              placeholder="SGOPI-AAAA-NNNNNN"
+              placeholder={t('publico:consulta.placeholder')}
               value={protocoloInput}
               onChange={(e) => setProtocoloInput(e.target.value.toUpperCase())}
               style={{ fontSize: '1.05rem', fontWeight: 600, letterSpacing: '0.04em' }}
@@ -81,7 +81,7 @@ export const ConsultaProtocoloPage: React.FC = () => {
               disabled={ocupado || !protocoloInput.trim()}
               style={{ padding: '0 24px' }}
             >
-              {ocupado ? t('actions.loading') : 'Consultar'}
+              {ocupado ? t('common:actions.loading') : t('publico:consulta.botao_consultar')}
             </button>
           </form>
 
@@ -89,16 +89,22 @@ export const ConsultaProtocoloPage: React.FC = () => {
 
           {resultado && (
             <div style={{ marginTop: 32, borderTop: '1px solid var(--line)', paddingTop: 24 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 12,
+                }}
+              >
                 <div>
-                  <span className="small muted">PROTOCOLO:</span>
+                  <span className="small muted">{t('publico:consulta.protocolo_rotulo')}</span>
                   <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--primary)' }}>
                     {resultado.numero_protocolo}
                   </div>
                 </div>
-                <div className="pill" style={{ fontSize: '0.85rem' }}>
-                  {t(`status.${resultado.status}`, resultado.status)}
-                </div>
+                <StatusBadge status={resultado.status} />
               </div>
 
               <div className="status-timeline">
@@ -112,28 +118,30 @@ export const ConsultaProtocoloPage: React.FC = () => {
                       key={etapa.id}
                       className={`timeline-step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
                     >
-                      <div className="timeline-dot">
-                        {isCompleted ? '✓' : idx + 1}
+                      <div className="timeline-dot">{isCompleted ? '✓' : idx + 1}</div>
+                      <div className="timeline-label">
+                        {t(`publico:consulta.etapas.${etapa.rotuloChave}`)}
                       </div>
-                      <div className="timeline-label">{etapa.rotulo}</div>
                     </div>
                   );
                 })}
               </div>
 
               <dl className="grid2" style={{ marginTop: 24 }}>
-                <dt>Natureza:</dt>
-                <dd><strong>{resultado.natureza}</strong></dd>
+                <dt>{t('publico:consulta.detalhes.natureza')}</dt>
+                <dd>
+                  <strong>{resultado.natureza}</strong>
+                </dd>
 
-                <dt>Local do Fato:</dt>
+                <dt>{t('publico:consulta.detalhes.local')}</dt>
                 <dd>{resultado.localizacao}</dd>
 
-                <dt>Data de Abertura:</dt>
-                <dd>{new Date(resultado.criada_em).toLocaleString('pt-BR')}</dd>
+                <dt>{t('publico:consulta.detalhes.data_abertura')}</dt>
+                <dd>{new Date(resultado.criada_em).toLocaleString(localeData)}</dd>
 
                 {resultado.desfecho && (
                   <>
-                    <dt>Desfecho Policial:</dt>
+                    <dt>{t('publico:consulta.detalhes.desfecho')}</dt>
                     <dd>{resultado.desfecho}</dd>
                   </>
                 )}
@@ -141,7 +149,7 @@ export const ConsultaProtocoloPage: React.FC = () => {
 
               <div style={{ marginTop: 20, textAlign: 'right' }}>
                 <Link to="/" className="btn btn-ghost">
-                  Voltar à Página Inicial
+                  {t('publico:consulta.detalhes.voltar_inicio')}
                 </Link>
               </div>
             </div>
@@ -151,3 +159,5 @@ export const ConsultaProtocoloPage: React.FC = () => {
     </div>
   );
 };
+
+export default ConsultaProtocoloPage;

@@ -1,0 +1,71 @@
+{
+  "registro": {
+    "titulo": "Registro de Ocorrência Online",
+    "subtitulo": "Preencha as informações do fato. Os dados serão encaminhados para validação da autoridade competente e despacho operacional.",
+    "comunicante_titulo": "1. Dados do Comunicante / Solicitante",
+    "nome_label": "Nome Completo *",
+    "nome_placeholder": "Ex: João da Silva",
+    "documento_label": "Documento (CPF ou RG)",
+    "documento_placeholder": "Opcional (somente números)",
+    "fato_titulo": "2. Natureza e Circunstância do Fato",
+    "natureza_label": "Tipo da Ocorrência *",
+    "data_hora_label": "Data e Hora do Fato *",
+    "natureza_especificar_label": "Especifique a Natureza",
+    "natureza_especificar_placeholder": "Ex: Extravio de placa automotiva",
+    "relato_label": "Relato Detalhado do Ocorrido * (mínimo 20 caracteres)",
+    "relato_placeholder": "Descreva com detalhes o que aconteceu, características de suspeitos ou objetos envolvidos...",
+    "caracteres_contagem": "{{atual}}/20 caracteres",
+    "caracteres_faltam": "(faltam {{restantes}})",
+    "localizacao_titulo": "3. Localização do Ocorrido",
+    "endereco_label": "Endereço Aproximado / Ponto de Referência *",
+    "endereco_placeholder": "Ex: Av. Eurípedes Brasil Milano, Centro, próximo à praça",
+    "mapa_label": "Posicionamento no Mapa (clique para ajustar o ponto exato)",
+    "botao_cancelar": "Cancelar",
+    "botao_enviar": "Confirmar e Registrar Ocorrência",
+    "sucesso_titulo": "Ocorrência Registrada com Sucesso!",
+    "sucesso_mensagem": "Sua ocorrência foi enviada para a central do SGOPI Sentinela e já se encontra na fila de triagem da autoridade policial.",
+    "protocolo_label": "NÚMERO DO SEU PROTOCOLO:",
+    "copiar_protocolo": "Copiar Protocolo",
+    "protocolo_copiado": "Protocolo Copiado!",
+    "guardar_aviso": "Guarde este número para acompanhar o andamento ou apresentar quando solicitado.",
+    "acompanhar_status": "Acompanhar Status",
+    "novo_registro": "Novo Registro",
+    "erros": {
+      "nome_obrigatorio": "Informe o seu nome completo.",
+      "localizacao_obrigatoria": "Informe o endereço ou ponto de referência do local do fato.",
+      "descricao_curta": "A descrição do ocorrido deve ter pelo menos 20 caracteres.",
+      "data_futura": "A data e hora do fato não podem estar no futuro.",
+      "falha_registro": "Não foi possível registrar a ocorrência. Tente novamente."
+    },
+    "naturezas": {
+      "furto": "Furto",
+      "perda_extravio": "Perda ou Extravio de Documento/Objeto",
+      "acidente_sem_vitima": "Acidente de Trânsito sem Vítima",
+      "ameaca": "Ameaça",
+      "perturbacao_sossego": "Perturbação do Sossego",
+      "dano_patrimonio": "Dano ao Patrimônio",
+      "outro": "Outro Fato Circunstanciado"
+    }
+  },
+  "consulta": {
+    "titulo": "Consulta Pública de Ocorrência",
+    "subtitulo": "Digite o número de protocolo oficial (ex: SGOPI-2026-000001) para consultar o status e a tramitação do seu atendimento policial.",
+    "placeholder": "SGOPI-AAAA-NNNNNN",
+    "botao_consultar": "Consultar",
+    "protocolo_rotulo": "PROTOCOLO:",
+    "etapas": {
+      "triagem": "Triagem Policial",
+      "validada": "Validada",
+      "atendimento": "Em Atendimento",
+      "finalizada": "Finalizada"
+    },
+    "detalhes": {
+      "natureza": "Natureza:",
+      "local": "Local do Fato:",
+      "data_abertura": "Data de Abertura:",
+      "desfecho": "Desfecho Policial:",
+      "voltar_inicio": "Voltar à Página Inicial"
+    },
+    "erro_nao_encontrada": "Ocorrência não encontrada com o protocolo informado. Verifique os dígitos e tente novamente."
+  }
+}

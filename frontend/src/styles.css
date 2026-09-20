@@ -170,6 +170,27 @@ h4 { font-size: .95rem; margin-top: 16px; }
   border: 1px solid var(--line);
 }
 
+.user-profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.25;
+}
+
+.user-profile-header .user-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.user-profile-header .user-role {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
 .pill {
   background: rgba(59, 130, 246, 0.15);
   color: #60a5fa;

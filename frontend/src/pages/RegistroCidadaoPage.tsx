@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { NavbarPublica } from '../components/layout/NavbarPublica';
 import { SeletorCoordenada } from '../components/painel/SeletorCoordenada';
 import { CENTRO_PADRAO } from '../components/painel/leaflet';
@@ -7,26 +8,29 @@ import { mensagemDeErro, registrarOcorrenciaPublica } from '../services/api';
 import { Button } from '../components/common/Button';
 import { GlideSelect, GlideSelectOption } from '../components/common/GlideSelect';
 
-const NATUREZAS_COMUNS = [
-  'Furto',
-  'Perda ou Extravio de Documento/Objeto',
-  'Acidente de Trânsito sem Vítima',
-  'Ameaça',
-  'Perturbação do Sossego',
-  'Dano ao Patrimônio',
-  'Outro Fato Circunstanciado'
+const NATUREZA_CHAVES = [
+  { chave: 'furto', valorPadrao: 'Furto' },
+  { chave: 'perda_extravio', valorPadrao: 'Perda ou Extravio de Documento/Objeto' },
+  { chave: 'acidente_sem_vitima', valorPadrao: 'Acidente de Trânsito sem Vítima' },
+  { chave: 'ameaca', valorPadrao: 'Ameaça' },
+  { chave: 'perturbacao_sossego', valorPadrao: 'Perturbação do Sossego' },
+  { chave: 'dano_patrimonio', valorPadrao: 'Dano ao Patrimônio' },
+  { chave: 'outro', valorPadrao: 'Outro Fato Circunstanciado' },
 ];
 
-const OPCOES_NATUREZA: GlideSelectOption[] = NATUREZAS_COMUNS.map((n) => ({
-  value: n,
-  label: n,
-}));
-
-
 export const RegistroCidadaoPage: React.FC = () => {
+  const { t } = useTranslation(['publico', 'common']);
+
+  const opcoesNatureza: GlideSelectOption[] = useMemo(() => {
+    return NATUREZA_CHAVES.map((n) => ({
+      value: n.valorPadrao,
+      label: t(`publico:registro.naturezas.${n.chave}`, n.valorPadrao),
+    }));
+  }, [t]);
+
   const [nome, setNome] = useState('');
   const [documento, setDocumento] = useState('');
-  const [natureza, setNatureza] = useState(NATUREZAS_COMUNS[0]);
+  const [natureza, setNatureza] = useState(NATUREZA_CHAVES[0].valorPadrao);
   const [naturezaPersonalizada, setNaturezaPersonalizada] = useState('');
   const [descricao, setDescricao] = useState('');
   const [localizacao, setLocalizacao] = useState('');
@@ -43,24 +47,25 @@ export const RegistroCidadaoPage: React.FC = () => {
     e.preventDefault();
     setErro(null);
 
-    const naturezaFinal = natureza === 'Outro Fato Circunstanciado' && naturezaPersonalizada.trim()
-      ? naturezaPersonalizada.trim()
-      : natureza;
+    const naturezaFinal =
+      natureza === 'Outro Fato Circunstanciado' && naturezaPersonalizada.trim()
+        ? naturezaPersonalizada.trim()
+        : natureza;
 
     if (!nome.trim()) {
-      setErro('Informe o seu nome completo.');
+      setErro(t('publico:registro.erros.nome_obrigatorio'));
       return;
     }
     if (!localizacao.trim()) {
-      setErro('Informe o endereço ou ponto de referência do local do fato.');
+      setErro(t('publico:registro.erros.localizacao_obrigatoria'));
       return;
     }
     if (descricao.trim().length < 20) {
-      setErro('A descrição do ocorrido deve ter pelo menos 20 caracteres.');
+      setErro(t('publico:registro.erros.descricao_curta'));
       return;
     }
     if (new Date(dataHora).getTime() > Date.now()) {
-      setErro('A data e hora do fato não podem estar no futuro.');
+      setErro(t('publico:registro.erros.data_futura'));
       return;
     }
 
@@ -74,12 +79,12 @@ export const RegistroCidadaoPage: React.FC = () => {
         localizacao: localizacao.trim(),
         latitude,
         longitude,
-        data_hora_fato: new Date(dataHora).toISOString()
+        data_hora_fato: new Date(dataHora).toISOString(),
       });
       setProtocoloGerado(res.numero_protocolo);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
-      setErro(mensagemDeErro(err, 'Não foi possível registrar a ocorrência. Tente novamente.'));
+      setErro(mensagemDeErro(err, t('publico:registro.erros.falha_registro')));
     } finally {
       setOcupado(false);
     }
@@ -116,14 +121,11 @@ export const RegistroCidadaoPage: React.FC = () => {
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <h2>Ocorrência Registrada com Sucesso!</h2>
-            <p className="muted">
-              Sua ocorrência foi enviada para a central do SGOPI Sentinela e já se encontra na fila de
-              triagem da autoridade policial.
-            </p>
+            <h2>{t('publico:registro.sucesso_titulo')}</h2>
+            <p className="muted">{t('publico:registro.sucesso_mensagem')}</p>
 
             <div className="protocolo-banner">
-              <span className="small muted">NÚMERO DO SEU PROTOCOLO:</span>
+              <span className="small muted">{t('publico:registro.protocolo_label')}</span>
               <span className="protocolo-codigo">{protocoloGerado}</span>
               <Button
                 type="button"
@@ -132,17 +134,15 @@ export const RegistroCidadaoPage: React.FC = () => {
                 onClick={copiarProtocolo}
                 style={{ marginTop: 8 }}
               >
-                {copiado ? 'Protocolo Copiado!' : 'Copiar Protocolo'}
+                {copiado ? t('publico:registro.protocolo_copiado') : t('publico:registro.copiar_protocolo')}
               </Button>
             </div>
 
-            <p className="muted small">
-              Guarde este número para acompanhar o andamento ou apresentar quando solicitado.
-            </p>
+            <p className="muted small">{t('publico:registro.guardar_aviso')}</p>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24, flexWrap: 'wrap' }}>
               <Button to={`/consulta?protocolo=${protocoloGerado}`} variant="primary">
-                Acompanhar Status
+                {t('publico:registro.acompanhar_status')}
               </Button>
               <Button
                 type="button"
@@ -154,43 +154,37 @@ export const RegistroCidadaoPage: React.FC = () => {
                   setLocalizacao('');
                 }}
               >
-                Novo Registro
+                {t('publico:registro.novo_registro')}
               </Button>
             </div>
           </div>
         ) : (
           <form className="card form" onSubmit={handleSubmit} style={{ padding: '32px' }}>
             <div style={{ marginBottom: 24 }}>
-              <span className="pill" style={{ marginBottom: 8, display: 'inline-block' }}>
-                DELEGACIA ELETRÔNICA · SGOPI
-              </span>
-              <h2>Registro de Ocorrência Online</h2>
-              <p className="muted">
-                Preencha as informações do fato. Os dados serão encaminhados para validação da autoridade
-                competente e despacho operacional.
-              </p>
+              <h2>{t('publico:registro.titulo')}</h2>
+              <p className="muted">{t('publico:registro.subtitulo')}</p>
             </div>
 
             {erro && <div className="alerta erro">{erro}</div>}
 
             <fieldset>
-              <legend>1. Dados do Comunicante / Solicitante</legend>
+              <legend>{t('publico:registro.comunicante_titulo')}</legend>
               <div className="grid2">
                 <label>
-                  Nome Completo *
+                  {t('publico:registro.nome_label')}
                   <input
                     type="text"
                     required
-                    placeholder="Ex: João da Silva"
+                    placeholder={t('publico:registro.nome_placeholder')}
                     value={nome}
                     onChange={(e) => setNome(e.target.value)}
                   />
                 </label>
                 <label>
-                  Documento (CPF ou RG)
+                  {t('publico:registro.documento_label')}
                   <input
                     type="text"
-                    placeholder="Opcional (somente números)"
+                    placeholder={t('publico:registro.documento_placeholder')}
                     value={documento}
                     onChange={(e) => setDocumento(e.target.value)}
                   />
@@ -199,23 +193,31 @@ export const RegistroCidadaoPage: React.FC = () => {
             </fieldset>
 
             <fieldset>
-              <legend>2. Natureza e Circunstância do Fato</legend>
+              <legend>{t('publico:registro.fato_titulo')}</legend>
               <div className="grid2">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Tipo da Ocorrência *
+                  <label
+                    style={{
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      color: 'var(--muted)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    {t('publico:registro.natureza_label')}
                   </label>
                   <GlideSelect
-                    options={OPCOES_NATUREZA}
+                    options={opcoesNatureza}
                     value={natureza}
                     onChange={(val) => setNatureza(val)}
                     size="md"
                     menuWidth="100%"
-                    ariaLabel="Tipo da Ocorrência"
+                    ariaLabel={t('publico:registro.natureza_label')}
                   />
                 </div>
                 <label>
-                  Data e Hora do Fato *
+                  {t('publico:registro.data_hora_label')}
                   <input
                     type="datetime-local"
                     required
@@ -227,10 +229,10 @@ export const RegistroCidadaoPage: React.FC = () => {
 
               {natureza === 'Outro Fato Circunstanciado' && (
                 <label style={{ marginTop: 12 }}>
-                  Especifique a Natureza
+                  {t('publico:registro.natureza_especificar_label')}
                   <input
                     type="text"
-                    placeholder="Ex: Extravio de placa automotiva"
+                    placeholder={t('publico:registro.natureza_especificar_placeholder')}
                     value={naturezaPersonalizada}
                     onChange={(e) => setNaturezaPersonalizada(e.target.value)}
                   />
@@ -238,36 +240,37 @@ export const RegistroCidadaoPage: React.FC = () => {
               )}
 
               <label style={{ marginTop: 14 }}>
-                Relato Detalhado do Ocorrido * (mínimo 20 caracteres)
+                {t('publico:registro.relato_label')}
                 <textarea
                   rows={4}
                   required
-                  placeholder="Descreva com detalhes o que aconteceu, características de suspeitos ou objetos envolvidos..."
+                  placeholder={t('publico:registro.relato_placeholder')}
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
                 />
               </label>
               <span className="small muted">
-                {descricao.length}/20 caracteres {descricao.length < 20 ? '(faltam ' + (20 - descricao.length) + ')' : '✓'}
+                {t('publico:registro.caracteres_contagem', { atual: descricao.length })}{' '}
+                {descricao.length < 20
+                  ? t('publico:registro.caracteres_faltam', { restantes: 20 - descricao.length })
+                  : '✓'}
               </span>
             </fieldset>
 
             <fieldset>
-              <legend>3. Localização do Ocorrido</legend>
+              <legend>{t('publico:registro.localizacao_titulo')}</legend>
               <label>
-                Endereço Aproximado / Ponto de Referência *
+                {t('publico:registro.endereco_label')}
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Av. Eurípedes Brasil Milano, Centro, próximo à praça"
+                  placeholder={t('publico:registro.endereco_placeholder')}
                   value={localizacao}
                   onChange={(e) => setLocalizacao(e.target.value)}
                 />
               </label>
 
-              <label style={{ marginTop: 14 }}>
-                Posicionamento no Mapa (clique para ajustar o ponto exato)
-              </label>
+              <label style={{ marginTop: 14 }}>{t('publico:registro.mapa_label')}</label>
               <SeletorCoordenada
                 latitude={latitude}
                 longitude={longitude}
@@ -280,7 +283,7 @@ export const RegistroCidadaoPage: React.FC = () => {
 
             <div style={{ display: 'flex', gap: 14, justifyContent: 'flex-end', marginTop: 28 }}>
               <Button to="/" variant="ghost">
-                Cancelar
+                {t('publico:registro.botao_cancelar')}
               </Button>
               <Button
                 type="submit"
@@ -288,7 +291,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                 loading={ocupado}
                 disabled={!nome.trim() || descricao.trim().length < 20}
               >
-                Confirmar e Registrar Ocorrência
+                {t('publico:registro.botao_enviar')}
               </Button>
             </div>
           </form>
@@ -297,3 +300,5 @@ export const RegistroCidadaoPage: React.FC = () => {
     </div>
   );
 };
+
+export default RegistroCidadaoPage;
