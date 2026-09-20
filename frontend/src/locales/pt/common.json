@@ -51,6 +51,15 @@
     "SEM_SINAL": "Sem sinal",
     "SEM_POSICAO": "Sem posição"
   },
+  "naturezas": {
+    "furto": "Furto",
+    "perda_extravio": "Perda ou Extravio de Documento/Objeto",
+    "acidente_sem_vitima": "Acidente de Trânsito sem Vítima",
+    "ameaca": "Ameaça",
+    "perturbacao_sossego": "Perturbação do Sossego",
+    "dano_patrimonio": "Dano ao Patrimônio",
+    "outro": "Outro Fato Circunstanciado"
+  },
   "landing": {
     "hero_label": "SISTEMA OFICIAL — UNIPAMPA / ALEGRETE",
     "hero_subtitle": "Canal oficial e unificado para registro de ocorrências pelo cidadão, triagem técnica pela autoridade policial e monitoramento de viaturas em tempo real.",

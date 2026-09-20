@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { NavbarPublica } from '../components/layout/NavbarPublica';
 import { StatusBadge } from '../components/StatusBadge';
+import { formatarNatureza } from '../utils/formatarNatureza';
 import { ConsultaPublicaResponse, consultarOcorrenciaPublica, mensagemDeErro } from '../services/api';
 
 const STATUS_ETAPAS = [
@@ -131,7 +132,7 @@ export const ConsultaProtocoloPage: React.FC = () => {
               <dl className="grid2" style={{ marginTop: 24 }}>
                 <dt>{t('publico:consulta.detalhes.natureza')}</dt>
                 <dd>
-                  <strong>{resultado.natureza}</strong>
+                  <strong>{formatarNatureza(resultado.natureza, t)}</strong>
                 </dd>
 
                 <dt>{t('publico:consulta.detalhes.local')}</dt>

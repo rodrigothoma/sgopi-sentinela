@@ -1154,38 +1154,48 @@ dl.grid2 dd { margin: 0 0 8px; }
 
 .status-timeline {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   margin: 28px 0 16px;
   position: relative;
 }
 
-.status-timeline::before {
+.timeline-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  text-align: center;
+}
+
+/* Linha conectora que sai do CENTRO do circulo atual ate o proximo */
+.timeline-step::before {
   content: '';
   position: absolute;
-  top: 18px;
-  left: 30px;
-  right: 30px;
+  top: 18px; /* Metade dos 36px do circulo */
+  left: 50%;
+  width: 100%;
   height: 2px;
   background: var(--line);
   z-index: 1;
 }
 
-.timeline-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  max-width: 110px;
+/* O ultimo passo (passo 4) nao projeta linha para a frente */
+.timeline-step:last-child::before {
+  display: none;
+}
+
+/* Passos concluidos possuem linha verde */
+.timeline-step.completed::before {
+  background: var(--ok);
 }
 
 .timeline-dot {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--card);
+  background: var(--bg-surface);
   border: 2px solid var(--line);
   display: flex;
   align-items: center;
@@ -1194,6 +1204,12 @@ dl.grid2 dd { margin: 0 0 8px; }
   font-weight: bold;
   color: var(--muted);
   margin-bottom: 8px;
+  position: relative;
+  z-index: 2;
+}
+
+[data-theme="light"] .timeline-dot {
+  background: #ffffff;
 }
 
 .timeline-step.active .timeline-dot {
@@ -1213,9 +1229,14 @@ dl.grid2 dd { margin: 0 0 8px; }
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--muted);
+  max-width: 120px;
 }
 
 .timeline-step.active .timeline-label {
+  color: var(--ink);
+}
+
+.timeline-step.completed .timeline-label {
   color: var(--ink);
 }
 

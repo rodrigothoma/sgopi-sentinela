@@ -51,6 +51,15 @@
     "SEM_SINAL": "No Signal",
     "SEM_POSICAO": "No Position"
   },
+  "naturezas": {
+    "furto": "Theft / Larceny",
+    "perda_extravio": "Lost Document / Property",
+    "acidente_sem_vitima": "Traffic Accident (Non-Injury)",
+    "ameaca": "Threat",
+    "perturbacao_sossego": "Disturbance of the Peace",
+    "dano_patrimonio": "Property Damage / Vandalism",
+    "outro": "Other Circumstanced Incident"
+  },
   "landing": {
     "hero_label": "OFFICIAL SYSTEM — UNIPAMPA / ALEGRETE",
     "hero_subtitle": "Unified official channel for citizen incident reporting, technical police triage, and real-time tactical vehicle monitoring.",

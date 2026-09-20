@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
 import { OcorrenciaForm, paraInputLocal, paraRequest, type ValoresOcorrencia } from '../components/ocorrencias/OcorrenciaForm';
 import { StatusBadge } from '../components/StatusBadge';
+import { formatarNatureza } from '../utils/formatarNatureza';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
@@ -63,7 +64,7 @@ export const MinhasOcorrenciasPage: React.FC = () => {
         <ul className="lista clicavel">
           {itens.map((o) => (
             <li key={o.ocorrencia_id} className={detalhe?.ocorrencia_id === o.ocorrencia_id ? 'ativo' : ''} onClick={() => abrir(o.ocorrencia_id)}>
-              <span><strong>{o.numero_protocolo}</strong> · {o.natureza}</span>
+              <span><strong>{o.numero_protocolo}</strong> · {formatarNatureza(o.natureza, t)}</span>
               <StatusBadge status={o.status} />
             </li>
           ))}

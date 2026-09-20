@@ -5,6 +5,7 @@ import { mensagemDeErro } from '../../services/api';
 import { ocorrenciasService } from '../../services/ocorrenciasService';
 import type { Evidencia, OcorrenciaDetalhe as Detalhe } from '../../types/api';
 import { StatusBadge } from '../StatusBadge';
+import { formatarNatureza } from '../../utils/formatarNatureza';
 
 const fmt = (iso: string) => new Date(iso).toLocaleString();
 
@@ -76,7 +77,7 @@ export const OcorrenciaDetalheView: React.FC<{ o: Detalhe }> = ({ o }) => {
         </span>
       </div>
       <dl className="grid2">
-        <dt>{t('ocorrencias:form.natureza_label')}</dt><dd>{o.natureza}</dd>
+        <dt>{t('ocorrencias:form.natureza_label')}</dt><dd>{formatarNatureza(o.natureza, t)}</dd>
         <dt>{t('ocorrencias:form.data_hora_fato_label')}</dt><dd>{fmt(o.data_hora_fato)}</dd>
         <dt>{t('ocorrencias:form.localizacao_label')}</dt><dd>{o.localizacao}</dd>
         <dt>{t('ocorrencias:form.coordenada_label')}</dt><dd>{o.latitude.toFixed(5)}, {o.longitude.toFixed(5)}</dd>
