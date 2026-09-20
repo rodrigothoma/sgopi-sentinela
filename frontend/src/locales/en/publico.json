@@ -14,7 +14,7 @@
     "natureza_especificar_placeholder": "E.g.: Lost vehicle license plate",
     "relato_label": "Detailed Incident Statement * (minimum 20 characters)",
     "relato_placeholder": "Describe in detail what happened, suspect traits, or involved items...",
-    "caracteres_contagem": "{{atual}}/20 characters",
+    "caracteres_contagem": "{{atual}}/500 characters (minimum 20)",
     "caracteres_faltam": "(missing {{restantes}})",
     "localizacao_titulo": "3. Incident Location",
     "endereco_label": "Approximate Address / Landmark *",

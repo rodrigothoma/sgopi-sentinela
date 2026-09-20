@@ -70,6 +70,7 @@ export const ConsultaProtocoloPage: React.FC = () => {
           <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 10, marginTop: 20 }}>
             <input
               type="text"
+              maxLength={25}
               placeholder={t('publico:consulta.placeholder')}
               value={protocoloInput}
               onChange={(e) => setProtocoloInput(e.target.value.toUpperCase())}

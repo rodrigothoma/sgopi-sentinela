@@ -184,10 +184,10 @@ h4 { font-size: .95rem; margin-top: 16px; }
 }
 
 .user-profile-header .user-role {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 500;
   color: var(--muted);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -508,38 +508,58 @@ dl.grid2 dd { margin: 0 0 8px; }
   box-shadow: 0 0 12px var(--primary-glow);
 }
 
-/* --- Status Badges (Tactical Glows) --- */
+/* --- Status Badges (Minimal Clean Indicator) --- */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: .75rem;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.82rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   white-space: nowrap;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--ink);
+  border: none !important;
+  background: transparent !important;
 }
 
-.badge-AGUARDANDO_REVISAO { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
-.badge-EM_CORRECAO { background: rgba(234, 88, 12, 0.15); color: #f97316; border-color: rgba(234, 88, 12, 0.3); }
-.badge-VALIDADA { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
-.badge-EM_ATENDIMENTO { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); }
-.badge-REJEITADA { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
-.badge-ENCERRADA { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.3); }
+.badge::before {
+  content: '●';
+  font-size: 0.62rem;
+  line-height: 1;
+}
 
-.badge-DISPONIVEL { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
-.badge-EM_DESLOCAMENTO { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); }
-.badge-OPERANDO { background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3); }
-.badge-INDISPONIVEL { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: rgba(148, 163, 184, 0.3); }
+.badge-AGUARDANDO_REVISAO { color: #f59e0b; }
+.badge-EM_CORRECAO { color: #ea580c; }
+.badge-VALIDADA { color: #10b981; }
+.badge-EM_ATENDIMENTO { color: #3b82f6; }
+.badge-REJEITADA { color: #ef4444; }
+.badge-ENCERRADA { color: #94a3b8; }
 
-.badge-OK { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
-.badge-SEM_SINAL { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
-.badge-SEM_POSICAO { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: rgba(148, 163, 184, 0.3); }
+.badge-DISPONIVEL { color: #10b981; }
+.badge-EM_DESLOCAMENTO { color: #3b82f6; }
+.badge-OPERANDO { color: #a855f7; }
+.badge-INDISPONIVEL { color: #94a3b8; }
+
+.badge-OK { color: #10b981; }
+.badge-SEM_SINAL { color: #f59e0b; }
+.badge-SEM_POSICAO { color: #94a3b8; }
+
+[data-theme="light"] .badge-AGUARDANDO_REVISAO { color: #d97706; }
+[data-theme="light"] .badge-EM_CORRECAO { color: #c2410c; }
+[data-theme="light"] .badge-VALIDADA { color: #059669; }
+[data-theme="light"] .badge-EM_ATENDIMENTO { color: #2563eb; }
+[data-theme="light"] .badge-REJEITADA { color: #dc2626; }
+[data-theme="light"] .badge-ENCERRADA { color: #64748b; }
+
+[data-theme="light"] .badge-DISPONIVEL { color: #059669; }
+[data-theme="light"] .badge-EM_DESLOCAMENTO { color: #2563eb; }
+[data-theme="light"] .badge-OPERANDO { color: #9333ea; }
+[data-theme="light"] .badge-INDISPONIVEL { color: #64748b; }
+
+[data-theme="light"] .badge-OK { color: #059669; }
+[data-theme="light"] .badge-SEM_SINAL { color: #d97706; }
+[data-theme="light"] .badge-SEM_POSICAO { color: #64748b; }
 
 /* --- Alerts & Callouts --- */
 .alerta {

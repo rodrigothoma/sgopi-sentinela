@@ -50,7 +50,7 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="login-wrap">
       <Link to="/" className="login-back-link">
-        ← Voltar ao Portal Público
+        {t('auth:voltar_portal')}
       </Link>
 
       <div className="login-header-controls">
@@ -74,7 +74,7 @@ export const LoginPage: React.FC = () => {
 
         <h1>{t('common:app.title')}</h1>
         <p className="muted" style={{ marginBottom: 20 }}>
-          {t('auth:subtitulo', 'Acesso Restrito às Forças Policiais')}
+          {t('auth:subtitulo')}
         </p>
 
         {erro && <div className="alerta erro" style={{ marginBottom: 16 }}>{erro}</div>}
@@ -84,7 +84,8 @@ export const LoginPage: React.FC = () => {
           <input
             autoFocus
             autoComplete="username"
-            placeholder="Seu usuário"
+            maxLength={50}
+            placeholder={t('auth:login_placeholder')}
             value={login}
             onChange={(e) => setLogin(e.target.value)}
           />
@@ -95,7 +96,8 @@ export const LoginPage: React.FC = () => {
           <input
             type="password"
             autoComplete="current-password"
-            placeholder="Sua senha"
+            maxLength={100}
+            placeholder={t('auth:senha_placeholder')}
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
           />
@@ -110,18 +112,18 @@ export const LoginPage: React.FC = () => {
           disabled={!login || !senha}
           style={{ marginTop: 20 }}
         >
-          {ocupado ? t('common:actions.loading') : 'Entrar no Sistema'}
+          {ocupado ? t('common:actions.loading') : t('auth:entrar')}
         </Button>
 
         <div className="demo-presets">
-          <div className="demo-presets-title">Atalhos de Demonstração (Seed)</div>
+          <div className="demo-presets-title">{t('auth:demo_titulo')}</div>
           <div className="demo-presets-buttons">
             <button
               type="button"
               className="btn-preset"
               onClick={() => preencherDemo('agente')}
             >
-              <span>Agente</span>
+              <span>{t('auth:perfis.agente')}</span>
               <span className="small muted">agente</span>
             </button>
             <button
@@ -129,7 +131,7 @@ export const LoginPage: React.FC = () => {
               className="btn-preset"
               onClick={() => preencherDemo('delegado')}
             >
-              <span>Delegada</span>
+              <span>{t('auth:perfis.delegado')}</span>
               <span className="small muted">delegado</span>
             </button>
             <button
@@ -137,7 +139,7 @@ export const LoginPage: React.FC = () => {
               className="btn-preset"
               onClick={() => preencherDemo('operador')}
             >
-              <span>Operador</span>
+              <span>{t('auth:perfis.operador')}</span>
               <span className="small muted">operador</span>
             </button>
           </div>

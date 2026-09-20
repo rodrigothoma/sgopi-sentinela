@@ -39,6 +39,7 @@ export const EnvolvidoForm: React.FC<Props> = ({ onAdd }) => {
           <label>{t('envolvido.nome_label')}</label>
           <input
             type="text"
+            maxLength={50}
             value={nome}
             onChange={(e) => setNome(e.target.value)}
           />
@@ -58,6 +59,7 @@ export const EnvolvidoForm: React.FC<Props> = ({ onAdd }) => {
           <label>{t('envolvido.documento_label')}</label>
           <input
             type="text"
+            maxLength={20}
             value={documento}
             onChange={(e) => setDocumento(e.target.value)}
           />

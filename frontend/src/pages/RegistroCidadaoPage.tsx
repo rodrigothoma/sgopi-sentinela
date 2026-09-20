@@ -175,6 +175,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                   <input
                     type="text"
                     required
+                    maxLength={50}
                     placeholder={t('publico:registro.nome_placeholder')}
                     value={nome}
                     onChange={(e) => setNome(e.target.value)}
@@ -184,6 +185,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                   {t('publico:registro.documento_label')}
                   <input
                     type="text"
+                    maxLength={20}
                     placeholder={t('publico:registro.documento_placeholder')}
                     value={documento}
                     onChange={(e) => setDocumento(e.target.value)}
@@ -232,6 +234,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                   {t('publico:registro.natureza_especificar_label')}
                   <input
                     type="text"
+                    maxLength={50}
                     placeholder={t('publico:registro.natureza_especificar_placeholder')}
                     value={naturezaPersonalizada}
                     onChange={(e) => setNaturezaPersonalizada(e.target.value)}
@@ -244,6 +247,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                 <textarea
                   rows={4}
                   required
+                  maxLength={500}
                   placeholder={t('publico:registro.relato_placeholder')}
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
@@ -264,6 +268,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                 <input
                   type="text"
                   required
+                  maxLength={150}
                   placeholder={t('publico:registro.endereco_placeholder')}
                   value={localizacao}
                   onChange={(e) => setLocalizacao(e.target.value)}

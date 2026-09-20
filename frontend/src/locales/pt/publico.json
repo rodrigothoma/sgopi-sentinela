@@ -14,7 +14,7 @@
     "natureza_especificar_placeholder": "Ex: Extravio de placa automotiva",
     "relato_label": "Relato Detalhado do Ocorrido * (mínimo 20 caracteres)",
     "relato_placeholder": "Descreva com detalhes o que aconteceu, características de suspeitos ou objetos envolvidos...",
-    "caracteres_contagem": "{{atual}}/20 caracteres",
+    "caracteres_contagem": "{{atual}}/500 caracteres (mínimo 20)",
     "caracteres_faltam": "(faltam {{restantes}})",
     "localizacao_titulo": "3. Localização do Ocorrido",
     "endereco_label": "Endereço Aproximado / Ponto de Referência *",
