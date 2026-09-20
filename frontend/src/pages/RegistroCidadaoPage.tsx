@@ -7,6 +7,7 @@ import { paraInputLocal } from '../components/ocorrencias/OcorrenciaForm';
 import { mensagemDeErro, registrarOcorrenciaPublica } from '../services/api';
 import { Button } from '../components/common/Button';
 import { GlideSelect, GlideSelectOption } from '../components/common/GlideSelect';
+import { SpringCheck } from '../components/common/SpringCheck';
 import {
   mascararCpfInput,
   mascararTelefoneInput,
@@ -270,9 +271,14 @@ export const RegistroCidadaoPage: React.FC = () => {
             <fieldset>
               <legend>{t('publico:registro.comunicante_titulo')}</legend>
               <div className="grid2">
-                <label>
-                  {t('publico:registro.nome_label')}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', minHeight: 24, margin: '14px 0 6px' }}>
+                    <label htmlFor="campo-nome" style={{ margin: 0 }}>
+                      {t('publico:registro.nome_label')}
+                    </label>
+                  </div>
                   <input
+                    id="campo-nome"
                     type="text"
                     required
                     maxLength={100}
@@ -280,12 +286,44 @@ export const RegistroCidadaoPage: React.FC = () => {
                     value={nome}
                     onChange={(e) => setNome(e.target.value)}
                   />
-                </label>
+                </div>
 
-                {!isEstrangeiro ? (
-                  <label>
-                    {t('publico:registro.cpf_label')}
+                <div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      minHeight: 24,
+                      margin: '14px 0 6px',
+                      gap: 8,
+                    }}
+                  >
+                    <label htmlFor="campo-documento" style={{ margin: 0 }}>
+                      {!isEstrangeiro ? t('publico:registro.cpf_label') : t('publico:registro.passaporte_label')}
+                    </label>
+                    <SpringCheck
+                      label={t('publico:registro.estrangeiro_check')}
+                      checked={isEstrangeiro}
+                      onChange={(checked) => {
+                        setIsEstrangeiro(checked);
+                        setCpf('');
+                        setPassaporte('');
+                      }}
+                      strike="none"
+                      doneOpacity={1}
+                      boxSize={18}
+                      boxRadius={5}
+                      fontSize={12}
+                      color="var(--muted)"
+                      fillColor="var(--primary)"
+                      checkColor="#ffffff"
+                      style={{ minHeight: 'unset' }}
+                    />
+                  </div>
+                  {!isEstrangeiro ? (
                     <input
+                      id="campo-documento"
                       type="text"
                       required
                       maxLength={14}
@@ -293,11 +331,9 @@ export const RegistroCidadaoPage: React.FC = () => {
                       value={cpf}
                       onChange={(e) => setCpf(mascararCpfInput(e.target.value))}
                     />
-                  </label>
-                ) : (
-                  <label>
-                    {t('publico:registro.passaporte_label')}
+                  ) : (
                     <input
+                      id="campo-documento"
                       type="text"
                       required
                       maxLength={30}
@@ -305,23 +341,8 @@ export const RegistroCidadaoPage: React.FC = () => {
                       value={passaporte}
                       onChange={(e) => setPassaporte(e.target.value)}
                     />
-                  </label>
-                )}
-              </div>
-
-              <div style={{ marginTop: 8, marginBottom: 14 }}>
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.82rem', color: 'var(--muted)' }}>
-                  <input
-                    type="checkbox"
-                    checked={isEstrangeiro}
-                    onChange={(e) => {
-                      setIsEstrangeiro(e.target.checked);
-                      setCpf('');
-                      setPassaporte('');
-                    }}
-                  />
-                  <span>{t('publico:registro.estrangeiro_check')}</span>
-                </label>
+                  )}
+                </div>
               </div>
 
               <div className="grid2">
@@ -451,26 +472,33 @@ export const RegistroCidadaoPage: React.FC = () => {
             {/* 4. Declaração Legal e Maioridade */}
             <fieldset>
               <legend>{t('publico:registro.declaracao_titulo')}</legend>
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 12,
-                  cursor: 'pointer',
-                  fontSize: '0.88rem',
-                  lineHeight: 1.5,
-                  userSelect: 'none',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  required
+              <div style={{ padding: '6px 0' }}>
+                <SpringCheck
+                  id="declaracao-maioridade-check"
+                  label={t('publico:registro.declaracao_texto')}
                   checked={declaracaoMaioridade}
-                  onChange={(e) => setDeclaracaoMaioridade(e.target.checked)}
-                  style={{ marginTop: 3, flexShrink: 0 }}
+                  onChange={setDeclaracaoMaioridade}
+                  strike="none"
+                  doneOpacity={1}
+                  boxSize={22}
+                  boxRadius={6}
+                  fontSize={14}
+                  color="var(--ink)"
+                  fillColor="var(--primary)"
+                  checkColor="#ffffff"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    textAlign: 'left',
+                    lineHeight: 1.55,
+                    fontWeight: 400,
+                    minHeight: 'unset',
+                    width: '100%',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                  }}
                 />
-                <span>{t('publico:registro.declaracao_texto')}</span>
-              </label>
+              </div>
             </fieldset>
 
             <div style={{ display: 'flex', gap: 14, justifyContent: 'flex-end', marginTop: 28 }}>

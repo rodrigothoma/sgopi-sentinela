@@ -18,7 +18,7 @@
     "nome_placeholder": "Nome e sobrenome completos",
     "cpf_label": "CPF (Cadastro de Pessoa Física) *",
     "cpf_placeholder": "000.000.000-00",
-    "estrangeiro_check": "Sou estrangeiro e não possuo CPF brasileiro",
+    "estrangeiro_check": "Estrangeiro",
     "passaporte_label": "Passaporte ou Documento de Identidade Estrangeira *",
     "passaporte_placeholder": "Número do documento / passaporte",
     "email_label": "Endereço de E-mail *",

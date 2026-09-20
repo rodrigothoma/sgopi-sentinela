@@ -18,7 +18,7 @@
     "nome_placeholder": "Full legal name",
     "cpf_label": "CPF (National Tax ID) *",
     "cpf_placeholder": "000.000.000-00",
-    "estrangeiro_check": "I am a foreign citizen and do not have a Brazilian CPF",
+    "estrangeiro_check": "Foreign citizen",
     "passaporte_label": "Passport or Foreign ID Number *",
     "passaporte_placeholder": "Passport or national ID number",
     "email_label": "Email Address *",
