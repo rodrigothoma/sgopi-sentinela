@@ -10,6 +10,7 @@ export interface GlideSelectOption {
 }
 
 export interface GlideSelectProps {
+  id?: string;
   options: GlideSelectOption[];
   value?: string;
   defaultValue?: string;
@@ -21,6 +22,7 @@ export interface GlideSelectProps {
   highlightColor?: string;
   textColor?: string;
   size?: 'sm' | 'md' | 'lg';
+  fullWidth?: boolean;
   radius?: number;
   menuWidth?: number | string;
   placement?: 'bottom' | 'top';
@@ -29,11 +31,13 @@ export interface GlideSelectProps {
   glideDuration?: number;
   rememberPosition?: boolean;
   className?: string;
+  style?: React.CSSProperties;
   disabled?: boolean;
   placeholder?: string;
 }
 
 export const GlideSelect: React.FC<GlideSelectProps> = ({
+  id: customId,
   options = [],
   value: controlledValue,
   defaultValue,
@@ -45,6 +49,7 @@ export const GlideSelect: React.FC<GlideSelectProps> = ({
   highlightColor,
   textColor,
   size = 'md',
+  fullWidth = false,
   radius = 8,
   menuWidth,
   placement = 'bottom',
@@ -53,6 +58,7 @@ export const GlideSelect: React.FC<GlideSelectProps> = ({
   glideDuration = 220,
   rememberPosition = true,
   className = '',
+  style,
   disabled = false,
   placeholder = 'Selecione...',
 }) => {
@@ -71,7 +77,8 @@ export const GlideSelect: React.FC<GlideSelectProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const id = useId();
+  const generatedId = useId();
+  const id = customId || generatedId;
 
   const selectedOption = useMemo(
     () => options.find((opt) => opt.value === selectedValue) || options[0],
@@ -196,8 +203,8 @@ export const GlideSelect: React.FC<GlideSelectProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`glide-select-root glide-select--${size} ${isOpen ? 'glide-select--open' : ''} ${className}`.trim()}
-      style={cssVariables}
+      className={`glide-select-root glide-select--${size} ${fullWidth ? 'glide-select-root--full-width' : ''} ${isOpen ? 'glide-select--open' : ''} ${className}`.trim()}
+      style={{ ...cssVariables, ...style }}
       onKeyDown={handleKeyDown}
     >
       <button

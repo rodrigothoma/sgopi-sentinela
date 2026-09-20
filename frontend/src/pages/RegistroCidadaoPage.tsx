@@ -272,7 +272,7 @@ export const RegistroCidadaoPage: React.FC = () => {
               <legend>{t('publico:registro.comunicante_titulo')}</legend>
               <div className="grid2">
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', minHeight: 24, margin: '14px 0 6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', minHeight: 28, margin: '14px 0 6px' }}>
                     <label htmlFor="campo-nome" style={{ margin: 0 }}>
                       {t('publico:registro.nome_label')}
                     </label>
@@ -294,7 +294,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      minHeight: 24,
+                      minHeight: 28,
                       margin: '14px 0 6px',
                       gap: 8,
                     }}
@@ -346,9 +346,14 @@ export const RegistroCidadaoPage: React.FC = () => {
               </div>
 
               <div className="grid2">
-                <label>
-                  {t('publico:registro.email_label')}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', minHeight: 28, margin: '14px 0 6px' }}>
+                    <label htmlFor="campo-email" style={{ margin: 0 }}>
+                      {t('publico:registro.email_label')}
+                    </label>
+                  </div>
                   <input
+                    id="campo-email"
                     type="email"
                     required
                     maxLength={100}
@@ -356,14 +361,19 @@ export const RegistroCidadaoPage: React.FC = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
-                  <small className="muted" style={{ display: 'block', marginTop: 4 }}>
+                  <small className="muted" style={{ display: 'block', marginTop: 4, minHeight: 18 }}>
                     {t('publico:registro.email_ajuda')}
                   </small>
-                </label>
+                </div>
 
-                <label>
-                  {t('publico:registro.telefone_label')}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', minHeight: 28, margin: '14px 0 6px' }}>
+                    <label htmlFor="campo-telefone" style={{ margin: 0 }}>
+                      {t('publico:registro.telefone_label')}
+                    </label>
+                  </div>
                   <input
+                    id="campo-telefone"
                     type="tel"
                     required
                     maxLength={15}
@@ -371,7 +381,10 @@ export const RegistroCidadaoPage: React.FC = () => {
                     value={telefone}
                     onChange={(e) => setTelefone(mascararTelefoneInput(e.target.value))}
                   />
-                </label>
+                  <small className="muted" style={{ display: 'block', marginTop: 4, minHeight: 18 }}>
+                    {t('publico:registro.telefone_ajuda')}
+                  </small>
+                </div>
               </div>
             </fieldset>
 
@@ -379,36 +392,38 @@ export const RegistroCidadaoPage: React.FC = () => {
             <fieldset>
               <legend>{t('publico:registro.fato_titulo')}</legend>
               <div className="grid2">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label
-                    style={{
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      color: 'var(--muted)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    {t('publico:registro.natureza_label')}
-                  </label>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', minHeight: 28, margin: '14px 0 6px' }}>
+                    <label htmlFor="campo-natureza" style={{ margin: 0 }}>
+                      {t('publico:registro.natureza_label')}
+                    </label>
+                  </div>
                   <GlideSelect
+                    id="campo-natureza"
                     options={opcoesNatureza}
                     value={natureza}
                     onChange={(val) => setNatureza(val)}
                     size="md"
+                    fullWidth
                     menuWidth="100%"
                     ariaLabel={t('publico:registro.natureza_label')}
                   />
                 </div>
-                <label>
-                  {t('publico:registro.data_hora_label')}
+
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', minHeight: 28, margin: '14px 0 6px' }}>
+                    <label htmlFor="campo-data-hora" style={{ margin: 0 }}>
+                      {t('publico:registro.data_hora_label')}
+                    </label>
+                  </div>
                   <input
+                    id="campo-data-hora"
                     type="datetime-local"
                     required
                     value={dataHora}
                     onChange={(e) => setDataHora(e.target.value)}
                   />
-                </label>
+                </div>
               </div>
 
               {natureza === 'Outro Fato Circunstanciado' && (

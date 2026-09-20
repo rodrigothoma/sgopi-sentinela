@@ -53,6 +53,7 @@ export const TipificacaoForm: React.FC<Props> = ({ onAdd }) => {
           type="button"
           className="btn btn-primary"
           onClick={handleSubmit}
+          style={{ height: 42 }}
         >
           {t('form.add_tipificacao')}
         </button>

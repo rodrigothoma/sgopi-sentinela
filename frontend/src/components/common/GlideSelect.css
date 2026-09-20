@@ -13,6 +13,11 @@
   user-select: none;
 }
 
+.glide-select-root--full-width {
+  width: 100%;
+  display: block;
+}
+
 /* ── Trigger Button ── */
 .glide-select-trigger {
   display: inline-flex;
@@ -28,6 +33,7 @@
   font-weight: 500;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .glide-select-trigger:hover:not(:disabled) {
@@ -69,16 +75,23 @@
 .glide-select--sm .glide-select-trigger {
   padding: 5px 10px;
   font-size: 0.82rem;
+  min-height: 32px;
 }
 
 .glide-select--md .glide-select-trigger {
-  padding: 8px 14px;
-  font-size: 0.9rem;
+  padding: 9.5px 12px;
+  font-size: 0.95rem;
+  min-height: 42px;
+  height: 42px;
+  box-sizing: border-box;
 }
 
 .glide-select--lg .glide-select-trigger {
   padding: 11px 18px;
   font-size: 1rem;
+  min-height: 48px;
+  height: 48px;
+  box-sizing: border-box;
 }
 
 /* ── Menu Popover ── */
