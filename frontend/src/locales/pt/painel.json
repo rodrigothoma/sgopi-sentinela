@@ -18,6 +18,8 @@
   "manchas": {
     "mostrar": "Manchas criminais", "ocultar": "Ocultar manchas",
     "periodo": "Período", "dias": "{{n}} dias", "natureza": "Natureza", "todas": "Todas",
-    "criticidade": "Alta criticidade: {{n}}+ ocorrências nas últimas 24 h — considere reforçar o policiamento na região."
+    "criticidade": "Alta criticidade: {{n}}+ ocorrências nas últimas 24 h — considere reforçar o policiamento na região.",
+    "em_aberto_titulo": "Críticas em aberto", "em_aberto_vazio": "Nenhuma ocorrência em aberto no filtro atual.",
+    "ha_minutos": "há {{n}} min", "ha_horas": "há {{n}} h", "ha_dias": "há {{n}} dias"
   }
 }

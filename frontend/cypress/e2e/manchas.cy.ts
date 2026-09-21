@@ -57,5 +57,16 @@ describe('Issue #45 - Manchas criminais e criticidade', () => {
     cy.contains('.painel-barra label', 'Natureza').find('select').select(NATUREZA_TESTE);
     cy.get('.leaflet-heatmap-layer').should('exist');
     cy.contains('.painel-mapa .alerta.erro', 'criticidade').should('be.visible');
+  it('lista as críticas em aberto com tempo de abertura mesmo fora das 24h', () => {
+    cy.criarOcorrenciaApi({ natureza: NATUREZA_TESTE }).then((o) => {
+      validarComoDelegado(o.ocorrencia_id);
+      cy.login('operador', '/painel');
+      ligarManchas();
+
+      cy.contains('.painel-lateral .card', 'Críticas em aberto').within(() => {
+        cy.contains('li', o.numero_protocolo).should('be.visible').click();
+      });
+      cy.contains('.painel-lateral .card', 'Críticas em aberto').contains('li', /há \d+ (min|h|dias)/);
+    });
   });
 });

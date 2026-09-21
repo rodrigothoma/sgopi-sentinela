@@ -18,6 +18,8 @@
   "manchas": {
     "mostrar": "Crime hotspots", "ocultar": "Hide hotspots",
     "periodo": "Period", "dias": "{{n}} days", "natureza": "Nature", "todas": "All",
-    "criticidade": "High criticality: {{n}}+ occurrences in the last 24 h — consider reinforcing patrols in the area."
+    "criticidade": "High criticality: {{n}}+ occurrences in the last 24 h — consider reinforcing patrols in the area.",
+    "em_aberto_titulo": "Open critical", "em_aberto_vazio": "No open occurrences in the current filter.",
+    "ha_minutos": "{{n}} min ago", "ha_horas": "{{n}} h ago", "ha_dias": "{{n}} days ago"
   }
 }

@@ -39,4 +39,14 @@ export function contarOcorrencias24h(
       (natureza === '' || o.natureza === natureza) &&
       new Date(o.data_hora_fato).getTime() >= corte,
   ).length;
+export function listarEmAberto(ocorrencias: OcorrenciaResumo[], natureza: string): OcorrenciaResumo[] {
+  const filtradas =
+    natureza === '' ? ocorrencias : ocorrencias.filter((o) => o.natureza === natureza);
+  return [...filtradas].sort(
+    (a, b) => new Date(a.criada_em).getTime() - new Date(b.criada_em).getTime(),
+  );
+}
+
+export function idadeEmMinutos(criadaEm: string, agora: number = Date.now()): number {
+  return Math.max(0, Math.floor((agora - new Date(criadaEm).getTime()) / 60_000));
 }

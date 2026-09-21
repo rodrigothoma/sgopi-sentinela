@@ -15,6 +15,8 @@ import {
   PERIODO_MANCHA_PADRAO_DIAS,
   contarOcorrencias24h,
   filtrarPontosMancha,
+  idadeEmMinutos,
+  listarEmAberto,
   listarNaturezas,
 } from '../utils/manchas';
 import type { EventoTempoReal, OcorrenciaResumo, OrdemDespacho, StatusSimulador, Sugestoes, Viatura } from '../types/api';
@@ -114,6 +116,17 @@ export const PainelTaticoPage: React.FC = () => {
     () => heatAtivo && contarOcorrencias24h(ocorrencias, naturezaFiltro) >= LIMIAR_CRITICIDADE_24H,
     [heatAtivo, ocorrencias, naturezaFiltro],
   );
+  const emAberto = useMemo(
+    () => (heatAtivo ? listarEmAberto(ocorrencias, naturezaFiltro) : []),
+    [heatAtivo, ocorrencias, naturezaFiltro],
+  );
+
+  const idade = (criadaEm: string): string => {
+    const min = idadeEmMinutos(criadaEm);
+    if (min < 60) return t('painel:manchas.ha_minutos', { n: min });
+    if (min < 24 * 60) return t('painel:manchas.ha_horas', { n: Math.floor(min / 60) });
+    return t('painel:manchas.ha_dias', { n: Math.floor(min / (24 * 60)) });
+  };
 
   const selecionar = async (id: string) => {
     setSelecionada(id);
@@ -268,6 +281,21 @@ export const PainelTaticoPage: React.FC = () => {
               ))}
             </ul>
           </section>
+
+          {heatAtivo && (
+            <section className="card">
+              <h3>{t('painel:manchas.em_aberto_titulo')} <span className="muted">({emAberto.length})</span></h3>
+              {emAberto.length === 0 && <p className="muted">{t('painel:manchas.em_aberto_vazio')}</p>}
+              <ul className="lista clicavel">
+                {emAberto.map((o) => (
+                  <li key={o.ocorrencia_id} className={o.ocorrencia_id === selecionada ? 'ativo' : ''} onClick={() => selecionar(o.ocorrencia_id)}>
+                    <span><strong>{o.numero_protocolo}</strong> · {o.natureza}<br /><small className="muted">{idade(o.criada_em)}</small></span>
+                    <StatusBadge status={o.status} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {ocorrenciaSel && podeDespachar && ocorrenciaSel.status === 'VALIDADA' && (
             <section className="card">
