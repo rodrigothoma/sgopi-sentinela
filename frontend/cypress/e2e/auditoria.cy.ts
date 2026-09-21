@@ -29,7 +29,9 @@ describe('Issue #47 — Trilha de Auditoria Imutável e RBAC (RNF02 / RNF03)', (
       // 7. Inspeção do payload
       cy.contains('button', 'Inspecionar').first().click();
       cy.contains('div[role="dialog"]', 'Inspeção de Auditoria').should('be.visible');
-      cy.contains('div[role="dialog"]', 'Novo Estado (dados_depois)').should('be.visible');
+      cy.contains('div[role="dialog"]', 'Visão Operacional').should('be.visible');
+      cy.contains('button', 'JSON Técnico').click();
+      cy.contains('div[role="dialog"]', 'Novo Estado').should('be.visible');
 
       // 8. Fecha o modal
       cy.contains('div[role="dialog"] button', 'Fechar').click();
