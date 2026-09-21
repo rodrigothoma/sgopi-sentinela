@@ -1,42 +1,147 @@
 {
   "page_title": "Registrar Ocorrência",
   "form": {
-    "natureza_label": "Natureza da ocorrência", "natureza_placeholder": "Ex: Furto, Roubo, Homicídio...",
-    "descricao_label": "Descrição circunstanciada", "descricao_placeholder": "Descreva os fatos com detalhes (mínimo 20 caracteres)...",
-    "localizacao_label": "Endereço", "localizacao_placeholder": "Rua, número, bairro, cidade",
-    "coordenada_label": "Coordenada geográfica", "coordenada_ajuda": "clique no mapa ou arraste o marcador",
+    "natureza_label": "Natureza da ocorrência",
+    "natureza_placeholder": "Ex: Furto, Roubo, Homicídio...",
+    "descricao_label": "Descrição circunstanciada",
+    "descricao_placeholder": "Descreva os fatos com detalhes (mínimo 20 caracteres)...",
+    "localizacao_label": "Endereço / local da ocorrência",
+    "localizacao_placeholder": "Rua, número, bairro, cidade — ou escolha o ponto no mapa",
+    "coordenada_label": "Coordenada geográfica",
+    "coordenada_ajuda": "clique no mapa ou arraste o marcador",
     "data_hora_fato_label": "Data/hora do fato",
-    "envolvidos_label": "Envolvidos", "add_envolvido": "Adicionar envolvido",
-    "tipificacoes_label": "Tipificações penais", "add_tipificacao": "Adicionar tipificação"
+    "envolvidos_label": "Envolvidos",
+    "add_envolvido": "Adicionar envolvido",
+    "tipificacoes_label": "Tipificações penais",
+    "add_tipificacao": "Adicionar tipificação",
+    "secao_fato": "Dados do fato",
+    "secao_local": "Local do fato",
+    "secao_narrativa": "Narrativa",
+    "localizacao_dica": "Você também pode definir o local da ocorrência no mapa.",
+    "escolher_no_mapa": "Escolher no mapa",
+    "informar_endereco": "Informar endereço manualmente",
+    "localizar_endereco": "Localizar endereço",
+    "localizando": "Localizando...",
+    "endereco_nao_localizado": "Endereço não localizado. Ajuste o texto ou escolha o ponto no mapa.",
+    "endereco_localizado": "Endereço localizado — coordenada preenchida. Confira o marcador se quiser ajustar.",
+    "mapa_instrucao": "Clique no ponto onde ocorreu o fato: o endereço e as coordenadas de latitude/longitude são preenchidos no mesmo clique. Arraste o marcador para ajustar.",
+    "endereco_do_mapa": "Endereço obtido do mapa (você pode editar)",
+    "buscando_endereco": "Buscando endereço do ponto marcado...",
+    "marcado_no_mapa": "Ponto marcado no mapa ({{lat}}, {{lon}})",
+    "coordenada_definida": "Coordenada do fato: {{lat}}, {{lon}}",
+    "coordenada_pendente": "Coordenada do fato ainda não definida — use \"Localizar endereço\" ou escolha o ponto no mapa.",
+    "coordenada_manual": "Informar coordenadas manualmente",
+    "descricao_ajuda": "mínimo de 20 caracteres",
+    "obrigatorio": "campo obrigatório"
   },
-  "envolvido": { "nome_label": "Nome", "tipo_label": "Tipo", "documento_label": "Documento (CPF/RG)", "VITIMA": "Vítima", "TESTEMUNHA": "Testemunha", "SUSPEITO": "Suspeito" },
-  "tipificacao": { "artigo_label": "Artigo", "artigo_placeholder": "Ex: Art. 155 CP", "descricao_label": "Descrição", "descricao_placeholder": "Descrição do tipo penal" },
+  "envolvido": {
+    "nome_label": "Nome",
+    "tipo_label": "Tipo",
+    "documento_label": "Documento",
+    "VITIMA": "Vítima",
+    "TESTEMUNHA": "Testemunha",
+    "SUSPEITO": "Suspeito",
+    "tipo_documento_label": "Tipo de documento",
+    "sem_documento": "Não informado",
+    "numero_documento_placeholder_CPF": "000.000.000-00 (11 dígitos)",
+    "numero_documento_placeholder_RG": "10 dígitos, somente números",
+    "documento_ajuda_CPF": "Somente números — exatamente 11 dígitos",
+    "documento_ajuda_RG": "Somente números — exatamente 10 dígitos",
+    "erro_cpf_incompleto": "CPF deve ter exatamente 11 dígitos",
+    "erro_rg_tamanho": "RG deve ter exatamente 10 dígitos",
+    "nome_placeholder": "Nome completo (somente letras)",
+    "erro_nome_vazio": "Informe o nome do envolvido",
+    "erro_nome_invalido": "O nome deve conter apenas letras"
+  },
+  "tipificacao": {
+    "artigo_label": "Artigo",
+    "artigo_placeholder": "Ex: Art. 155 CP",
+    "descricao_label": "Descrição",
+    "descricao_placeholder": "Descrição do tipo penal"
+  },
   "evidencias": {
-    "titulo": "Evidências digitais", "selecionar": "Selecionar arquivos", "ajuda": "PDF, JPG, JPEG ou PNG; máximo de 10 MB por arquivo e 10 arquivos por ocorrência.",
-    "formato_invalido": "Selecione apenas arquivos PDF, JPG, JPEG ou PNG", "tamanho_excedido": "Cada evidência deve ter no máximo 10 MB",
-    "limite": "Selecione no máximo 10 evidências", "erro_upload": "A ocorrência foi registrada, mas uma evidência não pôde ser enviada."
+    "titulo": "Evidências digitais",
+    "selecionar": "Selecionar arquivos",
+    "ajuda": "PDF, JPG, JPEG ou PNG; máximo de 10 MB por arquivo e 10 arquivos por ocorrência.",
+    "formato_invalido": "Selecione apenas arquivos PDF, JPG, JPEG ou PNG",
+    "tamanho_excedido": "Cada evidência deve ter no máximo 10 MB",
+    "limite": "Selecione no máximo 10 evidências",
+    "erro_upload": "A ocorrência foi registrada, mas uma evidência não pôde ser enviada."
   },
   "erros": {
-    "campos_obrigatorios": "Preencha natureza e endereço", "descricao_curta": "A descrição deve ter ao menos 20 caracteres",
-    "sem_coordenada": "Marque a coordenada do fato no mapa", "data_futura": "A data/hora do fato não pode ser futura",
+    "campos_obrigatorios": "Preencha a natureza e o endereço/local da ocorrência",
+    "descricao_curta": "A descrição deve ter ao menos 20 caracteres",
+    "sem_coordenada": "Defina a coordenada do fato: localize o endereço ou escolha o ponto no mapa",
+    "data_futura": "A data/hora do fato não pode ser futura",
     "sem_envolvidos": "Qualifique ao menos um envolvido"
   },
-  "registro": { "aguardando": "a ocorrência está na fila de revisão do Delegado." },
-  "toast": { "success": "Ocorrência registrada! Protocolo: {{protocolo}}", "error_server": "Erro ao registrar ocorrência. Tente novamente." },
-  "detalhe": {
-    "versao": "versão", "registrada_em": "registrada em", "integra": "Narrativa íntegra desde a validação", "adulterada": "ATENÇÃO: narrativa alterada após a validação",
-    "justificativa": "Justificativa do Delegado", "desfecho": "Desfecho", "historico": "Histórico de status"
+  "registro": {
+    "aguardando": "a ocorrência está na fila de revisão do Delegado."
   },
-  "minhas": { "titulo": "Minhas ocorrências", "vazio": "Nenhuma ocorrência registrada.", "selecione": "Selecione uma ocorrência para ver o detalhe." },
-  "correcao": { "titulo": "Corrigir {{protocolo}}", "editar": "Editar", "reenviar": "Reenviar para revisão", "salvar": "Salvar correção", "salva": "Correção salva.", "reenviada": "Ocorrência reenviada para revisão." },
+  "toast": {
+    "success": "Ocorrência registrada! Protocolo: {{protocolo}}",
+    "error_server": "Erro ao registrar ocorrência. Tente novamente."
+  },
+  "detalhe": {
+    "versao": "versão",
+    "registrada_em": "registrada em",
+    "integra": "Narrativa íntegra desde a validação",
+    "adulterada": "ATENÇÃO: narrativa alterada após a validação",
+    "justificativa": "Justificativa do Delegado",
+    "desfecho": "Desfecho",
+    "historico": "Histórico de status",
+    "arquivada": "Ocorrência arquivada",
+    "excluida": "Ocorrência excluída (exclusão lógica — registro preservado para auditoria)",
+    "motivo": "Motivo",
+    "por": "autorizado por"
+  },
+  "minhas": {
+    "titulo": "Minhas ocorrências",
+    "vazio": "Nenhuma ocorrência registrada.",
+    "selecione": "Selecione uma ocorrência para ver o detalhe."
+  },
+  "correcao": {
+    "titulo": "Corrigir {{protocolo}}",
+    "editar": "Editar",
+    "reenviar": "Reenviar para revisão",
+    "salvar": "Salvar correção",
+    "salva": "Correção salva.",
+    "reenviada": "Ocorrência reenviada para revisão."
+  },
   "fila": {
-    "titulo": "Fila de revisão", "vazia": "Nenhuma ocorrência neste filtro.", "selecione": "Selecione uma ocorrência da fila.",
-    "filtro_0": "Aguardando revisão", "filtro_1": "Em correção", "filtro_2": "Validadas / em atendimento", "filtro_3": "Rejeitadas / encerradas"
+    "titulo": "Fila de revisão",
+    "vazia": "Nenhuma ocorrência neste filtro.",
+    "selecione": "Selecione uma ocorrência da fila.",
+    "filtro_0": "Aguardando revisão",
+    "filtro_1": "Em correção",
+    "filtro_2": "Validadas / em atendimento",
+    "filtro_3": "Rejeitadas / encerradas",
+    "filtro_4": "Arquivadas / excluídas"
   },
   "revisao": {
-    "justificativa_label": "Justificativa (obrigatória para devolver ou rejeitar, mínimo 10 caracteres)", "justificativa_placeholder": "Explique o motivo...",
-    "justificativa_curta": "Informe uma justificativa com ao menos 10 caracteres", "confirmar_rejeicao": "Rejeitar é definitivo. Confirmar?",
-    "validar": "Validar", "devolver": "Devolver para correção", "rejeitar": "Rejeitar",
-    "ok_validar": "Ocorrência validada — disponível no painel tático.", "ok_devolver": "Ocorrência devolvida ao agente.", "ok_rejeitar": "Ocorrência rejeitada."
+    "justificativa_label": "Justificativa (obrigatória para devolver ou rejeitar, mínimo 10 caracteres)",
+    "justificativa_placeholder": "Explique o motivo...",
+    "justificativa_curta": "Informe uma justificativa com ao menos 10 caracteres",
+    "confirmar_rejeicao": "Rejeitar é definitivo. Confirmar?",
+    "validar": "Validar",
+    "devolver": "Devolver para correção",
+    "rejeitar": "Rejeitar",
+    "ok_validar": "Ocorrência validada — disponível no painel tático.",
+    "ok_devolver": "Ocorrência devolvida ao agente.",
+    "ok_rejeitar": "Ocorrência rejeitada."
+  },
+  "admin": {
+    "titulo": "Atos administrativos do Delegado",
+    "aviso": "Arquivar ou excluir exige a sua autorização como Delegado e um motivo (mínimo 10 caracteres). O ato é registrado na auditoria com seu usuário, data/hora e motivo.",
+    "motivo_label": "Motivo (obrigatório)",
+    "motivo_placeholder": "Ex.: registro em duplicidade com o protocolo SGOPI-2026-000123...",
+    "motivo_curto": "Informe o motivo com ao menos 10 caracteres",
+    "arquivar": "Arquivar ocorrência",
+    "excluir": "Excluir ocorrência",
+    "confirmar_arquivar": "Arquivar a ocorrência {{protocolo}}? Ela sai do fluxo de revisão/despacho, mas permanece consultável.",
+    "confirmar_excluir": "Excluir a ocorrência {{protocolo}}? A exclusão é lógica e definitiva: ela some das listagens, mas o registro é preservado para auditoria. Esta ação não pode ser desfeita.",
+    "ok_arquivar": "Ocorrência arquivada.",
+    "ok_excluir": "Ocorrência excluída (registro preservado para auditoria).",
+    "bloqueado_atendimento": "Ocorrência em atendimento não pode ser arquivada nem excluída."
   }
 }

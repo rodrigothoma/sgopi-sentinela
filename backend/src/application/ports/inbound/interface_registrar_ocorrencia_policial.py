@@ -28,6 +28,22 @@ class TipificacaoInputDTO:
 
 
 @dataclass(frozen=True)
+class ItemApreendidoInputDTO:
+    """Item apreendido informado já no registro (RF03 — opcional; UC01 cenário alternativo I)."""
+
+    tipo: str  # ARMA_DE_FOGO | ARMA_BRANCA | ENTORPECENTE | VEICULO | VALOR | OBJETO
+    descricao: str
+    quantidade: int
+    estado_conservacao: str  # NOVO | BOM | REGULAR | DANIFICADO | INSERVIVEL
+    numero_lacre: str
+    localizacao_deposito: str
+    unidade: str = "UNIDADE"
+    numero_serie: str | None = None
+    marca: str | None = None
+    calibre: str | None = None
+
+
+@dataclass(frozen=True)
 class RegistrarOcorrenciaInput:
     natureza: str
     descricao: str
@@ -37,6 +53,7 @@ class RegistrarOcorrenciaInput:
     data_hora_fato: datetime
     tipificacoes: tuple[TipificacaoInputDTO, ...] = field(default_factory=tuple)
     envolvidos: tuple[EnvolvidoInputDTO, ...] = field(default_factory=tuple)
+    itens_apreendidos: tuple[ItemApreendidoInputDTO, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)

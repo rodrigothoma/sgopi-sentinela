@@ -9,17 +9,6 @@ import { mensagemDeErro } from '../services/api';
 import { despachoService } from '../services/despachoService';
 import { ocorrenciasService } from '../services/ocorrenciasService';
 import { viaturasService } from '../services/viaturasService';
-import {
-  LIMIAR_CRITICIDADE_24H,
-  PERIODOS_MANCHA_DIAS,
-  PERIODO_MANCHA_PADRAO_DIAS,
-  filtrarPontosMancha,
-  idadeEmMinutos,
-  listarCriticas24h,
-  listarEmAberto,
-  listarNaturezas,
-  resumirPorNatureza,
-} from '../utils/manchas';
 import type { EventoTempoReal, OcorrenciaResumo, OrdemDespacho, StatusSimulador, Sugestoes, Viatura } from '../types/api';
 
 /**
@@ -40,10 +29,8 @@ export const PainelTaticoPage: React.FC = () => {
   const [desfecho, setDesfecho] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [ultimoEvento, setUltimoEvento] = useState<string>('');
-  const [heatAtivo, setHeatAtivo] = useState(false);
-  const [periodoDias, setPeriodoDias] = useState<number>(PERIODO_MANCHA_PADRAO_DIAS);
-  const [naturezaFiltro, setNaturezaFiltro] = useState('');
-  const [detalhesCriticos, setDetalhesCriticos] = useState(false);
+  // comunicados operacionais (chegada ao local etc.) — ficam listados, não só no toast
+  const [comunicados, setComunicados] = useState<{ id: string; em: string; texto: string }[]>([]);
 
   const carregar = useCallback(async () => {
     try {
@@ -82,13 +69,22 @@ export const PainelTaticoPage: React.FC = () => {
   const onEvento = useCallback((e: EventoTempoReal) => {
     setUltimoEvento(`${e.tipo} ${new Date(e.ocorrido_em).toLocaleTimeString()}`);
     const d = e.dados as Record<string, string | number | null>;
+    const atualizarViatura = () => setViaturas((vs) => vs.map((v) => v.id === d.viatura_id
+      ? { ...v, situacao: (d.situacao as Viatura['situacao']) ?? v.situacao, latitude: (d.latitude as number) ?? v.latitude, longitude: (d.longitude as number) ?? v.longitude, posicao_registrada_em: (d.registrada_em as string) ?? v.posicao_registrada_em, sinal: d.latitude != null ? 'OK' : v.sinal }
+      : v));
     switch (e.tipo) {
       case 'PosicaoAtualizada':
       case 'ViaturaSituacaoAlterada':
-        setViaturas((vs) => vs.map((v) => v.id === d.viatura_id
-          ? { ...v, situacao: (d.situacao as Viatura['situacao']) ?? v.situacao, latitude: (d.latitude as number) ?? v.latitude, longitude: (d.longitude as number) ?? v.longitude, posicao_registrada_em: (d.registrada_em as string) ?? v.posicao_registrada_em, sinal: d.latitude != null ? 'OK' : v.sinal }
-          : v));
+        atualizarViatura();
         break;
+      case 'ViaturaChegouAoLocal': {
+        // RF18/RF19: a viatura chegou à ocorrência e iniciou os procedimentos de atendimento
+        atualizarViatura();
+        const texto = t('painel:chegada.mensagem', { prefixo: d.prefixo, protocolo: d.numero_protocolo, ordem: d.numero_ordem });
+        avisar(texto, 'sucesso');
+        setComunicados((cs) => [{ id: `${d.viatura_id}-${e.ocorrido_em}`, em: e.ocorrido_em, texto }, ...cs].slice(0, 20));
+        break;
+      }
       case 'OcorrenciaValidada':
         ocorrenciasService.listar(['VALIDADA', 'EM_ATENDIMENTO'], 200).then((p) => setOcorrencias(p.itens)).catch(() => undefined);
         break;
@@ -97,40 +93,21 @@ export const PainelTaticoPage: React.FC = () => {
         despachoService.listar(true).then(setOrdens).catch(() => undefined);
         break;
       case 'OcorrenciaEncerrada':
+      case 'OcorrenciaArquivada':
+      case 'OcorrenciaExcluida':
         setOcorrencias((os) => os.filter((o) => o.ocorrencia_id !== d.ocorrencia_id));
         despachoService.listar(true).then(setOrdens).catch(() => undefined);
         break;
       default:
         break;
     }
-  }, []);
+  }, [t, avisar]);
 
   const conexao = useTempoReal(onEvento, carregar);
+  const viaturasEmDeslocamento = viaturas.filter((v) => v.situacao === 'EM_DESLOCAMENTO');
 
   const ocorrenciaSel = useMemo(() => ocorrencias.find((o) => o.ocorrencia_id === selecionada) ?? null, [ocorrencias, selecionada]);
   const semSinal = viaturas.filter((v) => v.sinal !== 'OK');
-  const naturezas = useMemo(() => listarNaturezas(ocorrencias), [ocorrencias]);
-  const pontosCalor = useMemo(
-    () => (heatAtivo ? filtrarPontosMancha(ocorrencias, periodoDias, naturezaFiltro) : []),
-    [heatAtivo, ocorrencias, periodoDias, naturezaFiltro],
-  );
-  const criticas = useMemo(
-    () => (heatAtivo ? listarCriticas24h(ocorrencias, naturezaFiltro) : []),
-    [heatAtivo, ocorrencias, naturezaFiltro],
-  );
-  const criticidade = criticas.length >= LIMIAR_CRITICIDADE_24H;
-  const resumoCriticas = useMemo(() => resumirPorNatureza(criticas).slice(0, 3), [criticas]);
-  const emAberto = useMemo(
-    () => (heatAtivo ? listarEmAberto(ocorrencias, naturezaFiltro) : []),
-    [heatAtivo, ocorrencias, naturezaFiltro],
-  );
-
-  const idade = (criadaEm: string): string => {
-    const min = idadeEmMinutos(criadaEm);
-    if (min < 60) return t('painel:manchas.ha_minutos', { n: min });
-    if (min < 24 * 60) return t('painel:manchas.ha_horas', { n: Math.floor(min / 60) });
-    return t('painel:manchas.ha_dias', { n: Math.floor(min / (24 * 60)) });
-  };
 
   const selecionar = async (id: string) => {
     setSelecionada(id);
@@ -195,31 +172,6 @@ export const PainelTaticoPage: React.FC = () => {
             {simulador.ligado ? t('painel:simulador.desligar') : t('painel:simulador.ligar')} ({simulador.ticks})
           </button>
         )}
-        <button className={`btn ${heatAtivo ? 'btn-warn' : 'btn-ghost'}`} onClick={() => setHeatAtivo((v) => !v)}>
-          {heatAtivo ? t('painel:manchas.ocultar') : t('painel:manchas.mostrar')}
-        </button>
-        {heatAtivo && (
-          <>
-            <label className="muted small">
-              {t('painel:manchas.periodo')}
-              <select value={periodoDias} onChange={(e) => setPeriodoDias(Number(e.target.value))}>
-                {PERIODOS_MANCHA_DIAS.map((d) => (
-                  <option key={d} value={d}>{t('painel:manchas.dias', { n: d })}</option>
-                ))}
-              </select>
-            </label>
-            <label className="muted small">
-              {t('painel:manchas.natureza')}
-              <select value={naturezaFiltro} onChange={(e) => setNaturezaFiltro(e.target.value)}>
-                <option value="">{t('painel:manchas.todas')}</option>
-                {naturezas.map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </label>
-          </>
-        )}
-        <button className="btn btn-ghost" onClick={carregar}>{t('common:actions.atualizar')}</button>
       </div>
 
       <div className="kpi-grid">
@@ -247,41 +199,7 @@ export const PainelTaticoPage: React.FC = () => {
 
       <div className="painel-grid">
         <div className="painel-mapa">
-          {criticidade && (
-            <div className="alerta erro">
-              <div>{t('painel:manchas.criticidade', { n: LIMIAR_CRITICIDADE_24H })}</div>
-              <div className="criticas-resumo">
-                <span>
-                  {t('painel:manchas.resumo_24h', { total: criticas.length })}
-                  {' · '}
-                  {resumoCriticas.map((r) => `${r.natureza} (${r.quantidade})`).join(', ')}
-                </span>
-                <button
-                  className="btn btn-sm btn-ghost"
-                  onClick={() => setDetalhesCriticos((v) => !v)}
-                >
-                  {detalhesCriticos
-                    ? t('painel:manchas.detalhes_ocultar')
-                    : t('painel:manchas.detalhes_mostrar')}
-                </button>
-              </div>
-              {detalhesCriticos && (
-                <div className="criticas-detalhes">
-                  {criticas.map((o) => (
-                    <button
-                      key={o.ocorrencia_id}
-                      className="btn btn-sm btn-ghost"
-                      onClick={() => selecionar(o.ocorrencia_id)}
-                      title={o.localizacao}
-                    >
-                      {o.numero_protocolo} · {o.natureza}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          <MapaTatico viaturas={viaturas} ocorrencias={ocorrencias} selecionada={selecionada} onSelecionarOcorrencia={selecionar} heatAtivo={heatAtivo} pontosCalor={pontosCalor} />
+          <MapaTatico viaturas={viaturas} ocorrencias={ocorrencias} ordens={ordens} selecionada={selecionada} onSelecionarOcorrencia={selecionar} />
           {semSinal.length > 0 && (
             <div className="alerta aviso">
               ⚠ {t('painel:sem_sinal.alerta', { n: semSinal.length })}
@@ -302,6 +220,21 @@ export const PainelTaticoPage: React.FC = () => {
         </div>
 
         <aside className="painel-lateral">
+          {(comunicados.length > 0 || viaturasEmDeslocamento.length > 0) && (
+            <section className="card comunicados">
+              <h3>{t('painel:chegada.titulo')}</h3>
+              {viaturasEmDeslocamento.length > 0 && (
+                <p className="muted small">
+                  {t('painel:chegada.a_caminho', { n: viaturasEmDeslocamento.length, prefixos: viaturasEmDeslocamento.map((v) => v.prefixo).join(', ') })}
+                </p>
+              )}
+              <ul className="lista">
+                {comunicados.map((c) => (
+                  <li key={c.id}><span>🚓 {c.texto}<br /><small className="muted">{new Date(c.em).toLocaleTimeString()}</small></span></li>
+                ))}
+              </ul>
+            </section>
+          )}
           <section className="card">
             <h3>{t('painel:ocorrencias.titulo')} <span className="muted">({ocorrencias.length})</span></h3>
             {ocorrencias.length === 0 && <p className="muted">{t('painel:ocorrencias.vazio')}</p>}
@@ -314,21 +247,6 @@ export const PainelTaticoPage: React.FC = () => {
               ))}
             </ul>
           </section>
-
-          {heatAtivo && (
-            <section className="card">
-              <h3>{t('painel:manchas.em_aberto_titulo')} <span className="muted">({emAberto.length})</span></h3>
-              {emAberto.length === 0 && <p className="muted">{t('painel:manchas.em_aberto_vazio')}</p>}
-              <ul className="lista clicavel">
-                {emAberto.map((o) => (
-                  <li key={o.ocorrencia_id} className={o.ocorrencia_id === selecionada ? 'ativo' : ''} onClick={() => selecionar(o.ocorrencia_id)}>
-                    <span><strong>{o.numero_protocolo}</strong> · {o.natureza}<br /><small className="muted">{idade(o.criada_em)}</small></span>
-                    <StatusBadge status={o.status} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
 
           {ocorrenciaSel && podeDespachar && ocorrenciaSel.status === 'VALIDADA' && (
             <section className="card">

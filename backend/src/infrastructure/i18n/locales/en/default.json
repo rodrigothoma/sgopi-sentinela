@@ -1,5 +1,6 @@
 {
   "ocorrencia": {
+    "motivo_curto": "Reason must have at least 10 characters",
     "created": "Occurrence registered successfully",
     "not_found": "Occurrence not found",
     "invalid_transition": "Invalid state transition",
@@ -17,10 +18,13 @@
     "status_invalido": "Invalid occurrence status"
   },
   "envolvido": {
+    "documento_tamanho_invalido": "Invalid document length: ID with 10 digits or CPF with 11 digits",
+    "documento_nao_numerico": "Document must contain digits only",
     "nome_vazio": "Involved person name is required",
     "tipo_invalido": "Invalid involved person type",
     "cpf_invalido": "Invalid CPF",
-    "duplicado": "Involved person already added to this occurrence"
+    "duplicado": "Involved person already added to this occurrence",
+    "nome_invalido": "Involved person name must contain letters only"
   },
   "tipificacao": {
     "artigo_vazio": "Article is required",
@@ -87,5 +91,24 @@
     "numero_vazio": "Order number is required",
     "ordem_ja_encerrada": "Dispatch order already closed",
     "viatura_indisponivel": "Vehicle is not available for dispatch"
+  },
+  "apreensao": {
+    "descricao_vazia": "Seized item description is required",
+    "quantidade_invalida": "Quantity must be greater than zero",
+    "lacre_vazio": "Seal number is required",
+    "lacre_duplicado": "Seal number already registered",
+    "localizacao_vazia": "Storage/vault location is required",
+    "arma_sem_calibre_ou_marca": "Firearms require caliber and brand",
+    "tipo_invalido": "Invalid seized item type",
+    "unidade_invalida": "Invalid unit of measure",
+    "estado_invalido": "Invalid condition",
+    "status_invalido": "The occurrence does not accept seizures in its current status",
+    "duplicada": "Item already linked to the occurrence",
+    "not_found": "Seized item not found",
+    "destino_vazio": "Custody destination is required",
+    "destino_igual_origem": "The item is already held at that location",
+    "movimentacao_retroativa": "The movement cannot precede the last one recorded",
+    "data_sem_fuso": "Date must include a time zone",
+    "sem_itens": "The occurrence has no seized items to issue the report"
   }
 }

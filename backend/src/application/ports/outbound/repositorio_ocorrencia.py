@@ -39,3 +39,8 @@ class RepositorioOcorrencia(ABC):
 
     @abstractmethod
     async def contar(self, filtro: FiltroOcorrencias) -> int: ...
+
+    @abstractmethod
+    async def lacre_em_uso(self, numero_lacre: str) -> bool:
+        """RF03 / UC03 exceção I: o número de lacre é único em toda a base (qualquer ocorrência)."""
+        ...

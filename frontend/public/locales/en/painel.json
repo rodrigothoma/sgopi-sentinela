@@ -1,18 +1,56 @@
 {
-  "conexao": { "conectando": "connecting", "conectado": "live", "reconectando": "reconnecting...", "desconectado": "disconnected" },
-  "simulador": { "ligar": "Start GPS simulator", "desligar": "Stop simulator" },
-  "viatura": "Vehicle", "situacao": "Status", "sinal": "Signal", "ultima_posicao": "Last position",
-  "sem_sinal": { "alerta": "{{n}} vehicle(s) without GPS signal — last known position in table", "nunca": "never reported a position" },
-  "kpi": { "ativas": "Active occurrences", "em_atendimento": "In progress", "sem_sinal": "No signal" },
-  "ocorrencias": { "titulo": "Validated occurrences", "vazio": "No validated occurrence awaiting dispatch." },
+  "conexao": {
+    "conectando": "connecting",
+    "conectado": "live",
+    "reconectando": "reconnecting...",
+    "desconectado": "disconnected"
+  },
+  "simulador": {
+    "ligar": "Start GPS simulator",
+    "desligar": "Stop simulator"
+  },
+  "viatura": "Vehicle",
+  "situacao": "Status",
+  "sinal": "Signal",
+  "ultima_posicao": "Last position",
+  "sem_sinal": {
+    "alerta": "{{n}} vehicle(s) without GPS signal — last known position in table",
+    "nunca": "never reported a position"
+  },
+  "kpi": {
+    "ativas": "Active occurrences",
+    "em_atendimento": "In progress",
+    "sem_sinal": "No signal"
+  },
+  "ocorrencias": {
+    "titulo": "Validated occurrences",
+    "vazio": "No validated occurrence awaiting dispatch."
+  },
   "despacho": {
-    "titulo": "Dispatch {{protocolo}}", "despachar": "Dispatch", "manual": "Manual dispatch",
+    "titulo": "Dispatch {{protocolo}}",
+    "despachar": "Dispatch",
+    "manual": "Manual dispatch",
     "sem_elegiveis": "No available vehicle with a valid GPS fix (≤ 60 s). You may dispatch manually:",
     "ok": "Dispatch order {{numero}} issued."
   },
-  "encerrar": { "titulo": "Response {{protocolo}}", "desfecho": "Outcome", "botao": "Close response", "ok": "Response closed; vehicles released." },
+  "encerrar": {
+    "titulo": "Response {{protocolo}}",
+    "desfecho": "Outcome",
+    "botao": "Close response",
+    "ok": "Response closed; vehicles released."
+  },
   "frota": {
-    "titulo": "Fleet", "prefixo": "Call sign", "placa": "Plate", "cadastrar": "Register", "cadastrada": "Vehicle registered.",
-    "disponibilizar": "Mark available", "indisponibilizar": "Mark unavailable"
+    "titulo": "Fleet",
+    "prefixo": "Call sign",
+    "placa": "Plate",
+    "cadastrar": "Register",
+    "cadastrada": "Vehicle registered.",
+    "disponibilizar": "Mark available",
+    "indisponibilizar": "Mark unavailable"
+  },
+  "chegada": {
+    "titulo": "Field reports",
+    "a_caminho": "{{n}} vehicle(s) en route: {{prefixos}}",
+    "mensagem": "Vehicle {{prefixo}} arrived at occurrence {{protocolo}} (order {{ordem}}) and started the response procedures."
   }
 }

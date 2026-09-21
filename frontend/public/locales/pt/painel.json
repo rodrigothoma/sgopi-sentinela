@@ -1,18 +1,56 @@
 {
-  "conexao": { "conectando": "conectando", "conectado": "tempo real", "reconectando": "reconectando...", "desconectado": "desconectado" },
-  "simulador": { "ligar": "Ligar simulador GPS", "desligar": "Desligar simulador" },
-  "viatura": "Viatura", "situacao": "Situação", "sinal": "Sinal", "ultima_posicao": "Última posição",
-  "sem_sinal": { "alerta": "{{n}} viatura(s) sem sinal GPS — última posição conhecida em tabela", "nunca": "nunca emitiu posição" },
-  "kpi": { "ativas": "Ocorrências ativas", "em_atendimento": "Em atendimento", "sem_sinal": "Sem sinal" },
-  "ocorrencias": { "titulo": "Ocorrências validadas", "vazio": "Nenhuma ocorrência validada aguardando despacho." },
+  "conexao": {
+    "conectando": "conectando",
+    "conectado": "tempo real",
+    "reconectando": "reconectando...",
+    "desconectado": "desconectado"
+  },
+  "simulador": {
+    "ligar": "Ligar simulador GPS",
+    "desligar": "Desligar simulador"
+  },
+  "viatura": "Viatura",
+  "situacao": "Situação",
+  "sinal": "Sinal",
+  "ultima_posicao": "Última posição",
+  "sem_sinal": {
+    "alerta": "{{n}} viatura(s) sem sinal GPS — última posição conhecida em tabela",
+    "nunca": "nunca emitiu posição"
+  },
+  "kpi": {
+    "ativas": "Ocorrências ativas",
+    "em_atendimento": "Em atendimento",
+    "sem_sinal": "Sem sinal"
+  },
+  "ocorrencias": {
+    "titulo": "Ocorrências validadas",
+    "vazio": "Nenhuma ocorrência validada aguardando despacho."
+  },
   "despacho": {
-    "titulo": "Despachar {{protocolo}}", "despachar": "Despachar", "manual": "Despacho manual",
+    "titulo": "Despachar {{protocolo}}",
+    "despachar": "Despachar",
+    "manual": "Despacho manual",
     "sem_elegiveis": "Nenhuma viatura disponível com GPS válido (≤ 60 s). Você pode despachar manualmente:",
     "ok": "Ordem de despacho {{numero}} emitida."
   },
-  "encerrar": { "titulo": "Atendimento {{protocolo}}", "desfecho": "Desfecho do atendimento", "botao": "Encerrar atendimento", "ok": "Atendimento encerrado; viaturas liberadas." },
+  "encerrar": {
+    "titulo": "Atendimento {{protocolo}}",
+    "desfecho": "Desfecho do atendimento",
+    "botao": "Encerrar atendimento",
+    "ok": "Atendimento encerrado; viaturas liberadas."
+  },
   "frota": {
-    "titulo": "Frota", "prefixo": "Prefixo", "placa": "Placa", "cadastrar": "Cadastrar", "cadastrada": "Viatura cadastrada.",
-    "disponibilizar": "Marcar disponível", "indisponibilizar": "Marcar indisponível"
+    "titulo": "Frota",
+    "prefixo": "Prefixo",
+    "placa": "Placa",
+    "cadastrar": "Cadastrar",
+    "cadastrada": "Viatura cadastrada.",
+    "disponibilizar": "Marcar disponível",
+    "indisponibilizar": "Marcar indisponível"
+  },
+  "chegada": {
+    "titulo": "Comunicados de campo",
+    "a_caminho": "{{n}} viatura(s) a caminho: {{prefixos}}",
+    "mensagem": "Viatura {{prefixo}} chegou ao local da ocorrência {{protocolo}} (ordem {{ordem}}) e iniciou os procedimentos de atendimento."
   }
 }
