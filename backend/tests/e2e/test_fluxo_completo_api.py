@@ -34,7 +34,7 @@ def test_fluxo_completo_registro_validacao_despacho_encerramento(client: httpx.C
     assert disponiveis, "nenhuma viatura DISPONIVEL para o teste"
     viatura = disponiveis[0]
     r = client.post("/v1/telemetria/posicoes", json={
-        "viatura_id": viatura["id"], "latitude": -29.7834, "longitude": -55.7920,
+        "viatura_id": viatura["id"], "latitude": -29.79, "longitude": -55.79,
         "registrada_em": datetime.now(UTC).isoformat(),
     }, headers=auth("operador"))
     assert r.status_code == 200, r.text
@@ -44,11 +44,21 @@ def test_fluxo_completo_registro_validacao_despacho_encerramento(client: httpx.C
     assert r.status_code == 200, r.text
     sugestoes = r.json()["sugestoes"]
     assert sugestoes, "esperava ao menos uma sugestão"
-    assert sugestoes[0]["viatura"]["id"] == viatura["id"]  # a que emitiu posição é a mais próxima
+    # Desligar o simulador não apaga posições pré-existentes de outras
+    # viaturas, então a nossa pode não ser a 1ª — basta estar entre as sugeridas.
+    assert any(
+        sugestao["viatura"]["id"] == viatura["id"]
+        for sugestao in sugestoes
+    ), "a viatura que enviou telemetria não foi sugerida"
 
-    # 5. Despacho (RF18)
-    r = client.post("/v1/despachos", json={"ocorrencia_id": oc_id, "viatura_id": sugestoes[0]["viatura"]["id"]},
-                    headers=auth("operador"))
+    # 5. Despacho (RF18) — despacha a mais próxima sugerida pela API
+    r = client.post(
+        "/v1/despachos",
+        json={
+            "ocorrencia_id": oc_id,
+            "viatura_id": sugestoes[0]["viatura"]["id"],
+        },
+        headers=auth("operador"))
     assert r.status_code == 201, r.text
     assert r.json()["numero"].startswith("OD-")
 

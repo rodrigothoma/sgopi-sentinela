@@ -4,11 +4,11 @@ import pytest
 import websockets
 
 import httpx
-from tests.e2e.conftest import token_de
+from tests.e2e.conftest import BASE_URL, token_de
 
 
 async def _conectar_ws(token: str):
-    url = f"ws://localhost:8000/v1/tempo-real?token={token}"
+    url = f"{BASE_URL.replace('http', 'ws')}/v1/tempo-real?token={token}"
     async with websockets.connect(url) as ws:
         return ws
 
