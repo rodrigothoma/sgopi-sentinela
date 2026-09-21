@@ -66,11 +66,10 @@ export interface RegistroAuditoria {
   quem: string | null;
   operacao: string;
   entidade: string;
-  entidade_id: string;
+  entidade_id: string | null;
   dados_antes: Record<string, unknown> | null;
   dados_depois: Record<string, unknown> | null;
   ip: string | null;
-  user_agent: string | null;
   autor_nome?: string | null;
   autor_papel?: Papel | null;
   identificador_amigavel?: string | null;

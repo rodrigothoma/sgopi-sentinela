@@ -13,6 +13,7 @@
   --primary-hover: #2563eb;
   --primary-glow: rgba(59, 130, 246, 0.25);
   --ok: #10b981;
+  --ok-glow: rgba(16, 185, 129, 0.25);
   --warn: #f59e0b;
   --warn-glow: rgba(245, 158, 11, 0.25);
   --danger: #ef4444;
@@ -38,6 +39,7 @@
   --primary-hover: #1d4ed8;
   --primary-glow: rgba(37, 99, 235, 0.15);
   --ok: #059669;
+  --ok-glow: rgba(5, 150, 105, 0.15);
   --warn: #d97706;
   --warn-glow: rgba(217, 119, 6, 0.15);
   --danger: #dc2626;
@@ -560,6 +562,40 @@ dl.grid2 dd { margin: 0 0 8px; }
 [data-theme="light"] .badge-OK { color: #059669; }
 [data-theme="light"] .badge-SEM_SINAL { color: #d97706; }
 [data-theme="light"] .badge-SEM_POSICAO { color: #64748b; }
+
+/* --- Badges da Trilha de Auditoria --- */
+.badge-auditoria {
+  display: inline-block;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-auditoria-danger {
+  background-color: var(--danger-glow);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.badge-auditoria-ok {
+  background-color: var(--ok-glow);
+  color: var(--ok);
+  border: 1px solid var(--ok);
+}
+
+.badge-auditoria-warn {
+  background-color: var(--warn-glow);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.badge-auditoria-info {
+  background-color: var(--primary-glow);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
 
 /* --- Alerts & Callouts --- */
 .alerta {

@@ -23,28 +23,29 @@ const OPERACOES: string[] = [
   'auth.login_negado',
   'auth.acesso_negado',
   'evidencia.anexar',
-  'evidencia.acessar',
+  'evidencia.download',
+  'evidencia.verificar_integridade',
 ];
 
 const ENTIDADES: string[] = [
   'Ocorrencia',
   'Viatura',
-  'OrdemDespacho',
+  'OrdemDeDespacho',
   'Evidencia',
   'Usuario',
 ];
 
-function getBadgeCor(operacao: string): { bg: string; color: string; border: string } {
+function getBadgeClasse(operacao: string): string {
   if (operacao.includes('rejeitar') || operacao.includes('negado')) {
-    return { bg: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: 'rgba(239, 68, 68, 0.3)' };
+    return 'badge-auditoria-danger';
   }
   if (operacao.includes('validar') || operacao.includes('registrar')) {
-    return { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: 'rgba(16, 185, 129, 0.3)' };
+    return 'badge-auditoria-ok';
   }
   if (operacao.includes('devolver') || operacao.includes('corrigir') || operacao.includes('alterar')) {
-    return { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: 'rgba(245, 158, 11, 0.3)' };
+    return 'badge-auditoria-warn';
   }
-  return { bg: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', border: 'rgba(59, 130, 246, 0.3)' };
+  return 'badge-auditoria-info';
 }
 
 /**
@@ -104,7 +105,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
     const termo = busca.trim().toLowerCase();
     if (!termo) return registros;
     return registros.filter((r) => {
-      const matchId = r.entidade_id.toLowerCase().includes(termo);
+      const matchId = r.entidade_id ? r.entidade_id.toLowerCase().includes(termo) : false;
       const matchIdAmigavel = r.identificador_amigavel ? r.identificador_amigavel.toLowerCase().includes(termo) : false;
       const matchOpTecnica = r.operacao.toLowerCase().includes(termo);
       const matchOpAmigavel = t(`auditoria.operacoes.${r.operacao}`, r.operacao).toLowerCase().includes(termo);
@@ -145,10 +146,18 @@ export const TrilhaAuditoriaPage: React.FC = () => {
       quem: detalheSelecionado.quem,
       ip: detalheSelecionado.ip,
     };
-    navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000);
-  }, [detalheSelecionado]);
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(JSON.stringify(payload, null, 2))
+        .then(() => {
+          setCopiado(true);
+          setTimeout(() => setCopiado(false), 2000);
+        })
+        .catch(() => {
+          avisar(t('errors.unexpected', 'Erro ao copiar para a área de transferência'), 'erro');
+        });
+    }
+  }, [detalheSelecionado, avisar, t]);
 
   const formatarValor = useCallback((chave: string, valor: unknown) => {
     if (valor === null || valor === undefined) {
@@ -312,52 +321,47 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                 </td>
               </tr>
             ) : (
-              registrosFiltrados.map((reg) => {
-                const corBadge = getBadgeCor(reg.operacao);
-                return (
-                  <tr key={reg.id} style={{ borderBottom: '1px solid var(--line)' }}>
-                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
-                      <strong>{new Date(reg.quando).toLocaleDateString()}</strong>
-                      <br />
-                      <span className="muted">{new Date(reg.quando).toLocaleTimeString()}</span>
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          padding: '4px 9px',
-                          borderRadius: 6,
-                          fontSize: '0.82rem',
-                          fontWeight: 600,
-                          backgroundColor: corBadge.bg,
-                          color: corBadge.color,
-                          border: `1px solid ${corBadge.border}`,
-                        }}
-                        title={reg.operacao}
-                      >
-                        {t(`auditoria.operacoes.${reg.operacao}`, reg.operacao)}
+              registrosFiltrados.map((reg) => (
+                <tr key={reg.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                  <td style={{ padding: '12px 16px', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
+                    <strong>{new Date(reg.quando).toLocaleDateString()}</strong>
+                    <br />
+                    <span className="muted">{new Date(reg.quando).toLocaleTimeString()}</span>
+                  </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <span
+                      className={`badge-auditoria ${getBadgeClasse(reg.operacao)}`}
+                      title={reg.operacao}
+                    >
+                      {t(`auditoria.operacoes.${reg.operacao}`, reg.operacao)}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px 16px', fontWeight: 500 }}>
+                    {reg.entidade}
+                  </td>
+                  <td style={{ padding: '12px 16px', fontSize: '0.85rem' }}>
+                    {reg.identificador_amigavel ? (
+                      <div>
+                        <strong style={{ fontFamily: 'monospace', color: 'var(--ink)' }}>
+                          {reg.identificador_amigavel}
+                        </strong>
+                        {reg.entidade_id && (
+                          <>
+                            <br />
+                            <small className="muted" style={{ fontFamily: 'monospace', fontSize: '0.75rem' }} title={reg.entidade_id}>
+                              ID: {reg.entidade_id.length > 18 ? `${reg.entidade_id.slice(0, 8)}...` : reg.entidade_id}
+                            </small>
+                          </>
+                        )}
+                      </div>
+                    ) : reg.entidade_id ? (
+                      <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--muted)' }} title={reg.entidade_id}>
+                        {reg.entidade_id.length > 24 ? `${reg.entidade_id.slice(0, 8)}...${reg.entidade_id.slice(-6)}` : reg.entidade_id}
                       </span>
-                    </td>
-                    <td style={{ padding: '12px 16px', fontWeight: 500 }}>
-                      {reg.entidade}
-                    </td>
-                    <td style={{ padding: '12px 16px', fontSize: '0.85rem' }}>
-                      {reg.identificador_amigavel ? (
-                        <div>
-                          <strong style={{ fontFamily: 'monospace', color: 'var(--ink)' }}>
-                            {reg.identificador_amigavel}
-                          </strong>
-                          <br />
-                          <small className="muted" style={{ fontFamily: 'monospace', fontSize: '0.75rem' }} title={reg.entidade_id}>
-                            ID: {reg.entidade_id.length > 18 ? `${reg.entidade_id.slice(0, 8)}...` : reg.entidade_id}
-                          </small>
-                        </div>
-                      ) : (
-                        <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--muted)' }} title={reg.entidade_id}>
-                          {reg.entidade_id.length > 24 ? `${reg.entidade_id.slice(0, 8)}...${reg.entidade_id.slice(-6)}` : reg.entidade_id}
-                        </span>
-                      )}
-                    </td>
+                    ) : (
+                      <span className="muted" style={{ fontStyle: 'italic' }}>—</span>
+                    )}
+                  </td>
                     <td style={{ padding: '12px 16px', fontSize: '0.85rem' }}>
                       {reg.autor_nome ? (
                         <div>
@@ -397,8 +401,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                       </button>
                     </td>
                   </tr>
-                );
-              })
+                ))
             )}
           </tbody>
         </table>
@@ -553,9 +556,11 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                       <span style={{ color: 'var(--primary)', fontWeight: 600 }}> ({detalheSelecionado.identificador_amigavel})</span>
                     )}
                   </div>
-                  <small className="muted" style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
-                    ID: {detalheSelecionado.entidade_id}
-                  </small>
+                  {detalheSelecionado.entidade_id && (
+                    <small className="muted" style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                      ID: {detalheSelecionado.entidade_id}
+                    </small>
+                  )}
                 </div>
                 <div>
                   <span className="muted">{t('auditoria.coluna_autor')}:</span>
