@@ -1,4 +1,4 @@
-"""Conversão entidade → DTO de saída (com máscara de CPF por papel — RNF10)."""
+"""Conversão entidade → DTO de saída (com máscara de CPF por papel — LGPD)."""
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_anexar_evidencia import EvidenciaOutput
 from application.ports.inbound.interface_consultar_ocorrencias import (
@@ -14,7 +14,7 @@ from domain.usuario.entity import Papel
 
 
 def pode_ver_documento(ator: Ator, ocorrencia: Ocorrencia) -> bool:
-    """RNF10: CPF em claro só para Delegado e para o Agente autor."""
+    """LGPD: CPF em claro só para Delegado e para o Agente autor."""
     return ator.papel == Papel.DELEGADO or ator.id == ocorrencia.agente_policial_id
 
 

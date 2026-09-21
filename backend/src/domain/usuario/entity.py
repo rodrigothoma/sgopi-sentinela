@@ -1,5 +1,5 @@
 """
-Entidade Usuario e enum Papel (RF12 / DEC-08).
+Entidade Usuario e enum Papel (RNF02 / DEC-08).
 
 Papéis do MVP: AGENTE, DELEGADO, OPERADOR_CENTRAL. Os demais existem no enum
 sem caso de uso associado. Não há acesso anônimo no MVP.

@@ -1,4 +1,4 @@
-"""Portas de entrada: gestão de frota (RF15) e telemetria (RF16)."""
+"""Portas de entrada: gestão de frota e telemetria (RF02)."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime

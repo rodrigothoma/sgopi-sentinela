@@ -10,7 +10,7 @@ import type { OcorrenciaDetalhe, OcorrenciaResumo, StatusOcorrencia } from '../t
 
 const FILTROS: StatusOcorrencia[][] = [['AGUARDANDO_REVISAO'], ['EM_CORRECAO'], ['VALIDADA', 'EM_ATENDIMENTO'], ['REJEITADA', 'ENCERRADA']];
 
-/** Delegado: fila de triagem (mais antiga primeiro) e decisões validar/devolver/rejeitar (RF04*, RF13). */
+/** Delegado: fila de triagem (mais antiga primeiro) e decisões validar/devolver/rejeitar (RF04*, RF01). */
 export const FilaDelegadoPage: React.FC = () => {
   const { t } = useTranslation(['ocorrencias', 'common']);
   const { avisar } = useToast();

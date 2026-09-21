@@ -1,5 +1,5 @@
 """
-Observabilidade (RNF09): logs JSON com request_id, usuario_id, operacao e duracao_ms.
+Observabilidade: logs JSON com request_id, usuario_id, operacao e duracao_ms.
 Os valores de contexto são preenchidos pelo middleware HTTP e pela dependência de autenticação.
 """
 from __future__ import annotations
@@ -16,7 +16,7 @@ usuario_id_var: ContextVar[str | None] = ContextVar("usuario_id", default=None)
 
 _CAMPOS_PADRAO = set(logging.LogRecord("", 0, "", 0, "", (), None).__dict__) | {"message", "asctime"}
 
-# RNF10: CPF nunca aparece em claro nos logs (formatado ou só dígitos)
+# LGPD / Privacidade: CPF nunca aparece em claro nos logs (formatado ou só dígitos)
 _CPF_FORMATADO = re.compile(r"\b(\d{3})\.(\d{3})\.(\d{3})-(\d{2})\b")
 _CPF_DIGITOS = re.compile(r"(?<!\d)(\d{3})(\d{3})(\d{3})(\d{2})(?!\d)")
 

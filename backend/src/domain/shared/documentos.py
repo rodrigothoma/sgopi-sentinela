@@ -44,7 +44,7 @@ def validar_documento(valor: str | None) -> str | None:
 
 
 def mascarar_cpf(valor: str | None) -> str | None:
-    """Máscara LGPD (RNF10): ***.***.789-** — preserva só o terceiro bloco."""
+    """Máscara LGPD: ***.***.789-** — preserva só o terceiro bloco."""
     if valor is None:
         return None
     digitos = normalizar_cpf(valor)

@@ -1,5 +1,5 @@
 """
-Adapter de entrada: router HTTP /v1/ocorrencias (RF01*, RF13, RF04*, RF14, RF19).
+Adapter de entrada: router HTTP /v1/ocorrencias (RF01*, RF04*, RF02).
 
 Só este arquivo (e os demais routers) importa FastAPI — domain e application não sabem
 da sua existência. Toda rota exige token; o ator vem do JWT, nunca do body.
@@ -229,7 +229,7 @@ async def anexar_evidencia(
     ator: Ator = Depends(exigir_papel(Papel.AGENTE)),
     use_case: InterfaceAnexarEvidencia = Depends(get_anexar_evidencia),
 ) -> EvidenciaSchema:
-    """Anexa PDF/JPEG/PNG de até 10 MB à ocorrência do agente autor (RF22)."""
+    """Anexa PDF/JPEG/PNG de até 10 MB à ocorrência do agente autor (RF01)."""
     try:
         conteudo = await arquivo.read(settings.evidencias_tamanho_maximo_bytes + 1)
     finally:
@@ -289,7 +289,7 @@ async def download_evidencia(
     )
 
 
-# ------------------------------------------------ consulta (RF13) e revisão (RF04*, RF14)
+# ------------------------------------------------ consulta (RF01) e revisão (RF04*)
 from fastapi import Query  # noqa: E402
 
 from application.ports.inbound.interface_consultar_ocorrencias import (  # noqa: E402
@@ -426,7 +426,7 @@ async def listar_ocorrencias(
     ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
     use_case: InterfaceListarOcorrencias = Depends(get_listar_ocorrencias),
 ) -> PaginaOcorrenciasSchema:
-    """Lista ocorrências por status, da mais antiga para a mais nova (RF13). Agente só vê as próprias."""
+    """Lista ocorrências por status, da mais antiga para a mais nova (RF01). Agente só vê as próprias."""
     pagina = await use_case.executar(ator, ListarOcorrenciasInput(status=tuple(status), limit=limit, offset=offset, somente_minhas=somente_minhas))
     return PaginaOcorrenciasSchema(itens=[_resumo(i) for i in pagina.itens], total=pagina.total, limit=pagina.limit, offset=pagina.offset)
 
@@ -437,7 +437,7 @@ async def obter_ocorrencia(
     ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
     use_case: InterfaceObterDetalheOcorrencia = Depends(get_obter_detalhe_ocorrencia),
 ) -> OcorrenciaDetalheSchema:
-    """Detalhe completo com envolvidos, tipificações e histórico de status (RF13)."""
+    """Detalhe completo com envolvidos, tipificações e histórico de status (RF01)."""
     return _detalhe(await use_case.executar(ator, ocorrencia_id))
 
 
@@ -480,7 +480,7 @@ async def corrigir(
     ator: Ator = Depends(exigir_papel(Papel.AGENTE)),
     use_case: InterfaceCorrigirOcorrencia = Depends(get_corrigir_ocorrencia),
 ) -> OcorrenciaDetalheSchema:
-    """Edição pelo Agente autor, só em EM_CORRECAO (RF14)."""
+    """Edição pelo Agente autor, só em EM_CORRECAO (RF04)."""
     input_dto = CorrigirOcorrenciaInput(
         ocorrencia_id=ocorrencia_id,
         natureza=body.natureza,
@@ -501,5 +501,5 @@ async def reenviar(
     ator: Ator = Depends(exigir_papel(Papel.AGENTE)),
     use_case: InterfaceReenviarOcorrencia = Depends(get_reenviar_ocorrencia),
 ) -> OcorrenciaDetalheSchema:
-    """EM_CORRECAO → AGUARDANDO_REVISAO pelo Agente autor (RF14)."""
+    """EM_CORRECAO → AGUARDANDO_REVISAO pelo Agente autor (RF04)."""
     return _detalhe(await use_case.executar(ator, ocorrencia_id))

@@ -1,4 +1,4 @@
-"""Testes unitários de AutenticarUsuario (RF11/RF12) — sem banco."""
+"""Testes unitários de AutenticarUsuario (RNF02) — sem banco."""
 from datetime import UTC, datetime
 
 import pytest

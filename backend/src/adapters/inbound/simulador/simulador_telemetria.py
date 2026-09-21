@@ -1,5 +1,5 @@
 """
-SimuladorTelemetria (RF16) — *driving adapter*: chama a mesma porta que um GPS
+SimuladorTelemetria (RF02) — *driving adapter*: chama a mesma porta que um GPS
 real chamaria (``InterfaceRegistrarPosicaoViatura``). Ligado/desligado pelo painel.
 
 A cada tick move todas as viaturas não-INDISPONIVEL aleatoriamente dentro de um raio;
@@ -24,7 +24,7 @@ from domain.viatura.entity import SituacaoViatura, Viatura
 
 log = logging.getLogger("sgopi.simulador")
 
-# Alegrete/RS — sede do curso (dados fictícios, RNF10)
+# Alegrete/RS — sede do curso (dados fictícios, LGPD)
 CENTRO_PADRAO = Coordenada(-29.7833, -55.7919)
 METROS_POR_GRAU_LAT = 111_320.0
 

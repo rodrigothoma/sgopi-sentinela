@@ -1,4 +1,4 @@
-"""Casos de uso: ListarOcorrencias e ObterDetalheOcorrencia (RF13; corrige HEX-01)."""
+"""Casos de uso: ListarOcorrencias e ObterDetalheOcorrencia (RF01; corrige HEX-01)."""
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator

@@ -6,7 +6,7 @@ Apenas este arquivo pode importar models SQLAlchemy — nunca domain/ nem applic
 
 - Não confirma transação (papel da UnidadeDeTrabalho).
 - Nunca apaga filhos: envolvidos/tipificações removidos do agregado ficam ``ativo=False`` (RNF03*).
-- Optimistic locking via ``versao`` (RNF11): a versão carregada é rastreada por
+- Optimistic locking via ``versao`` (RNF03): a versão carregada é rastreada por
   instância (uma por request); ao salvar, a linha é travada (``FOR UPDATE`` no
   Postgres) e comparada — divergência → ConflitoError (409).
 """

@@ -1,4 +1,4 @@
-"""Integração HTTP ponta a ponta: fila do Delegado, decisões, correção/reenvio, auditoria (RF13, RF04*, RF14, RF20)."""
+"""Integração HTTP ponta a ponta: fila do Delegado, decisões, correção/reenvio, auditoria (RF01, RF04*, RNF03)."""
 from sqlalchemy import select
 
 from infrastructure.database.models import RegistroAuditoriaModel

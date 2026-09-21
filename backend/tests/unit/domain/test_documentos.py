@@ -1,4 +1,4 @@
-"""Testes de validação/máscara de CPF (DEC-04, RNF10)."""
+"""Testes de validação/máscara de CPF (DEC-04, LGPD)."""
 import pytest
 
 from domain.shared.documentos import cpf_valido, mascarar_cpf, validar_documento

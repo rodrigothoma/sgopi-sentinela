@@ -1,8 +1,8 @@
 """
-Casos de uso de despacho (RF18): SugerirViaturasProximas e DespacharViatura.
+Casos de uso de despacho (RF02): SugerirViaturasProximas e DespacharViatura.
 
 DespacharViatura altera três agregados (ocorrência, viatura, ordem) em UMA transação
-(RNF11): qualquer falha no meio desfaz tudo — não existe ocorrência EM_ATENDIMENTO sem ordem.
+(RNF03): qualquer falha no meio desfaz tudo — não existe ocorrência EM_ATENDIMENTO sem ordem.
 """
 from __future__ import annotations
 

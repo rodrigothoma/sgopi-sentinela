@@ -1,4 +1,4 @@
-"""Testes do script reproduzível de seed (Issue #52 / RNF07 / RNF10)."""
+"""Testes do script reproduzível de seed (Issue #52 / LGPD)."""
 import pytest
 from sqlalchemy import select
 

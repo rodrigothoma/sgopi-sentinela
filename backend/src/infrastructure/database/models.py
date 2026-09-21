@@ -51,7 +51,7 @@ class OcorrenciaModel(Base):
     desfecho: Mapped[str | None] = mapped_column(Text, nullable=True)
     hash_narrativa: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
-    # optimistic locking (RNF11): ``versao`` é controlada pelo domínio e verificada
+    # optimistic locking (RNF03): ``versao`` é controlada pelo domínio e verificada
     # explicitamente pelo repositório (SELECT … FOR UPDATE + comparação).
 
     envolvidos: Mapped[list[EnvolvidoModel]] = relationship("EnvolvidoModel", back_populates="ocorrencia")
@@ -129,7 +129,7 @@ class EvidenciaModel(Base):
 
 
 class RegistroAuditoriaModel(Base):
-    """Auditoria append-only (RF20 / RNF03*)."""
+    """Auditoria append-only (RNF03*)."""
 
     __tablename__ = "registros_auditoria"
 
@@ -154,7 +154,7 @@ class SequenciaProtocoloModel(Base):
 
 
 class ViaturaModel(Base):
-    """Frota (RF15) com última posição desnormalizada (RF16)."""
+    """Frota (RF02) com última posição desnormalizada."""
 
     __tablename__ = "viaturas"
 
@@ -170,7 +170,7 @@ class ViaturaModel(Base):
 
 
 class OrdemDespachoModel(Base):
-    """Ordem de despacho (RF18): data/hora, operador, viatura e ocorrência (critério 5 do MVP)."""
+    """Ordem de despacho (RF02): data/hora, operador, viatura e ocorrência (critério 5 do MVP)."""
 
     __tablename__ = "ordens_despacho"
 

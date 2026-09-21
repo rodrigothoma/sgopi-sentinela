@@ -1,5 +1,5 @@
 """
-Caso de uso: RegistrarPosicaoViatura (RF16).
+Caso de uso: RegistrarPosicaoViatura (RF02).
 
 Chamado tanto pelo adapter HTTP de telemetria quanto pelo simulador — o domínio
 não sabe se a posição é real ou simulada (RNF05). Posições não são auditadas

@@ -1,9 +1,9 @@
 """
-Entidade Viatura + máquina de estados (RF15/RF16, ETAPA-04 §2).
+Entidade Viatura + máquina de estados (RF02, ETAPA-04 §2).
 
 DISPONIVEL ⇄ INDISPONIVEL (manual) · DISPONIVEL → EM_DESLOCAMENTO (despacho) →
 OPERANDO → DISPONIVEL (liberação). Só DISPONIVEL pode ser despachada (UC02 regra 1).
-Posição GPS é aceita apenas com timestamp dentro da janela de tolerância (RF16);
+Posição GPS é aceita apenas com timestamp dentro da janela de tolerância (RF02);
 posição anterior é mantida se a nova for inválida (RNF04*).
 """
 from __future__ import annotations
@@ -90,7 +90,7 @@ class Viatura:
         self.atualizada_em = agora
 
     def marcar_indisponivel(self, agora: datetime) -> None:
-        """Manual, pelo Operador. Viatura despachada não pode ser retirada (RF15 aceite 2)."""
+        """Manual, pelo Operador. Viatura despachada não pode ser retirada (RF02 aceite 2)."""
         self._mudar(SituacaoViatura.INDISPONIVEL, agora, (SituacaoViatura.DISPONIVEL,))
 
     def marcar_disponivel(self, agora: datetime) -> None:
@@ -103,7 +103,7 @@ class Viatura:
         self._mudar(SituacaoViatura.OPERANDO, agora, (SituacaoViatura.EM_DESLOCAMENTO,))
 
     def liberar(self, agora: datetime) -> None:
-        """Fim do atendimento (RF19): volta a DISPONIVEL."""
+        """Fim do atendimento (RF02): volta a DISPONIVEL."""
         self._mudar(SituacaoViatura.DISPONIVEL, agora, (SituacaoViatura.EM_DESLOCAMENTO, SituacaoViatura.OPERANDO))
 
     @property

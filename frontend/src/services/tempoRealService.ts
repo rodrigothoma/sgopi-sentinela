@@ -7,7 +7,7 @@ export type EstadoConexao = 'conectando' | 'conectado' | 'reconectando' | 'desco
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 16000, 30000]; // RNF04*: 1/2/4/8 s, máx. 30 s
 
 /**
- * Cliente WebSocket de /v1/tempo-real (RF17) com reconexão exponencial.
+ * Cliente WebSocket de /v1/tempo-real (RF02 / RNF01) com reconexão exponencial.
  * Ao (re)conectar, o consumidor deve recarregar a carga inicial por REST (callback onReconectar).
  */
 export class ClienteTempoReal {

@@ -1,4 +1,4 @@
-"""Seed de frota fictícia (RF15) — chamado por scripts/seed.py."""
+"""Seed de frota fictícia (RF02) — chamado por scripts/seed.py."""
 from __future__ import annotations
 
 import sys

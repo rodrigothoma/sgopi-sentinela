@@ -309,7 +309,7 @@ class Ocorrencia:
         envolvidos: list[Envolvido] | None = None,
         tipificacoes: list[TipificacaoPenal] | None = None,
     ) -> None:
-        """Edição pelo Agente autor — só em EM_CORRECAO (RF14)."""
+        """Edição pelo Agente autor — só em EM_CORRECAO (RF04)."""
         self._exigir_autor(agente_id)
         if self.status not in ESTADOS_EDITAVEIS:
             raise TransicaoInvalidaError(
@@ -341,16 +341,16 @@ class Ocorrencia:
         self._tocar(em)
 
     def reenviar(self, agente_id: UUID, em: datetime) -> None:
-        """EM_CORRECAO → AGUARDANDO_REVISAO pelo Agente autor (RF14)."""
+        """EM_CORRECAO → AGUARDANDO_REVISAO pelo Agente autor (RF04)."""
         self._exigir_autor(agente_id)
         self._transicionar("reenviar", agente_id, em)
 
     def despachar(self, operador_id: UUID, em: datetime) -> None:
-        """VALIDADA → EM_ATENDIMENTO (RF18)."""
+        """VALIDADA → EM_ATENDIMENTO (RF02)."""
         self._transicionar("despachar", operador_id, em)
 
     def encerrar(self, ator_id: UUID, desfecho: str, em: datetime) -> None:
-        """EM_ATENDIMENTO → ENCERRADA com desfecho textual obrigatório (RF19)."""
+        """EM_ATENDIMENTO → ENCERRADA com desfecho textual obrigatório (RF02)."""
         if not desfecho or not desfecho.strip():
             raise CampoObrigatorioError("O desfecho do atendimento é obrigatório.", chave="ocorrencia.desfecho_vazio")
         self._transicionar("encerrar", ator_id, em, desfecho.strip())

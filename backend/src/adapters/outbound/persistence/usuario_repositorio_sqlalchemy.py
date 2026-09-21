@@ -1,4 +1,4 @@
-"""Adapter de saída: UsuarioRepositorioSQLAlchemy (RF12)."""
+"""Adapter de saída: UsuarioRepositorioSQLAlchemy (RNF02)."""
 from uuid import UUID
 
 from sqlalchemy import select

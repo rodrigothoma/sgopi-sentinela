@@ -1,5 +1,5 @@
 """
-Handlers globais de exceção (HEX-03, RNF08, RNF09).
+Handlers globais de exceção (HEX-03, Observabilidade).
 
 Corpo padronizado: {"detail": <mensagem i18n>, "code": <chave>, "request_id": <id>, "extra": {...}}.
 """

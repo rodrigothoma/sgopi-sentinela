@@ -59,7 +59,7 @@ def criar_app() -> FastAPI:
 
     @app.get("/health", tags=["health"])
     async def health(session: AsyncSession = Depends(get_session)) -> JSONResponse:
-        """Health check (RNF09): verifica o servidor e a conexão com o banco."""
+        """Health check: verifica o servidor e a conexão com o banco."""
         try:
             await session.execute(text("SELECT 1"))
             db = "up"

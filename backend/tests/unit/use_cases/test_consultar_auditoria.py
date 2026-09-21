@@ -1,4 +1,4 @@
-"""Testes unitários do caso de uso ConsultarAuditoria (RF20 / RNF02 / RNF03)."""
+"""Testes unitários do caso de uso ConsultarAuditoria (RNF02 / RNF03)."""
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 

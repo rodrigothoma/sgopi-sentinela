@@ -1,4 +1,4 @@
-// Contratos espelhados do OpenAPI do backend (RNF12). Manter sincronizado por revisão.
+// Contratos espelhados do OpenAPI do backend. Manter sincronizado por revisão.
 export type Papel = 'AGENTE' | 'DELEGADO' | 'OPERADOR_CENTRAL' | 'SUPERVISOR' | 'PERITO' | 'ESCRIVAO';
 export type TipoEnvolvido = 'VITIMA' | 'TESTEMUNHA' | 'SUSPEITO' | 'COMUNICANTE';
 export type StatusOcorrencia = 'AGUARDANDO_REVISAO' | 'EM_CORRECAO' | 'REJEITADA' | 'VALIDADA' | 'EM_ATENDIMENTO' | 'ENCERRADA';

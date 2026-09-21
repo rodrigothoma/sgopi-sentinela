@@ -1,4 +1,4 @@
-"""ProvedorTokenJose: emissão/decodificação, expiração e assinatura (RF11, RNF02*)."""
+"""ProvedorTokenJose: emissão/decodificação, expiração e assinatura (RNF02*)."""
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 

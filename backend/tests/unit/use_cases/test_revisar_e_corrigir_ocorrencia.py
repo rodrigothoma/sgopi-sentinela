@@ -1,4 +1,4 @@
-"""Validar / Devolver / Rejeitar (RF04*) e Corrigir / Reenviar (RF14) com fakes."""
+"""Validar / Devolver / Rejeitar e Corrigir / Reenviar (RF04) com fakes."""
 import pytest
 from uuid import uuid4
 

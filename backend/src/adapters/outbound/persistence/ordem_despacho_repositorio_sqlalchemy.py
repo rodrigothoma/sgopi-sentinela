@@ -1,4 +1,4 @@
-"""Adapter de saída: OrdemDespachoRepositorioSQLAlchemy + GeradorNumeroOrdemSQLAlchemy (RF18)."""
+"""Adapter de saída: OrdemDespachoRepositorioSQLAlchemy + GeradorNumeroOrdemSQLAlchemy (RF02)."""
 from uuid import UUID
 
 from sqlalchemy import select, text

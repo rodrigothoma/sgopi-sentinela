@@ -1,4 +1,4 @@
-"""Eventos de domínio de viatura (consumidos por RF17)."""
+"""Eventos de domínio de viatura (consumidos por tempo real / RF02 e RNF01)."""
 from datetime import datetime
 
 from domain.shared.eventos import EventoDominio

@@ -1,4 +1,4 @@
-"""Porta de saída: ProvedorToken (RF11) — emissão/decodificação de token de sessão."""
+"""Porta de saída: ProvedorToken (RNF02) — emissão/decodificação de token de sessão."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime

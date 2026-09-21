@@ -1,4 +1,4 @@
-"""Caso de uso: ConsultarAuditoria (RF20 / RNF02 / RNF03)."""
+"""Caso de uso: ConsultarAuditoria (RNF02 / RNF03)."""
 import re
 from typing import Any
 from uuid import UUID

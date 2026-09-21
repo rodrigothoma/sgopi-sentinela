@@ -1,4 +1,4 @@
-"""Porta de saída: GeradorNumeroOrdem — formato OD-AAAA-NNNNNN (RF18)."""
+"""Porta de saída: GeradorNumeroOrdem — formato OD-AAAA-NNNNNN (RF02)."""
 from abc import ABC, abstractmethod
 
 

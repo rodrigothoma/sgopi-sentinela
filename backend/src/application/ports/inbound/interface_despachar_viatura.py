@@ -1,4 +1,4 @@
-"""Portas de entrada: sugestão + despacho (RF18) e encerramento (RF19)."""
+"""Portas de entrada: sugestão, despacho e encerramento de viaturas (RF02)."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from uuid import UUID

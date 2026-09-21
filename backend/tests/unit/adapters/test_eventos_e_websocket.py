@@ -1,4 +1,4 @@
-"""PublicadorEventosEmMemoria (fan-out isolado) e GerenciadorConexoes (RF17, DEC-06)."""
+"""PublicadorEventosEmMemoria (fan-out isolado) e GerenciadorConexoes (RF02 / RNF01, DEC-06)."""
 import json
 from datetime import UTC, datetime
 

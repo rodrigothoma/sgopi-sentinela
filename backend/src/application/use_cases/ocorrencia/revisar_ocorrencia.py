@@ -1,7 +1,7 @@
 """
 Casos de uso de revisão pelo Delegado (RF04*): ValidarOcorrencia, DevolverParaCorrecao,
 RejeitarOcorrencia. Cada decisão: verifica papel, transiciona, audita, publica evento,
-confirma transação. Decisão dupla é bloqueada pelo optimistic locking (RNF11).
+confirma transação. Decisão dupla é bloqueada pelo optimistic locking (RNF03).
 """
 from __future__ import annotations
 

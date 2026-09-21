@@ -1,5 +1,5 @@
 """
-Settings centralizados via pydantic-settings (RNF07: nada fixo em código).
+Settings centralizados via pydantic-settings (12-Factor: nada fixo em código).
 Carrega variáveis de ambiente do arquivo .env na raiz de backend/.
 """
 from __future__ import annotations
@@ -26,13 +26,13 @@ class Settings(BaseSettings):
 
     # RNF04*: idade máxima da posição GPS para ser considerada válida
     telemetria_max_idade_segundos: int = 60
-    # RF16: simulador de telemetria
+    # RF02: simulador de telemetria
     simulador_intervalo_segundos: float = 1.0
     simulador_raio_metros: float = 150.0
-    # RF18: quantidade de sugestões de viatura
+    # RF02: quantidade de sugestões de viatura
     despacho_qtd_sugestoes: int = 3
 
-    # RF22: evidências digitais armazenadas localmente atrás de uma porta
+    # RF01: evidências digitais armazenadas localmente atrás de uma porta
     evidencias_diretorio: str = "storage/evidencias"
     evidencias_tamanho_maximo_bytes: int = 10 * 1024 * 1024
 

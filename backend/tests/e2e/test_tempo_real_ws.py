@@ -1,4 +1,4 @@
-"""E2E: WebSocket de tempo real abre conexão (RF17)."""
+"""E2E: WebSocket de tempo real abre conexão (RF02 / RNF01)."""
 import asyncio
 import pytest
 import websockets

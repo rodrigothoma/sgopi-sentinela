@@ -26,7 +26,7 @@ def test_fluxo_completo_registro_validacao_despacho_encerramento(client: httpx.C
     assert r.status_code == 200, r.text
     assert r.json()["status"] == "VALIDADA"
 
-    # 3. Telemetria: uma viatura disponível emite posição perto da ocorrência (RF16)
+    # 3. Telemetria: uma viatura disponível emite posição perto da ocorrência (RF02)
     # desliga o simulador para que só a nossa posição conte no cálculo de proximidade
     client.post("/v1/simulador/desligar", headers=auth("operador"))
     viaturas = client.get("/v1/viaturas", headers=auth("operador")).json()
@@ -39,7 +39,7 @@ def test_fluxo_completo_registro_validacao_despacho_encerramento(client: httpx.C
     }, headers=auth("operador"))
     assert r.status_code == 200, r.text
 
-    # 4. Sugestões ordenadas por proximidade (RF18)
+    # 4. Sugestões ordenadas por proximidade (RF02)
     r = client.get(f"/v1/ocorrencias/{oc_id}/sugestoes-viaturas", headers=auth("operador"))
     assert r.status_code == 200, r.text
     sugestoes = r.json()["sugestoes"]
@@ -51,7 +51,7 @@ def test_fluxo_completo_registro_validacao_despacho_encerramento(client: httpx.C
         for sugestao in sugestoes
     ), "a viatura que enviou telemetria não foi sugerida"
 
-    # 5. Despacho (RF18) — despacha a mais próxima sugerida pela API
+    # 5. Despacho (RF02) — despacha a mais próxima sugerida pela API
     r = client.post(
         "/v1/despachos",
         json={
@@ -62,7 +62,7 @@ def test_fluxo_completo_registro_validacao_despacho_encerramento(client: httpx.C
     assert r.status_code == 201, r.text
     assert r.json()["numero"].startswith("OD-")
 
-    # 6. Encerramento libera a viatura (RF19)
+    # 6. Encerramento libera a viatura (RF02)
     r = client.post(f"/v1/ocorrencias/{oc_id}/encerrar", json={"desfecho": "Atendido e finalizado (E2E)."},
                     headers=auth("operador"))
     assert r.status_code == 200, r.text

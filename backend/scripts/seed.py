@@ -1,11 +1,11 @@
 """
-Seed reproduzível de desenvolvimento/demo (RNF07, RF12, DIV-23).
+Seed reproduzível de desenvolvimento/demo (RNF02, DIV-23).
 
     uv run alembic upgrade head
     uv run python -m scripts.seed
 
 Idempotente: usuários e viaturas já existentes (por login/prefixo) são mantidos.
-Dados fictícios (RNF10). Senha padrão de todos os usuários: ``Senha@123``.
+Dados fictícios (LGPD). Senha padrão de todos os usuários: ``Senha@123``.
 """
 from __future__ import annotations
 

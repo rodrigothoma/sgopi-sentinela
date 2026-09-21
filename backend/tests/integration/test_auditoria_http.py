@@ -1,5 +1,5 @@
 """
-Integração HTTP: Trilha de Auditoria Imutável e Logs Sanitizados (RF20 / RNF02 / RNF03).
+Integração HTTP: Trilha de Auditoria Imutável e Logs Sanitizados (RNF02 / RNF03).
 
 Critérios de Aceite:
 1. RBAC estrito: apenas DELEGADO e SUPERVISOR podem consultar a auditoria.

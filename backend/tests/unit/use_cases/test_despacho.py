@@ -1,4 +1,4 @@
-"""SugerirViaturasProximas, DespacharViatura, EncerrarOcorrencia com fakes (RF18, RF19, RNF11)."""
+"""SugerirViaturasProximas, DespacharViatura, EncerrarOcorrencia com fakes (RF02, RNF03)."""
 from datetime import timedelta
 
 import pytest

@@ -1,4 +1,4 @@
-"""Armazenamento local de evidências atrás da porta hexagonal do RF22."""
+"""Armazenamento local de evidências atrás da porta hexagonal do RF01."""
 from __future__ import annotations
 
 import asyncio

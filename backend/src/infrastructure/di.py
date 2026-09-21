@@ -102,7 +102,7 @@ publicador_eventos = PublicadorEventosEmMemoria()
 relogio_sistema = RelogioSistema()
 hasher_argon2 = HasherArgon2()
 gerenciador_conexoes = GerenciadorConexoes()
-publicador_eventos.assinar(gerenciador_conexoes.transmitir)  # RF17: fan-out para os painéis
+publicador_eventos.assinar(gerenciador_conexoes.transmitir)  # RF02 / RNF01: fan-out para os painéis
 provedor_token_jose = ProvedorTokenJose(settings.jwt_secret_key, settings.jwt_algorithm, settings.jwt_expires_in_hours)
 armazenamento_evidencias = ArmazenamentoDisco(settings.evidencias_diretorio)
 

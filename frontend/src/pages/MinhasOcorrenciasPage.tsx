@@ -9,7 +9,7 @@ import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
 import type { OcorrenciaDetalhe, OcorrenciaResumo } from '../types/api';
 
-/** Agente: minhas ocorrências + correção/reenvio das devolvidas (RF14). */
+/** Agente: minhas ocorrências + correção/reenvio das devolvidas (RF04). */
 export const MinhasOcorrenciasPage: React.FC = () => {
   const { t } = useTranslation(['ocorrencias', 'common']);
   const { avisar } = useToast();

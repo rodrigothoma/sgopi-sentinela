@@ -1,4 +1,4 @@
-"""Adapter de saída: AuditoriaSQLAlchemy — append-only (RF20 / RNF03*)."""
+"""Adapter de saída: AuditoriaSQLAlchemy — append-only (RNF03*)."""
 from uuid import UUID
 
 from sqlalchemy import select

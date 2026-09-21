@@ -1,4 +1,4 @@
-"""Adapter de saída: UnidadeDeTrabalhoSQLAlchemy — detém a transação da sessão (RNF11)."""
+"""Adapter de saída: UnidadeDeTrabalhoSQLAlchemy — detém a transação da sessão (RNF03)."""
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho

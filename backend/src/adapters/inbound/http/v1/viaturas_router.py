@@ -1,4 +1,4 @@
-"""Adapter de entrada: /v1/viaturas (RF15) e /v1/telemetria (RF16) e /v1/simulador (RF16)."""
+"""Adapter de entrada: /v1/viaturas, /v1/telemetria e /v1/simulador (RF02)."""
 from datetime import datetime
 from uuid import UUID
 
@@ -66,25 +66,25 @@ def _schema(v: ViaturaOutput) -> ViaturaSchema:
 
 @router.get("/v1/viaturas", response_model=list[ViaturaSchema])
 async def listar_viaturas(ator: Ator = Depends(exigir_papel(*CONSULTA)), uc: InterfaceListarViaturas = Depends(get_listar_viaturas)):
-    """Frota com última posição e indicador de sinal (RF15, RNF04*)."""
+    """Frota com última posição e indicador de sinal (RF02, RNF04*)."""
     return [_schema(v) for v in await uc.executar(ator)]
 
 
 @router.post("/v1/viaturas", response_model=ViaturaSchema, status_code=201)
 async def cadastrar_viatura(body: CadastrarViaturaRequest, ator: Ator = Depends(exigir_papel(*GESTAO)), uc: InterfaceCadastrarViatura = Depends(get_cadastrar_viatura)):
-    """Cadastra viatura; prefixo/placa duplicados → 409 (RF15)."""
+    """Cadastra viatura; prefixo/placa duplicados → 409 (RF02)."""
     return _schema(await uc.executar(ator, CadastrarViaturaInput(prefixo=body.prefixo, placa=body.placa)))
 
 
 @router.patch("/v1/viaturas/{viatura_id}/situacao", response_model=ViaturaSchema)
 async def alterar_situacao(viatura_id: UUID, body: AlterarSituacaoRequest, ator: Ator = Depends(exigir_papel(*GESTAO)), uc: InterfaceAlterarSituacaoViatura = Depends(get_alterar_situacao_viatura)):
-    """DISPONIVEL ⇄ INDISPONIVEL manual (RF15)."""
+    """DISPONIVEL ⇄ INDISPONIVEL manual (RF02)."""
     return _schema(await uc.executar(ator, AlterarSituacaoInput(viatura_id=viatura_id, situacao=body.situacao)))
 
 
 @router.post("/v1/telemetria/posicoes", response_model=ViaturaSchema, tags=["telemetria"])
 async def registrar_posicao(body: PosicaoRequest, ator: Ator = Depends(exigir_papel(*GESTAO)), uc: InterfaceRegistrarPosicaoViatura = Depends(get_registrar_posicao_viatura)):
-    """Ingestão de posição GPS (RF16). Timestamp fora de ±60 s → 422; posição anterior é mantida."""
+    """Ingestão de posição GPS (RF02). Timestamp fora de ±60 s → 422; posição anterior é mantida."""
     return _schema(await uc.executar(RegistrarPosicaoInput(viatura_id=body.viatura_id, latitude=body.latitude, longitude=body.longitude, registrada_em=body.registrada_em, origem=f"http:{ator.login}")))
 
 
@@ -95,7 +95,7 @@ async def status_simulador(ator: Ator = Depends(exigir_papel(*CONSULTA)), sim: S
 
 @router.post("/v1/simulador/ligar", tags=["telemetria"])
 async def ligar_simulador(ator: Ator = Depends(exigir_papel(*GESTAO)), sim: SimuladorTelemetria = Depends(get_simulador)) -> dict:
-    """Liga o simulador de telemetria a 1 Hz (RF16)."""
+    """Liga o simulador de telemetria a 1 Hz (RF02)."""
     sim.ligar()
     return sim.status()
 

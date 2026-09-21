@@ -1,4 +1,4 @@
-"""ListarOcorrencias / ObterDetalheOcorrencia (RF13, RNF10)."""
+"""ListarOcorrencias / ObterDetalheOcorrencia (RF01, LGPD)."""
 import pytest
 from uuid import uuid4
 

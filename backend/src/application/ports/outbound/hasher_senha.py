@@ -1,4 +1,4 @@
-"""Porta de saída: HasherSenha (RF11) — senha nunca em texto puro no banco."""
+"""Porta de saída: HasherSenha (RNF02) — senha nunca em texto puro no banco."""
 from abc import ABC, abstractmethod
 
 

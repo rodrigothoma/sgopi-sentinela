@@ -58,7 +58,7 @@ async def session(session_factory) -> AsyncGenerator[AsyncSession, None]:
 
 @pytest.fixture
 async def usuarios(session_factory):
-    """Semeia um usuário por papel (RF12) com senha argon2 real."""
+    """Semeia um usuário por papel (RNF02) com senha argon2 real."""
     from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
 
     hasher = HasherArgon2()

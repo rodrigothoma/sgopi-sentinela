@@ -1,4 +1,4 @@
-"""Adapter de entrada: /v1/auditoria (RF20) — leitura, somente Delegado/Supervisor."""
+"""Adapter de entrada: /v1/auditoria (RNF03) — leitura, somente Delegado/Supervisor."""
 from typing import Any
 from uuid import UUID
 

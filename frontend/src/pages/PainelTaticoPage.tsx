@@ -12,7 +12,7 @@ import { viaturasService } from '../services/viaturasService';
 import type { EventoTempoReal, OcorrenciaResumo, OrdemDespacho, StatusSimulador, Sugestoes, Viatura } from '../types/api';
 
 /**
- * Painel tático (RF17/RF18/RF19): carga inicial por REST, atualizações por WebSocket,
+ * Painel tático (RF02 / RNF01): carga inicial por REST, atualizações por WebSocket,
  * fallback tabular quando não há sinal (RNF04*), sugestão + despacho + encerramento.
  */
 export const PainelTaticoPage: React.FC = () => {

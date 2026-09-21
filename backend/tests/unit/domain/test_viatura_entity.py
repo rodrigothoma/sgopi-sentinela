@@ -1,4 +1,4 @@
-"""Entidade Viatura: máquina de estados, janela de telemetria, sinal (RF15, RF16, RNF04*)."""
+"""Entidade Viatura: máquina de estados, janela de telemetria, sinal (RF02, RNF04*)."""
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -63,7 +63,7 @@ def test_ciclo_despacho_liberacao():
     v.despachar(AGORA)
     assert v.situacao == SituacaoViatura.EM_DESLOCAMENTO and not v.despachavel and v.versao == 2
     with pytest.raises(TransicaoInvalidaError):
-        v.marcar_indisponivel(AGORA)  # RF15 aceite 2
+        v.marcar_indisponivel(AGORA)  # RF02 aceite 2
     with pytest.raises(TransicaoInvalidaError):
         v.despachar(AGORA)
     v.chegar_ao_local(AGORA)

@@ -1,4 +1,4 @@
-"""viaturas (RF15/RF16)
+"""viaturas (RF02)
 
 Revision ID: 0002
 Revises: 0001

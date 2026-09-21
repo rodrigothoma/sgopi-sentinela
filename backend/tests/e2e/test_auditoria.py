@@ -1,4 +1,4 @@
-"""E2E: trilha de auditoria (RF20) registra o fluxo de uma ocorrência."""
+"""E2E: trilha de auditoria (RNF03) registra o fluxo de uma ocorrência."""
 import httpx
 
 
@@ -13,5 +13,5 @@ def test_auditoria_registra_fluxo_e_agente_nao_consulta(client: httpx.Client, au
     assert "ocorrencia.registrar" in operacoes
     assert "ocorrencia.validar" in operacoes
 
-    # Agente não pode consultar a auditoria (RF20: só Delegado/Supervisor)
+    # Agente não pode consultar a auditoria (RNF02 / RNF03: só Delegado/Supervisor)
     assert client.get("/v1/auditoria", headers=auth("agente")).status_code == 403

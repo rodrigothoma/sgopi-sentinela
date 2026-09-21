@@ -1,4 +1,4 @@
-"""Integração HTTP: frota, telemetria e simulador (RF15, RF16)."""
+"""Integração HTTP: frota, telemetria e simulador (RF02)."""
 import asyncio
 from datetime import UTC, datetime, timedelta
 

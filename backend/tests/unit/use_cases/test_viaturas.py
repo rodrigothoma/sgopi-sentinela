@@ -1,4 +1,4 @@
-"""Casos de uso de frota e telemetria + simulador com fakes (RF15, RF16)."""
+"""Casos de uso de frota e telemetria + simulador com fakes (RF02)."""
 from contextlib import asynccontextmanager
 from datetime import timedelta
 
