@@ -83,7 +83,10 @@ export const TrilhaAuditoriaPage: React.FC = () => {
   const opcoesOperacao: GlideSelectOption[] = useMemo(() => {
     return [
       { value: 'TODAS', label: t('auditoria.filtro_todas_operacoes') },
-      ...OPERACOES.map((op) => ({ value: op, label: op })),
+      ...OPERACOES.map((op) => ({
+        value: op,
+        label: t(`auditoria.operacoes.${op}`, op),
+      })),
     ];
   }, [t]);
 
@@ -99,13 +102,14 @@ export const TrilhaAuditoriaPage: React.FC = () => {
     if (!termo) return registros;
     return registros.filter((r) => {
       const matchId = r.entidade_id.toLowerCase().includes(termo);
-      const matchOp = r.operacao.toLowerCase().includes(termo);
+      const matchOpTecnica = r.operacao.toLowerCase().includes(termo);
+      const matchOpAmigavel = t(`auditoria.operacoes.${r.operacao}`, r.operacao).toLowerCase().includes(termo);
       const matchEnt = r.entidade.toLowerCase().includes(termo);
       const matchQuem = r.quem ? r.quem.toLowerCase().includes(termo) : false;
       const matchIp = r.ip ? r.ip.toLowerCase().includes(termo) : false;
-      return matchId || matchOp || matchEnt || matchQuem || matchIp;
+      return matchId || matchOpTecnica || matchOpAmigavel || matchEnt || matchQuem || matchIp;
     });
-  }, [registros, busca]);
+  }, [registros, busca, t]);
 
   const kpis = useMemo(() => {
     const total = registros.length;
@@ -119,36 +123,8 @@ export const TrilhaAuditoriaPage: React.FC = () => {
       {/* Cabeçalho da Trilha de Auditoria */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <h1>{t('auditoria.titulo')}</h1>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                padding: '4px 10px',
-                borderRadius: 20,
-                background: 'rgba(16, 185, 129, 0.15)',
-                color: '#10b981',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-              }}
-            >
-              🔒 {t('auditoria.badge_imutavel')}
-            </span>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                padding: '4px 10px',
-                borderRadius: 20,
-                background: 'rgba(59, 130, 246, 0.15)',
-                color: '#3b82f6',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-              }}
-            >
-              🛡️ {t('auditoria.badge_protegido')}
-            </span>
-          </div>
-          <p className="muted" style={{ margin: '4px 0 0', maxWidth: 780 }}>
+          <h1 style={{ margin: '0 0 4px' }}>{t('auditoria.titulo')}</h1>
+          <p className="muted" style={{ margin: 0, maxWidth: 780 }}>
             {t('auditoria.subtitulo')}
           </p>
         </div>
@@ -261,17 +237,17 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                       <span
                         style={{
                           display: 'inline-block',
-                          padding: '3px 8px',
+                          padding: '4px 9px',
                           borderRadius: 6,
-                          fontSize: '0.8rem',
+                          fontSize: '0.82rem',
                           fontWeight: 600,
                           backgroundColor: corBadge.bg,
                           color: corBadge.color,
                           border: `1px solid ${corBadge.border}`,
-                          fontFamily: 'monospace',
                         }}
+                        title={reg.operacao}
                       >
-                        {reg.operacao}
+                        {t(`auditoria.operacoes.${reg.operacao}`, reg.operacao)}
                       </span>
                     </td>
                     <td style={{ padding: '12px 16px', fontWeight: 500 }}>
@@ -352,12 +328,12 @@ export const TrilhaAuditoriaPage: React.FC = () => {
               }}
             >
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span>{t('auditoria.modal_titulo')}</span>
                   <span
                     style={{
-                      fontFamily: 'monospace',
-                      fontSize: '0.8rem',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
                       padding: '2px 8px',
                       borderRadius: 4,
                       background: 'var(--bg)',
@@ -365,7 +341,10 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                       border: '1px solid var(--line)',
                     }}
                   >
-                    {detalheSelecionado.operacao}
+                    {t(`auditoria.operacoes.${detalheSelecionado.operacao}`, detalheSelecionado.operacao)}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontFamily: 'monospace' }}>
+                    ({detalheSelecionado.operacao})
                   </span>
                 </h3>
                 <p className="muted small" style={{ margin: '4px 0 0' }}>

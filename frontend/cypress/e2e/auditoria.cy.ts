@@ -14,8 +14,6 @@ describe('Issue #47 — Trilha de Auditoria Imutável e RBAC (RNF02 / RNF03)', (
 
       // 3. Valida elementos chave da tela
       cy.contains('h1', 'Trilha de Auditoria').should('be.visible');
-      cy.contains('Registro Imutável').should('be.visible');
-      cy.contains('Dados Pessoais Protegidos').should('be.visible');
 
       // 4. Valida KPIs
       cy.get('.kpi-card').should('have.length', 3);
