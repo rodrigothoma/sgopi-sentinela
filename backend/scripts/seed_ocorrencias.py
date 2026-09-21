@@ -273,7 +273,7 @@ async def semear_ocorrencias() -> None:
                     Envolvido(
                         nome="Marcos Vinicius Ribeiro",
                         tipo=TipoEnvolvido.SUSPEITO,
-                        documento="RS-10.987.654",
+                        documento="1098765432",
                     ),
                 ],
                 tipificacoes=[
@@ -327,7 +327,7 @@ async def semear_ocorrencias() -> None:
                     Envolvido(
                         nome="Vigilante Noturno",
                         tipo=TipoEnvolvido.COMUNICANTE,
-                        documento="RS-20.987.654",
+                        documento="2098765432",
                     ),
                 ],
                 tipificacoes=[

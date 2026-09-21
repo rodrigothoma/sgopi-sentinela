@@ -14,7 +14,6 @@
     "@hugeicons/core-free-icons": "^4.3.4",
     "axios": "^1.7.0",
     "i18next": "^24.0.0",
-    "i18next-http-backend": "^3.0.0",
     "leaflet": "^1.9.4",
     "leaflet.heat": "^0.2.0",
     "motion": "^13.4.0",
