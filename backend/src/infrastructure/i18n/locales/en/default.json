@@ -37,7 +37,10 @@
     "tamanho_excedido": "File exceeds the 10 MB limit",
     "status_invalido": "This occurrence does not accept new evidence in its current status",
     "limite_atingido": "This occurrence has reached the 10 evidence limit",
-    "duplicada": "Evidence is already linked to the occurrence"
+    "duplicada": "Evidence is already linked to the occurrence",
+    "not_found": "Evidence not found",
+    "arquivo_ausente": "Physical evidence file not found",
+    "integridade_divergente": "Evidence integrity is divergent; download blocked"
   },
   "geo": {
     "coordenada_invalida": "Invalid coordinate",

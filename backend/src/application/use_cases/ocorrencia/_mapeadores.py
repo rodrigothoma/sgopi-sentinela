@@ -47,7 +47,14 @@ def para_detalhe(o: Ocorrencia, ator: Ator) -> OcorrenciaDetalheOutput:
         hash_narrativa=o.hash_narrativa,
         narrativa_integra=o.narrativa_integra(),
         envolvidos=tuple(
-            EnvolvidoOutput(id=e.id, nome=e.nome, tipo=e.tipo.value, documento=e.documento if mostrar_doc else mascarar_cpf(e.documento))
+            EnvolvidoOutput(
+                id=e.id,
+                nome=e.nome,
+                tipo=e.tipo.value,
+                documento=e.documento if mostrar_doc else mascarar_cpf(e.documento),
+                email=e.email,
+                telefone=e.telefone,
+            )
             for e in o.envolvidos
         ),
         tipificacoes=tuple(TipificacaoOutput(artigo=t.artigo, descricao=t.descricao) for t in o.tipificacoes),

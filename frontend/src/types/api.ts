@@ -1,6 +1,6 @@
 // Contratos espelhados do OpenAPI do backend (RNF12). Manter sincronizado por revisão.
 export type Papel = 'AGENTE' | 'DELEGADO' | 'OPERADOR_CENTRAL' | 'SUPERVISOR' | 'PERITO' | 'ESCRIVAO';
-export type TipoEnvolvido = 'VITIMA' | 'TESTEMUNHA' | 'SUSPEITO';
+export type TipoEnvolvido = 'VITIMA' | 'TESTEMUNHA' | 'SUSPEITO' | 'COMUNICANTE';
 export type StatusOcorrencia = 'AGUARDANDO_REVISAO' | 'EM_CORRECAO' | 'REJEITADA' | 'VALIDADA' | 'EM_ATENDIMENTO' | 'ENCERRADA';
 export type SituacaoViatura = 'DISPONIVEL' | 'EM_DESLOCAMENTO' | 'OPERANDO' | 'INDISPONIVEL';
 export type Sinal = 'OK' | 'SEM_SINAL' | 'SEM_POSICAO';
@@ -8,11 +8,13 @@ export type Sinal = 'OK' | 'SEM_SINAL' | 'SEM_POSICAO';
 export interface Usuario { id: string; nome: string; login: string; papel: Papel }
 export interface LoginResponse { access_token: string; token_type: string; expira_em: string; usuario: Usuario }
 
-export interface EnvolvidoDTO { nome: string; tipo: TipoEnvolvido; documento?: string }
+export interface EnvolvidoDTO { nome: string; tipo: TipoEnvolvido; documento?: string; email?: string; telefone?: string }
 export interface TipificacaoDTO { artigo: string; descricao: string }
 export interface Evidencia {
   id: string; nome_original: string; formato: string; tamanho: number; hash_sha256: string; enviada_em: string;
 }
+export type EstadoIntegridadeEvidencia = 'INTEGRA' | 'DIVERGENTE';
+export interface IntegridadeEvidencia { evidencia_id: string; estado: EstadoIntegridadeEvidencia }
 
 export interface RegistrarOcorrenciaRequest {
   natureza: string; descricao: string; localizacao: string;
@@ -28,7 +30,14 @@ export interface OcorrenciaResumo {
   latitude: number; longitude: number; status: StatusOcorrencia; data_hora_fato: string;
   criada_em: string; atualizada_em: string; agente_policial_id: string; versao: number;
 }
-export interface EnvolvidoDetalhe { id: string; nome: string; tipo: TipoEnvolvido; documento: string | null }
+export interface EnvolvidoDetalhe {
+  id: string;
+  nome: string;
+  tipo: TipoEnvolvido;
+  documento: string | null;
+  email?: string | null;
+  telefone?: string | null;
+}
 export interface HistoricoStatus { de: string | null; para: StatusOcorrencia; em: string; por_id: string; justificativa: string | null }
 export interface OcorrenciaDetalhe extends OcorrenciaResumo {
   descricao: string; validada_por_id: string | null; justificativa_revisao: string | null; desfecho: string | null;

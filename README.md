@@ -48,8 +48,6 @@ sgopi-sentinela/
 │   └── src/ {components, pages, services, hooks, types}
 ├── docs/
 │   ├── DOCUMENTACAO_DE_ENGENHARIA.md · PLANEJAMENTO_DESENVOLVIMENTO.md
-│   ├── analise/                   # Análise de requisitos (5 etapas)
-│   ├── implementacao/             # Rastreabilidade da implementação do MVP (8 etapas)
 │   └── diagramas/
 ├── docker-compose.yml             # PostgreSQL 16 local
 └── README.md
@@ -99,10 +97,13 @@ cp .env.example .env
 npm run dev                     # http://localhost:3000 (proxy /v1 e WebSocket para o backend)
 ```
 
-### Fluxo de demonstração do MVP
-1. **agente** → *Registrar ocorrência* (clique no mapa para a coordenada) → protocolo `SGOPI-AAAA-NNNNNN`.
-2. **delegado** → *Fila de revisão* → *Validar* (ou devolver/rejeitar com justificativa).
-3. **operador** → *Painel tático* → *Ligar simulador GPS* → selecionar a ocorrência → *Despachar* uma das 3 viaturas mais próximas → *Encerrar atendimento*.
+### 📋 Quadro de Desenvolvimento (Kanban GitHub Projects)
+Todas as etapas e fatias verticais do projeto estão mapeadas e organizadas no [**Quadro Oficial de Desenvolvimento no GitHub Projects**](https://github.com/users/rodrigothoma/projects/2).
+
+### 🚀 Fluxo de Demonstração Ponta a Ponta (Arquitetura Dual)
+1. **Cidadão (Portal Público):** Acessa `http://localhost:3000/` com animação mecânica retrô via `<SplitFlapText />` → Clica em *Registrar Ocorrência* (`/registrar-cidadao`) → Preenche o fato e clica no mapa Leaflet para marcar a coordenada → Recebe o protocolo oficial `SGOPI-AAAA-NNNNNN` e acompanha o status em tempo real em `/consulta`.
+2. **Delegado (Revisão & Triagem):** Clica em *Acesso Policial* (`/login`) e usa o atalho de demonstração da **Delegada** (`delegado` / `Senha@123`) → Acessa a *Fila de revisão* (`/fila`) → Identifica o registro do cidadão → *Valida* a ocorrência (gerando o hash SHA-256 da narrativa) ou devolve/rejeita com justificativa.
+3. **Operador da Central (Despacho Tático):** Autentica-se como **Operador** (`operador` / `Senha@123`) → Acessa o *Painel tático* (`/painel`) → Ativa o *Simulador GPS* → Seleciona a ocorrência validada → *Despacha* uma das 3 viaturas mais próximas sugeridas pelo algoritmo de Haversine → *Encerra atendimento* com desfecho circunstanciado.
 
 ### Qualidade
 
@@ -161,25 +162,26 @@ cd frontend && npm run e2e:db
 
 | Documento | Localização | Descrição |
 | :--- | :--- | :--- |
-| 📄 **Especificação Completa de Engenharia** | [**docs/DOCUMENTACAO_DE_ENGENHARIA.md**](docs/DOCUMENTACAO_DE_ENGENHARIA.md) | Requisitos (RF01–RF10, RNF01–RNF05), matriz MoSCoW, proposta de MVP, padrões de projeto e os 11 casos de uso com diagramas de sequência. |
+| 📋 **Quadro Kanban Oficial** | [**GitHub Projects #2**](https://github.com/users/rodrigothoma/projects/2) | Backlog e esteira de desenvolvimento do projeto do início ao fim (49 itens rastreáveis). |
+| 📄 **Especificação Completa de Engenharia** | [**docs/DOCUMENTACAO_DE_ENGENHARIA.md**](docs/DOCUMENTACAO_DE_ENGENHARIA.md) | Requisitos canônicos (RF01–RF10, RNF01–RNF05), matriz MoSCoW, proposta de MVP e casos de uso com diagramas de sequência. |
+| 🗓️ **Planejamento de Desenvolvimento** | [**docs/PLANEJAMENTO_DESENVOLVIMENTO.md**](docs/PLANEJAMENTO_DESENVOLVIMENTO.md) | Cronograma de desenvolvimento e fatias verticais semanais da equipe (Sprints 2 a 5). |
 | 🌐 **Wiki Oficial do Projeto** | [**GitHub Wiki**](https://github.com/rodrigothoma/sgopi-sentinela/wiki) | Base de conhecimento da equipe com guias, modelagem UML navegável e detalhamento arquitetural. |
 | 📊 **Artefatos e Diagramas** | [**docs/diagramas/**](docs/diagramas/) | Todos os diagramas UML em alta definição. |
-| 🔎 **Análise de Requisitos e Prontidão do MVP** | [**docs/analise/**](docs/analise/00-INDICE-E-METODO.md) | Divergências doc × código, problemas em RF/RNF, requisitos novos (RF11–RF22, RNF06–RNF12), lacunas hexagonais e próximos passos, em 5 etapas rastreáveis. |
-| 🛠️ **Rastreabilidade da Implementação do MVP** | [**docs/implementacao/**](docs/implementacao/00-INDICE.md) | O que foi implementado em cada etapa (domínio, infraestrutura, auth, revisão, frota/tempo real, despacho, frontend, qualidade), decisões, testes e status por requisito. |
 
 ---
 
 ## 🎯 Proposta do MVP (Minimum Viable Product)
 
 ```
-[ Agente Policial ] ──(Registro)──► [ Núcleo SGOPI ] ◄──(Revisão/Validação)── [ Delegado ]
-                                            │
-                                            ▼ (Status: Validada)
-[ Viatura Policial ] ◄──(Despacho)── [ Operador Central (Mapa Tático GPS Real-Time) ]
+[ Cidadão (Portal Web Público) ] ──(Registro Online)──┐
+                                                      ├──► [ Núcleo SGOPI ] ◄──(Revisão/Validação)── [ Delegado ]
+[ Agente Policial (Delegacia) ]  ──(Reg. Circunst.)───┘            │
+                                                                   ▼ (Status: Validada)
+[ Viatura Policial ] ◄──────────(Despacho Tático)───────── [ Operador Central (Mapa GPS Real-Time) ]
 ```
 
 ### Matriz de Priorização (MoSCoW)
-- **Must Have (MVP Essencial):** RF01 (Gestão de Ocorrência Policial), RF04 (Fluxo de Validação pelo Delegado), RF02 (Monitoramento GPS e Despacho Tático) — **implementados** junto com os requisitos transversais RF11–RF20 (autenticação, papéis, consulta, correção, frota, telemetria, tempo real, despacho, encerramento, auditoria). Ver [docs/implementacao](docs/implementacao/00-INDICE.md).
+- **Must Have (MVP Essencial):** RF01 (Gestão de Ocorrência Policial), RF04 (Fluxo de Validação pelo Delegado) e RF02 (Monitoramento GPS e Despacho Tático).
 - **Should Have (Alta Prioridade):** RF03 (Inventário de Apreensões), RF05 (Manchas Criminais e Alertas), RF07 (Laudos Periciais).
 - **Could Have (Média Prioridade):** RF06 (Vinculação a Inquéritos), RF08 (Autenticação Pública de Documentos), RF09 (Medidas Protetivas).
 - **Won't Have (Próximos Ciclos):** RF10 (Comunicação Interagências).

@@ -15,8 +15,10 @@ from application.ports.inbound.ator import Ator
 @dataclass(frozen=True)
 class EnvolvidoInputDTO:
     nome: str
-    tipo: str  # valor de TipoEnvolvido: VITIMA | TESTEMUNHA | SUSPEITO
+    tipo: str  # valor de TipoEnvolvido: VITIMA | TESTEMUNHA | SUSPEITO | COMUNICANTE
     documento: str | None = None
+    email: str | None = None
+    telefone: str | None = None
 
 
 @dataclass(frozen=True)

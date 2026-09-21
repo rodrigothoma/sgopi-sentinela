@@ -126,34 +126,24 @@ A priorização seguiu critérios técnicos de viabilidade, dependência funcion
 
 ### 3.1 Visão Geral e Objetivo Principal
 
-O objetivo do MVP do **SGOPI Sentinela** é validar o fluxo técnico e operacional ponta a ponta: desde a captura estruturada dos dados de uma ocorrência, sua validação pelo Delegado, até a exibição de viaturas no mapa e execução do despacho tático com coordenadas simuladas em tempo real.
+O objetivo do MVP do **SGOPI Sentinela** é validar o fluxo técnico e operacional ponta a ponta através de uma **Arquitetura Dual (Portal Público do Cidadão + Painel Operacional Policial)**: desde a captura estruturada dos dados de uma ocorrência (pela população via Delegacia Eletrônica ou pelo Agente em campo), sua validação técnica pelo Delegado, até a exibição de viaturas no mapa e execução do despacho tático com coordenadas simuladas em tempo real.
 
 ```
-[Agente Policial]
-       │ (1. Registra Ocorrência)
-       ▼
-[Núcleo SGOPI - Core Domain] ─── (Persistência: 'Aguardando Revisão')
-       │
-       ▼
-[Delegado de Polícia]
-       │ (2. Revisa e Valida Ocorrência)
-       ▼
-[Status: 'Validada'] ─── (Notificação em Tempo Real via WebSocket)
-       │
-       ▼
-[Operador de Central]
-       │ (3. Visualiza Viaturas em Tempo Real no Mapa Tático)
-       │ (4. Despacha Viatura mais Próxima calculada pelo Sistema)
-       ▼
-[Ordem de Despacho Gerada] ─── (Viatura Em Deslocamento)
+[ Cidadão (Portal Web Público) ] ──(Registro Online)──┐
+                                                      ├──► [ Núcleo SGOPI ] ◄──(Revisão/Validação)── [ Delegado ]
+[ Agente Policial (Delegacia) ]  ──(Reg. Circunst.)───┘            │
+                                                                   ▼ (Status: Validada / WS Broadcast)
+[ Viatura Policial ] ◄──────────(Despacho Tático)───────── [ Operador Central (Mapa GPS Real-Time) ]
 ```
+
+As fatias de desenvolvimento e a rastreabilidade das tarefas estão organizadas no [**Kanban Oficial do GitHub Projects #2**](https://github.com/users/rodrigothoma/projects/2).
 
 ### 3.2 Hipótese Técnica e Escopo da Primeira Iteração
 
 * **Hipótese Técnica:** Uma arquitetura baseada em portas e adaptadores (*Hexagonal*) associada a WebSockets permite que o núcleo de domínio permaneça desacoplado, suportando atualizações contínuas de telemetria GPS sem comprometer a integridade transacional do banco de dados relacional.
 * **Escopo Incluído no MVP:**
   - Registro completo de ocorrência com múltiplos envolvidos e tipificação de crime;
-  - Máquina de estados da ocorrência (`Rascunho` -> `Aguardando Revisão` -> `Validada` / `Rejeitada` -> `Em Despacho` -> `Concluída`);
+  - Máquina de estados da ocorrência (`Aguardando Revisão` -> `Validada` / `Rejeitada` / `Em Correção` -> `Em Atendimento` -> `Encerrada`);
   - Módulo de revisão exclusiva para Delegado;
   - Painel tático em tempo real com mapa interativo (Leaflet / OpenStreetMap);
   - Serviço de simulação de telemetria GPS emitindo coordenadas periódicas para as viaturas ativas;
@@ -229,8 +219,8 @@ O padrão adotado é a **Arquitetura Hexagonal (*Ports & Adapters*)**. Essa esco
                                                  ▼
                     ┌─────────────────────────────────────────────────────────┐
                     │                  ADAPTADORES DE SAÍDA                   │
-                    │     (JPA / Hibernate / PostgreSQL, ServicoMapasOSM,     │
-                    │          SimuladorGPS, AssinaturaDigitalPDF)            │
+                    │   (PostgreSQL / SQLAlchemy, ServicoMapasOSM, Relógio,   │
+                    │          ArmazenamentoDisco, ProvedorToken)             │
                     └─────────────────────────────────────────────────────────┘
 ```
 
@@ -242,11 +232,11 @@ Para garantir a viabilidade técnica do MVP e o alinhamento com a Arquitetura He
   
 * **Gestão de Dependências e Execução:** Utilização do **uv**. O uv será responsável por padronizar a instalação das bibliotecas e a configuração do ambiente de desenvolvimento entre os membros da equipe.
 
-* **Persistência de Dados:** **Firebase Cloud Firestore** como banco de dados NoSQL em nuvem, utilizando o **Firebase Admin SDK** para comunicação entre o backend em FastAPI e o banco de dados.
+* **Persistência de Dados:** **PostgreSQL 16** como banco de dados relacional, utilizando **SQLAlchemy 2.0 (async)** para mapeamento objeto-relacional e **Alembic** para versionamento de migrações de esquema.
   
 * **Interface Gráfica (Frontend):** Desenvolvida em **JavaScript/TypeScript**.
   * *Painel Tático:* Renderização e interação com o mapa utilizando a biblioteca **Leaflet**, conectada aos *tiles* do **OpenStreetMap**.
-  * *Comunicação:* Comunicação bidirecional e reativa utilizando **WebSockets (STOMP/SockJS)**, permitindo a atualização das viaturas no mapa em tempo real.
+  * *Comunicação:* Comunicação bidirecional e reativa utilizando **WebSockets nativos do FastAPI**, permitindo a atualização das viaturas no mapa em tempo real.
 
 ## 5. Projeto do Software
 
@@ -304,9 +294,55 @@ Apresenta a distribuição física e lógica dos nós de processamento, servidor
 
 ### 5.6 Mapeamento Objeto-Relacional (Esquema do Banco de Dados)
 
-Esquema físico e relacional das tabelas, chaves primárias, estrangeiras e relacionamentos no banco de dados relacional (PostgreSQL):
+O diagrama abaixo representa a **modelagem conceitual relacional** elaborada originalmente na disciplina de Análise e Projeto de Software (APS), contemplando a visão corporativa alvo de ~28 tabelas para o ciclo completo do ecossistema policial (incluindo tabelas especializadas por subtipo, inquéritos, laudos periciais e comunicações interagências):
 
-![Mapeamento Relacional](diagramas/mapeamento-relacional.png)
+![Mapeamento Relacional Conceitual](diagramas/mapeamento-relacional.png)
+
+#### 5.6.1 Esquema Físico do MVP Implementado no PostgreSQL (11 Tabelas)
+
+Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQLAlchemy 2.0 (async)** e **Alembic** (`backend/src/infrastructure/database/models.py`), o esquema físico de dados foi consolidado em **11 tabelas relacionais**:
+
+1. **`usuarios`**: Armazena as credenciais e o controle de acesso dos operadores policiais.
+   - *Colunas:* `id` (UUID PK), `nome` (String 255), `login` (String 100 Unique), `senha_hash` (String 255), `papel` (String 30 — Enum `AGENTE`, `DELEGADO`, `OPERADOR_CENTRAL`, `SUPERVISOR`, `PERITO`, `ESCRIVAO`), `ativo` (Boolean).
+   - *Estratégia:* Mapeamento de perfis via coluna discriminadora (`papel`), preservando integridade referencial nas chaves estrangeiras.
+
+2. **`ocorrencias`**: Entidade central de registro de fatos delituosos.
+   - *Colunas:* `id` (UUID PK), `numero_protocolo` (String 50 Unique), `natureza` (String 255), `descricao` (Text), `localizacao` (String 500), `latitude` (Float), `longitude` (Float), `data_hora_fato` (Timestamp com timezone), `status` (String 30), `versao` (Integer), `criada_em` (Timestamp com timezone), `atualizada_em` (Timestamp com timezone), `agente_policial_id` (UUID FK `usuarios.id`), `validada_por_id` (UUID FK `usuarios.id` nullable), `justificativa_revisao` (Text nullable), `desfecho` (Text nullable), `hash_narrativa` (String 64 nullable).
+   - *Integridade:* `numero_protocolo` gerado no padrão oficial `SGOPI-AAAA-NNNNNN`. A coluna `versao` implementa bloqueio otimista (*optimistic locking*) para controle de concorrência.
+
+3. **`envolvidos`**: Qualificação das partes envolvidas em uma ocorrência (vítimas, testemunhas, suspeitos).
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `nome` (String 255), `tipo` (String 20 — Enum `VITIMA`, `TESTEMUNHA`, `SUSPEITO`), `documento` (String 50 nullable), `ativo` (Boolean).
+
+4. **`tipificacoes_ocorrencia`**: Artigos da legislação penal associados à ocorrência.
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `artigo` (String 100), `descricao` (String 500), `ativo` (Boolean).
+
+5. **`historico_status_ocorrencia`**: Tabela *append-only* de rastreabilidade temporal das ocorrências.
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `ordem` (Integer), `de` (String 30 nullable), `para` (String 30), `em` (Timestamp com timezone), `por_id` (UUID), `justificativa` (Text nullable).
+   - *Regra & Integridade:* Restrição de unicidade composta `(ocorrencia_id, ordem)`. Não permite `UPDATE` ou `DELETE` (protegido por trigger no PostgreSQL), garantindo imutabilidade histórica das decisões tomadas.
+
+6. **`evidencias`**: Metadados e integridade criptográfica dos arquivos anexados.
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `nome_original` (String 255), `formato` (String 10), `tamanho` (Integer), `hash_sha256` (String 64), `chave_armazenamento` (String 255 Unique), `enviada_em` (Timestamp com timezone).
+
+7. **`registros_auditoria`**: Trilha de conformidade e auditoria de ações sensíveis (RNF03).
+   - *Colunas:* `id` (UUID PK), `quem` (UUID nullable), `quando` (Timestamp com timezone), `operacao` (String 100), `entidade` (String 100), `entidade_id` (String 100 nullable), `dados_antes` (JSON), `dados_depois` (JSON), `ip` (String 64 nullable).
+
+8. **`sequencias_protocolo`**: Tabela de controle de concorrência e atomicidade na geração sequencial de protocolos anuais.
+   - *Colunas:* `ano` (Integer PK), `ultimo` (Integer).
+
+9. **`viaturas`**: Frota tática monitorada pela central de despacho.
+   - *Colunas:* `id` (UUID PK), `prefixo` (String 20 Unique), `placa` (String 10 Unique), `situacao` (String 20), `latitude` (Float nullable), `longitude` (Float nullable), `posicao_registrada_em` (Timestamp com timezone nullable), `versao` (Integer), `atualizada_em` (Timestamp com timezone nullable).
+
+10. **`ordens_despacho`**: Formalização de despacho tático de viaturas para atendimento.
+    - *Colunas:* `id` (UUID PK), `numero` (String 30 Unique), `ocorrencia_id` (UUID FK `ocorrencias.id`), `viatura_id` (UUID FK `viaturas.id`), `operador_id` (UUID FK `usuarios.id`), `criada_em` (Timestamp com timezone), `observacoes` (Text nullable), `ativa` (Boolean), `encerrada_em` (Timestamp com timezone nullable).
+    - *Formato:* `numero` padronizado como `OD-AAAA-NNNNNN`.
+
+11. **`sequencias_ordem_despacho`**: Gerador sequencial controlado para emissão atômica de números de ordem de despacho por ano.
+    - *Colunas:* `ano` (Integer PK), `ultimo` (Integer).
+
+#### 5.6.2 Princípios de Engenharia do Modelo Físico
+- **Identificadores UUIDv4:** Chaves primárias universais e opacas geradas na camada de aplicação/domínio, prevenindo ataques de enumeração na API e garantindo que entidades nasçam identificadas em testes unitários sem dependência prévia de persistência.
+- **Governança e Imutabilidade (RNF03):** Eliminação de exclusões físicas (`DELETE`) na camada de dados operacionais, com adoção de desativação lógica (`ativo = false`) e tabelas estritamente *append-only* para auditoria e histórico de decisões.
+- **Rastreabilidade de Ator:** Vínculos relacionais preservados entre operadores (`usuarios`), ocorrências (`agente_policial_id`, `validada_por_id`) e despachos (`operador_id`).
 
 ---
 

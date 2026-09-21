@@ -44,7 +44,13 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
         agora = self._relogio.agora()
 
         envolvidos = [
-            Envolvido(nome=e.nome, tipo=_tipo_envolvido(e.tipo), documento=e.documento)
+            Envolvido(
+                nome=e.nome,
+                tipo=_tipo_envolvido(e.tipo),
+                documento=e.documento,
+                email=e.email,
+                telefone=e.telefone,
+            )
             for e in input_dto.envolvidos
         ]
         tipificacoes = [TipificacaoPenal(artigo=t.artigo, descricao=t.descricao) for t in input_dto.tipificacoes]

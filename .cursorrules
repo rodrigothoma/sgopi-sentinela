@@ -1,0 +1,27 @@
+# SGOPI Sentinela — Cursor Rules
+# Regras canônicas para agentes de IA no Cursor
+
+Consulte sempre o arquivo AGENTS.md e docs/DOCUMENTACAO_DE_ENGENHARIA.md.
+
+1. STACK OBRIGATÓRIA:
+   - Backend: Python >= 3.13, FastAPI, uv, PostgreSQL 16, SQLAlchemy 2.0 (async), Alembic.
+   - Frontend: React 18, TypeScript, Vite, Leaflet, WebSockets nativos do FastAPI.
+   - NUNCA invente bibliotecas ou stacks alternativas (Java, NestJS, Spring, Flask, etc.).
+
+2. ARQUITETURA HEXAGONAL:
+   - domain/: Apenas Python puro (dataclasses). NUNCA importe SQLAlchemy, Pydantic, FastAPI ou qualquer lib externa.
+   - application/usecases/: Dependa apenas de ports/ (DIP). NUNCA acesse banco diretamente nem instancie adapters.
+   - ports/: Interfaces abstratas ABC com métodos @abstractmethod.
+   - adapters/: Implementações HTTP (FastAPI), WebSockets e persistência (SQLAlchemy).
+   - infrastructure/di.py: Único composition root permitido para injeção de dependências.
+
+3. SOLID & CLEAN CODE:
+   - SRP: Cada use case tem uma única responsabilidade e método execute().
+   - OCP/DIP: Use interfaces das portas para inversão de dependência.
+   - Funções curtas (< 35 linhas), tipagem estrita e nomes semânticos em português para o domínio.
+   - Proibido DELETE físico em entidades operacionais; tabelas de auditoria e histórico são estritamente append-only (RNF03).
+
+4. VERIFICAÇÃO OBRIGATÓRIA:
+   - Rodar sempre: PYTHONPATH=src uv run lint-imports --config pyproject.toml
+   - Rodar sempre: uv run pytest --cov
+   - Rodar no frontend: npx tsc --noEmit && npm run build

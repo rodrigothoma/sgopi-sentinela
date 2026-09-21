@@ -1,0 +1,153 @@
+/* ─── SelectField — select estilizado global ─────────────────────────────── */
+
+.select-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Label ── */
+.select-field__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted, #9a9a9a);
+}
+
+.select-field__required {
+  color: var(--danger, #c0392b);
+}
+
+/* ── Wrapper (posicionamento relativo para a seta) ── */
+.select-field__wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Select nativo (aparência removida, estilo próprio) ── */
+.select-field__select {
+  /* reset aparência do browser */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  width: 100%;
+  /* espaço à direita para a seta customizada */
+  padding-right: 36px;
+  padding-left: 12px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+
+  background-color: var(--bg, #1a1a1a);
+  color: var(--ink, #f0f0f0);
+  border: 1px solid var(--line, #3a3a3a);
+  border-radius: 6px;
+
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  cursor: pointer;
+
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Estado de foco */
+.select-field__select:focus {
+  outline: none;
+  border-color: var(--primary, #4a7aff);
+  box-shadow: 0 0 0 3px rgba(74, 122, 255, 0.18);
+}
+
+/* Hover */
+.select-field__select:hover:not(:disabled) {
+  border-color: var(--muted, #9a9a9a);
+}
+
+/* ── Seta customizada ── */
+.select-field__arrow {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  color: var(--muted, #9a9a9a);
+  transition: transform 0.15s ease;
+}
+
+/* Seta rotaciona quando aberto (focus no select-pai) */
+.select-field__wrapper:has(.select-field__select:focus) .select-field__arrow {
+  transform: rotate(180deg);
+  color: var(--primary, #4a7aff);
+}
+
+/* ── Estado de erro ── */
+.select-field--error .select-field__select {
+  border-color: var(--danger, #c0392b);
+}
+
+.select-field--error .select-field__select:focus {
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.18);
+}
+
+.select-field--error .select-field__label {
+  color: var(--danger, #c0392b);
+}
+
+/* ── Estado desabilitado ── */
+.select-field--disabled .select-field__select {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.select-field--disabled .select-field__label {
+  opacity: 0.55;
+}
+
+/* ── Mensagens de feedback ── */
+.select-field__error,
+.select-field__hint {
+  font-size: 0.8rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.select-field__error {
+  color: var(--danger, #c0392b);
+}
+
+.select-field__hint {
+  color: var(--muted, #9a9a9a);
+}
+
+/* ── Tamanhos ── */
+.select-field--sm .select-field__select {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  font-size: 0.85rem;
+}
+
+.select-field--lg .select-field__select {
+  padding-top: 13px;
+  padding-bottom: 13px;
+  font-size: 1.05rem;
+}
+
+/* ── Tema claro ── */
+[data-theme="light"] .select-field__select {
+  background-color: var(--bg-surface, #ffffff);
+  color: var(--ink, #1a1a1a);
+  border-color: var(--line, #d0d0d0);
+}
+
+[data-theme="light"] .select-field__select:focus {
+  border-color: var(--primary, #1a4fa0);
+  box-shadow: 0 0 0 3px rgba(26, 79, 160, 0.15);
+}
+
+/* ── Opções do select (chrome/firefox) ── */
+.select-field__select option {
+  background-color: var(--card, #2b2b2b);
+  color: var(--ink, #f0f0f0);
+}

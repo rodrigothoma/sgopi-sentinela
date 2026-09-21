@@ -46,11 +46,18 @@ async def main() -> None:
     print("Seed SGOPI Sentinela")
     await semear_usuarios()
     try:
-        from scripts.seed_viaturas import semear_viaturas  # Etapa 5
-    except ImportError:
-        return
-    await semear_viaturas()
+        from scripts.seed_viaturas import semear_viaturas
+        await semear_viaturas()
+    except ImportError as e:
+        print(f"  ! Não foi possível carregar seed_viaturas: {e}")
+
+    try:
+        from scripts.seed_ocorrencias import semear_ocorrencias
+        await semear_ocorrencias()
+    except ImportError as e:
+        print(f"  ! Não foi possível carregar seed_ocorrencias: {e}")
 
 
 if __name__ == "__main__":
     asyncio.run(main())
+
