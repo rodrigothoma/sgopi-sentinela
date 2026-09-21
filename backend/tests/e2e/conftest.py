@@ -8,13 +8,18 @@ apenas eles: ``uv run pytest -m e2e``.
 """
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = os.environ.get("SGOPI_E2E_BASE_URL", "http://localhost:8000")
 SENHA = "Senha@123"
+# Em CI (SGOPI_E2E_STRICT=1) o backend TEM que estar no ar: falha com
+# diagnóstico claro em vez de Connection refused espalhado. Localmente,
+# mantém o comportamento antigo de pular quando ninguém subiu o servidor.
+STRICT = os.environ.get("SGOPI_E2E_STRICT", "").strip().lower() in {"1", "true", "yes"}
 
 
 def _servidor_no_ar() -> bool:
@@ -24,7 +29,26 @@ def _servidor_no_ar() -> bool:
         return False
 
 
-pytestmark = [pytest.mark.e2e, pytest.mark.skipif(not _servidor_no_ar(), reason="backend não está no ar em :8000")]
+def pytest_collection_modifyitems(items) -> None:
+    """Marca como `e2e` só os testes deste diretório (`pytestmark` em conftest.py é ignorado)."""
+    for item in items:
+        if item.path.parent.name == "e2e":
+            item.add_marker(pytest.mark.e2e)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def garantir_backend_no_ar():
+    """Falha com diagnóstico claro (CI) ou pula (dev local) se o backend caiu."""
+    if _servidor_no_ar():
+        return
+    mensagem = (
+        f"Backend E2E indisponível em {BASE_URL}/health. "
+        "Suba com: uv run uvicorn --app-dir src main:app --reload "
+        "(após `uv run alembic upgrade head` + `uv run python -m scripts.seed`)."
+    )
+    if STRICT:
+        pytest.fail(mensagem)
+    pytest.skip(mensagem)
 
 
 @pytest.fixture
