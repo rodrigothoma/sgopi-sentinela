@@ -504,13 +504,9 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                   fontWeight: abaModal === 'amigavel' ? 600 : 500,
                   cursor: 'pointer',
                   fontSize: '0.88rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
                 }}
               >
-                <span>✨</span>
-                <span>{t('auditoria.modal_visual_amigavel')}</span>
+                {t('auditoria.modal_visao_operacional')}
               </button>
               <button
                 type="button"
@@ -524,13 +520,9 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                   fontWeight: abaModal === 'json' ? 600 : 500,
                   cursor: 'pointer',
                   fontSize: '0.88rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
                 }}
               >
-                <span style={{ fontFamily: 'monospace' }}>{'{ }'}</span>
-                <span>{t('auditoria.modal_json_tecnico')}</span>
+                {t('auditoria.modal_json_tecnico')}
               </button>
             </div>
 
@@ -753,16 +745,12 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                       variant="secondary"
                       size="sm"
                       onClick={handleCopiarJson}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}
+                      style={{ fontSize: '0.8rem' }}
                     >
                       {copiado ? (
-                        <>
-                          <span style={{ color: 'var(--ok)' }}>✓</span> {t('auditoria.modal_copiado')}
-                        </>
+                        <span style={{ color: 'var(--ok)' }}>✓ {t('auditoria.modal_copiado')}</span>
                       ) : (
-                        <>
-                          <span>📋</span> {t('auditoria.modal_copiar_json')}
-                        </>
+                        t('auditoria.modal_copiar_json')
                       )}
                     </Button>
                   </div>
