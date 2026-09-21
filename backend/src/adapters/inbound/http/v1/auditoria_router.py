@@ -7,7 +7,12 @@ from pydantic import BaseModel
 
 from adapters.inbound.http.deps import exigir_papel
 from application.ports.inbound.ator import Ator
-from application.ports.inbound.interface_consultar_auditoria import ConsultarAuditoriaInput, InterfaceConsultarAuditoria
+from application.ports.inbound.interface_consultar_auditoria import (
+    ConsultarAuditoriaInput,
+    InterfaceConsultarAuditoria,
+    LIMITE_MAXIMO_CONSULTA,
+    LIMITE_PADRAO_CONSULTA,
+)
 from domain.usuario.entity import Papel
 from infrastructure.di import get_consultar_auditoria
 
@@ -35,7 +40,7 @@ async def listar_auditoria(
     entidade_id: str | None = Query(default=None),
     operacao: str | None = Query(default=None),
     quem: UUID | None = Query(default=None),
-    limit: int = Query(default=100, ge=1, le=500),
+    limit: int = Query(default=LIMITE_PADRAO_CONSULTA, ge=1, le=LIMITE_MAXIMO_CONSULTA),
     ator: Ator = Depends(exigir_papel(Papel.DELEGADO, Papel.SUPERVISOR)),
     use_case: InterfaceConsultarAuditoria = Depends(get_consultar_auditoria),
 ) -> list[RegistroAuditoriaSchema]:

@@ -7,13 +7,17 @@ from uuid import UUID
 from application.ports.inbound.ator import Ator
 
 
+LIMITE_PADRAO_CONSULTA: int = 100
+LIMITE_MAXIMO_CONSULTA: int = 500
+
+
 @dataclass(frozen=True)
 class ConsultarAuditoriaInput:
     entidade: str | None = None
     entidade_id: str | None = None
     operacao: str | None = None
     quem: UUID | None = None
-    limit: int = 100
+    limit: int = LIMITE_PADRAO_CONSULTA
 
 
 @dataclass(frozen=True)
