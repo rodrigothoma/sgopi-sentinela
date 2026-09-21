@@ -16,7 +16,12 @@ export const NavbarPublica: React.FC = () => {
   const { t, i18n } = useTranslation('common');
   const location = useLocation();
 
-  const isActive = (path: string) => (location.pathname === path ? 'active' : '');
+  // /autenticar/:chave (QR Code) é um alias da consulta pública
+  const isActive = (path: string) => {
+    const atual = location.pathname;
+    const ativo = atual === path || (path === '/consulta' && atual.startsWith('/autenticar'));
+    return ativo ? 'active' : '';
+  };
   const idiomaAtual = i18n.language ? i18n.language.slice(0, 2) : 'pt';
 
   return (

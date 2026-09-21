@@ -25,8 +25,8 @@ Permitir que um cidadão, advogado ou órgão externo confira, **sem login**, se
 | Router **`GET /v1/publico/documentos/{chave}`** — sem `exigir_papel`; `Path(min_length=24)` barra lixo antes do caso de uso | `adapters/inbound/http/v1/publico_router.py` | UC08 passos 1–3 |
 | Wiring `get_autenticar_documento`; registro do router | `infrastructure/di.py`, `main.py` | HEX-02 |
 | Mensagens `documento.not_found` / `documento.chave_invalida` em pt/en | `infrastructure/i18n/locales/*/default.json` | RNF08, UC08 Exceção I |
-| Página pública **`/autenticar`** e **`/autenticar/:chave`** (deep-link do QR Code): formulário, resultado com selo verde/vermelho, aviso LGPD, link de volta ao login | `frontend/src/pages/AutenticarDocumentoPage.tsx`, `App.tsx` | UC08 passos 1–6 |
-| `DocumentoEmitido`: chave + **QR Code** (`qrcode.react`) no detalhe da ocorrência validada; link "Cidadão?" na tela de login | `components/ocorrencias/DocumentoEmitido.tsx`, `OcorrenciaDetalhe.tsx`, `LoginPage.tsx` | UC08 passo 2 |
+| **Consulta pública unificada** em **`/consulta`**: um único campo aceita o protocolo (acompanhamento) ou a chave de autenticidade; o modo é inferido pelo formato (`detectarModoConsulta`) e pode ser trocado por abas. **`/autenticar/:chave`** (deep-link do QR Code) renderiza a mesma página já conferindo; `/autenticar` redireciona para `/consulta?modo=chave`. Resultado com selo verde/vermelho e aviso LGPD | `frontend/src/pages/ConsultaPublicaPage.tsx`, `components/publico/ResultadoDocumento.tsx`, `utils/consultaPublica.ts`, `App.tsx` | UC08 passos 1–6 |
+| `DocumentoEmitido`: chave + **QR Code** (`qrcode.react`) no detalhe da ocorrência validada; acesso público pela home (hero, card "Consulta Pública" e navbar) | `components/ocorrencias/DocumentoEmitido.tsx`, `OcorrenciaDetalhe.tsx`, `LandingPage.tsx`, `NavbarPublica.tsx` | UC08 passo 2 |
 | `documentosService`, tipo `DocumentoAutenticado`, namespace i18n `publico` (pt/en), estilos | `services/documentosService.ts`, `types/api.ts`, `public/locales/*/publico.json`, `styles.css` | RNF08, RNF12 |
 | Seed de um documento fictício já validado com chave fixa **`SGPX-SENT-DEMX-CHAV-EXEM-PLAR`** (idempotente), exibida como dica copiável na página pública — mesmo padrão da dica de credenciais do login | `scripts/seed_documento_demo.py`, `scripts/seed.py` | RNF07, RNF10 |
 
@@ -57,9 +57,9 @@ npm run build (tsc + vite)           →   150 módulos, sem erros
 
 ## 5. Roteiro de demonstração
 
-0. `uv run python -m scripts.seed` deixa pronto o documento demo — em `/autenticar`, basta clicar em "Copiar" na dica e conferir.
+0. `uv run python -m scripts.seed` deixa pronto o documento demo — em `/consulta`, aba "Autenticar documento", basta clicar em "Copiar" na dica e conferir.
 1. Agente registra uma ocorrência; Delegado valida → o detalhe mostra a chave e o QR Code.
-2. Abrir `/autenticar` em uma **janela anônima** (sem sessão) → colar a chave → selo verde "Documento autêntico e íntegro".
+2. Abrir a home em uma **janela anônima** (sem sessão) → "Consulta Pública" → colar a chave (a página reconhece o formato e troca para o modo de autenticação sozinha) → selo verde "Documento autêntico e íntegro".
 3. Alterar a narrativa direto no banco (`UPDATE ocorrencias SET descricao=… WHERE chave_autenticidade=…`) → repetir a consulta → selo vermelho "documento adulterado" e linha `documento.suspeita_fraude` em `GET /v1/auditoria`.
 4. Escanear o QR Code com o celular → abre `/autenticar/<chave>` já com o resultado.
 

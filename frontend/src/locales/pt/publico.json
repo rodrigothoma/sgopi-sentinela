@@ -78,11 +78,32 @@
       "outro": "Outro Fato Circunstanciado"
     }
   },
+  "publica": {
+    "titulo": "Consulta Pública",
+    "subtitulo": "Acompanhe o andamento de uma ocorrência ou confira a autenticidade de um Boletim de Ocorrência emitido. Não é necessário login.",
+    "modo_rotulo": "Tipo de consulta",
+    "protocolo": {
+      "aba": "Acompanhar ocorrência",
+      "rotulo": "Número de protocolo",
+      "ajuda": "Informe o protocolo recebido no registro (formato SGOPI-AAAA-NNNNNN) para ver a etapa atual da tramitação.",
+      "detectado": "Formato de protocolo reconhecido — modo de acompanhamento selecionado automaticamente.",
+      "botao": "Consultar",
+      "vazio": "Informe o número de protocolo",
+      "nao_encontrado": "Nenhuma ocorrência encontrada com o protocolo informado. Verifique os dígitos e tente novamente.",
+      "demo_rotulo": "Ambiente de demonstração, experimente com este protocolo:"
+    },
+    "chave": {
+      "aba": "Autenticar documento",
+      "rotulo": "Chave de segurança do documento",
+      "ajuda": "Informe a chave de 24 caracteres impressa no Boletim de Ocorrência, ou leia o QR Code do documento com a câmera do celular.",
+      "detectado": "Formato de chave de segurança reconhecido — modo de autenticação selecionado automaticamente.",
+      "botao": "Conferir autenticidade",
+      "vazio": "Informe a chave impressa no documento",
+      "nao_encontrado": "Documento não localizado. Confira a chave impressa e, se persistir, procure a delegacia emissora.",
+      "demo_rotulo": "Ambiente de demonstração, experimente com esta chave:"
+    }
+  },
   "consulta": {
-    "titulo": "Consulta Pública de Ocorrência",
-    "subtitulo": "Digite o número de protocolo oficial (ex: SGOPI-2026-000001) para consultar o status e a tramitação do seu atendimento policial.",
-    "placeholder": "SGOPI-AAAA-NNNNNN",
-    "botao_consultar": "Consultar",
     "protocolo_rotulo": "PROTOCOLO:",
     "etapas": {
       "triagem": "Triagem Policial",
@@ -96,16 +117,8 @@
       "data_abertura": "Comunicação Efetuada em:",
       "desfecho": "Desfecho Conclusivo:",
       "voltar_inicio": "Voltar ao Início"
-    },
-    "erro_nao_encontrada": "Nenhuma ocorrência encontrada com o protocolo informado. Verifique os dígitos e tente novamente."
+    }
   },
-  "titulo": "Autenticação de documento",
-  "subtitulo": "Confira a autenticidade e a integridade de um Boletim de Ocorrência emitido pelo SGOPI Sentinela. Não é necessário login.",
-  "chave_label": "Chave de segurança (24 caracteres, impressa no documento ou lida pelo QR Code)",
-  "chave_placeholder": "XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",
-  "consultar": "Conferir autenticidade",
-  "consultando": "Conferindo...",
-  "voltar_inicio": "Retornar ao início",
   "lgpd": "Em respeito à LGPD, o portal público exibe apenas os dados de conferência do documento — nunca nomes, documentos, endereços ou a narrativa dos fatos.",
   "resultado": {
     "VALIDO": "Documento autêntico e íntegro",
@@ -121,14 +134,9 @@
     "tipificacoes": "Tipificação penal",
     "envolvidos": "Envolvidos qualificados",
     "evidencias": "Evidências anexadas",
-    "hash": "Hash de integridade (SHA-256)",
-    "nova_consulta": "Conferir outro documento"
-  },
-  "erro": {
-    "chave_vazia": "Informe a chave impressa no documento"
+    "hash": "Hash de integridade (SHA-256)"
   },
   "demo": {
-    "rotulo": "Ambiente de demonstração, experimente com esta chave:",
     "copiar": "Copiar",
     "copiado": "Copiado!",
     "preencher": "Clique para preencher o campo"

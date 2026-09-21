@@ -9,7 +9,7 @@
     "painel": "Painel tático",
     "frota": "Frota",
     "auditoria": "Trilha de auditoria",
-    "lookup": "Consultar protocolo",
+    "lookup": "Consulta pública",
     "police_access": "Acesso Policial"
   },
   "actions": {
@@ -65,7 +65,7 @@
     "hero_label": "SISTEMA OFICIAL — UNIPAMPA / ALEGRETE",
     "hero_subtitle": "Canal oficial e unificado para registro de ocorrências pelo cidadão, triagem técnica pela autoridade policial e monitoramento de viaturas em tempo real.",
     "cta_register": "Registrar Ocorrência",
-    "cta_lookup": "Consultar Protocolo",
+    "cta_lookup": "Consulta Pública",
     "split_word_1": "SENTINELA ONLINE",
     "split_word_2": "PORTAL CIDADAO",
     "split_word_3": "PRONTIDAO TOTAL",
@@ -84,9 +84,9 @@
       "card_register_title": "Registrar Ocorrência",
       "card_register_desc": "Comunique furtos, extravios, ameaças e outros fatos de forma rápida, sem filas e com localização no mapa.",
       "card_register_action": "Registrar agora",
-      "card_lookup_title": "Consultar Protocolo",
-      "card_lookup_desc": "Acompanhe a situação e o andamento da sua ocorrência em tempo real utilizando o código do protocolo oficial.",
-      "card_lookup_action": "Verificar status",
+      "card_lookup_title": "Consulta Pública",
+      "card_lookup_desc": "Acompanhe o andamento da sua ocorrência pelo número de protocolo ou confira a autenticidade de um Boletim de Ocorrência pela chave de segurança ou QR Code.",
+      "card_lookup_action": "Consultar agora",
       "card_operational_title": "Painel Operacional",
       "card_operational_desc": "Acesso restrito para Agentes de campo, Delegados de triagem e Operadores da Central de Despacho.",
       "card_operational_action": "Entrar no sistema"
@@ -117,11 +117,11 @@
       "th_status": "Status"
     },
     "search": {
-      "title": "Já registrou uma ocorrência?",
-      "subtitle": "Digite seu número de protocolo para consultar o status atual.",
-      "placeholder": "SGOPI-2026-000001",
+      "title": "Já registrou uma ocorrência ou recebeu um documento?",
+      "subtitle": "Digite o número de protocolo para acompanhar o andamento, ou a chave de segurança do Boletim para conferir a autenticidade.",
+      "placeholder": "SGOPI-2026-000001 ou XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",
       "button": "Consultar",
-      "hint": "Exemplo de protocolo: SGOPI-2026-000137"
+      "hint": "O sistema identifica automaticamente se o código é um protocolo ou uma chave de autenticidade."
     },
     "faq": {
       "title": "Perguntas Frequentes",

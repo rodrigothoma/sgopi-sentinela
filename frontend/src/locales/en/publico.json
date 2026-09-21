@@ -78,11 +78,32 @@
       "outro": "Other Circumstanced Incident"
     }
   },
+  "publica": {
+    "titulo": "Public Inquiry",
+    "subtitulo": "Track the progress of an incident or verify the authenticity of an issued Police Report. No login required.",
+    "modo_rotulo": "Inquiry type",
+    "protocolo": {
+      "aba": "Track incident",
+      "rotulo": "Protocol number",
+      "ajuda": "Enter the protocol received when the incident was filed (format SGOPI-YYYY-NNNNNN) to see its current stage.",
+      "detectado": "Protocol format recognized — tracking mode selected automatically.",
+      "botao": "Inquire",
+      "vazio": "Enter the protocol number",
+      "nao_encontrado": "No incident report found with the given protocol. Please verify the code and try again.",
+      "demo_rotulo": "Demo environment, try this protocol:"
+    },
+    "chave": {
+      "aba": "Verify document",
+      "rotulo": "Document security key",
+      "ajuda": "Enter the 24-character key printed on the Police Report, or scan the document's QR Code with your phone camera.",
+      "detectado": "Security key format recognized — verification mode selected automatically.",
+      "botao": "Verify authenticity",
+      "vazio": "Enter the key printed on the document",
+      "nao_encontrado": "Document not found. Check the printed key and, if the problem persists, contact the issuing police station.",
+      "demo_rotulo": "Demo environment, try this key:"
+    }
+  },
   "consulta": {
-    "titulo": "Public Incident Status Inquiry",
-    "subtitulo": "Enter the official protocol number (e.g.: SGOPI-2026-000001) to check the status and progress of your police report.",
-    "placeholder": "SGOPI-YYYY-NNNNNN",
-    "botao_consultar": "Inquire",
     "protocolo_rotulo": "PROTOCOL:",
     "etapas": {
       "triagem": "Police Screening",
@@ -96,16 +117,8 @@
       "data_abertura": "Reported On:",
       "desfecho": "Final Disposition:",
       "voltar_inicio": "Back to Home"
-    },
-    "erro_nao_encontrada": "No incident report found with the given protocol. Please verify the code and try again."
+    }
   },
-  "titulo": "Document authentication",
-  "subtitulo": "Verify the authenticity and integrity of a Police Report issued by SGOPI Sentinela. No login required.",
-  "chave_label": "Security key (24 characters, printed on the document or read from the QR Code)",
-  "chave_placeholder": "XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",
-  "consultar": "Verify authenticity",
-  "consultando": "Verifying...",
-  "voltar_inicio": "Back to home",
   "lgpd": "In compliance with data protection law, the public portal shows only the document's verification data — never names, IDs, addresses or the narrative of the facts.",
   "resultado": {
     "VALIDO": "Authentic and intact document",
@@ -121,14 +134,9 @@
     "tipificacoes": "Criminal classification",
     "envolvidos": "Qualified parties",
     "evidencias": "Attached evidence",
-    "hash": "Integrity hash (SHA-256)",
-    "nova_consulta": "Verify another document"
-  },
-  "erro": {
-    "chave_vazia": "Enter the key printed on the document"
+    "hash": "Integrity hash (SHA-256)"
   },
   "demo": {
-    "rotulo": "Demo environment, try this key:",
     "copiar": "Copy",
     "copiado": "Copied!",
     "preencher": "Click to fill the field"

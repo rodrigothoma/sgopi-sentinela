@@ -8,10 +8,9 @@ import { RequireRole } from './components/RequireRole';
 import { AuthProvider } from './hooks/useAuth';
 import { ThemeProvider } from './hooks/useTheme';
 import { ToastProvider } from './hooks/useToast';
-import { AutenticarDocumentoPage } from './pages/AutenticarDocumentoPage';
 import { LandingPage } from './pages/LandingPage';
 import { RegistroCidadaoPage } from './pages/RegistroCidadaoPage';
-import { ConsultaProtocoloPage } from './pages/ConsultaProtocoloPage';
+import { ConsultaPublicaPage } from './pages/ConsultaPublicaPage';
 import { LoginPage } from './pages/LoginPage';
 import { FilaDelegadoPage } from './pages/FilaDelegadoPage';
 import { FrotaPage } from './pages/FrotaPage';
@@ -36,12 +35,13 @@ export default function App() {
                 {/* Rotas Públicas do Portal Cidadão */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/registrar-cidadao" element={<RegistroCidadaoPage />} />
-                <Route path="/consulta" element={<ConsultaProtocoloPage />} />
                 <Route path="/login" element={<LoginPage />} />
 
-                {/* RF08: portal público — fora do RequireRole por definição (UC08 regra 1) */}
-                <Route path="/autenticar" element={<AutenticarDocumentoPage />} />
-                <Route path="/autenticar/:chave" element={<AutenticarDocumentoPage />} />
+                {/* Consulta pública unificada: protocolo (acompanhamento) e chave de autenticidade (RF08).
+                    Fora do RequireRole por definição (UC08 regra 1); /autenticar/:chave é o deep-link do QR Code. */}
+                <Route path="/consulta" element={<ConsultaPublicaPage />} />
+                <Route path="/autenticar" element={<Navigate to="/consulta?modo=chave" replace />} />
+                <Route path="/autenticar/:chave" element={<ConsultaPublicaPage />} />
 
                 {/* Rotas Restritas Protegidas (RBAC Policial) */}
                 <Route element={<RequireRole><AppShell /></RequireRole>}>

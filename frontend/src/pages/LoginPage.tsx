@@ -145,18 +145,6 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
       </form>
-
-      {/* RF08: atalho para o portal público de autenticação de documento (UC08 regra 1) */}
-      <div className="login-divisor" aria-hidden="true"><span>{t('auth:publico.ou')}</span></div>
-
-      <Link to="/autenticar" className="card login-publico">
-        <span className="login-publico-icone" aria-hidden="true">🔎</span>
-        <span className="login-publico-texto">
-          <strong>{t('auth:publico.titulo')}</strong>
-          <span className="muted small">{t('auth:publico.subtitulo')}</span>
-        </span>
-        <span className="login-publico-seta" aria-hidden="true">→</span>
-      </Link>
     </div>
   );
 };

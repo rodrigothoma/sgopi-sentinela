@@ -260,12 +260,12 @@ export const LandingPage: React.FC = () => {
             className="hero-search-form"
             onSubmit={(e) => {
               e.preventDefault();
-              const input = (e.currentTarget.elements.namedItem('protocolo') as HTMLInputElement).value.trim().toUpperCase();
-              if (input) window.location.href = `/consulta?protocolo=${encodeURIComponent(input)}`;
+              const input = (e.currentTarget.elements.namedItem('codigo') as HTMLInputElement).value.trim().toUpperCase();
+              if (input) window.location.href = `/consulta?codigo=${encodeURIComponent(input)}`;
             }}
           >
             <input
-              name="protocolo"
+              name="codigo"
               type="text"
               placeholder={t('landing.search.placeholder')}
               style={{ fontFamily: 'monospace', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}

@@ -1449,134 +1449,61 @@ dl.grid2 dd { margin: 0 0 8px; }
 
 .chave-input { text-transform: uppercase; }
 
-.login.publico { width: min(560px, 100% - 32px); }
-.login.publico h2 { margin: 4px 0 0; font-size: 1.15rem; }
-.login.publico .grid2 { margin-top: 16px; }
-.login.publico .hash code { word-break: break-all; }
-.login.publico .btn-ghost { width: 100%; margin-top: 16px; }
-.resultado-autenticacao[data-situacao="ADULTERADO"] .grid2 { opacity: 0.8; }
+/* --- Portal público: consulta unificada (protocolo + chave de autenticidade RF08) --- */
+.consulta-publica .modo-consulta { margin-top: 20px; margin-bottom: 4px; }
+.consulta-publica .modo-consulta .tab { flex: 1; text-align: center; padding: 10px 14px; }
 
-/* --- Login: acesso público (RF08) abaixo do card de autenticação --- */
-.login-coluna {
-  width: 380px;
-  max-width: calc(100% - 32px);
+.consulta-publica-linha {
   display: flex;
-  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
 }
 
-.login-coluna .login { width: 100%; margin-bottom: 0; }
-
-.login-divisor {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 18px 0;
-  color: var(--muted);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.login-divisor::before,
-.login-divisor::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--line);
-}
-
-.login-publico {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 18px;
-  margin-bottom: 0;
-  text-decoration: none;
-  color: var(--ink);
-  border-color: var(--line);
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.login-publico:hover,
-.login-publico:focus-visible {
-  background: var(--card-hover);
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-glow);
-  transform: translateY(-1px);
-  outline: none;
-}
-
-.login-publico-icone {
-  flex: 0 0 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  background: rgba(59, 130, 246, 0.14);
-  border: 1px solid rgba(59, 130, 246, 0.35);
-  font-size: 1.25rem;
-}
-
-.login-publico-texto {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+.consulta-publica-linha input {
   flex: 1;
   min-width: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
-.login-publico-texto strong { font-size: 0.95rem; }
-.login-publico-texto .small { line-height: 1.35; }
+.consulta-publica-linha .btn { padding: 0 24px; white-space: nowrap; }
 
-.login-publico-seta {
-  color: var(--muted);
-  font-size: 1.2rem;
-  transition: transform 0.2s ease, color 0.2s ease;
+.consulta-publica-ajuda { margin: 8px 0 0; line-height: 1.45; }
+
+.consulta-publica-resultado {
+  margin-top: 32px;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
 }
 
-.login-publico:hover .login-publico-seta { transform: translateX(3px); color: var(--primary); }
-
-/* --- Portal público: retornar ao início (canto superior esquerdo) --- */
-.login-wrap { position: relative; }
-
-.voltar-inicio {
-  position: absolute;
-  top: 20px;
-  left: 24px;
-  display: inline-flex;
+.resultado-publico-cabecalho {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: rgba(24, 34, 56, 0.7);
-  color: var(--muted);
-  font-size: 0.85rem;
-  text-decoration: none;
-  backdrop-filter: blur(6px);
-  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.voltar-inicio:hover,
-.voltar-inicio:focus-visible {
-  color: var(--ink);
-  border-color: var(--primary);
-  background: var(--card-hover);
-  outline: none;
+.resultado-publico-codigo {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--primary);
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-.voltar-inicio span { transition: transform 0.2s ease; }
-.voltar-inicio:hover span { transform: translateX(-3px); }
+.resultado-autenticacao .grid2 { margin-top: 16px; }
+.resultado-autenticacao .hash code { word-break: break-all; }
+.resultado-autenticacao[data-situacao="ADULTERADO"] .grid2 { opacity: 0.8; }
 
-@media (max-width: 640px) {
-  .voltar-inicio { top: 12px; left: 12px; }
-  .login-wrap { padding-top: 56px; }
+@media (max-width: 560px) {
+  .consulta-publica-linha { flex-direction: column; }
+  .consulta-publica-linha .btn { padding: 12px 24px; }
 }
 
 /* --- Portal público: chave de demonstração copiável --- */
-.chave-demo { margin-top: 10px; }
+.codigo-demo { margin-top: 10px; }
 
-.chave-demo-linha {
+.codigo-demo-linha {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1584,7 +1511,7 @@ dl.grid2 dd { margin: 0 0 8px; }
   flex-wrap: wrap;
 }
 
-.chave-demo-valor {
+.codigo-demo-valor {
   flex: 1;
   min-width: 0;
   padding: 0;
@@ -1594,7 +1521,7 @@ dl.grid2 dd { margin: 0 0 8px; }
   text-align: left;
 }
 
-.chave-demo-valor code {
+.codigo-demo-valor code {
   display: block;
   padding: 8px 10px;
   border-radius: 8px;
@@ -1608,15 +1535,15 @@ dl.grid2 dd { margin: 0 0 8px; }
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.chave-demo-valor:hover code,
-.chave-demo-valor:focus-visible code {
+.codigo-demo-valor:hover code,
+.codigo-demo-valor:focus-visible code {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
-.chave-demo-valor:focus-visible { outline: none; }
+.codigo-demo-valor:focus-visible { outline: none; }
 
-.login .chave-demo-linha .btn {
+.consulta-publica .codigo-demo-linha .btn {
   width: auto;
   margin-top: 0;
   flex: 0 0 auto;
@@ -1624,4 +1551,4 @@ dl.grid2 dd { margin: 0 0 8px; }
   border: 1px solid var(--line);
 }
 
-.login .chave-demo-linha .btn:hover { border-color: var(--primary); }
+.consulta-publica .codigo-demo-linha .btn:hover { border-color: var(--primary); }
