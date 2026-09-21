@@ -24,6 +24,9 @@ class RegistroAuditoriaSchema(BaseModel):
     dados_antes: dict[str, Any] | None
     dados_depois: dict[str, Any] | None
     ip: str | None
+    autor_nome: str | None = None
+    autor_papel: str | None = None
+    identificador_amigavel: str | None = None
 
 
 @router.get("", response_model=list[RegistroAuditoriaSchema])

@@ -96,6 +96,10 @@ async def test_filtros_de_auditoria(client, session):
     assert len(itens_quem) >= 1
     assert all(i["quem"] == str(IDS["delegado"]) for i in itens_quem)
 
+    # 5. Validação de identificador_amigavel e autor_nome (enriquecimento na leitura)
+    assert any(i.get("identificador_amigavel") == oc["numero_protocolo"] for i in itens_id)
+    assert any(i.get("autor_nome") == "Delegado" and i.get("autor_papel") == "DELEGADO" for i in itens_quem)
+
 
 async def test_mascaramento_cpf_em_payloads_de_auditoria(client, session):
     h_delegado = await auth(client, "delegado")

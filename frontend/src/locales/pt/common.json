@@ -178,9 +178,15 @@
       "viatura.cadastrar": "Viatura cadastrada",
       "viatura.alterar_situacao": "Situação de viatura alterada",
       "evidencia.anexar": "Evidência anexada",
-      "evidencia.acessar": "Evidência visualizada"
+      "evidencia.acessar": "Evidência visualizada",
+      "REGISTRO_OCORRENCIA": "Ocorrência registrada",
+      "HOMOLOGACAO_OCORRENCIA": "Ocorrência validada",
+      "DEVOLUCAO_CORRECAO": "Devolvida para correção",
+      "ENCERRAMENTO_OCORRENCIA": "Ocorrência encerrada",
+      "DESPACHO_VIATURA": "Despacho criado"
     },
-    "pesquisar_placeholder": "Filtrar por ID da entidade, IP, autor ou operação...",
+    "autor_sistema": "Sistema / Cidadão",
+    "pesquisar_placeholder": "Filtrar por protocolo, viatura, autor, IP ou operação...",
     "filtro_todas_operacoes": "Todas as operações",
     "filtro_todas_entidades": "Todas as entidades",
     "filtro_operacao": "Operação",

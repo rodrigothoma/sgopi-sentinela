@@ -71,6 +71,9 @@ export interface RegistroAuditoria {
   dados_depois: Record<string, unknown> | null;
   ip: string | null;
   user_agent: string | null;
+  autor_nome?: string | null;
+  autor_papel?: Papel | null;
+  identificador_amigavel?: string | null;
 }
 
 export interface FiltroAuditoria {

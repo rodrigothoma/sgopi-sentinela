@@ -178,9 +178,15 @@
       "viatura.cadastrar": "Vehicle Registered",
       "viatura.alterar_situacao": "Vehicle Status Changed",
       "evidencia.anexar": "Evidence Attached",
-      "evidencia.acessar": "Evidence Accessed"
+      "evidencia.acessar": "Evidence Accessed",
+      "REGISTRO_OCORRENCIA": "Incident Reported",
+      "HOMOLOGACAO_OCORRENCIA": "Incident Validated",
+      "DEVOLUCAO_CORRECAO": "Returned for Correction",
+      "ENCERRAMENTO_OCORRENCIA": "Incident Closed",
+      "DESPACHO_VIATURA": "Dispatch Created"
     },
-    "pesquisar_placeholder": "Filter by entity ID, IP, author or operation...",
+    "autor_sistema": "System / Citizen",
+    "pesquisar_placeholder": "Filter by protocol, vehicle, author, IP or operation...",
     "filtro_todas_operacoes": "All operations",
     "filtro_todas_entidades": "All entities",
     "filtro_operacao": "Operation",

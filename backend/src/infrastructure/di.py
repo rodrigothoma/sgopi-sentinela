@@ -264,8 +264,18 @@ def get_reenviar_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceRe
     return ReenviarOcorrencia(*deps)
 
 
-def get_consultar_auditoria(auditoria: PortaAuditoria = Depends(get_auditoria)) -> InterfaceConsultarAuditoria:
-    return ConsultarAuditoria(auditoria)
+def get_consultar_auditoria(
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    repositorio_usuario: RepositorioUsuario = Depends(get_repositorio_usuario),
+    repositorio_ocorrencia: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    repositorio_viatura: RepositorioViatura = Depends(get_repositorio_viatura),
+) -> InterfaceConsultarAuditoria:
+    return ConsultarAuditoria(
+        auditoria=auditoria,
+        repositorio_usuario=repositorio_usuario,
+        repositorio_ocorrencia=repositorio_ocorrencia,
+        repositorio_viatura=repositorio_viatura,
+    )
 
 
 # ------------------------------------------------------------------ viaturas

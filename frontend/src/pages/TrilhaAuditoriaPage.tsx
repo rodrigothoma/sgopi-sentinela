@@ -102,12 +102,14 @@ export const TrilhaAuditoriaPage: React.FC = () => {
     if (!termo) return registros;
     return registros.filter((r) => {
       const matchId = r.entidade_id.toLowerCase().includes(termo);
+      const matchIdAmigavel = r.identificador_amigavel ? r.identificador_amigavel.toLowerCase().includes(termo) : false;
       const matchOpTecnica = r.operacao.toLowerCase().includes(termo);
       const matchOpAmigavel = t(`auditoria.operacoes.${r.operacao}`, r.operacao).toLowerCase().includes(termo);
       const matchEnt = r.entidade.toLowerCase().includes(termo);
       const matchQuem = r.quem ? r.quem.toLowerCase().includes(termo) : false;
+      const matchAutorNome = r.autor_nome ? r.autor_nome.toLowerCase().includes(termo) : false;
       const matchIp = r.ip ? r.ip.toLowerCase().includes(termo) : false;
-      return matchId || matchOpTecnica || matchOpAmigavel || matchEnt || matchQuem || matchIp;
+      return matchId || matchIdAmigavel || matchOpTecnica || matchOpAmigavel || matchEnt || matchQuem || matchAutorNome || matchIp;
     });
   }, [registros, busca, t]);
 
@@ -253,14 +255,42 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                     <td style={{ padding: '12px 16px', fontWeight: 500 }}>
                       {reg.entidade}
                     </td>
-                    <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--muted)' }}>
-                      {reg.entidade_id.length > 24 ? `${reg.entidade_id.slice(0, 8)}...${reg.entidade_id.slice(-6)}` : reg.entidade_id}
-                    </td>
-                    <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: '0.82rem' }}>
-                      {reg.quem ? (
-                        <span title={reg.quem}>{reg.quem.slice(0, 8)}...</span>
+                    <td style={{ padding: '12px 16px', fontSize: '0.85rem' }}>
+                      {reg.identificador_amigavel ? (
+                        <div>
+                          <strong style={{ fontFamily: 'monospace', color: 'var(--ink)' }}>
+                            {reg.identificador_amigavel}
+                          </strong>
+                          <br />
+                          <small className="muted" style={{ fontFamily: 'monospace', fontSize: '0.75rem' }} title={reg.entidade_id}>
+                            ID: {reg.entidade_id.length > 18 ? `${reg.entidade_id.slice(0, 8)}...` : reg.entidade_id}
+                          </small>
+                        </div>
                       ) : (
-                        <span className="muted">—</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--muted)' }} title={reg.entidade_id}>
+                          {reg.entidade_id.length > 24 ? `${reg.entidade_id.slice(0, 8)}...${reg.entidade_id.slice(-6)}` : reg.entidade_id}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px 16px', fontSize: '0.85rem' }}>
+                      {reg.autor_nome ? (
+                        <div>
+                          <strong>{reg.autor_nome}</strong>
+                          {reg.autor_papel && (
+                            <>
+                              <br />
+                              <small className="muted">{t(`papel.${reg.autor_papel}`, reg.autor_papel)}</small>
+                            </>
+                          )}
+                        </div>
+                      ) : reg.quem ? (
+                        <span title={reg.quem} style={{ fontFamily: 'monospace', fontSize: '0.82rem' }}>
+                          {reg.quem.slice(0, 8)}...
+                        </span>
+                      ) : (
+                        <span className="muted" style={{ fontStyle: 'italic', fontSize: '0.82rem' }}>
+                          {t('auditoria.autor_sistema')}
+                        </span>
                       )}
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: '0.85rem', color: 'var(--muted)' }}>
@@ -383,11 +413,35 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="muted">{t('auditoria.coluna_entidade')}:</span>
-                  <div>{detalheSelecionado.entidade} ({detalheSelecionado.entidade_id})</div>
+                  <div>
+                    <strong>{detalheSelecionado.entidade}</strong>
+                    {detalheSelecionado.identificador_amigavel && (
+                      <span style={{ color: 'var(--primary)', fontWeight: 600 }}> ({detalheSelecionado.identificador_amigavel})</span>
+                    )}
+                  </div>
+                  <small className="muted" style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                    ID: {detalheSelecionado.entidade_id}
+                  </small>
                 </div>
                 <div>
                   <span className="muted">{t('auditoria.coluna_autor')}:</span>
-                  <div style={{ fontFamily: 'monospace' }}>{detalheSelecionado.quem || '—'}</div>
+                  <div>
+                    {detalheSelecionado.autor_nome ? (
+                      <strong>
+                        {detalheSelecionado.autor_nome}
+                        {detalheSelecionado.autor_papel && ` (${t(`papel.${detalheSelecionado.autor_papel}`, detalheSelecionado.autor_papel)})`}
+                      </strong>
+                    ) : (
+                      <span className="muted" style={{ fontStyle: 'italic' }}>
+                        {t('auditoria.autor_sistema')}
+                      </span>
+                    )}
+                  </div>
+                  {detalheSelecionado.quem && (
+                    <small className="muted" style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                      UUID: {detalheSelecionado.quem}
+                    </small>
+                  )}
                 </div>
                 <div>
                   <span className="muted">{t('auditoria.coluna_ip')}:</span>
