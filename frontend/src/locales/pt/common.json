@@ -178,12 +178,8 @@
       "viatura.cadastrar": "Viatura cadastrada",
       "viatura.alterar_situacao": "Situação de viatura alterada",
       "evidencia.anexar": "Evidência anexada",
-      "evidencia.acessar": "Evidência visualizada",
-      "REGISTRO_OCORRENCIA": "Ocorrência registrada",
-      "HOMOLOGACAO_OCORRENCIA": "Ocorrência validada",
-      "DEVOLUCAO_CORRECAO": "Devolvida para correção",
-      "ENCERRAMENTO_OCORRENCIA": "Ocorrência encerrada",
-      "DESPACHO_VIATURA": "Despacho criado"
+      "evidencia.download": "Download de evidência",
+      "evidencia.verificar_integridade": "Verificação de integridade"
     },
     "autor_sistema": "Sistema / Cidadão",
     "pesquisar_placeholder": "Filtrar por protocolo, viatura, autor, IP ou operação...",
@@ -203,7 +199,6 @@
     "modal_titulo": "Inspeção de Auditoria",
     "modal_subtitulo": "Detalhes e histórico de alterações com sanitização de dados sensíveis",
     "modal_visao_operacional": "Visão Operacional",
-    "modal_visual_amigavel": "Visão Operacional",
     "modal_json_tecnico": "JSON Técnico",
     "modal_campo": "Campo / Informação",
     "modal_anterior": "Estado Anterior",
@@ -216,8 +211,8 @@
     "modal_alterado": "Alterado",
     "sim": "Sim",
     "nao": "Não",
-    "modal_dados_antes": "Estado Anterior (dados_antes)",
-    "modal_dados_depois": "Novo Estado (dados_depois)",
+    "modal_dados_antes": "Estado Anterior",
+    "modal_dados_depois": "Novo Estado",
     "modal_sem_dados": "Nenhum dado registrado nesta etapa.",
     "modal_fechar": "Fechar",
     "campos": {

@@ -178,12 +178,8 @@
       "viatura.cadastrar": "Vehicle Registered",
       "viatura.alterar_situacao": "Vehicle Status Changed",
       "evidencia.anexar": "Evidence Attached",
-      "evidencia.acessar": "Evidence Accessed",
-      "REGISTRO_OCORRENCIA": "Incident Reported",
-      "HOMOLOGACAO_OCORRENCIA": "Incident Validated",
-      "DEVOLUCAO_CORRECAO": "Returned for Correction",
-      "ENCERRAMENTO_OCORRENCIA": "Incident Closed",
-      "DESPACHO_VIATURA": "Dispatch Created"
+      "evidencia.download": "Evidence Downloaded",
+      "evidencia.verificar_integridade": "Evidence Integrity Checked"
     },
     "autor_sistema": "System / Citizen",
     "pesquisar_placeholder": "Filter by protocol, vehicle, author, IP or operation...",
@@ -203,7 +199,6 @@
     "modal_titulo": "Audit Inspection",
     "modal_subtitulo": "Details and change history with sensitive data sanitization",
     "modal_visao_operacional": "Operational View",
-    "modal_visual_amigavel": "Operational View",
     "modal_json_tecnico": "Technical JSON",
     "modal_campo": "Field / Information",
     "modal_anterior": "Previous State",
@@ -216,8 +211,8 @@
     "modal_alterado": "Changed",
     "sim": "Yes",
     "nao": "No",
-    "modal_dados_antes": "Previous State (dados_antes)",
-    "modal_dados_depois": "New State (dados_depois)",
+    "modal_dados_antes": "Previous State",
+    "modal_dados_depois": "New State",
     "modal_sem_dados": "No payload data recorded for this step.",
     "modal_fechar": "Close",
     "campos": {
