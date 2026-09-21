@@ -105,7 +105,7 @@ export const MapaTatico: React.FC<Props> = ({ viaturas, ocorrencias, selecionada
     if (heatRef.current) {
       heatRef.current.setLatLngs(pontosCalor);
     } else {
-      heatRef.current = L.heatLayer(pontosCalor, { radius: 28, blur: 18, maxZoom: 17 }).addTo(map);
+      heatRef.current = L.heatLayer(pontosCalor, { radius: 30, blur: 20, maxZoom: 13 }).addTo(map);
     }
   }, [heatAtivo, pontosCalor]);
 
