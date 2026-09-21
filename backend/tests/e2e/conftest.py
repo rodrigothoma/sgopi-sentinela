@@ -81,7 +81,7 @@ def corpo_ocorrencia(**overrides) -> dict:
         "latitude": -29.7833,
         "longitude": -55.7919,
         "data_hora_fato": (datetime.now(UTC) - timedelta(hours=1)).isoformat(),
-        "envolvidos": [{"nome": "Maria E2E", "tipo": "VITIMA"}],
+        "envolvidos": [{"nome": "Maria Teste", "tipo": "VITIMA"}],
         "tipificacoes": [{"artigo": "Art. 155 CP", "descricao": "Furto simples"}],
     }
     corpo.update(overrides)
