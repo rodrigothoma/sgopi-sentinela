@@ -10,5 +10,10 @@ class PortaAuditoria(ABC):
 
     @abstractmethod
     async def listar(
-        self, entidade: str | None = None, entidade_id: str | None = None, limit: int = 100
+        self,
+        entidade: str | None = None,
+        entidade_id: str | None = None,
+        operacao: str | None = None,
+        quem=None,
+        limit: int = 100,
     ) -> list[RegistroAuditoria]: ...

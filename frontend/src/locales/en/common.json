@@ -8,6 +8,7 @@
     "fila": "Review Queue",
     "painel": "Tactical Dispatch",
     "frota": "Fleet",
+    "auditoria": "Audit Trail",
     "lookup": "Lookup Protocol",
     "police_access": "Police Portal"
   },
@@ -155,5 +156,35 @@
       "hours": "Mon to Fri, 08:00–18:00",
       "copyright": "SGOPI Sentinela — Developed by the Software Engineering Team — Unipampa Alegrete — 2026"
     }
+  },
+  "auditoria": {
+    "titulo": "Immutable Audit Trail",
+    "subtitulo": "Chronological, indelible, append-only log of all security actions and data mutations (RNF02 / RNF03).",
+    "badge_append_only": "Append-Only (RNF03)",
+    "badge_lgpd": "Privacy / Masked CPF (RNF02)",
+    "kpi_total": "Total Log Entries",
+    "kpi_mutacoes": "Audited Mutations",
+    "kpi_acessos": "Auth Events",
+    "pesquisar_placeholder": "Filter by entity ID, IP, author or operation...",
+    "filtro_todas_operacoes": "All operations",
+    "filtro_todas_entidades": "All entities",
+    "filtro_operacao": "Operation",
+    "filtro_entidade": "Entity",
+    "coluna_quando": "Timestamp",
+    "coluna_operacao": "Operation",
+    "coluna_entidade": "Entity",
+    "coluna_id": "Identifier",
+    "coluna_autor": "Author (ID)",
+    "coluna_ip": "IP Address",
+    "coluna_acoes": "Actions",
+    "btn_detalhes": "Inspect",
+    "vazio": "No audit records found matching selected filters.",
+    "modal_titulo": "Audit Inspection",
+    "modal_subtitulo": "Recorded state mutation with sensitive data sanitization",
+    "modal_dados_antes": "Previous State (dados_antes)",
+    "modal_dados_depois": "New State (dados_depois)",
+    "modal_sem_dados": "No payload data recorded for this step.",
+    "modal_fechar": "Close"
   }
 }
+

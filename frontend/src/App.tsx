@@ -17,6 +17,7 @@ import { FrotaPage } from './pages/FrotaPage';
 import { MinhasOcorrenciasPage } from './pages/MinhasOcorrenciasPage';
 import { PainelTaticoPage } from './pages/PainelTaticoPage';
 import { RegistrarOcorrenciaPage } from './pages/RegistrarOcorrenciaPage';
+import { TrilhaAuditoriaPage } from './pages/TrilhaAuditoriaPage';
 
 const Carregando = () => {
   const { t } = useTranslation();
@@ -44,6 +45,7 @@ export default function App() {
                   <Route path="/fila" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><FilaDelegadoPage /></RequireRole>} />
                   <Route path="/painel" element={<RequireRole papeis={['OPERADOR_CENTRAL', 'SUPERVISOR', 'DELEGADO']}><PainelTaticoPage /></RequireRole>} />
                   <Route path="/frota" element={<RequireRole papeis={['OPERADOR_CENTRAL', 'SUPERVISOR']}><FrotaPage /></RequireRole>} />
+                  <Route path="/auditoria" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><TrilhaAuditoriaPage /></RequireRole>} />
                 </Route>
 
                 {/* Redirecionamento padrão */}

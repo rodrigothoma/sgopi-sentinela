@@ -33,6 +33,7 @@ export const AppShell: React.FC = () => {
           {tem('DELEGADO', 'SUPERVISOR') && <NavLink to="/fila">{t('nav.fila')}</NavLink>}
           {tem('OPERADOR_CENTRAL', 'SUPERVISOR', 'DELEGADO') && <NavLink to="/painel">{t('nav.painel')}</NavLink>}
           {tem('OPERADOR_CENTRAL', 'SUPERVISOR') && <NavLink to="/frota">{t('nav.frota')}</NavLink>}
+          {tem('DELEGADO', 'SUPERVISOR') && <NavLink to="/auditoria">{t('nav.auditoria')}</NavLink>}
         </nav>
         <div className="userbox">
           <GlideSelect

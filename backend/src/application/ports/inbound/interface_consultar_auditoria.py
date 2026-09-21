@@ -11,6 +11,8 @@ from application.ports.inbound.ator import Ator
 class ConsultarAuditoriaInput:
     entidade: str | None = None
     entidade_id: str | None = None
+    operacao: str | None = None
+    quem: UUID | None = None
     limit: int = 100
 
 

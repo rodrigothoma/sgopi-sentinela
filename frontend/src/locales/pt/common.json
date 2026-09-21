@@ -8,6 +8,7 @@
     "fila": "Fila de revisão",
     "painel": "Painel tático",
     "frota": "Frota",
+    "auditoria": "Trilha de auditoria",
     "lookup": "Consultar protocolo",
     "police_access": "Acesso Policial"
   },
@@ -155,5 +156,35 @@
       "hours": "Seg a Sex, 08h–18h",
       "copyright": "SGOPI Sentinela — Desenvolvido pela Equipe de Engenharia de Software — Unipampa Alegrete — 2026"
     }
+  },
+  "auditoria": {
+    "titulo": "Trilha de Auditoria Imutável",
+    "subtitulo": "Registro cronológico, indelével e append-only de todas as ações e mutações de segurança (RNF02 / RNF03).",
+    "badge_append_only": "Append-Only (RNF03)",
+    "badge_lgpd": "LGPD / CPF Mascarado (RNF02)",
+    "kpi_total": "Total de Registros",
+    "kpi_mutacoes": "Mutações Auditadas",
+    "kpi_acessos": "Eventos de Autenticação",
+    "pesquisar_placeholder": "Filtrar por ID da entidade, IP, autor ou operação...",
+    "filtro_todas_operacoes": "Todas as operações",
+    "filtro_todas_entidades": "Todas as entidades",
+    "filtro_operacao": "Operação",
+    "filtro_entidade": "Entidade",
+    "coluna_quando": "Data/Hora",
+    "coluna_operacao": "Operação",
+    "coluna_entidade": "Entidade",
+    "coluna_id": "Identificador",
+    "coluna_autor": "Autor (ID)",
+    "coluna_ip": "Endereço IP",
+    "coluna_acoes": "Ações",
+    "btn_detalhes": "Inspecionar",
+    "vazio": "Nenhum registro de auditoria encontrado com os filtros selecionados.",
+    "modal_titulo": "Inspeção de Auditoria",
+    "modal_subtitulo": "Mutações registradas com sanitização de dados sensíveis",
+    "modal_dados_antes": "Estado Anterior (dados_antes)",
+    "modal_dados_depois": "Novo Estado (dados_depois)",
+    "modal_sem_dados": "Nenhum dado registrado nesta etapa.",
+    "modal_fechar": "Fechar"
   }
 }
+

@@ -60,4 +60,25 @@ export interface StatusSimulador { ligado: boolean; intervalo_segundos: number; 
 
 export interface EventoTempoReal { tipo: string; ocorrido_em: string; dados: Record<string, unknown> }
 
+export interface RegistroAuditoria {
+  id: string;
+  quando: string;
+  quem: string | null;
+  operacao: string;
+  entidade: string;
+  entidade_id: string;
+  dados_antes: Record<string, unknown> | null;
+  dados_depois: Record<string, unknown> | null;
+  ip: string | null;
+  user_agent: string | null;
+}
+
+export interface FiltroAuditoria {
+  entidade?: string;
+  entidade_id?: string;
+  operacao?: string;
+  quem?: string;
+  limit?: number;
+}
+
 export interface ErroApi { detail: string; code: string; request_id: string | null; extra?: Record<string, unknown> }

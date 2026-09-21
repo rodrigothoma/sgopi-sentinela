@@ -30,10 +30,21 @@ class RegistroAuditoriaSchema(BaseModel):
 async def listar_auditoria(
     entidade: str | None = Query(default=None),
     entidade_id: str | None = Query(default=None),
+    operacao: str | None = Query(default=None),
+    quem: UUID | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=500),
     ator: Ator = Depends(exigir_papel(Papel.DELEGADO, Papel.SUPERVISOR)),
     use_case: InterfaceConsultarAuditoria = Depends(get_consultar_auditoria),
 ) -> list[RegistroAuditoriaSchema]:
     """Trilha de auditoria append-only (mais recente primeiro)."""
-    registros = await use_case.executar(ator, ConsultarAuditoriaInput(entidade=entidade, entidade_id=entidade_id, limit=limit))
+    registros = await use_case.executar(
+        ator,
+        ConsultarAuditoriaInput(
+            entidade=entidade,
+            entidade_id=entidade_id,
+            operacao=operacao,
+            quem=quem,
+            limit=limit,
+        ),
+    )
     return [RegistroAuditoriaSchema(**r.__dict__) for r in registros]
