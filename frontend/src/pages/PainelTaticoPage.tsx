@@ -13,11 +13,12 @@ import {
   LIMIAR_CRITICIDADE_24H,
   PERIODOS_MANCHA_DIAS,
   PERIODO_MANCHA_PADRAO_DIAS,
-  contarOcorrencias24h,
   filtrarPontosMancha,
   idadeEmMinutos,
+  listarCriticas24h,
   listarEmAberto,
   listarNaturezas,
+  resumirPorNatureza,
 } from '../utils/manchas';
 import type { EventoTempoReal, OcorrenciaResumo, OrdemDespacho, StatusSimulador, Sugestoes, Viatura } from '../types/api';
 
@@ -42,6 +43,7 @@ export const PainelTaticoPage: React.FC = () => {
   const [heatAtivo, setHeatAtivo] = useState(false);
   const [periodoDias, setPeriodoDias] = useState<number>(PERIODO_MANCHA_PADRAO_DIAS);
   const [naturezaFiltro, setNaturezaFiltro] = useState('');
+  const [detalhesCriticos, setDetalhesCriticos] = useState(false);
 
   const carregar = useCallback(async () => {
     try {
@@ -112,10 +114,12 @@ export const PainelTaticoPage: React.FC = () => {
     () => (heatAtivo ? filtrarPontosMancha(ocorrencias, periodoDias, naturezaFiltro) : []),
     [heatAtivo, ocorrencias, periodoDias, naturezaFiltro],
   );
-  const criticidade = useMemo(
-    () => heatAtivo && contarOcorrencias24h(ocorrencias, naturezaFiltro) >= LIMIAR_CRITICIDADE_24H,
+  const criticas = useMemo(
+    () => (heatAtivo ? listarCriticas24h(ocorrencias, naturezaFiltro) : []),
     [heatAtivo, ocorrencias, naturezaFiltro],
   );
+  const criticidade = criticas.length >= LIMIAR_CRITICIDADE_24H;
+  const resumoCriticas = useMemo(() => resumirPorNatureza(criticas).slice(0, 3), [criticas]);
   const emAberto = useMemo(
     () => (heatAtivo ? listarEmAberto(ocorrencias, naturezaFiltro) : []),
     [heatAtivo, ocorrencias, naturezaFiltro],
@@ -245,7 +249,36 @@ export const PainelTaticoPage: React.FC = () => {
         <div className="painel-mapa">
           {criticidade && (
             <div className="alerta erro">
-              {t('painel:manchas.criticidade', { n: LIMIAR_CRITICIDADE_24H })}
+              <div>{t('painel:manchas.criticidade', { n: LIMIAR_CRITICIDADE_24H })}</div>
+              <div className="criticas-resumo">
+                <span>
+                  {t('painel:manchas.resumo_24h', { total: criticas.length })}
+                  {' · '}
+                  {resumoCriticas.map((r) => `${r.natureza} (${r.quantidade})`).join(', ')}
+                </span>
+                <button
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => setDetalhesCriticos((v) => !v)}
+                >
+                  {detalhesCriticos
+                    ? t('painel:manchas.detalhes_ocultar')
+                    : t('painel:manchas.detalhes_mostrar')}
+                </button>
+              </div>
+              {detalhesCriticos && (
+                <div className="criticas-detalhes">
+                  {criticas.map((o) => (
+                    <button
+                      key={o.ocorrencia_id}
+                      className="btn btn-sm btn-ghost"
+                      onClick={() => selecionar(o.ocorrencia_id)}
+                      title={o.localizacao}
+                    >
+                      {o.numero_protocolo} · {o.natureza}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           <MapaTatico viaturas={viaturas} ocorrencias={ocorrencias} selecionada={selecionada} onSelecionarOcorrencia={selecionar} heatAtivo={heatAtivo} pontosCalor={pontosCalor} />

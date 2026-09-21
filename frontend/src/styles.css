@@ -610,6 +610,9 @@ dl.grid2 dd { margin: 0 0 8px; }
 .alerta.sucesso { background: rgba(16, 185, 129, 0.12); color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
 .alerta.aviso { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
 
+.criticas-resumo { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; }
+.criticas-detalhes { display: flex; flex-wrap: wrap; gap: 8px; max-height: 132px; overflow-y: auto; margin-top: 8px; }
+
 .callout {
   background: var(--bg-surface);
   border-left: 4px solid var(--warn);

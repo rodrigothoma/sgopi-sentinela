@@ -28,23 +28,40 @@ export function filtrarPontosMancha(
     .map((o) => [o.latitude, o.longitude, 1]);
 }
 
-export function contarOcorrencias24h(
+export function listarCriticas24h(
   ocorrencias: OcorrenciaResumo[],
   natureza: string,
   agora: number = Date.now(),
-): number {
+): OcorrenciaResumo[] {
   const corte = agora - MS_POR_DIA;
-  return ocorrencias.filter(
-    (o) =>
-      (natureza === '' || o.natureza === natureza) &&
-      new Date(o.data_hora_fato).getTime() >= corte,
-  ).length;
+  return ocorrencias
+    .filter(
+      (o) =>
+        (natureza === '' || o.natureza === natureza) &&
+        new Date(o.data_hora_fato).getTime() >= corte,
+    )
+    .sort((a, b) => new Date(b.data_hora_fato).getTime() - new Date(a.data_hora_fato).getTime());
+}
+
 export function listarEmAberto(ocorrencias: OcorrenciaResumo[], natureza: string): OcorrenciaResumo[] {
   const filtradas =
     natureza === '' ? ocorrencias : ocorrencias.filter((o) => o.natureza === natureza);
   return [...filtradas].sort(
     (a, b) => new Date(a.criada_em).getTime() - new Date(b.criada_em).getTime(),
   );
+}
+
+export interface ResumoNatureza {
+  natureza: string;
+  quantidade: number;
+}
+
+export function resumirPorNatureza(ocorrencias: OcorrenciaResumo[]): ResumoNatureza[] {
+  const contagem = new Map<string, number>();
+  for (const o of ocorrencias) contagem.set(o.natureza, (contagem.get(o.natureza) ?? 0) + 1);
+  return [...contagem.entries()]
+    .map(([natureza, quantidade]) => ({ natureza, quantidade }))
+    .sort((a, b) => b.quantidade - a.quantidade);
 }
 
 export function idadeEmMinutos(criadaEm: string, agora: number = Date.now()): number {

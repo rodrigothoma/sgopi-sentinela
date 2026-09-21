@@ -57,6 +57,31 @@ describe('Issue #45 - Manchas criminais e criticidade', () => {
     cy.contains('.painel-barra label', 'Natureza').find('select').select(NATUREZA_TESTE);
     cy.get('.leaflet-heatmap-layer').should('exist');
     cy.contains('.painel-mapa .alerta.erro', 'criticidade').should('be.visible');
+    cy.contains('.painel-mapa .alerta.erro', 'em 24 h').should('be.visible');
+  });
+
+  it('expande o banner para ver e alcançar as ocorrências críticas', () => {
+    semearTresOcorrenciasRecentes();
+    cy.login('operador', '/painel');
+    ligarManchas();
+
+    cy.contains('.painel-mapa .alerta.erro', 'criticidade').should('be.visible');
+    cy.get('.painel-mapa .alerta.erro .criticas-detalhes button').should('not.exist');
+    cy.contains('.painel-mapa .alerta.erro button', 'Ver ocorrências').click();
+    cy.get('.painel-mapa .alerta.erro .criticas-detalhes button').should('have.length.at.least', 3);
+  });
+
+  it('permite ir direto à ocorrência crítica pelo banner', () => {
+    semearTresOcorrenciasRecentes();
+    cy.login('operador', '/painel');
+    ligarManchas();
+
+    cy.contains('.painel-mapa .alerta.erro', 'criticidade').should('be.visible');
+    cy.contains('.painel-mapa .alerta.erro button', 'Ver ocorrências').click();
+    cy.get('.painel-mapa .alerta.erro .criticas-detalhes button').first().click();
+    cy.contains('.painel-lateral .card', 'Críticas em aberto').find('li.ativo').should('exist');
+  });
+
   it('lista as críticas em aberto com tempo de abertura mesmo fora das 24h', () => {
     cy.criarOcorrenciaApi({ natureza: NATUREZA_TESTE }).then((o) => {
       validarComoDelegado(o.ocorrencia_id);
