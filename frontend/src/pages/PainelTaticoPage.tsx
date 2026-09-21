@@ -9,6 +9,14 @@ import { mensagemDeErro } from '../services/api';
 import { despachoService } from '../services/despachoService';
 import { ocorrenciasService } from '../services/ocorrenciasService';
 import { viaturasService } from '../services/viaturasService';
+import {
+  LIMIAR_CRITICIDADE_24H,
+  PERIODOS_MANCHA_DIAS,
+  PERIODO_MANCHA_PADRAO_DIAS,
+  contarOcorrencias24h,
+  filtrarPontosMancha,
+  listarNaturezas,
+} from '../utils/manchas';
 import type { EventoTempoReal, OcorrenciaResumo, OrdemDespacho, StatusSimulador, Sugestoes, Viatura } from '../types/api';
 
 /**
@@ -29,6 +37,9 @@ export const PainelTaticoPage: React.FC = () => {
   const [desfecho, setDesfecho] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [ultimoEvento, setUltimoEvento] = useState<string>('');
+  const [heatAtivo, setHeatAtivo] = useState(false);
+  const [periodoDias, setPeriodoDias] = useState<number>(PERIODO_MANCHA_PADRAO_DIAS);
+  const [naturezaFiltro, setNaturezaFiltro] = useState('');
 
   const carregar = useCallback(async () => {
     try {
@@ -94,6 +105,15 @@ export const PainelTaticoPage: React.FC = () => {
 
   const ocorrenciaSel = useMemo(() => ocorrencias.find((o) => o.ocorrencia_id === selecionada) ?? null, [ocorrencias, selecionada]);
   const semSinal = viaturas.filter((v) => v.sinal !== 'OK');
+  const naturezas = useMemo(() => listarNaturezas(ocorrencias), [ocorrencias]);
+  const pontosCalor = useMemo(
+    () => (heatAtivo ? filtrarPontosMancha(ocorrencias, periodoDias, naturezaFiltro) : []),
+    [heatAtivo, ocorrencias, periodoDias, naturezaFiltro],
+  );
+  const criticidade = useMemo(
+    () => heatAtivo && contarOcorrencias24h(ocorrencias, naturezaFiltro) >= LIMIAR_CRITICIDADE_24H,
+    [heatAtivo, ocorrencias, naturezaFiltro],
+  );
 
   const selecionar = async (id: string) => {
     setSelecionada(id);
@@ -158,6 +178,30 @@ export const PainelTaticoPage: React.FC = () => {
             {simulador.ligado ? t('painel:simulador.desligar') : t('painel:simulador.ligar')} ({simulador.ticks})
           </button>
         )}
+        <button className={`btn ${heatAtivo ? 'btn-warn' : 'btn-ghost'}`} onClick={() => setHeatAtivo((v) => !v)}>
+          {heatAtivo ? t('painel:manchas.ocultar') : t('painel:manchas.mostrar')}
+        </button>
+        {heatAtivo && (
+          <>
+            <label className="muted small">
+              {t('painel:manchas.periodo')}
+              <select value={periodoDias} onChange={(e) => setPeriodoDias(Number(e.target.value))}>
+                {PERIODOS_MANCHA_DIAS.map((d) => (
+                  <option key={d} value={d}>{t('painel:manchas.dias', { n: d })}</option>
+                ))}
+              </select>
+            </label>
+            <label className="muted small">
+              {t('painel:manchas.natureza')}
+              <select value={naturezaFiltro} onChange={(e) => setNaturezaFiltro(e.target.value)}>
+                <option value="">{t('painel:manchas.todas')}</option>
+                {naturezas.map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
         <button className="btn btn-ghost" onClick={carregar}>{t('common:actions.atualizar')}</button>
       </div>
 
@@ -186,7 +230,12 @@ export const PainelTaticoPage: React.FC = () => {
 
       <div className="painel-grid">
         <div className="painel-mapa">
-          <MapaTatico viaturas={viaturas} ocorrencias={ocorrencias} selecionada={selecionada} onSelecionarOcorrencia={selecionar} />
+          {criticidade && (
+            <div className="alerta erro">
+              {t('painel:manchas.criticidade', { n: LIMIAR_CRITICIDADE_24H })}
+            </div>
+          )}
+          <MapaTatico viaturas={viaturas} ocorrencias={ocorrencias} selecionada={selecionada} onSelecionarOcorrencia={selecionar} heatAtivo={heatAtivo} pontosCalor={pontosCalor} />
           {semSinal.length > 0 && (
             <div className="alerta aviso">
               ⚠ {t('painel:sem_sinal.alerta', { n: semSinal.length })}

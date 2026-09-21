@@ -14,5 +14,10 @@
   "frota": {
     "titulo": "Fleet", "prefixo": "Call sign", "placa": "Plate", "cadastrar": "Register", "cadastrada": "Vehicle registered.",
     "disponibilizar": "Mark available", "indisponibilizar": "Mark unavailable"
+  },
+  "manchas": {
+    "mostrar": "Crime hotspots", "ocultar": "Hide hotspots",
+    "periodo": "Period", "dias": "{{n}} days", "natureza": "Nature", "todas": "All",
+    "criticidade": "High criticality: {{n}}+ occurrences in the last 24 h — consider reinforcing patrols in the area."
   }
 }
