@@ -158,10 +158,10 @@
     }
   },
   "auditoria": {
-    "titulo": "Immutable Audit Trail",
-    "subtitulo": "Chronological, indelible, append-only log of all security actions and data mutations (RNF02 / RNF03).",
-    "badge_append_only": "Append-Only (RNF03)",
-    "badge_lgpd": "Privacy / Masked CPF (RNF02)",
+    "titulo": "Audit Trail",
+    "subtitulo": "Chronological, indelible log of all actions and changes performed in the system.",
+    "badge_imutavel": "Immutable Record",
+    "badge_protegido": "Protected Personal Data",
     "kpi_total": "Total Log Entries",
     "kpi_mutacoes": "Audited Mutations",
     "kpi_acessos": "Auth Events",

@@ -158,10 +158,10 @@
     }
   },
   "auditoria": {
-    "titulo": "Trilha de Auditoria Imutável",
-    "subtitulo": "Registro cronológico, indelével e append-only de todas as ações e mutações de segurança (RNF02 / RNF03).",
-    "badge_append_only": "Append-Only (RNF03)",
-    "badge_lgpd": "LGPD / CPF Mascarado (RNF02)",
+    "titulo": "Trilha de Auditoria",
+    "subtitulo": "Registro cronológico e imutável de todas as ações e alterações realizadas no sistema.",
+    "badge_imutavel": "Registro Imutável",
+    "badge_protegido": "Dados Pessoais Protegidos",
     "kpi_total": "Total de Registros",
     "kpi_mutacoes": "Mutações Auditadas",
     "kpi_acessos": "Eventos de Autenticação",

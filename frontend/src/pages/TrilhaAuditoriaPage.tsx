@@ -132,7 +132,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                 border: '1px solid rgba(16, 185, 129, 0.3)',
               }}
             >
-              🔒 {t('auditoria.badge_append_only')}
+              🔒 {t('auditoria.badge_imutavel')}
             </span>
             <span
               style={{
@@ -145,7 +145,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                 border: '1px solid rgba(59, 130, 246, 0.3)',
               }}
             >
-              🛡️ {t('auditoria.badge_lgpd')}
+              🛡️ {t('auditoria.badge_protegido')}
             </span>
           </div>
           <p className="muted" style={{ margin: '4px 0 0', maxWidth: 780 }}>
