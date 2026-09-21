@@ -109,12 +109,52 @@ Todas as etapas e fatias verticais do projeto estão mapeadas e organizadas no [
 
 ```bash
 cd backend
-uv run pytest -q                                   # 258 testes (unitários + integração em SQLite em memória)
+uv run pytest -q                                   # 258 testes (unitários + integração + E2E de API)
 uv run pytest --cov                                # cobertura ≥ 80 % em domain/ + application/ (atual ≈ 98 %)
 
 PYTHONPATH=src uv run lint-imports --config pyproject.toml   # contratos da Arquitetura Hexagonal
 cd ../frontend && npx tsc --noEmit && npm run build
 ```
+
+### Testes E2E (Issues #21 e #22)
+
+Pré-requisito: **backend** (`uv run uvicorn --app-dir src main:app --reload`) e **frontend** (`npm run dev`) rodando simultaneamente.
+
+```bash
+# Frontend (Cypress) — 18 testes (registro, validação, despacho)
+cd frontend
+npm run e2e            # headless
+npm run e2e:open       # interface gráfica do Cypress (ver "Visualização" abaixo)
+
+# Backend (pytest E2E de API) — 12 testes contra o servidor real em :8000
+cd backend
+uv run pytest tests/e2e -q
+```
+
+**Reset do banco E2E** (útil antes da primeira rodada ou se o estado estiver estranho):
+```bash
+cd frontend && npm run e2e:db
+```
+
+**Visualização dos testes (Cypress):**
+
+- **Modo interativo (recomendado)** — abre o Cypress App com snapshots por passo:
+  ```bash
+  cd frontend && npm run e2e:open
+  ```
+  No app: escolha *E2E Testing* → navegador (Chrome/Edge) → clique na spec (`registro.cy.ts` ou `validacao-despacho.cy.ts`).  
+  Você verá **em tempo real** o navegador preenchendo o formulário, clicando no mapa, trocando de tela.  
+  À esquerda, o **log de cada comando** com ✅/❌; clique num passo para ver o **snapshot da tela naquele instante** (time-travel debugging).
+
+- **Modo headed (navegador visível, sem UI do Cypress):**
+  ```bash
+  cd frontend && npx cypress run --headed --browser chrome
+  ```
+
+- **Evidências de falha:** se um teste falhar, o Cypress salva automaticamente **screenshots** em `frontend/cypress/screenshots/`.  
+  Para gravar vídeo da execução, adicione `"video": true` no `cypress.config.ts` e rode `npm run e2e`.
+
+> **Dica:** deixe `npm run e2e:open` rodando enquanto edita testes — ele re-roda ao salvar o arquivo.
 
 ---
 

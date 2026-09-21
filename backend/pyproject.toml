@@ -31,6 +31,7 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["src", "tests"]
 filterwarnings = ["ignore::DeprecationWarning:starlette.testclient"]
+markers = ["e2e: testes ponta a ponta contra o backend real em :8000 (pulados se o servidor não estiver no ar)"]
 
 # RNF06: cobertura >= 80 % em domain/ + application/ (uv run pytest --cov)
 [tool.coverage.run]

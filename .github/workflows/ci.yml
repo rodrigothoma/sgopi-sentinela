@@ -13,6 +13,10 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      DATABASE_URL: sqlite+aiosqlite:///./sgopi_ci.db
+      SGOPI_E2E_BASE_URL: http://127.0.0.1:8000
+      SGOPI_E2E_STRICT: "1"
 
     steps:
       - name: Checkout do Código
@@ -32,8 +36,45 @@ jobs:
       - name: 🏛️ Validar Contratos da Arquitetura Hexagonal (RNF05)
         run: PYTHONPATH=src uv run lint-imports --config pyproject.toml
 
+      - name: 🗄️ Preparar Banco do CI (SQLite) + Seed
+        run: |
+          rm -f sgopi_ci.db
+          uv run alembic upgrade head
+          uv run python -m scripts.seed
+
+      - name: Iniciar backend para os testes E2E
+        run: |
+          uv run uvicorn --app-dir src main:app --host 127.0.0.1 --port 8000 > /tmp/backend.log 2>&1 &
+          echo $! > /tmp/backend.pid
+
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8000/health > /dev/null; then
+              echo "Backend disponível"
+              break
+            fi
+
+            if [ "$i" -eq 30 ]; then
+              echo "Backend não iniciou:"
+              cat /tmp/backend.log
+              exit 1
+            fi
+
+            sleep 1
+          done
+
       - name: 🧪 Executar Testes Automatizados e Cobertura (RNF06 >= 80%)
         run: uv run pytest --cov
+
+      - name: Encerrar backend E2E
+        if: always()
+        run: |
+          if [ -f /tmp/backend.pid ]; then
+            kill "$(cat /tmp/backend.pid)" || true
+          fi
+          if [ "${{ job.status }}" = "failure" ] && [ -f /tmp/backend.log ]; then
+            echo "===== /tmp/backend.log ====="
+            cat /tmp/backend.log
+          fi
 
       - name: 🚫 Verificar Ausência de Resíduos de IA
         working-directory: .
