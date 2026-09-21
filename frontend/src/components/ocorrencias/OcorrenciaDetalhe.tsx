@@ -6,6 +6,7 @@ import { ocorrenciasService } from '../../services/ocorrenciasService';
 import type { Evidencia, OcorrenciaDetalhe as Detalhe } from '../../types/api';
 import { StatusBadge } from '../StatusBadge';
 import { formatarNatureza } from '../../utils/formatarNatureza';
+import { ApreensoesAba } from './ApreensoesAba';
 
 const fmt = (iso: string) => new Date(iso).toLocaleString();
 
@@ -64,9 +65,20 @@ const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = 
   );
 };
 
-export const OcorrenciaDetalheView: React.FC<{ o: Detalhe }> = ({ o }) => {
+type Aba = 'detalhe' | 'apreensoes';
+
+interface Props {
+  o: Detalhe;
+  /** Chamado quando a aba de apreensões altera a ocorrência (novo item / custódia) para o pai recarregar o detalhe. */
+  onAlterada?: () => void;
+}
+
+export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
   const { t } = useTranslation(['ocorrencias', 'common']);
+  const [aba, setAba] = useState<Aba>('detalhe');
   const isOnline = o.envolvidos.some((e) => e.tipo === 'COMUNICANTE');
+
+  useEffect(() => { setAba('detalhe'); }, [o.ocorrencia_id]);
 
   return (
     <div className="detalhe">
@@ -81,6 +93,16 @@ export const OcorrenciaDetalheView: React.FC<{ o: Detalhe }> = ({ o }) => {
           · {t('ocorrencias:detalhe.versao')} {o.versao} · {t('ocorrencias:detalhe.registrada_em')} {fmt(o.criada_em)}
         </span>
       </div>
+      <div className="tabs detalhe-abas" role="tablist">
+        <button role="tab" aria-selected={aba === 'detalhe'} className={`tab ${aba === 'detalhe' ? 'ativo' : ''}`} onClick={() => setAba('detalhe')}>
+          {t('ocorrencias:detalhe.aba_detalhe')}
+        </button>
+        <button role="tab" aria-selected={aba === 'apreensoes'} className={`tab ${aba === 'apreensoes' ? 'ativo' : ''}`} onClick={() => setAba('apreensoes')} data-cy="tab-apreensoes">
+          {t('ocorrencias:apreensoes.titulo')} ({o.itens_apreendidos.length})
+        </button>
+      </div>
+      {aba === 'apreensoes' && <ApreensoesAba o={o} onAlterada={onAlterada} />}
+      {aba === 'detalhe' && (<>
       <dl className="grid2">
         <dt>{t('ocorrencias:form.natureza_label')}</dt><dd>{formatarNatureza(o.natureza, t)}</dd>
         <dt>{t('ocorrencias:form.data_hora_fato_label')}</dt><dd>{fmt(o.data_hora_fato)}</dd>
@@ -157,6 +179,7 @@ export const OcorrenciaDetalheView: React.FC<{ o: Detalhe }> = ({ o }) => {
           </li>
         ))}
       </ol>
+      </>)}
     </div>
   );
 };

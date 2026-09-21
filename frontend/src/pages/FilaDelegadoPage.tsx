@@ -45,6 +45,15 @@ export const FilaDelegadoPage: React.FC = () => {
     setDetalhe(await ocorrenciasService.buscarPorId(id));
   };
 
+  const recarregarDetalhe = async () => {
+    if (!detalhe) return;
+    try {
+      setDetalhe(await ocorrenciasService.buscarPorId(detalhe.ocorrencia_id));
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    }
+  };
+
   const decidir = async (acao: 'validar' | 'devolver' | 'rejeitar') => {
     if (!detalhe) return;
     if (acao !== 'validar' && justificativa.trim().length < 10) {
@@ -119,7 +128,7 @@ export const FilaDelegadoPage: React.FC = () => {
         {!detalhe && <p className="muted">{t('ocorrencias:fila.selecione')}</p>}
         {detalhe && (
           <>
-            <OcorrenciaDetalheView o={detalhe} />
+            <OcorrenciaDetalheView o={detalhe} onAlterada={() => void recarregarDetalhe()} />
             {detalhe.status === 'AGUARDANDO_REVISAO' && (
               <div className="painel-decisao">
                 <label>

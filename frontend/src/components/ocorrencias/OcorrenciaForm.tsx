@@ -3,17 +3,20 @@ import { useTranslation } from 'react-i18next';
 import { EnvolvidoForm } from './EnvolvidoForm';
 import { LocalOcorrencia } from './LocalOcorrencia';
 import { TipificacaoForm } from './TipificacaoForm';
-import type { EnvolvidoDTO, RegistrarOcorrenciaRequest, TipificacaoDTO } from '../../types/api';
+import { ItemApreendidoForm } from './ItemApreendidoForm';
+import type { EnvolvidoDTO, ItemApreendidoDTO, RegistrarOcorrenciaRequest, TipificacaoDTO } from '../../types/api';
 
 export interface ValoresOcorrencia {
   natureza: string; descricao: string; localizacao: string;
   latitude: number | null; longitude: number | null; dataHoraFatoLocal: string;
   envolvidos: EnvolvidoDTO[]; tipificacoes: TipificacaoDTO[]; evidencias: File[];
+  /** RF03 — apreensão concomitante ao registro (opcional). */
+  itensApreendidos: ItemApreendidoDTO[];
 }
 
 export const valoresVazios = (): ValoresOcorrencia => ({
   natureza: '', descricao: '', localizacao: '', latitude: null, longitude: null,
-  dataHoraFatoLocal: paraInputLocal(new Date()), envolvidos: [], tipificacoes: [], evidencias: [],
+  dataHoraFatoLocal: paraInputLocal(new Date()), envolvidos: [], tipificacoes: [], evidencias: [], itensApreendidos: [],
 });
 
 export function paraInputLocal(d: Date): string {
@@ -27,6 +30,7 @@ export function paraRequest(v: ValoresOcorrencia): RegistrarOcorrenciaRequest {
     latitude: v.latitude as number, longitude: v.longitude as number,
     data_hora_fato: new Date(v.dataHoraFatoLocal).toISOString(),
     envolvidos: v.envolvidos, tipificacoes: v.tipificacoes,
+    ...(v.itensApreendidos.length > 0 ? { itens_apreendidos: v.itensApreendidos } : {}),
   };
 }
 
@@ -36,16 +40,19 @@ interface Props {
   rotuloEnviar: string;
   ocupado: boolean;
   permitirEvidencias?: boolean;
+  /** Exibe a seção opcional de apreensões (só no registro: a correção não altera o inventário). */
+  permitirApreensoes?: boolean;
 }
 
 const FORMATOS_EVIDENCIA = ['application/pdf', 'image/jpeg', 'image/png'];
 const TAMANHO_MAXIMO_EVIDENCIA = 10 * 1024 * 1024;
 const MINIMO_DESCRICAO = 20;
 
-export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnviar, ocupado, permitirEvidencias = false }) => {
+export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnviar, ocupado, permitirEvidencias = false, permitirApreensoes = false }) => {
   const { t } = useTranslation(['ocorrencias', 'common']);
   const [v, setV] = useState<ValoresOcorrencia>(inicial);
   const [erro, setErro] = useState<string | null>(null);
+  const [comApreensao, setComApreensao] = useState(inicial.itensApreendidos.length > 0);
   const set = <K extends keyof ValoresOcorrencia>(k: K, val: ValoresOcorrencia[K]) => setV((x) => ({ ...x, [k]: val }));
 
   const validar = (): string | null => {
@@ -161,6 +168,37 @@ export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnvia
               </li>
             ))}
           </ul>
+        </fieldset>
+      )}
+
+      {permitirApreensoes && (
+        <fieldset className="apreensoes-registro" data-cy="secao-apreensoes">
+          <legend>
+            <label className="apreensoes-toggle">
+              <input type="checkbox" checked={comApreensao} onChange={(e) => setComApreensao(e.target.checked)} data-cy="toggle-apreensoes" />
+              {' '}{t('ocorrencias:apreensoes.secao_registro')} <span className="muted">({t('ocorrencias:apreensoes.opcional')})</span>
+            </label>
+          </legend>
+          {comApreensao && (
+            <>
+              <p className="muted small">{t('ocorrencias:apreensoes.ajuda_registro')}</p>
+              <ItemApreendidoForm
+                onAdd={(item) => set('itensApreendidos', [...v.itensApreendidos, item])}
+                lacresEmUso={v.itensApreendidos.map((i) => i.numero_lacre)}
+              />
+              <ul className="lista">
+                {v.itensApreendidos.map((item, idx) => (
+                  <li key={item.numero_lacre}>
+                    <span>
+                      <strong>{item.numero_lacre}</strong> · {t(`ocorrencias:apreensoes.tipo.${item.tipo}`)} · {item.quantidade} {t(`ocorrencias:apreensoes.unidade.${item.unidade}`)} · {item.descricao}
+                      <br /><small className="muted">{t(`ocorrencias:apreensoes.estado.${item.estado_conservacao}`)} · {item.localizacao_deposito}</small>
+                    </span>
+                    <button type="button" className="btn btn-link" onClick={() => set('itensApreendidos', v.itensApreendidos.filter((_, i) => i !== idx))}>{t('common:actions.remover')}</button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </fieldset>
       )}
 

@@ -687,3 +687,62 @@ dl.grid2 dd { margin: 0 0 8px; }
 .chip { background: var(--bg-surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font-size: .85rem; }
 .chip.voce { border-color: var(--primary); color: var(--primary); }
 @media (max-width: 640px) { .inicio-grid { grid-template-columns: 1fr; } .inicio-turno { align-items: flex-start; text-align: left; } }
+
+/* --- Apreensões (RF03): subformulário, aba e Auto de Apreensão --- */
+.grid-apreensao { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 10px; align-items: flex-end; }
+.grid-apreensao .col-2 { grid-column: span 2; }
+.grid-apreensao input, .grid-apreensao select { width: 100%; }
+.apreensoes-registro legend .apreensoes-toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; white-space: nowrap; }
+.apreensoes-registro legend .apreensoes-toggle input[type="checkbox"] { width: auto; margin: 0; padding: 0; }
+.detalhe-abas { margin: 14px 0 18px; }
+.apreensoes-lista li.apreensao-item { display: block; }
+.apreensao-topo { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: flex-start; }
+.apreensao-local { text-align: right; display: flex; flex-direction: column; }
+.apreensao-movimentar { display: grid; grid-template-columns: 2fr 2fr auto; gap: 8px; margin-top: 8px; align-items: center; }
+.apreensao-item .btn-link { padding: 4px 0; color: var(--primary); }
+.apreensao-item .historico { margin: 6px 0 0; }
+.apreensoes-lista .historico li { display: list-item; padding: 3px 0; border: 0; }
+
+.auto-overlay {
+  position: fixed; inset: 0; z-index: 3000; overflow: auto;
+  background: rgba(2, 6, 23, 0.75); padding: 24px 16px;
+}
+.auto-janela { max-width: 960px; margin: 0 auto; }
+.auto-apreensao {
+  background: #fff; color: #111; padding: 32px 40px; border-radius: 10px; margin-top: 12px;
+  font-size: .9rem; line-height: 1.45;
+}
+.auto-apreensao h1, .auto-apreensao h2, .auto-apreensao h3, .auto-apreensao dd, .auto-apreensao strong { color: #111; }
+.auto-apreensao h1 { margin: 4px 0 0; font-size: 1.5rem; letter-spacing: .04em; text-transform: uppercase; }
+.auto-apreensao h2 { font-size: 1.05rem; margin: 22px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+.auto-apreensao h3 { font-size: .95rem; margin: 12px 0 4px; }
+.auto-apreensao .muted, .auto-apreensao .historico li { color: #555; }
+.auto-apreensao code { background: #f1f1f1; color: #111; padding: 1px 4px; border-radius: 4px; font-size: .8rem; }
+.auto-cabecalho { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 2px solid #111; padding-bottom: 12px; }
+.auto-orgao { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: #555; }
+.auto-numero { text-align: right; font-size: 1.1rem; }
+.auto-dados { margin: 16px 0; }
+.auto-dados dt { color: #555; }
+.auto-tabela { width: 100%; border-collapse: collapse; }
+.auto-tabela th, .auto-tabela td { border: 1px solid #bbb; padding: 6px 8px; text-align: left; vertical-align: top; color: #111; background: transparent; }
+.auto-tabela th { background: #eee; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+.auto-rodape { margin-top: 28px; border-top: 1px solid #ccc; padding-top: 12px; }
+.auto-assinaturas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 56px; text-align: center; font-size: .85rem; }
+.auto-assinaturas span { display: block; border-top: 1px solid #111; margin: 0 20px 6px; }
+
+@media (max-width: 720px) {
+  .grid-apreensao { grid-template-columns: 1fr 1fr; }
+  .apreensao-topo { grid-template-columns: 1fr; }
+  .apreensao-local { text-align: left; }
+  .apreensao-movimentar { grid-template-columns: 1fr; }
+  .auto-apreensao { padding: 20px 16px; }
+}
+
+@media print {
+  body * { visibility: hidden; }
+  .auto-overlay { position: static; background: none; padding: 0; overflow: visible; }
+  .auto-apreensao, .auto-apreensao * { visibility: visible; }
+  .auto-apreensao { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; border-radius: 0; box-shadow: none; }
+  .nao-imprimir { display: none !important; }
+  .auto-custodia { break-inside: avoid; }
+}

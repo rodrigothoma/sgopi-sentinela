@@ -11,6 +11,7 @@ interface CorpoOcorrencia {
   data_hora_fato?: string;
   envolvidos?: { nome: string; tipo: string; documento?: string }[];
   tipificacoes?: { artigo: string; descricao: string }[];
+  itens_apreendidos?: Record<string, unknown>[];
 }
 
 declare global {
