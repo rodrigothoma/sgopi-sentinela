@@ -76,6 +76,8 @@ export interface HistoricoStatus { de: string | null; para: StatusOcorrencia; em
 export interface OcorrenciaDetalhe extends OcorrenciaResumo {
   descricao: string; validada_por_id: string | null; justificativa_revisao: string | null; desfecho: string | null;
   hash_narrativa: string | null; narrativa_integra: boolean | null;
+  /** RF08: chave pública do documento emitido (só após validação pelo Delegado). */
+  chave_autenticidade: string | null;
   arquivada_por_id: string | null; motivo_arquivamento: string | null;
   excluida_por_id: string | null; motivo_exclusao: string | null;
   envolvidos: EnvolvidoDetalhe[]; tipificacoes: TipificacaoDTO[]; evidencias: Evidencia[]; historico_status: HistoricoStatus[];
@@ -121,3 +123,21 @@ export interface FiltroAuditoria {
 }
 
 export interface ErroApi { detail: string; code: string; request_id: string | null; extra?: Record<string, unknown> }
+
+/** RF08 / UC08 — resultado da conferência pública do documento. */
+export type SituacaoDocumento = 'AUTENTICO' | 'ADULTERADO' | 'INDISPONIVEL';
+export interface DocumentoAutenticado {
+  numero_protocolo: string;
+  situacao: SituacaoDocumento;
+  chave_autenticidade: string;
+  chave_formatada: string;
+  emitido_em: string;
+  consultado_em: string;
+  natureza: string;
+  data_hora_fato: string;
+  status_ocorrencia: StatusOcorrencia;
+  hash_integridade: string;
+  tipificacoes: TipificacaoDTO[];
+  envolvidos_por_tipo: Record<string, number>;
+  quantidade_evidencias: number;
+}

@@ -36,6 +36,9 @@ export const NavbarPublica: React.FC = () => {
         <Link to="/consulta" className={isActive('/consulta')}>
           {t('nav.lookup')}
         </Link>
+        <Link to="/autenticar" className={location.pathname.startsWith('/autenticar') ? 'active' : ''}>
+          {t('nav.autenticar')}
+        </Link>
       </nav>
 
       <div className="userbox">

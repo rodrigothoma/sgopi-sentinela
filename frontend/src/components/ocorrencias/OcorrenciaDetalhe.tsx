@@ -7,6 +7,8 @@ import type { Evidencia, OcorrenciaDetalhe as Detalhe } from '../../types/api';
 import { StatusBadge } from '../StatusBadge';
 import { formatarNatureza } from '../../utils/formatarNatureza';
 import { ApreensoesAba } from './ApreensoesAba';
+import { ComprovanteOcorrencia } from './ComprovanteOcorrencia';
+import { formatarChave } from '../../utils/autenticidade';
 
 const fmt = (iso: string) => new Date(iso).toLocaleString();
 
@@ -76,9 +78,10 @@ interface Props {
 export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
   const { t } = useTranslation(['ocorrencias', 'common']);
   const [aba, setAba] = useState<Aba>('detalhe');
+  const [comprovante, setComprovante] = useState(false);
   const isOnline = o.envolvidos.some((e) => e.tipo === 'COMUNICANTE');
 
-  useEffect(() => { setAba('detalhe'); }, [o.ocorrencia_id]);
+  useEffect(() => { setAba('detalhe'); setComprovante(false); }, [o.ocorrencia_id]);
 
   return (
     <div className="detalhe">
@@ -115,6 +118,20 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
         <p className={o.narrativa_integra ? 'ok' : 'erro'}>
           {o.narrativa_integra ? t('ocorrencias:detalhe.integra') : t('ocorrencias:detalhe.adulterada')} · SHA-256 {o.hash_narrativa?.slice(0, 12)}…
         </p>
+      )}
+      {o.chave_autenticidade && (
+        <div className="callout comprovante-callout" data-cy="documento-emitido">
+          <div>
+            <strong>{t('ocorrencias:comprovante.chave')}:</strong> <code data-cy="chave-autenticidade">{formatarChave(o.chave_autenticidade)}</code>
+            <br /><small className="muted">{t('ocorrencias:comprovante.dica')}</small>
+          </div>
+          <button className="btn btn-sm" onClick={() => setComprovante(true)} data-cy="emitir-comprovante">
+            {t('ocorrencias:comprovante.emitir')}
+          </button>
+        </div>
+      )}
+      {comprovante && o.chave_autenticidade && (
+        <ComprovanteOcorrencia o={o} chave={o.chave_autenticidade} onFechar={() => setComprovante(false)} />
       )}
       {o.justificativa_revisao && (
         <div className="callout">

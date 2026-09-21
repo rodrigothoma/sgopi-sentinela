@@ -98,5 +98,55 @@
       "voltar_inicio": "Back to Home"
     },
     "erro_nao_encontrada": "No incident report found with the given protocol. Please verify the code and try again."
+  },
+  "autenticar": {
+    "titulo": "Public Document Authentication",
+    "subtitulo": "Check whether an Incident Report or certificate issued by SGOPI Sentinela is authentic and intact. Scan the document's QR Code or type the 24-character security key (or the SHA-256 hash) printed on the receipt.",
+    "campo_label": "Security key or verification hash",
+    "placeholder": "XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",
+    "botao": "Verify authenticity",
+    "ajuda": "The key is printed at the bottom of the receipt, right below the QR Code. Hyphens, spaces and letter case are ignored.",
+    "erro_generico": "The verification could not be performed right now. Please try again shortly.",
+    "veredito": {
+      "AUTENTICO": {
+        "titulo": "AUTHENTIC DOCUMENT",
+        "descricao": "The key matches a document issued by the system and the stored SHA-256 hash matches the registered content."
+      },
+      "ADULTERADO": {
+        "titulo": "TAMPERED DOCUMENT",
+        "descricao": "The key exists, but the registered content does not match the integrity hash generated at issuance. Do not rely on this document and report it to the issuing police station."
+      },
+      "INDISPONIVEL": {
+        "titulo": "DOCUMENT UNAVAILABLE FOR PUBLIC LOOKUP",
+        "descricao": "The document was annulled or is under judicial restriction and cannot be looked up publicly. Contact the issuing police station."
+      },
+      "NAO_RECONHECIDO": {
+        "titulo": "DOCUMENT NOT RECOGNIZED",
+        "descricao": "No document issued by the system matches the code provided. Check the characters typed or contact the issuing police station."
+      },
+      "CODIGO_INVALIDO": {
+        "titulo": "INVALID CODE",
+        "descricao": "Enter the full 24-character key (no 0, O, 1 or I) or the 64-character SHA-256 hash printed on the document."
+      }
+    },
+    "espelho": {
+      "protocolo": "Incident Report No.",
+      "chave": "Security key",
+      "natureza": "Nature",
+      "data_fato": "Date/time of the incident",
+      "emitido_em": "Issued (validated) on",
+      "consultado_em": "Verification performed on",
+      "tipificacoes": "Criminal classification",
+      "envolvidos": "People involved (by role)",
+      "evidencias": "Attached evidence",
+      "hash": "SHA-256 integrity hash",
+      "lgpd": "In compliance with LGPD, this lookup does not show names, documents, contacts or addresses of the people involved, nor the incident narrative."
+    },
+    "envolvido": {
+      "VITIMA": "victim(s)",
+      "TESTEMUNHA": "witness(es)",
+      "SUSPEITO": "suspect(s)",
+      "COMUNICANTE": "reporter(s)"
+    }
   }
 }

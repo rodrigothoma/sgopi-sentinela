@@ -13,7 +13,8 @@
     "auditoria": "Trilha de auditoria",
     "lookup": "Consultar protocolo",
     "police_access": "Acesso Policial",
-    "inicio": "Início"
+    "inicio": "Início",
+    "autenticar": "Autenticar documento"
   },
   "actions": {
     "save": "Salvar",
@@ -185,7 +186,10 @@
       "viatura.alterar_situacao": "Situação de viatura alterada",
       "evidencia.anexar": "Evidência anexada",
       "evidencia.download": "Download de evidência",
-      "evidencia.verificar_integridade": "Verificação de integridade"
+      "evidencia.verificar_integridade": "Verificação de integridade",
+      "documento.autenticar": "Consulta pública de autenticidade",
+      "documento.suspeita_fraude": "Suspeita de fraude documental",
+      "documento.nao_localizado": "Documento não localizado (consulta pública)"
     },
     "autor_sistema": "Sistema / Cidadão",
     "pesquisar_placeholder": "Filtrar por protocolo, viatura, autor, IP ou operação...",

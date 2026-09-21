@@ -95,6 +95,24 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
         self._versoes_carregadas[model.id] = model.versao
         return self._to_domain(model)
 
+    async def _buscar_primeira(self, stmt) -> Ocorrencia | None:
+        model = (await self._session.execute(stmt.options(*_CARREGAR_FILHOS))).scalars().first()
+        if model is None:
+            return None
+        self._versoes_carregadas[model.id] = model.versao
+        return self._to_domain(model)
+
+    async def buscar_por_chave_autenticidade(self, chave: str) -> Ocorrencia | None:
+        return await self._buscar_primeira(select(OcorrenciaModel).where(OcorrenciaModel.chave_autenticidade == chave))
+
+    async def buscar_por_hash_narrativa(self, hash_narrativa: str) -> Ocorrencia | None:
+        stmt = (
+            select(OcorrenciaModel)
+            .where(OcorrenciaModel.hash_narrativa == hash_narrativa)
+            .order_by(OcorrenciaModel.criada_em.asc())
+        )
+        return await self._buscar_primeira(stmt)
+
     def _aplicar_filtro(self, stmt, filtro: FiltroOcorrencias):
         if filtro.status:
             stmt = stmt.where(OcorrenciaModel.status.in_([s.value for s in filtro.status]))
@@ -138,6 +156,7 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             justificativa_revisao=ocorrencia.justificativa_revisao,
             desfecho=ocorrencia.desfecho,
             hash_narrativa=ocorrencia.hash_narrativa,
+            chave_autenticidade=ocorrencia.chave_autenticidade,
             arquivada_por_id=ocorrencia.arquivada_por_id,
             motivo_arquivamento=ocorrencia.motivo_arquivamento,
             excluida_por_id=ocorrencia.excluida_por_id,
@@ -308,6 +327,7 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             justificativa_revisao=model.justificativa_revisao,
             desfecho=model.desfecho,
             hash_narrativa=model.hash_narrativa,
+            chave_autenticidade=model.chave_autenticidade,
             arquivada_por_id=model.arquivada_por_id,
             motivo_arquivamento=model.motivo_arquivamento,
             excluida_por_id=model.excluida_por_id,

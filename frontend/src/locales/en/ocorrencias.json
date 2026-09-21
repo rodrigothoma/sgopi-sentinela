@@ -242,5 +242,24 @@
       "assinatura_agente": "Responsible officer",
       "assinatura_delegado": "Police Chief"
     }
+  },
+  "comprovante": {
+    "emitir": "Receipt / QR Code",
+    "chave": "Authenticity key",
+    "dica": "Official document issued on validation. The receipt carries a QR Code and a key for public verification at /autenticar.",
+    "imprimir": "Print receipt",
+    "orgao": "Civil Police — SGOPI Sentinela",
+    "titulo": "Incident Report Receipt",
+    "protocolo": "Incident Report No.",
+    "status": "Current status",
+    "registrada_em": "Registered on",
+    "emitido_em": "Validated / issued on",
+    "validada_por": "Validated by (ID)",
+    "qr_legenda": "Point your camera to verify authenticity",
+    "autenticidade": "Authenticity verification",
+    "instrucao": "To verify this document, scan the QR Code or open the public page below and enter the security key (or the SHA-256 hash).",
+    "url": "Verification page",
+    "hash": "SHA-256 verification hash",
+    "lgpd": "Public verification shows only document identification data — never personal data of the people involved (LGPD)."
   }
 }

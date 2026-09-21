@@ -26,6 +26,13 @@ class RepositorioOcorrenciaFake(RepositorioOcorrencia):
         o = self._store.get(ocorrencia_id)
         return copy.deepcopy(o) if o else None
 
+    async def buscar_por_chave_autenticidade(self, chave: str) -> Ocorrencia | None:
+        return next((copy.deepcopy(o) for o in self._store.values() if o.chave_autenticidade == chave), None)
+
+    async def buscar_por_hash_narrativa(self, hash_narrativa: str) -> Ocorrencia | None:
+        candidatos = sorted((o for o in self._store.values() if o.hash_narrativa == hash_narrativa), key=lambda o: o.criada_em)
+        return copy.deepcopy(candidatos[0]) if candidatos else None
+
     def _filtrar(self, filtro: FiltroOcorrencias) -> list[Ocorrencia]:
         itens = list(self._store.values())
         if filtro.status:

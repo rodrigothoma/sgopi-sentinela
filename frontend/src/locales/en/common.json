@@ -13,7 +13,8 @@
     "auditoria": "Audit Trail",
     "lookup": "Lookup Protocol",
     "police_access": "Police Portal",
-    "inicio": "Home"
+    "inicio": "Home",
+    "autenticar": "Authenticate document"
   },
   "actions": {
     "save": "Save",
@@ -185,7 +186,10 @@
       "viatura.alterar_situacao": "Vehicle Status Changed",
       "evidencia.anexar": "Evidence Attached",
       "evidencia.download": "Evidence Downloaded",
-      "evidencia.verificar_integridade": "Evidence Integrity Checked"
+      "evidencia.verificar_integridade": "Evidence Integrity Checked",
+      "documento.autenticar": "Public authenticity lookup",
+      "documento.suspeita_fraude": "Suspected document fraud",
+      "documento.nao_localizado": "Document not found (public lookup)"
     },
     "autor_sistema": "System / Citizen",
     "pesquisar_placeholder": "Filter by protocol, vehicle, author, IP or operation...",

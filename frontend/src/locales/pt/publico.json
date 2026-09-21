@@ -98,5 +98,55 @@
       "voltar_inicio": "Voltar ao Início"
     },
     "erro_nao_encontrada": "Nenhuma ocorrência encontrada com o protocolo informado. Verifique os dígitos e tente novamente."
+  },
+  "autenticar": {
+    "titulo": "Autenticação Pública de Documentos",
+    "subtitulo": "Confira se um Boletim de Ocorrência ou certidão emitido pelo SGOPI Sentinela é autêntico e íntegro. Leia o QR Code do documento ou digite a chave de segurança de 24 caracteres (ou o hash SHA-256) impressa no comprovante.",
+    "campo_label": "Chave de segurança ou hash de verificação",
+    "placeholder": "XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",
+    "botao": "Verificar autenticidade",
+    "ajuda": "A chave está impressa no rodapé do comprovante, logo abaixo do QR Code. Hífens, espaços e maiúsculas/minúsculas são ignorados.",
+    "erro_generico": "Não foi possível realizar a verificação no momento. Tente novamente em instantes.",
+    "veredito": {
+      "AUTENTICO": {
+        "titulo": "DOCUMENTO AUTÊNTICO",
+        "descricao": "A chave corresponde a um documento emitido pelo sistema e o hash SHA-256 armazenado confere com o conteúdo registrado."
+      },
+      "ADULTERADO": {
+        "titulo": "DOCUMENTO ADULTERADO",
+        "descricao": "A chave existe, mas o conteúdo registrado não confere com o hash de integridade gerado na emissão. Não utilize este documento e comunique a delegacia emissora."
+      },
+      "INDISPONIVEL": {
+        "titulo": "DOCUMENTO INDISPONÍVEL PARA CONSULTA",
+        "descricao": "O documento foi anulado ou está sob restrição judicial e não pode ser consultado publicamente. Procure a delegacia emissora."
+      },
+      "NAO_RECONHECIDO": {
+        "titulo": "DOCUMENTO NÃO RECONHECIDO",
+        "descricao": "Nenhum documento emitido pelo sistema corresponde ao código informado. Confira os caracteres digitados ou procure a delegacia emissora."
+      },
+      "CODIGO_INVALIDO": {
+        "titulo": "CÓDIGO INVÁLIDO",
+        "descricao": "Informe a chave completa de 24 caracteres (sem 0, O, 1 ou I) ou o hash SHA-256 de 64 caracteres impresso no documento."
+      }
+    },
+    "espelho": {
+      "protocolo": "Boletim de Ocorrência nº",
+      "chave": "Chave de segurança",
+      "natureza": "Natureza",
+      "data_fato": "Data/hora do fato",
+      "emitido_em": "Emitido (validado) em",
+      "consultado_em": "Conferência realizada em",
+      "tipificacoes": "Tipificações penais",
+      "envolvidos": "Envolvidos qualificados",
+      "evidencias": "Evidências anexadas",
+      "hash": "Hash SHA-256 de integridade",
+      "lgpd": "Em respeito à LGPD, esta conferência não exibe nomes, documentos, contatos ou endereços dos envolvidos, nem a narrativa dos fatos."
+    },
+    "envolvido": {
+      "VITIMA": "vítima(s)",
+      "TESTEMUNHA": "testemunha(s)",
+      "SUSPEITO": "suspeito(s)",
+      "COMUNICANTE": "comunicante(s)"
+    }
   }
 }

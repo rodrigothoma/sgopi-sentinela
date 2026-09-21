@@ -65,6 +65,7 @@ class OcorrenciaDetalheOutput(OcorrenciaResumoOutput):
     desfecho: str | None = None
     hash_narrativa: str | None = None
     narrativa_integra: bool | None = None
+    chave_autenticidade: str | None = None
     arquivada_por_id: UUID | None = None
     motivo_arquivamento: str | None = None
     excluida_por_id: UUID | None = None

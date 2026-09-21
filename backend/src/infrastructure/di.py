@@ -42,6 +42,7 @@ from application.ports.inbound.interface_arquivar_ocorrencia import (
     InterfaceArquivarOcorrencia,
     InterfaceExcluirOcorrencia,
 )
+from application.ports.inbound.interface_autenticar_documento import InterfaceAutenticarDocumento
 from application.ports.inbound.interface_consultar_auditoria import InterfaceConsultarAuditoria
 from application.ports.inbound.interface_gerir_apreensoes import (
     InterfaceEmitirAutoApreensao,
@@ -88,6 +89,7 @@ from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.shared.geo import Coordenada
 from application.use_cases.auditoria.consultar_auditoria import ConsultarAuditoria
 from application.use_cases.auth.autenticar_usuario import AutenticarUsuario
+from application.use_cases.documento.autenticar_documento import AutenticarDocumento
 from application.use_cases.usuario.listar_usuarios import ListarUsuarios
 from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
 from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
@@ -302,6 +304,12 @@ def get_consultar_auditoria(
         repositorio_ocorrencia=repositorio_ocorrencia,
         repositorio_viatura=repositorio_viatura,
     )
+
+
+# ----------------------------------------------------- documento público (RF08)
+def get_autenticar_documento(deps: tuple = Depends(_deps_revisao)) -> InterfaceAutenticarDocumento:
+    repositorio, uow, relogio, auditoria, _ = deps
+    return AutenticarDocumento(repositorio, uow, relogio, auditoria)
 
 
 # ---------------------------------------------------------------- apreensões (RF03)

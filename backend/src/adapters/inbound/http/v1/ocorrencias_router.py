@@ -377,6 +377,7 @@ class OcorrenciaDetalheSchema(OcorrenciaResumoSchema):
     desfecho: str | None
     hash_narrativa: str | None
     narrativa_integra: bool | None
+    chave_autenticidade: str | None
     arquivada_por_id: UUID | None
     motivo_arquivamento: str | None
     excluida_por_id: UUID | None
@@ -430,6 +431,7 @@ def _detalhe(o: OcorrenciaDetalheOutput) -> OcorrenciaDetalheSchema:
         desfecho=o.desfecho,
         hash_narrativa=o.hash_narrativa,
         narrativa_integra=o.narrativa_integra,
+        chave_autenticidade=o.chave_autenticidade,
         arquivada_por_id=o.arquivada_por_id,
         motivo_arquivamento=o.motivo_arquivamento,
         excluida_por_id=o.excluida_por_id,

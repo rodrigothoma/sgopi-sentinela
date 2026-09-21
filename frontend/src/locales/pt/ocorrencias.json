@@ -242,5 +242,24 @@
       "assinatura_agente": "Agente responsável",
       "assinatura_delegado": "Delegado de Polícia"
     }
+  },
+  "comprovante": {
+    "emitir": "Comprovante / QR Code",
+    "chave": "Chave de autenticidade",
+    "dica": "Documento oficial emitido na validação. O comprovante traz QR Code e chave para conferência pública em /autenticar.",
+    "imprimir": "Imprimir comprovante",
+    "orgao": "Polícia Civil — SGOPI Sentinela",
+    "titulo": "Comprovante de Ocorrência",
+    "protocolo": "Boletim de Ocorrência nº",
+    "status": "Situação atual",
+    "registrada_em": "Registrada em",
+    "emitido_em": "Validada / emitida em",
+    "validada_por": "Validada por (ID)",
+    "qr_legenda": "Aponte a câmera para verificar a autenticidade",
+    "autenticidade": "Verificação de autenticidade",
+    "instrucao": "Para conferir a autenticidade deste documento, leia o QR Code ou acesse a página pública abaixo e informe a chave de segurança (ou o hash SHA-256).",
+    "url": "Página de verificação",
+    "hash": "Hash SHA-256 de verificação",
+    "lgpd": "A conferência pública exibe apenas dados de identificação do documento — nunca dados pessoais dos envolvidos (LGPD)."
   }
 }

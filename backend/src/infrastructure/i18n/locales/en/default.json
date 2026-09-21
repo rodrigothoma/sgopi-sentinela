@@ -110,5 +110,9 @@
     "movimentacao_retroativa": "The movement cannot precede the last one recorded",
     "data_sem_fuso": "Date must include a time zone",
     "sem_itens": "The occurrence has no seized items to issue the report"
+  },
+  "documento": {
+    "not_found": "Document not found. Check the printed key or contact the issuing police station.",
+    "codigo_invalido": "Invalid verification code: enter the 24-character key or the SHA-256 hash printed on the document."
   }
 }

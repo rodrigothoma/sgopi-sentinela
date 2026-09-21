@@ -50,6 +50,8 @@ class OcorrenciaModel(Base):
     justificativa_revisao: Mapped[str | None] = mapped_column(Text, nullable=True)
     desfecho: Mapped[str | None] = mapped_column(Text, nullable=True)
     hash_narrativa: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # RF08: chave pública do documento emitido na validação; única entre as ocorrências validadas
+    chave_autenticidade: Mapped[str | None] = mapped_column(String(24), nullable=True, unique=True, index=True)
     # RF20: arquivamento / exclusão lógica autorizados pelo Delegado, sempre com motivo
     arquivada_por_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True)
     motivo_arquivamento: Mapped[str | None] = mapped_column(Text, nullable=True)
