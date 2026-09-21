@@ -7,7 +7,7 @@ async def test_lista_efetivo_ativo_sem_credenciais(client):
     assert r.status_code == 200, r.text
     itens = r.json()
     logins = [u["login"] for u in itens]
-    assert logins == ["agente", "agente2", "delegado", "operador"]  # inativo não aparece
+    assert logins == ["agente", "agente2", "delegado", "operador", "supervisor"]  # inativo não aparece
     assert all(set(u) == {"id", "nome", "login", "papel"} for u in itens)
     papeis = {u["login"]: u["papel"] for u in itens}
     assert papeis["delegado"] == "DELEGADO" and papeis["operador"] == "OPERADOR_CENTRAL"
