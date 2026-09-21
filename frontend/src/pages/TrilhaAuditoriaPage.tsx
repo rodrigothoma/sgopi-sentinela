@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GlideSelect, GlideSelectOption } from '../components/common/GlideSelect';
 import { Button } from '../components/common/Button';
+import { StatusBadge } from '../components/StatusBadge';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { auditoriaService } from '../services/auditoriaService';
@@ -60,6 +61,8 @@ export const TrilhaAuditoriaPage: React.FC = () => {
   const [filtroOperacao, setFiltroOperacao] = useState<string>('TODAS');
   const [filtroEntidade, setFiltroEntidade] = useState<string>('TODAS');
   const [detalheSelecionado, setDetalheSelecionado] = useState<RegistroAuditoria | null>(null);
+  const [abaModal, setAbaModal] = useState<'amigavel' | 'json'>('amigavel');
+  const [copiado, setCopiado] = useState<boolean>(false);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -119,6 +122,89 @@ export const TrilhaAuditoriaPage: React.FC = () => {
     const acessos = registros.filter((r) => r.operacao.startsWith('auth.')).length;
     return { total, mutacoes, acessos };
   }, [registros]);
+
+  const temAntes = Boolean(detalheSelecionado?.dados_antes && Object.keys(detalheSelecionado.dados_antes).length > 0);
+  const temDepois = Boolean(detalheSelecionado?.dados_depois && Object.keys(detalheSelecionado.dados_depois).length > 0);
+
+  const chavesComparacao = useMemo(() => {
+    if (!detalheSelecionado) return [];
+    const antesKeys = detalheSelecionado.dados_antes ? Object.keys(detalheSelecionado.dados_antes) : [];
+    const depoisKeys = detalheSelecionado.dados_depois ? Object.keys(detalheSelecionado.dados_depois) : [];
+    return Array.from(new Set([...antesKeys, ...depoisKeys]));
+  }, [detalheSelecionado]);
+
+  const handleCopiarJson = useCallback(() => {
+    if (!detalheSelecionado) return;
+    const payload = {
+      operacao: detalheSelecionado.operacao,
+      entidade: detalheSelecionado.entidade,
+      entidade_id: detalheSelecionado.entidade_id,
+      dados_antes: detalheSelecionado.dados_antes,
+      dados_depois: detalheSelecionado.dados_depois,
+      quando: detalheSelecionado.quando,
+      quem: detalheSelecionado.quem,
+      ip: detalheSelecionado.ip,
+    };
+    navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
+  }, [detalheSelecionado]);
+
+  const formatarValor = useCallback((chave: string, valor: unknown) => {
+    if (valor === null || valor === undefined) {
+      return <span className="muted" style={{ fontStyle: 'italic' }}>—</span>;
+    }
+    if (typeof valor === 'boolean') {
+      return (
+        <span style={{ fontWeight: 600, color: valor ? 'var(--ok)' : 'var(--danger)' }}>
+          {valor ? t('auditoria.sim') : t('auditoria.nao')}
+        </span>
+      );
+    }
+    const strVal = String(valor);
+    if (chave === 'status' || chave.endsWith('_status')) {
+      return <StatusBadge status={strVal} grupo="status" />;
+    }
+    if (chave === 'situacao' || chave.endsWith('_situacao')) {
+      return <StatusBadge status={strVal} grupo="situacao" />;
+    }
+    if (typeof valor === 'object') {
+      return (
+        <pre
+          style={{
+            margin: 0,
+            padding: '6px 8px',
+            background: 'var(--bg)',
+            borderRadius: 6,
+            fontSize: '0.78rem',
+            maxHeight: 120,
+            overflow: 'auto',
+            border: '1px solid var(--line)',
+          }}
+        >
+          {JSON.stringify(valor, null, 2)}
+        </pre>
+      );
+    }
+    if (typeof valor === 'string' && valor.length >= 40 && /^[a-fA-F0-9]+$/.test(valor)) {
+      return (
+        <span
+          style={{
+            fontFamily: 'monospace',
+            fontSize: '0.8rem',
+            background: 'var(--bg)',
+            padding: '2px 6px',
+            borderRadius: 4,
+            border: '1px solid var(--line)',
+          }}
+          title={valor}
+        >
+          {valor.slice(0, 10)}...{valor.slice(-8)}
+        </span>
+      );
+    }
+    return <span style={{ fontWeight: 500 }}>{strVal}</span>;
+  }, [t]);
 
   return (
     <div className="pagina" style={{ maxWidth: 1240, margin: '0 auto', padding: '24px 16px' }}>
@@ -301,7 +387,11 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                         type="button"
                         className="btn btn-sm"
                         style={{ padding: '4px 10px', fontSize: '0.8rem' }}
-                        onClick={() => setDetalheSelecionado(reg)}
+                        onClick={() => {
+                          setDetalheSelecionado(reg);
+                          setAbaModal('amigavel');
+                          setCopiado(false);
+                        }}
                       >
                         {t('auditoria.btn_detalhes')}
                       </button>
@@ -340,7 +430,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
               border: '1px solid var(--line)',
               boxShadow: 'var(--shadow-pop)',
               width: '100%',
-              maxWidth: 720,
+              maxWidth: 780,
               maxHeight: '90vh',
               display: 'flex',
               flexDirection: 'column',
@@ -389,6 +479,58 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                 aria-label={t('auditoria.modal_fechar')}
               >
                 ✕
+              </button>
+            </div>
+
+            {/* Modal Tabs Navigation */}
+            <div
+              style={{
+                display: 'flex',
+                gap: 20,
+                padding: '0 20px',
+                borderBottom: '1px solid var(--line)',
+                background: 'var(--card)',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setAbaModal('amigavel')}
+                style={{
+                  padding: '10px 4px',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: abaModal === 'amigavel' ? '2px solid var(--primary)' : '2px solid transparent',
+                  color: abaModal === 'amigavel' ? 'var(--primary)' : 'var(--muted)',
+                  fontWeight: abaModal === 'amigavel' ? 600 : 500,
+                  cursor: 'pointer',
+                  fontSize: '0.88rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <span>✨</span>
+                <span>{t('auditoria.modal_visual_amigavel')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAbaModal('json')}
+                style={{
+                  padding: '10px 4px',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: abaModal === 'json' ? '2px solid var(--primary)' : '2px solid transparent',
+                  color: abaModal === 'json' ? 'var(--primary)' : 'var(--muted)',
+                  fontWeight: abaModal === 'json' ? 600 : 500,
+                  cursor: 'pointer',
+                  fontSize: '0.88rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <span style={{ fontFamily: 'monospace' }}>{'{ }'}</span>
+                <span>{t('auditoria.modal_json_tecnico')}</span>
               </button>
             </div>
 
@@ -449,60 +591,237 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Payloads Antes e Depois */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+              {/* Aba 1: Visual Amigável */}
+              {abaModal === 'amigavel' && (
                 <div>
-                  <h4 style={{ margin: '0 0 6px', fontSize: '0.9rem', color: 'var(--muted)' }}>
-                    {t('auditoria.modal_dados_antes')}
-                  </h4>
-                  {detalheSelecionado.dados_antes ? (
-                    <pre
-                      style={{
-                        background: 'var(--bg)',
-                        border: '1px solid var(--line)',
-                        borderRadius: 8,
-                        padding: 12,
-                        fontSize: '0.82rem',
-                        overflowX: 'auto',
-                        maxHeight: 180,
-                        color: 'var(--ink)',
-                      }}
-                    >
-                      {JSON.stringify(detalheSelecionado.dados_antes, null, 2)}
-                    </pre>
-                  ) : (
-                    <p className="muted small" style={{ fontStyle: 'italic', margin: 0 }}>
-                      {t('auditoria.modal_sem_dados')}
-                    </p>
-                  )}
-                </div>
+                  {temAntes && temDepois ? (
+                    <div>
+                      <h4 style={{ margin: '0 0 10px', fontSize: '0.9rem', color: 'var(--ink)' }}>
+                        {t('auditoria.modal_mudanca_estado')}
+                      </h4>
+                      <div style={{ border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
+                          <thead>
+                            <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--line)' }}>
+                              <th style={{ textAlign: 'left', padding: '10px 14px', width: '32%', color: 'var(--muted)' }}>
+                                {t('auditoria.modal_campo')}
+                              </th>
+                              <th style={{ textAlign: 'left', padding: '10px 14px', width: '34%', color: 'var(--muted)' }}>
+                                {t('auditoria.modal_anterior')}
+                              </th>
+                              <th style={{ textAlign: 'left', padding: '10px 14px', width: '34%', color: 'var(--muted)' }}>
+                                {t('auditoria.modal_novo')}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {chavesComparacao.map((chave) => {
+                              const valAntes = detalheSelecionado.dados_antes ? detalheSelecionado.dados_antes[chave] : undefined;
+                              const valDepois = detalheSelecionado.dados_depois ? detalheSelecionado.dados_depois[chave] : undefined;
+                              const mudou = JSON.stringify(valAntes) !== JSON.stringify(valDepois);
 
-                <div>
-                  <h4 style={{ margin: '0 0 6px', fontSize: '0.9rem', color: 'var(--muted)' }}>
-                    {t('auditoria.modal_dados_depois')}
-                  </h4>
-                  {detalheSelecionado.dados_depois ? (
-                    <pre
+                              return (
+                                <tr
+                                  key={chave}
+                                  style={{
+                                    borderBottom: '1px solid var(--line)',
+                                    background: mudou ? 'rgba(59, 130, 246, 0.04)' : undefined,
+                                  }}
+                                >
+                                  <td style={{ padding: '10px 14px', verticalAlign: 'top' }}>
+                                    <div style={{ fontWeight: 600, color: 'var(--ink)' }}>
+                                      {t(`auditoria.campos.${chave}`, chave)}
+                                    </div>
+                                    <small className="muted" style={{ fontFamily: 'monospace', fontSize: '0.74rem' }}>
+                                      {chave}
+                                    </small>
+                                  </td>
+                                  <td style={{ padding: '10px 14px', verticalAlign: 'top' }}>
+                                    {formatarValor(chave, valAntes)}
+                                  </td>
+                                  <td style={{ padding: '10px 14px', verticalAlign: 'top' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                      {formatarValor(chave, valDepois)}
+                                      {mudou && (
+                                        <span
+                                          style={{
+                                            fontSize: '0.68rem',
+                                            padding: '1px 6px',
+                                            borderRadius: 4,
+                                            background: 'rgba(16, 185, 129, 0.15)',
+                                            color: '#10b981',
+                                            fontWeight: 600,
+                                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                                          }}
+                                        >
+                                          {t('auditoria.modal_alterado')}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : temDepois ? (
+                    <div>
+                      <h4 style={{ margin: '0 0 10px', fontSize: '0.9rem', color: 'var(--ink)' }}>
+                        {t('auditoria.modal_registro_inicial')}
+                      </h4>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                          gap: 12,
+                        }}
+                      >
+                        {Object.entries(detalheSelecionado.dados_depois || {}).map(([chave, val]) => (
+                          <div
+                            key={chave}
+                            style={{
+                              background: 'var(--bg)',
+                              border: '1px solid var(--line)',
+                              borderRadius: 8,
+                              padding: '10px 14px',
+                            }}
+                          >
+                            <div className="muted small" style={{ marginBottom: 4, display: 'flex', justifyContent: 'space-between' }}>
+                              <span>{t(`auditoria.campos.${chave}`, chave)}</span>
+                              <span style={{ fontFamily: 'monospace', fontSize: '0.72rem' }}>{chave}</span>
+                            </div>
+                            <div>{formatarValor(chave, val)}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : temAntes ? (
+                    <div>
+                      <h4 style={{ margin: '0 0 10px', fontSize: '0.9rem', color: 'var(--ink)' }}>
+                        {t('auditoria.modal_anterior')}
+                      </h4>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                          gap: 12,
+                        }}
+                      >
+                        {Object.entries(detalheSelecionado.dados_antes || {}).map(([chave, val]) => (
+                          <div
+                            key={chave}
+                            style={{
+                              background: 'var(--bg)',
+                              border: '1px solid var(--line)',
+                              borderRadius: 8,
+                              padding: '10px 14px',
+                            }}
+                          >
+                            <div className="muted small" style={{ marginBottom: 4, display: 'flex', justifyContent: 'space-between' }}>
+                              <span>{t(`auditoria.campos.${chave}`, chave)}</span>
+                              <span style={{ fontFamily: 'monospace', fontSize: '0.72rem' }}>{chave}</span>
+                            </div>
+                            <div>{formatarValor(chave, val)}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div
                       style={{
+                        textAlign: 'center',
+                        padding: '32px 16px',
+                        color: 'var(--muted)',
                         background: 'var(--bg)',
-                        border: '1px solid var(--line)',
                         borderRadius: 8,
-                        padding: 12,
-                        fontSize: '0.82rem',
-                        overflowX: 'auto',
-                        maxHeight: 180,
-                        color: 'var(--ink)',
+                        border: '1px solid var(--line)',
                       }}
                     >
-                      {JSON.stringify(detalheSelecionado.dados_depois, null, 2)}
-                    </pre>
-                  ) : (
-                    <p className="muted small" style={{ fontStyle: 'italic', margin: 0 }}>
-                      {t('auditoria.modal_sem_dados')}
-                    </p>
+                      {t('auditoria.modal_sem_alteracoes')}
+                    </div>
                   )}
                 </div>
-              </div>
+              )}
+
+              {/* Aba 2: JSON Técnico */}
+              {abaModal === 'json' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleCopiarJson}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}
+                    >
+                      {copiado ? (
+                        <>
+                          <span style={{ color: 'var(--ok)' }}>✓</span> {t('auditoria.modal_copiado')}
+                        </>
+                      ) : (
+                        <>
+                          <span>📋</span> {t('auditoria.modal_copiar_json')}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+                    <div>
+                      <h4 style={{ margin: '0 0 6px', fontSize: '0.88rem', color: 'var(--muted)' }}>
+                        {t('auditoria.modal_dados_antes')}
+                      </h4>
+                      {detalheSelecionado.dados_antes ? (
+                        <pre
+                          style={{
+                            background: 'var(--bg)',
+                            border: '1px solid var(--line)',
+                            borderRadius: 8,
+                            padding: 12,
+                            fontSize: '0.82rem',
+                            overflowX: 'auto',
+                            maxHeight: 180,
+                            color: 'var(--ink)',
+                          }}
+                        >
+                          {JSON.stringify(detalheSelecionado.dados_antes, null, 2)}
+                        </pre>
+                      ) : (
+                        <p className="muted small" style={{ fontStyle: 'italic', margin: 0 }}>
+                          {t('auditoria.modal_sem_dados')}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <h4 style={{ margin: '0 0 6px', fontSize: '0.88rem', color: 'var(--muted)' }}>
+                        {t('auditoria.modal_dados_depois')}
+                      </h4>
+                      {detalheSelecionado.dados_depois ? (
+                        <pre
+                          style={{
+                            background: 'var(--bg)',
+                            border: '1px solid var(--line)',
+                            borderRadius: 8,
+                            padding: 12,
+                            fontSize: '0.82rem',
+                            overflowX: 'auto',
+                            maxHeight: 180,
+                            color: 'var(--ink)',
+                          }}
+                        >
+                          {JSON.stringify(detalheSelecionado.dados_depois, null, 2)}
+                        </pre>
+                      ) : (
+                        <p className="muted small" style={{ fontStyle: 'italic', margin: 0 }}>
+                          {t('auditoria.modal_sem_dados')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Modal Footer */}
