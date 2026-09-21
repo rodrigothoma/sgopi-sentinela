@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.heat';
 import type { OcorrenciaResumo, Viatura } from '../../types/api';
+import type { PontoCalor } from '../../utils/manchas';
 import { CENTRO_PADRAO, corrigirIconesLeaflet, iconeOcorrencia, iconeViatura } from './leaflet';
 
 interface Props {
@@ -9,14 +11,17 @@ interface Props {
   ocorrencias: OcorrenciaResumo[];
   selecionada: string | null;
   onSelecionarOcorrencia: (id: string) => void;
+  heatAtivo: boolean;
+  pontosCalor: PontoCalor[];
 }
 
 /** Mapa Leaflet/OSM com marcadores atualizados incrementalmente (sem recriar o mapa a cada evento). */
-export const MapaTatico: React.FC<Props> = ({ viaturas, ocorrencias, selecionada, onSelecionarOcorrencia }) => {
+export const MapaTatico: React.FC<Props> = ({ viaturas, ocorrencias, selecionada, onSelecionarOcorrencia, heatAtivo, pontosCalor }) => {
   const divRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const viaturasRef = useRef<Map<string, L.Marker>>(new Map());
   const ocorrenciasRef = useRef<Map<string, L.Marker>>(new Map());
+  const heatRef = useRef<L.HeatLayer | null>(null);
   const selecionarRef = useRef(onSelecionarOcorrencia);
   selecionarRef.current = onSelecionarOcorrencia;
 
@@ -88,6 +93,21 @@ export const MapaTatico: React.FC<Props> = ({ viaturas, ocorrencias, selecionada
     const o = ocorrencias.find((x) => x.ocorrencia_id === selecionada);
     if (map && o) map.panTo([o.latitude, o.longitude]);
   }, [selecionada, ocorrencias]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!heatAtivo || pontosCalor.length === 0) {
+      heatRef.current?.remove();
+      heatRef.current = null;
+      return;
+    }
+    if (heatRef.current) {
+      heatRef.current.setLatLngs(pontosCalor);
+    } else {
+      heatRef.current = L.heatLayer(pontosCalor, { radius: 30, blur: 20, maxZoom: 13 }).addTo(map);
+    }
+  }, [heatAtivo, pontosCalor]);
 
   return <div ref={divRef} className="mapa mapa-grande" />;
 };

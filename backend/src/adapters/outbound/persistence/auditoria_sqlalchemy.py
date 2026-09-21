@@ -1,4 +1,6 @@
 """Adapter de saída: AuditoriaSQLAlchemy — append-only (RF20 / RNF03*)."""
+from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,12 +30,23 @@ class AuditoriaSQLAlchemy(PortaAuditoria):
         )
         await self._session.flush()
 
-    async def listar(self, entidade=None, entidade_id=None, limit=100) -> list[RegistroAuditoria]:
+    async def listar(
+        self,
+        entidade: str | None = None,
+        entidade_id: str | None = None,
+        operacao: str | None = None,
+        quem: UUID | None = None,
+        limit: int = 100,
+    ) -> list[RegistroAuditoria]:
         stmt = select(RegistroAuditoriaModel).order_by(RegistroAuditoriaModel.quando.desc()).limit(limit)
         if entidade:
             stmt = stmt.where(RegistroAuditoriaModel.entidade == entidade)
         if entidade_id:
             stmt = stmt.where(RegistroAuditoriaModel.entidade_id == entidade_id)
+        if operacao:
+            stmt = stmt.where(RegistroAuditoriaModel.operacao == operacao)
+        if quem:
+            stmt = stmt.where(RegistroAuditoriaModel.quem == quem)
         rows = (await self._session.execute(stmt)).scalars().all()
         return [
             RegistroAuditoria(

@@ -10,7 +10,23 @@ interface AuthContexto {
   tem: (...papeis: Papel[]) => boolean;
 }
 
-const Ctx = createContext<AuthContexto | null>(null);
+const fallbackAuth: AuthContexto = {
+  usuario: sessao.ler()?.usuario ?? null,
+  entrar: async (login: string, senha: string) => {
+    const r = await authService.login(login, senha);
+    sessao.gravar({ token: r.access_token, expira_em: r.expira_em, usuario: r.usuario });
+    return r.usuario;
+  },
+  sair: () => {
+    sessao.limpar();
+  },
+  tem: (...papeis: Papel[]) => {
+    const u = sessao.ler()?.usuario;
+    return !!u && papeis.includes(u.papel);
+  },
+};
+
+const Ctx = createContext<AuthContexto>(fallbackAuth);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [usuario, setUsuario] = useState<Usuario | null>(() => sessao.ler()?.usuario ?? null);
@@ -41,6 +57,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export function useAuth(): AuthContexto {
   const ctx = useContext(Ctx);
-  if (!ctx) throw new Error('useAuth fora do AuthProvider');
-  return ctx;
+  return ctx || fallbackAuth;
 }
+

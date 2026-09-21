@@ -2,7 +2,7 @@
 Fixtures de integração: SQLite em memória (aiosqlite) com o esquema dos models.
 
 Docker/Postgres não é exigido para a suíte; o esquema Postgres é validado por
-``alembic check`` (ver docs/implementacao/ETAPA-02).
+``alembic check``.
 """
 from __future__ import annotations
 
@@ -22,8 +22,15 @@ IDS = {
     "delegado": UUID("00000000-0000-0000-0000-000000000002"),
     "operador": UUID("00000000-0000-0000-0000-000000000003"),
     "agente2": UUID("00000000-0000-0000-0000-000000000004"),
+    "supervisor": UUID("00000000-0000-0000-0000-000000000005"),
 }
-PAPEIS = {"agente": "AGENTE", "delegado": "DELEGADO", "operador": "OPERADOR_CENTRAL", "agente2": "AGENTE"}
+PAPEIS = {
+    "agente": "AGENTE",
+    "delegado": "DELEGADO",
+    "operador": "OPERADOR_CENTRAL",
+    "agente2": "AGENTE",
+    "supervisor": "SUPERVISOR",
+}
 SENHA_PADRAO = "Senha@123"
 
 

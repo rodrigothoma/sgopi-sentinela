@@ -32,7 +32,16 @@ class CorrigirOcorrencia(InterfaceCorrigirOcorrencia):
         agora = self._relogio.agora()
         envolvidos = None
         if input_dto.envolvidos is not None:
-            envolvidos = [Envolvido(nome=e.nome, tipo=_tipo_envolvido(e.tipo), documento=e.documento) for e in input_dto.envolvidos]
+            envolvidos = [
+                Envolvido(
+                    nome=e.nome,
+                    tipo=_tipo_envolvido(e.tipo),
+                    documento=e.documento,
+                    email=e.email,
+                    telefone=e.telefone,
+                )
+                for e in input_dto.envolvidos
+            ]
         tipificacoes = None
         if input_dto.tipificacoes is not None:
             tipificacoes = [TipificacaoPenal(artigo=t.artigo, descricao=t.descricao) for t in input_dto.tipificacoes]

@@ -24,3 +24,21 @@ class ArmazenamentoDisco(ArmazenamentoArquivos):
 
         await asyncio.to_thread(_gravar)
         return chave
+
+    async def ler(self, chave: str) -> bytes | None:
+        """Lê somente chaves relativas contidas no diretório configurado."""
+        if not chave:
+            return None
+        caminho_chave = Path(chave)
+        if caminho_chave.is_absolute() or len(caminho_chave.parts) != 1 or caminho_chave.name != chave:
+            return None
+
+        base = self._diretorio.resolve()
+        candidato = (base / caminho_chave).resolve()
+        try:
+            candidato.relative_to(base)
+        except ValueError:
+            return None
+        if candidato == base or not candidato.is_file():
+            return None
+        return await asyncio.to_thread(candidato.read_bytes)

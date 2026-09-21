@@ -34,6 +34,10 @@ from adapters.outbound.seguranca.provedor_token_jose import ProvedorTokenJose
 from application.ports.inbound.interface_autenticar_documento import InterfaceAutenticarDocumento
 from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
 from application.ports.inbound.interface_anexar_evidencia import InterfaceAnexarEvidencia
+from application.ports.inbound.interface_acessar_evidencia import (
+    InterfaceObterEvidenciaParaDownload,
+    InterfaceVerificarIntegridadeEvidencia,
+)
 from application.ports.inbound.interface_consultar_auditoria import InterfaceConsultarAuditoria
 from application.ports.inbound.interface_despachar_viatura import (
     InterfaceDespacharViatura,
@@ -77,6 +81,10 @@ from application.use_cases.auth.autenticar_usuario import AutenticarUsuario
 from application.use_cases.documento.autenticar_documento import AutenticarDocumento
 from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
 from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
+from application.use_cases.ocorrencia.acessar_evidencia import (
+    ObterEvidenciaParaDownload,
+    VerificarIntegridadeEvidencia,
+)
 from application.use_cases.ocorrencia.corrigir_ocorrencia import CorrigirOcorrencia, ReenviarOcorrencia
 from application.use_cases.despacho.despachar_viatura import DespacharViatura, ListarOrdensDespacho, SugerirViaturasProximas
 from application.use_cases.despacho.encerrar_ocorrencia import EncerrarOcorrencia
@@ -186,6 +194,28 @@ def get_anexar_evidencia(
     )
 
 
+def _deps_acesso_evidencia(
+    repositorio: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    armazenamento: ArmazenamentoArquivos = Depends(get_armazenamento_arquivos),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    relogio: Relogio = Depends(get_relogio),
+) -> tuple:
+    return repositorio, armazenamento, auditoria, uow, relogio
+
+
+def get_verificar_integridade_evidencia(
+    deps: tuple = Depends(_deps_acesso_evidencia),
+) -> InterfaceVerificarIntegridadeEvidencia:
+    return VerificarIntegridadeEvidencia(*deps)
+
+
+def get_obter_evidencia_para_download(
+    deps: tuple = Depends(_deps_acesso_evidencia),
+) -> InterfaceObterEvidenciaParaDownload:
+    return ObterEvidenciaParaDownload(*deps)
+
+
 def get_autenticar_usuario(
     repositorio: RepositorioUsuario = Depends(get_repositorio_usuario),
     hasher: HasherSenha = Depends(get_hasher),
@@ -236,8 +266,18 @@ def get_reenviar_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceRe
     return ReenviarOcorrencia(*deps)
 
 
-def get_consultar_auditoria(auditoria: PortaAuditoria = Depends(get_auditoria)) -> InterfaceConsultarAuditoria:
-    return ConsultarAuditoria(auditoria)
+def get_consultar_auditoria(
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    repositorio_usuario: RepositorioUsuario = Depends(get_repositorio_usuario),
+    repositorio_ocorrencia: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    repositorio_viatura: RepositorioViatura = Depends(get_repositorio_viatura),
+) -> InterfaceConsultarAuditoria:
+    return ConsultarAuditoria(
+        auditoria=auditoria,
+        repositorio_usuario=repositorio_usuario,
+        repositorio_ocorrencia=repositorio_ocorrencia,
+        repositorio_viatura=repositorio_viatura,
+    )
 
 
 # ------------------------------------------------------------ documento (RF08)

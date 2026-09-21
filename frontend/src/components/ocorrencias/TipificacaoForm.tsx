@@ -31,6 +31,7 @@ export const TipificacaoForm: React.FC<Props> = ({ onAdd }) => {
           </label>
           <input
             type="text"
+            maxLength={50}
             placeholder={t('tipificacao.artigo_placeholder')}
             value={artigo}
             onChange={(e) => setArtigo(e.target.value)}
@@ -42,6 +43,7 @@ export const TipificacaoForm: React.FC<Props> = ({ onAdd }) => {
           </label>
           <input
             type="text"
+            maxLength={150}
             placeholder={t('tipificacao.descricao_placeholder')}
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
@@ -51,6 +53,7 @@ export const TipificacaoForm: React.FC<Props> = ({ onAdd }) => {
           type="button"
           className="btn btn-primary"
           onClick={handleSubmit}
+          style={{ height: 42 }}
         >
           {t('form.add_tipificacao')}
         </button>

@@ -21,6 +21,8 @@ class EnvolvidoOutput:
     nome: str
     tipo: str
     documento: str | None
+    email: str | None = None
+    telefone: str | None = None
 
 
 @dataclass(frozen=True)

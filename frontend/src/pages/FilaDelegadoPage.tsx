@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
 import { StatusBadge } from '../components/StatusBadge';
+import { formatarNatureza } from '../utils/formatarNatureza';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
@@ -69,7 +70,7 @@ export const FilaDelegadoPage: React.FC = () => {
         <ul className="lista clicavel">
           {pagina.itens.map((o) => (
             <li key={o.ocorrencia_id} className={detalhe?.ocorrencia_id === o.ocorrencia_id ? 'ativo' : ''} onClick={async () => setDetalhe(await ocorrenciasService.buscarPorId(o.ocorrencia_id))}>
-              <span><strong>{o.numero_protocolo}</strong> · {o.natureza}<br /><small className="muted">{new Date(o.criada_em).toLocaleString()}</small></span>
+              <span><strong>{o.numero_protocolo}</strong> · {formatarNatureza(o.natureza, t)}<br /><small className="muted">{new Date(o.criada_em).toLocaleString()}</small></span>
               <StatusBadge status={o.status} />
             </li>
           ))}

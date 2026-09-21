@@ -76,6 +76,8 @@ class EnvolvidoModel(Base):
     nome: Mapped[str] = mapped_column(String(255), nullable=False)
     tipo: Mapped[str] = mapped_column(String(20), nullable=False)
     documento: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    telefone: Mapped[str | None] = mapped_column(String(30), nullable=True)
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     ocorrencia: Mapped[OcorrenciaModel] = relationship("OcorrenciaModel", back_populates="envolvidos")

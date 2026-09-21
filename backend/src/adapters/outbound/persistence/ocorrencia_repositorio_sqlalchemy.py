@@ -137,7 +137,15 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
     def _to_model(self, ocorrencia: Ocorrencia) -> OcorrenciaModel:
         model = OcorrenciaModel(id=ocorrencia.id, **self._campos_escalares(ocorrencia))
         model.envolvidos = [
-            EnvolvidoModel(id=e.id, nome=e.nome, tipo=e.tipo.value, documento=e.documento, ativo=True)
+            EnvolvidoModel(
+                id=e.id,
+                nome=e.nome,
+                tipo=e.tipo.value,
+                documento=e.documento,
+                email=e.email,
+                telefone=e.telefone,
+                ativo=True,
+            )
             for e in ocorrencia.envolvidos
         ]
         model.tipificacoes = [
@@ -167,12 +175,27 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
         for em in model.envolvidos:
             if em.id in atuais:
                 e = atuais.pop(em.id)
-                em.nome, em.tipo, em.documento, em.ativo = e.nome, e.tipo.value, e.documento, True
+                em.nome, em.tipo, em.documento, em.email, em.telefone, em.ativo = (
+                    e.nome,
+                    e.tipo.value,
+                    e.documento,
+                    e.email,
+                    e.telefone,
+                    True,
+                )
             else:
                 em.ativo = False
         for e in atuais.values():
             model.envolvidos.append(
-                EnvolvidoModel(id=e.id, nome=e.nome, tipo=e.tipo.value, documento=e.documento, ativo=True)
+                EnvolvidoModel(
+                    id=e.id,
+                    nome=e.nome,
+                    tipo=e.tipo.value,
+                    documento=e.documento,
+                    email=e.email,
+                    telefone=e.telefone,
+                    ativo=True,
+                )
             )
 
         # tipificações: chave natural (artigo, descricao)
@@ -240,7 +263,14 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             chave_autenticidade=model.chave_autenticidade,
         )
         ocorrencia.envolvidos = [
-            Envolvido(id=e.id, nome=e.nome, tipo=TipoEnvolvido(e.tipo), documento=e.documento)
+            Envolvido(
+                id=e.id,
+                nome=e.nome,
+                tipo=TipoEnvolvido(e.tipo),
+                documento=e.documento,
+                email=e.email,
+                telefone=e.telefone,
+            )
             for e in model.envolvidos
             if e.ativo
         ]

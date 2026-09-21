@@ -37,7 +37,10 @@
     "tamanho_excedido": "O arquivo excede o limite de 10 MB",
     "status_invalido": "A ocorrência não aceita novas evidências neste status",
     "limite_atingido": "A ocorrência já atingiu o limite de 10 evidências",
-    "duplicada": "A evidência já está vinculada à ocorrência"
+    "duplicada": "A evidência já está vinculada à ocorrência",
+    "not_found": "Evidência não encontrada",
+    "arquivo_ausente": "Arquivo físico da evidência não encontrado",
+    "integridade_divergente": "A integridade da evidência está divergente; download bloqueado"
   },
   "geo": {
     "coordenada_invalida": "Coordenada inválida",

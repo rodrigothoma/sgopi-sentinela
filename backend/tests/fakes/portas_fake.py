@@ -1,5 +1,6 @@
 """Fakes das portas transversais (Relogio, GeradorProtocolo, UnidadeDeTrabalho, Auditoria, Eventos)."""
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 from application.ports.outbound.gerador_protocolo import GeradorProtocolo, formatar_protocolo
 from application.ports.outbound.porta_auditoria import PortaAuditoria
@@ -49,12 +50,23 @@ class AuditoriaFake(PortaAuditoria):
     async def registrar(self, registro: RegistroAuditoria) -> None:
         self.registros.append(registro)
 
-    async def listar(self, entidade=None, entidade_id=None, limit=100):
+    async def listar(
+        self,
+        entidade: str | None = None,
+        entidade_id: str | None = None,
+        operacao: str | None = None,
+        quem: UUID | None = None,
+        limit: int = 100,
+    ) -> list[RegistroAuditoria]:
         itens = self.registros
         if entidade:
             itens = [r for r in itens if r.entidade == entidade]
         if entidade_id:
             itens = [r for r in itens if r.entidade_id == entidade_id]
+        if operacao:
+            itens = [r for r in itens if r.operacao == operacao]
+        if quem:
+            itens = [r for r in itens if r.quem == quem]
         return itens[:limit]
 
     def operacoes(self) -> list[str]:

@@ -1,0 +1,116 @@
+/* ─── Split Flap Text — sem tiles visuais ─────────────────────────────────── */
+/* Apenas o texto anima, sem quadradinhos/cards atrás de cada letra           */
+
+.split-flap-text {
+  display: inline-flex;
+  align-items: center;
+  /* sem gap entre letras — o espaço vem do próprio monospace + letter-spacing */
+  gap: 0;
+  color: var(--split-flap-text-color, var(--ink));
+  font-family: 'SFMono-Regular', 'Roboto Mono', 'Cascadia Code', 'Liberation Mono', Menlo, monospace;
+  font-size: var(--split-flap-font-size, 52px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  white-space: pre;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+  max-width: 100%;
+  overflow-x: auto;
+  /* centralizar dentro do hero */
+  justify-content: center;
+}
+
+/* Tile: apenas o container posicional, sem background nem borda nem sombra */
+.split-flap-text__tile {
+  position: relative;
+  width: 0.62em;
+  height: 1.1em;
+  overflow: hidden;
+  /* sem background, border-radius, box-shadow, perspective, etc. */
+  flex-shrink: 0;
+}
+
+/* Remove os pseudo-elementos decorativos do tile */
+.split-flap-text__tile::before,
+.split-flap-text__tile::after {
+  display: none;
+}
+
+/* Metades superior/inferior: sem background próprio */
+.split-flap-text__half,
+.split-flap-text__flap {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  background: transparent;
+  backface-visibility: hidden;
+}
+
+.split-flap-text__half--top,
+.split-flap-text__flap--front {
+  top: 0;
+}
+
+.split-flap-text__half--bottom,
+.split-flap-text__flap--back {
+  bottom: 0;
+  background: transparent;
+}
+
+/* Char: centraliza e exibe o texto sem sombra excessiva */
+.split-flap-text__char {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 200%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--split-flap-text-color, var(--ink));
+}
+
+.split-flap-text__half--top .split-flap-text__char,
+.split-flap-text__flap--front .split-flap-text__char {
+  top: 0;
+}
+
+.split-flap-text__half--bottom .split-flap-text__char,
+.split-flap-text__flap--back .split-flap-text__char {
+  bottom: 0;
+}
+
+/* Flaps de animação */
+.split-flap-text__flap {
+  z-index: 6;
+  will-change: transform, opacity;
+}
+
+.split-flap-text__flap--front {
+  transform-origin: center bottom;
+  animation: split-flap-front var(--split-flap-flip-duration, 0.1s) cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.split-flap-text__flap--back {
+  transform-origin: center top;
+  transform: rotateX(90deg);
+  animation: split-flap-back var(--split-flap-flip-duration, 0.1s) cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes split-flap-front {
+  0%   { transform: rotateX(0deg);   opacity: 1; }
+  100% { transform: rotateX(-90deg); opacity: 0.3; }
+}
+
+@keyframes split-flap-back {
+  0%, 40% { transform: rotateX(90deg);  opacity: 0.3; }
+  100%     { transform: rotateX(0deg);   opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .split-flap-text__flap {
+    animation: none !important;
+  }
+}

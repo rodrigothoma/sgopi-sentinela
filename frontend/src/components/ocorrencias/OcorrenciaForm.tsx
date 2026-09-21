@@ -73,7 +73,7 @@ export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnvia
       <div className="grid2">
         <label>
           {t('ocorrencias:form.natureza_label')}
-          <input value={v.natureza} onChange={(e) => set('natureza', e.target.value)} placeholder={t('ocorrencias:form.natureza_placeholder')} />
+          <input maxLength={100} value={v.natureza} onChange={(e) => set('natureza', e.target.value)} placeholder={t('ocorrencias:form.natureza_placeholder')} />
         </label>
         <label>
           {t('ocorrencias:form.data_hora_fato_label')}
@@ -82,15 +82,15 @@ export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnvia
       </div>
       <label>
         {t('ocorrencias:form.localizacao_label')}
-        <input value={v.localizacao} onChange={(e) => set('localizacao', e.target.value)} placeholder={t('ocorrencias:form.localizacao_placeholder')} />
+        <input maxLength={150} value={v.localizacao} onChange={(e) => set('localizacao', e.target.value)} placeholder={t('ocorrencias:form.localizacao_placeholder')} />
       </label>
       <label>
         {t('ocorrencias:form.coordenada_label')} <span className="muted">{t('ocorrencias:form.coordenada_ajuda')}</span>
       </label>
       <SeletorCoordenada latitude={v.latitude} longitude={v.longitude} onChange={(lat, lon) => setV((x) => ({ ...x, latitude: lat, longitude: lon }))} />
       <label>
-        {t('ocorrencias:form.descricao_label')} <span className="muted">({v.descricao.trim().length}/20+)</span>
-        <textarea rows={5} value={v.descricao} onChange={(e) => set('descricao', e.target.value)} placeholder={t('ocorrencias:form.descricao_placeholder')} />
+        {t('ocorrencias:form.descricao_label')} <span className="muted">({v.descricao.trim().length}/500, min. 20)</span>
+        <textarea maxLength={500} rows={5} value={v.descricao} onChange={(e) => set('descricao', e.target.value)} placeholder={t('ocorrencias:form.descricao_placeholder')} />
       </label>
 
       <fieldset>

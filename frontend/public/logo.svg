@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Curva ampla para o arco do texto -->
+    <path id="text-curve" d="M 85,215 Q 250,75 415,215" fill="none" />
+    
+    <!-- Máscara com recortes transparentes -->
+    <mask id="badge-cutout">
+      <!-- Fundo branco que mantém o preenchimento visível -->
+      <rect width="100%" height="100%" fill="#ffffff" />
+      
+      <!-- Círculo vazado central -->
+      <circle cx="250" cy="305" r="115" fill="#000000" />
+      
+      <!-- Texto S G O P I ampliado e com espaçamento entre letras -->
+      <text fill="#000000"
+            font-size="62"
+            font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+            font-weight="900"
+            letter-spacing="14">
+        <textPath href="#text-curve" startOffset="50%" text-anchor="middle">
+          SGOPI
+        </textPath>
+      </text>
+    </mask>
+  </defs>
+
+  <!-- Grupo com herança de cor dinâmica (fill="currentColor") -->
+  <g fill="currentColor">
+    <!-- Silhueta do distintivo com ponta inferior acentuada -->
+    <path mask="url(#badge-cutout)"
+          d="M 250,22 
+             C 285,55 330,75 375,75 
+             C 415,75 448,58 465,42 
+             C 445,105 465,155 480,180 
+             C 430,205 422,255 422,305 
+             C 422,390 350,448 250,495 
+             C 150,448 78,390 78,305 
+             C 78,255 70,205 20,180 
+             C 35,155 55,105 35,42 
+             C 52,58 85,75 125,75 
+             C 170,75 215,55 250,22 Z" />
+
+    <!-- Estrela sólida central -->
+    <polygon points="250,220 
+                    275,272 
+                    332,280 
+                    291,320 
+                    301,377 
+                    250,350 
+                    199,377 
+                    209,320 
+                    168,280 
+                    225,272" />
+  </g>
+</svg>

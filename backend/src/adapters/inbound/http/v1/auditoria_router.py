@@ -7,7 +7,12 @@ from pydantic import BaseModel
 
 from adapters.inbound.http.deps import exigir_papel
 from application.ports.inbound.ator import Ator
-from application.ports.inbound.interface_consultar_auditoria import ConsultarAuditoriaInput, InterfaceConsultarAuditoria
+from application.ports.inbound.interface_consultar_auditoria import (
+    ConsultarAuditoriaInput,
+    InterfaceConsultarAuditoria,
+    LIMITE_MAXIMO_CONSULTA,
+    LIMITE_PADRAO_CONSULTA,
+)
 from domain.usuario.entity import Papel
 from infrastructure.di import get_consultar_auditoria
 
@@ -24,16 +29,30 @@ class RegistroAuditoriaSchema(BaseModel):
     dados_antes: dict[str, Any] | None
     dados_depois: dict[str, Any] | None
     ip: str | None
+    autor_nome: str | None = None
+    autor_papel: str | None = None
+    identificador_amigavel: str | None = None
 
 
 @router.get("", response_model=list[RegistroAuditoriaSchema])
 async def listar_auditoria(
     entidade: str | None = Query(default=None),
     entidade_id: str | None = Query(default=None),
-    limit: int = Query(default=100, ge=1, le=500),
+    operacao: str | None = Query(default=None),
+    quem: UUID | None = Query(default=None),
+    limit: int = Query(default=LIMITE_PADRAO_CONSULTA, ge=1, le=LIMITE_MAXIMO_CONSULTA),
     ator: Ator = Depends(exigir_papel(Papel.DELEGADO, Papel.SUPERVISOR)),
     use_case: InterfaceConsultarAuditoria = Depends(get_consultar_auditoria),
 ) -> list[RegistroAuditoriaSchema]:
     """Trilha de auditoria append-only (mais recente primeiro)."""
-    registros = await use_case.executar(ator, ConsultarAuditoriaInput(entidade=entidade, entidade_id=entidade_id, limit=limit))
+    registros = await use_case.executar(
+        ator,
+        ConsultarAuditoriaInput(
+            entidade=entidade,
+            entidade_id=entidade_id,
+            operacao=operacao,
+            quem=quem,
+            limit=limit,
+        ),
+    )
     return [RegistroAuditoriaSchema(**r.__dict__) for r in registros]
