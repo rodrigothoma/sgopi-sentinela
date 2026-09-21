@@ -79,6 +79,7 @@ def criar_app() -> FastAPI:
 
 def _registrar_routers(app: FastAPI) -> None:
     """Routers são registrados aqui; cada etapa do MVP adiciona os seus."""
+    from adapters.inbound.http.v1.apreensoes_router import router as apreensoes_router
     from adapters.inbound.http.v1.auditoria_router import router as auditoria_router
     from adapters.inbound.http.v1.auth_router import router as auth_router
     from adapters.inbound.http.v1.ocorrencias_router import router as ocorrencias_router
@@ -90,6 +91,7 @@ def _registrar_routers(app: FastAPI) -> None:
     app.include_router(auth_router)
     app.include_router(usuarios_router)
     app.include_router(ocorrencias_router)
+    app.include_router(apreensoes_router)
     app.include_router(auditoria_router)
     app.include_router(viaturas_router)
     app.include_router(despacho_router)

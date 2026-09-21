@@ -5,6 +5,7 @@ from uuid import UUID
 
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_anexar_evidencia import EvidenciaOutput
+from application.ports.inbound.interface_gerir_apreensoes import ItemApreendidoOutput
 
 
 @dataclass(frozen=True)
@@ -69,6 +70,7 @@ class OcorrenciaDetalheOutput(OcorrenciaResumoOutput):
     envolvidos: tuple[EnvolvidoOutput, ...] = field(default_factory=tuple)
     tipificacoes: tuple[TipificacaoOutput, ...] = field(default_factory=tuple)
     evidencias: tuple[EvidenciaOutput, ...] = field(default_factory=tuple)
+    itens_apreendidos: tuple[ItemApreendidoOutput, ...] = field(default_factory=tuple)
     historico_status: tuple[HistoricoStatusOutput, ...] = field(default_factory=tuple)
 
 

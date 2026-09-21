@@ -39,6 +39,11 @@ from application.ports.inbound.interface_arquivar_ocorrencia import (
     InterfaceExcluirOcorrencia,
 )
 from application.ports.inbound.interface_consultar_auditoria import InterfaceConsultarAuditoria
+from application.ports.inbound.interface_gerir_apreensoes import (
+    InterfaceEmitirAutoApreensao,
+    InterfaceMovimentarCustodia,
+    InterfaceRegistrarItemApreendido,
+)
 from application.ports.inbound.interface_despachar_viatura import (
     InterfaceDespacharViatura,
     InterfaceEncerrarOcorrencia,
@@ -82,6 +87,7 @@ from application.use_cases.auth.autenticar_usuario import AutenticarUsuario
 from application.use_cases.usuario.listar_usuarios import ListarUsuarios
 from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
 from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
+from application.use_cases.ocorrencia.apreensoes import EmitirAutoApreensao, MovimentarCustodia, RegistrarItemApreendido
 from application.use_cases.ocorrencia.arquivar_ocorrencia import ArquivarOcorrencia, ExcluirOcorrencia
 from application.use_cases.ocorrencia.corrigir_ocorrencia import CorrigirOcorrencia, ReenviarOcorrencia
 from application.use_cases.despacho.despachar_viatura import DespacharViatura, ListarOrdensDespacho, SugerirViaturasProximas
@@ -256,6 +262,22 @@ def get_excluir_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceExc
 
 def get_consultar_auditoria(auditoria: PortaAuditoria = Depends(get_auditoria)) -> InterfaceConsultarAuditoria:
     return ConsultarAuditoria(auditoria)
+
+
+# ---------------------------------------------------------------- apreensões (RF03)
+def get_registrar_item_apreendido(deps: tuple = Depends(_deps_revisao)) -> InterfaceRegistrarItemApreendido:
+    repositorio, uow, relogio, auditoria, _ = deps
+    return RegistrarItemApreendido(repositorio, uow, relogio, auditoria)
+
+
+def get_movimentar_custodia(deps: tuple = Depends(_deps_revisao)) -> InterfaceMovimentarCustodia:
+    repositorio, uow, relogio, auditoria, _ = deps
+    return MovimentarCustodia(repositorio, uow, relogio, auditoria)
+
+
+def get_emitir_auto_apreensao(deps: tuple = Depends(_deps_revisao)) -> InterfaceEmitirAutoApreensao:
+    repositorio, uow, relogio, auditoria, _ = deps
+    return EmitirAutoApreensao(repositorio, uow, relogio, auditoria)
 
 
 # ------------------------------------------------------------------ viaturas

@@ -37,6 +37,16 @@ TRANSICOES: dict[tuple[StatusOcorrencia, str], StatusOcorrencia] = {
 ESTADOS_TERMINAIS = frozenset({StatusOcorrencia.REJEITADA, StatusOcorrencia.ENCERRADA})
 ESTADOS_EDITAVEIS = frozenset({StatusOcorrencia.EM_CORRECAO})
 
+# RF03 / UC03 pré-condição: "ocorrência registrada ou em andamento" aceita novos itens apreendidos.
+ESTADOS_ACEITAM_APREENSAO = frozenset(
+    {
+        StatusOcorrencia.AGUARDANDO_REVISAO,
+        StatusOcorrencia.EM_CORRECAO,
+        StatusOcorrencia.VALIDADA,
+        StatusOcorrencia.EM_ATENDIMENTO,
+    }
+)
+
 # Arquivar: qualquer estado fora do atendimento e que ainda não foi arquivado/excluído.
 ESTADOS_ARQUIVAVEIS = frozenset(
     {

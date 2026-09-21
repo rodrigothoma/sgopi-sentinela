@@ -88,5 +88,24 @@
     "numero_vazio": "Order number is required",
     "ordem_ja_encerrada": "Dispatch order already closed",
     "viatura_indisponivel": "Vehicle is not available for dispatch"
+  },
+  "apreensao": {
+    "descricao_vazia": "Seized item description is required",
+    "quantidade_invalida": "Quantity must be greater than zero",
+    "lacre_vazio": "Seal number is required",
+    "lacre_duplicado": "Seal number already registered",
+    "localizacao_vazia": "Storage/vault location is required",
+    "arma_sem_calibre_ou_marca": "Firearms require caliber and brand",
+    "tipo_invalido": "Invalid seized item type",
+    "unidade_invalida": "Invalid unit of measure",
+    "estado_invalido": "Invalid condition",
+    "status_invalido": "The occurrence does not accept seizures in its current status",
+    "duplicada": "Item already linked to the occurrence",
+    "not_found": "Seized item not found",
+    "destino_vazio": "Custody destination is required",
+    "destino_igual_origem": "The item is already held at that location",
+    "movimentacao_retroativa": "The movement cannot precede the last one recorded",
+    "data_sem_fuso": "Date must include a time zone",
+    "sem_itens": "The occurrence has no seized items to issue the report"
   }
 }

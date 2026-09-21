@@ -8,6 +8,8 @@ from application.ports.inbound.interface_consultar_ocorrencias import (
     OcorrenciaResumoOutput,
     TipificacaoOutput,
 )
+from application.ports.inbound.interface_gerir_apreensoes import ItemApreendidoOutput, MovimentacaoCustodiaOutput
+from domain.ocorrencia.apreensao import ItemApreendido
 from domain.ocorrencia.entity import Ocorrencia
 from domain.shared.documentos import mascarar_cpf
 from domain.usuario.entity import Papel
@@ -16,6 +18,31 @@ from domain.usuario.entity import Papel
 def pode_ver_documento(ator: Ator, ocorrencia: Ocorrencia) -> bool:
     """RNF10: CPF em claro só para Delegado e para o Agente autor."""
     return ator.papel == Papel.DELEGADO or ator.id == ocorrencia.agente_policial_id
+
+
+def para_item_apreendido(i: ItemApreendido) -> ItemApreendidoOutput:
+    return ItemApreendidoOutput(
+        id=i.id,
+        tipo=i.tipo.value,
+        descricao=i.descricao,
+        quantidade=i.quantidade,
+        unidade=i.unidade.value,
+        estado_conservacao=i.estado_conservacao.value,
+        numero_lacre=i.numero_lacre,
+        numero_serie=i.numero_serie,
+        marca=i.marca,
+        calibre=i.calibre,
+        localizacao_deposito=i.localizacao_deposito,
+        localizacao_atual=i.localizacao_atual,
+        registrado_em=i.registrado_em.isoformat(),
+        registrado_por_id=i.registrado_por_id,
+        movimentacoes=tuple(
+            MovimentacaoCustodiaOutput(
+                em=m.em.isoformat(), por_id=m.por_id, origem=m.origem, destino=m.destino, observacao=m.observacao
+            )
+            for m in i.movimentacoes
+        ),
+    )
 
 
 def para_resumo(o: Ocorrencia) -> OcorrenciaResumoOutput:
@@ -66,6 +93,7 @@ def para_detalhe(o: Ocorrencia, ator: Ator) -> OcorrenciaDetalheOutput:
             )
             for e in o.evidencias
         ),
+        itens_apreendidos=tuple(para_item_apreendido(i) for i in o.itens_apreendidos),
         historico_status=tuple(
             HistoricoStatusOutput(de=h.de.value if h.de else None, para=h.para.value, em=h.em.isoformat(), por_id=h.por_id, justificativa=h.justificativa)
             for h in o.historico_status

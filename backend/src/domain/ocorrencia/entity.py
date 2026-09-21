@@ -8,7 +8,8 @@ Decisões aplicadas: DEC-02 (máquina de estados única), DEC-03 (Coordenada +
 data_hora_fato obrigatórios), DEC-04 (Envolvido 1:N), DEC-09 (hash SHA-256 da
 narrativa na validação), HEX-06 (invariante ≥ 1 envolvido via factory),
 HEX-07 (instante recebido de fora — porta Relogio), HEX-08 (protocolo recebido
-de fora — porta GeradorProtocolo).
+de fora — porta GeradorProtocolo), RF03 (itens apreendidos + cadeia de custódia
+como filhos do agregado — ver ``domain/ocorrencia/apreensao.py``).
 """
 from __future__ import annotations
 
@@ -18,7 +19,9 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
+from domain.ocorrencia.apreensao import ItemApreendido, MovimentacaoCustodia
 from domain.ocorrencia.status import (
+    ESTADOS_ACEITAM_APREENSAO,
     ESTADOS_EDITAVEIS,
     StatusOcorrencia,
     proximo_estado,
@@ -27,6 +30,8 @@ from domain.shared.documentos import validar_documento
 from domain.shared.exceptions import (
     AcessoNegadoError,
     CampoObrigatorioError,
+    ConflitoError,
+    EntidadeNaoEncontradaError,
     TransicaoInvalidaError,
     ValorInvalidoError,
 )
@@ -151,6 +156,7 @@ class Ocorrencia:
     tipificacoes: list[TipificacaoPenal] = field(default_factory=list)
     envolvidos: list[Envolvido] = field(default_factory=list)
     evidencias: list[Evidencia] = field(default_factory=list)
+    itens_apreendidos: list[ItemApreendido] = field(default_factory=list)
     historico_status: list[RegistroHistoricoStatus] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -172,8 +178,13 @@ class Ocorrencia:
         agora: datetime,
         envolvidos: list[Envolvido],
         tipificacoes: list[TipificacaoPenal] | None = None,
+        itens_apreendidos: list[ItemApreendido] | None = None,
     ) -> Ocorrencia:
-        """Cria uma ocorrência válida em AGUARDANDO_REVISAO (RF01*, UC01 regras 1 e 3)."""
+        """Cria uma ocorrência válida em AGUARDANDO_REVISAO (RF01*, UC01 regras 1 e 3).
+
+        ``itens_apreendidos`` é opcional: registro de apreensão concomitante (UC01 cenário
+        alternativo I → UC03), na mesma transação e sem incrementar a versão.
+        """
         cls._validar_campos(natureza, descricao, localizacao, data_hora_fato, agora)
         if not envolvidos:
             raise CampoObrigatorioError(
@@ -196,6 +207,8 @@ class Ocorrencia:
             ocorrencia.adicionar_envolvido(envolvido)
         for tipificacao in tipificacoes or []:
             ocorrencia.tipificacoes.append(tipificacao)
+        for item in itens_apreendidos or []:
+            ocorrencia._vincular_item_apreendido(item)
         ocorrencia.historico_status.append(
             RegistroHistoricoStatus(de=None, para=ocorrencia.status, em=agora, por_id=agente_policial_id)
         )
@@ -255,6 +268,53 @@ class Ocorrencia:
             raise ValorInvalidoError("Evidência já vinculada à ocorrência.", chave="evidencia.duplicada")
         self.evidencias.append(evidencia)
         self._tocar(em)
+
+    # --------------------------------------------------------------- apreensões
+    def exigir_apreensao_permitida(self, agente_id: UUID) -> None:
+        """Apreensões só pelo Agente autor enquanto a ocorrência está registrada ou em andamento (UC03)."""
+        self._exigir_autor(agente_id)
+        if self.status not in ESTADOS_ACEITAM_APREENSAO:
+            raise TransicaoInvalidaError(
+                f"Ocorrência em {self.status.value} não aceita novas apreensões.",
+                chave="apreensao.status_invalido",
+                status_atual=self.status.value,
+            )
+
+    def _vincular_item_apreendido(self, item: ItemApreendido) -> None:
+        """Vínculo permanente ao agregado; lacre e id únicos entre os itens da ocorrência."""
+        if any(i.id == item.id for i in self.itens_apreendidos):
+            raise ValorInvalidoError("Item já vinculado à ocorrência.", chave="apreensao.duplicada")
+        if any(i.numero_lacre == item.numero_lacre for i in self.itens_apreendidos):
+            raise ConflitoError(
+                f"Lacre {item.numero_lacre} já cadastrado.", chave="apreensao.lacre_duplicado", numero_lacre=item.numero_lacre
+            )
+        self.itens_apreendidos.append(item)
+
+    def registrar_apreensao(self, item: ItemApreendido, agente_id: UUID, em: datetime) -> None:
+        """Vincula permanentemente um item apreendido à ocorrência já existente (RF03)."""
+        self.exigir_apreensao_permitida(agente_id)
+        self._vincular_item_apreendido(item)
+        self._tocar(em)
+
+    def item_apreendido(self, item_id: UUID) -> ItemApreendido:
+        for item in self.itens_apreendidos:
+            if item.id == item_id:
+                return item
+        raise EntidadeNaoEncontradaError("Item apreendido não encontrado.", chave="apreensao.not_found")
+
+    def movimentar_item_apreendido(
+        self, item_id: UUID, por_id: UUID, destino: str, observacao: str | None, em: datetime
+    ) -> MovimentacaoCustodia:
+        """Transferência de custódia (append-only). Não permitida em ocorrência EXCLUIDA."""
+        if self.status is StatusOcorrencia.EXCLUIDA:
+            raise TransicaoInvalidaError(
+                "Ocorrência excluída não aceita movimentações de custódia.",
+                chave="apreensao.status_invalido",
+                status_atual=self.status.value,
+            )
+        movimentacao = self.item_apreendido(item_id).movimentar(por_id, destino, observacao, em)
+        self._tocar(em)
+        return movimentacao
 
     # --------------------------------------------------------------- transições
     def _transicionar(self, operacao: str, por_id: UUID, em: datetime, justificativa: str | None = None) -> None:

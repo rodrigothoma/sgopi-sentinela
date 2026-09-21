@@ -88,5 +88,24 @@
     "numero_vazio": "Número da ordem é obrigatório",
     "ordem_ja_encerrada": "Ordem de despacho já encerrada",
     "viatura_indisponivel": "A viatura não está disponível para despacho"
+  },
+  "apreensao": {
+    "descricao_vazia": "A descrição do item apreendido é obrigatória",
+    "quantidade_invalida": "A quantidade deve ser maior que zero",
+    "lacre_vazio": "O número do lacre é obrigatório",
+    "lacre_duplicado": "Número de lacre já cadastrado na base",
+    "localizacao_vazia": "A localização no depósito/cofre é obrigatória",
+    "arma_sem_calibre_ou_marca": "Arma de fogo exige calibre e marca",
+    "tipo_invalido": "Tipo de item apreendido inválido",
+    "unidade_invalida": "Unidade de medida inválida",
+    "estado_invalido": "Estado de conservação inválido",
+    "status_invalido": "A ocorrência não aceita apreensões neste status",
+    "duplicada": "O item já está vinculado à ocorrência",
+    "not_found": "Item apreendido não encontrado",
+    "destino_vazio": "O destino da custódia é obrigatório",
+    "destino_igual_origem": "O item já está custodiado nesse local",
+    "movimentacao_retroativa": "A movimentação não pode ser anterior à última registrada",
+    "data_sem_fuso": "A data deve informar o fuso horário",
+    "sem_itens": "A ocorrência não possui itens apreendidos para emitir o auto"
   }
 }

@@ -3,6 +3,9 @@ Caso de uso: RegistrarOcorrenciaPolicial (RF01* — Must Have do MVP)
 
 Orquestra a criação do agregado Ocorrencia via factory e delega a persistência
 às portas de saída. Não conhece FastAPI nem SQLAlchemy.
+
+Itens apreendidos são opcionais no registro (UC01 cenário alternativo I → UC03/RF03):
+entram na mesma transação, com lacre único em toda a base e auditoria por item.
 """
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_registrar_ocorrencia_policial import (
@@ -15,6 +18,7 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from application.use_cases.ocorrencia.apreensoes import auditoria_registro_item, exigir_lacre_inedito, montar_item
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipificacaoPenal, TipoEnvolvido
 from domain.shared.exceptions import ValorInvalidoError
@@ -48,8 +52,11 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
             for e in input_dto.envolvidos
         ]
         tipificacoes = [TipificacaoPenal(artigo=t.artigo, descricao=t.descricao) for t in input_dto.tipificacoes]
+        itens = [montar_item(i, agora=agora, por_id=ator.id) for i in input_dto.itens_apreendidos]
 
         async with self._uow:
+            for item in itens:
+                await exigir_lacre_inedito(self._repositorio, item)
             numero_protocolo = await self._gerador_protocolo.proximo(agora.year)
             ocorrencia = Ocorrencia.registrar(
                 agente_policial_id=ator.id,
@@ -62,6 +69,7 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
                 agora=agora,
                 envolvidos=envolvidos,
                 tipificacoes=tipificacoes,
+                itens_apreendidos=itens,
             )
             await self._repositorio.salvar(ocorrencia)
             await self._auditoria.registrar(
@@ -71,10 +79,16 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
                     operacao="ocorrencia.registrar",
                     entidade="Ocorrencia",
                     entidade_id=str(ocorrencia.id),
-                    dados_depois={"status": ocorrencia.status.value, "protocolo": numero_protocolo},
+                    dados_depois={
+                        "status": ocorrencia.status.value,
+                        "protocolo": numero_protocolo,
+                        "itens_apreendidos": len(ocorrencia.itens_apreendidos),
+                    },
                     ip=ator.ip,
                 )
             )
+            for item in ocorrencia.itens_apreendidos:
+                await self._auditoria.registrar(auditoria_registro_item(ator, ocorrencia, item, agora))
             await self._uow.commit()
 
         return RegistrarOcorrenciaOutput(

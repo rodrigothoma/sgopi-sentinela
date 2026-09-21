@@ -20,9 +20,11 @@ from application.ports.inbound.interface_anexar_evidencia import (
 from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     EnvolvidoInputDTO,
     InterfaceRegistrarOcorrenciaPolicial,
+    ItemApreendidoInputDTO,
     RegistrarOcorrenciaInput,
     TipificacaoInputDTO,
 )
+from adapters.inbound.http.v1.apreensoes_router import RegistrarItemApreendidoRequest
 from domain.usuario.entity import Papel
 from infrastructure.config.settings import settings
 from infrastructure.di import get_anexar_evidencia, get_registrar_ocorrencia
@@ -51,6 +53,8 @@ class RegistrarOcorrenciaRequest(BaseModel):
     data_hora_fato: datetime
     tipificacoes: list[TipificacaoSchema] = []
     envolvidos: list[EnvolvidoSchema] = []
+    # RF03 — opcional: apreensão concomitante ao registro (mesma transação; lacre único na base)
+    itens_apreendidos: list[RegistrarItemApreendidoRequest] = []
 
 
 class OcorrenciaResponse(BaseModel):
@@ -77,7 +81,7 @@ async def registrar_ocorrencia(
     ator: Ator = Depends(exigir_papel(Papel.AGENTE)),
     use_case: InterfaceRegistrarOcorrenciaPolicial = Depends(get_registrar_ocorrencia),
 ) -> OcorrenciaResponse:
-    """Registra uma nova ocorrência policial (RF01*). Somente AGENTE."""
+    """Registra uma nova ocorrência policial (RF01*), opcionalmente já com itens apreendidos (RF03). Somente AGENTE."""
     input_dto = RegistrarOcorrenciaInput(
         natureza=body.natureza,
         descricao=body.descricao,
@@ -87,6 +91,7 @@ async def registrar_ocorrencia(
         data_hora_fato=body.data_hora_fato,
         tipificacoes=tuple(TipificacaoInputDTO(artigo=t.artigo, descricao=t.descricao) for t in body.tipificacoes),
         envolvidos=tuple(EnvolvidoInputDTO(nome=e.nome, tipo=e.tipo, documento=e.documento) for e in body.envolvidos),
+        itens_apreendidos=tuple(ItemApreendidoInputDTO(**i.model_dump()) for i in body.itens_apreendidos),
     )
     out = await use_case.executar(ator, input_dto)
     return OcorrenciaResponse(
@@ -142,6 +147,7 @@ from application.ports.inbound.interface_revisar_ocorrencia import (  # noqa: E4
     InterfaceRejeitarOcorrencia,
     InterfaceValidarOcorrencia,
 )
+from adapters.inbound.http.v1.apreensoes_router import ItemApreendidoSchema, item_schema  # noqa: E402
 from infrastructure.di import (  # noqa: E402
     get_arquivar_ocorrencia,
     get_corrigir_ocorrencia,
@@ -201,6 +207,7 @@ class OcorrenciaDetalheSchema(OcorrenciaResumoSchema):
     envolvidos: list[EnvolvidoDetalheSchema]
     tipificacoes: list[TipificacaoSchema]
     evidencias: list[EvidenciaSchema]
+    itens_apreendidos: list[ItemApreendidoSchema]
     historico_status: list[HistoricoStatusSchema]
 
 
@@ -253,6 +260,7 @@ def _detalhe(o: OcorrenciaDetalheOutput) -> OcorrenciaDetalheSchema:
         envolvidos=[EnvolvidoDetalheSchema(id=e.id, nome=e.nome, tipo=e.tipo, documento=e.documento) for e in o.envolvidos],
         tipificacoes=[TipificacaoSchema(artigo=t.artigo, descricao=t.descricao) for t in o.tipificacoes],
         evidencias=[EvidenciaSchema(**e.__dict__) for e in o.evidencias],
+        itens_apreendidos=[item_schema(i) for i in o.itens_apreendidos],
         historico_status=[HistoricoStatusSchema(**h.__dict__) for h in o.historico_status],
     )
 
@@ -279,7 +287,7 @@ async def obter_ocorrencia(
     ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
     use_case: InterfaceObterDetalheOcorrencia = Depends(get_obter_detalhe_ocorrencia),
 ) -> OcorrenciaDetalheSchema:
-    """Detalhe completo com envolvidos, tipificações e histórico de status (RF13)."""
+    """Detalhe completo com envolvidos, tipificações, evidências, itens apreendidos e histórico (RF13)."""
     return _detalhe(await use_case.executar(ator, ocorrencia_id))
 
 
