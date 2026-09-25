@@ -5,19 +5,27 @@ Implementação concreta de RepositorioOcorrencia usando SQLAlchemy async.
 Apenas este arquivo pode importar models SQLAlchemy — nunca domain/ nem application/.
 
 - Não confirma transação (papel da UnidadeDeTrabalho).
-- Nunca apaga filhos: envolvidos/tipificações removidos do agregado ficam ``ativo=False`` (RNF03*).
+- Nunca apaga filhos: envolvidos/tipificações removidos do agregado ficam ``ativo=False`` (RNF03*);
+  evidências, itens apreendidos e movimentações de custódia são append-only.
 - Optimistic locking via ``versao`` (RNF11): a versão carregada é rastreada por
   instância (uma por request); ao salvar, a linha é travada (``FOR UPDATE`` no
   Postgres) e comparada — divergência → ConflitoError (409).
 """
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from adapters.outbound.persistence._datas import aware
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
+from domain.ocorrencia.apreensao import (
+    EstadoConservacao,
+    ItemApreendido,
+    MovimentacaoCustodia,
+    TipoItemApreendido,
+    UnidadeMedida,
+)
 from domain.ocorrencia.entity import (
     Envolvido,
     Evidencia,
@@ -33,6 +41,8 @@ from infrastructure.database.models import (
     EnvolvidoModel,
     EvidenciaModel,
     HistoricoStatusModel,
+    ItemApreendidoModel,
+    MovimentacaoCustodiaModel,
     OcorrenciaModel,
     TipificacaoModel,
 )
@@ -42,6 +52,7 @@ _CARREGAR_FILHOS = (
     selectinload(OcorrenciaModel.tipificacoes),
     selectinload(OcorrenciaModel.historico),
     selectinload(OcorrenciaModel.evidencias),
+    selectinload(OcorrenciaModel.itens_apreendidos).selectinload(ItemApreendidoModel.movimentacoes),
 )
 
 
@@ -103,6 +114,10 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
         stmt = self._aplicar_filtro(select(func.count(OcorrenciaModel.id)), filtro)
         return int((await self._session.execute(stmt)).scalar_one())
 
+    async def lacre_em_uso(self, numero_lacre: str) -> bool:
+        stmt = select(exists().where(ItemApreendidoModel.numero_lacre == numero_lacre))
+        return bool((await self._session.execute(stmt)).scalar_one())
+
     # ------------------------------------------------------------- mapeamento
     @staticmethod
     def _campos_escalares(ocorrencia: Ocorrencia) -> dict:
@@ -123,6 +138,10 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             justificativa_revisao=ocorrencia.justificativa_revisao,
             desfecho=ocorrencia.desfecho,
             hash_narrativa=ocorrencia.hash_narrativa,
+            arquivada_por_id=ocorrencia.arquivada_por_id,
+            motivo_arquivamento=ocorrencia.motivo_arquivamento,
+            excluida_por_id=ocorrencia.excluida_por_id,
+            motivo_exclusao=ocorrencia.motivo_exclusao,
         )
 
     def _to_model(self, ocorrencia: Ocorrencia) -> OcorrenciaModel:
@@ -154,6 +173,7 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             )
             for e in ocorrencia.evidencias
         ]
+        model.itens_apreendidos = [self._item_model(i) for i in ocorrencia.itens_apreendidos]
         model.historico = [self._historico_model(ocorrencia.id, i, h) for i, h in enumerate(ocorrencia.historico_status)]
         return model
 
@@ -216,10 +236,47 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
                     )
                 )
 
+        # itens apreendidos: nunca removidos nem alterados; só a cadeia de custódia cresce (append-only)
+        itens_gravados = {im.id: im for im in model.itens_apreendidos}
+        for item in ocorrencia.itens_apreendidos:
+            gravado = itens_gravados.get(item.id)
+            if gravado is None:
+                model.itens_apreendidos.append(self._item_model(item))
+                continue
+            ja = len(gravado.movimentacoes)
+            for ordem, m in enumerate(item.movimentacoes[ja:], start=ja):
+                gravado.movimentacoes.append(self._movimentacao_model(item.id, ordem, m))
+
         # histórico: append-only
         ja_gravados = len(model.historico)
         for i, h in enumerate(ocorrencia.historico_status[ja_gravados:], start=ja_gravados):
             model.historico.append(self._historico_model(ocorrencia.id, i, h))
+
+    @classmethod
+    def _item_model(cls, item: ItemApreendido) -> ItemApreendidoModel:
+        model = ItemApreendidoModel(
+            id=item.id,
+            tipo=item.tipo.value,
+            descricao=item.descricao,
+            quantidade=item.quantidade,
+            unidade=item.unidade.value,
+            estado_conservacao=item.estado_conservacao.value,
+            numero_lacre=item.numero_lacre,
+            numero_serie=item.numero_serie,
+            marca=item.marca,
+            calibre=item.calibre,
+            localizacao_deposito=item.localizacao_deposito,
+            registrado_em=item.registrado_em,
+            registrado_por_id=item.registrado_por_id,
+        )
+        model.movimentacoes = [cls._movimentacao_model(item.id, i, m) for i, m in enumerate(item.movimentacoes)]
+        return model
+
+    @staticmethod
+    def _movimentacao_model(item_id: UUID, ordem: int, m: MovimentacaoCustodia) -> MovimentacaoCustodiaModel:
+        return MovimentacaoCustodiaModel(
+            item_id=item_id, ordem=ordem, em=m.em, por_id=m.por_id, origem=m.origem, destino=m.destino, observacao=m.observacao
+        )
 
     @staticmethod
     def _historico_model(ocorrencia_id: UUID, ordem: int, h: RegistroHistoricoStatus) -> HistoricoStatusModel:
@@ -251,6 +308,10 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             justificativa_revisao=model.justificativa_revisao,
             desfecho=model.desfecho,
             hash_narrativa=model.hash_narrativa,
+            arquivada_por_id=model.arquivada_por_id,
+            motivo_arquivamento=model.motivo_arquivamento,
+            excluida_por_id=model.excluida_por_id,
+            motivo_exclusao=model.motivo_exclusao,
         )
         ocorrencia.envolvidos = [
             Envolvido(
@@ -278,6 +339,30 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
                 enviada_em=aware(e.enviada_em),
             )
             for e in model.evidencias
+        ]
+        ocorrencia.itens_apreendidos = [
+            ItemApreendido(
+                id=i.id,
+                tipo=TipoItemApreendido(i.tipo),
+                descricao=i.descricao,
+                quantidade=i.quantidade,
+                unidade=UnidadeMedida(i.unidade),
+                estado_conservacao=EstadoConservacao(i.estado_conservacao),
+                numero_lacre=i.numero_lacre,
+                numero_serie=i.numero_serie,
+                marca=i.marca,
+                calibre=i.calibre,
+                localizacao_deposito=i.localizacao_deposito,
+                registrado_em=aware(i.registrado_em),
+                registrado_por_id=i.registrado_por_id,
+                movimentacoes=[
+                    MovimentacaoCustodia(
+                        em=aware(m.em), por_id=m.por_id, origem=m.origem, destino=m.destino, observacao=m.observacao
+                    )
+                    for m in sorted(i.movimentacoes, key=lambda m: m.ordem)
+                ],
+            )
+            for i in model.itens_apreendidos
         ]
         ocorrencia.historico_status = [
             RegistroHistoricoStatus(

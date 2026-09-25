@@ -1,5 +1,7 @@
 {
-  "app": { "title": "SGOPI Sentinela" },
+  "app": {
+    "title": "SGOPI Sentinela"
+  },
   "idioma": "Language",
   "nav": {
     "home": "Home",
@@ -10,7 +12,8 @@
     "frota": "Fleet",
     "auditoria": "Audit Trail",
     "lookup": "Lookup Protocol",
-    "police_access": "Police Portal"
+    "police_access": "Police Portal",
+    "inicio": "Home"
   },
   "actions": {
     "save": "Save",
@@ -19,7 +22,8 @@
     "submit": "Submit Incident",
     "remover": "Remove",
     "sair": "Sign Out",
-    "atualizar": "Update"
+    "atualizar": "Update",
+    "confirmar": "Confirm"
   },
   "papel": {
     "AGENTE": "Field Officer",
@@ -35,7 +39,9 @@
     "REJEITADA": "Rejected",
     "VALIDADA": "Validated",
     "EM_ATENDIMENTO": "In Progress",
-    "ENCERRADA": "Closed"
+    "ENCERRADA": "Closed",
+    "ARQUIVADA": "Archived",
+    "EXCLUIDA": "Deleted"
   },
   "situacao": {
     "DISPONIVEL": "Available",
@@ -252,4 +258,3 @@
     }
   }
 }
-

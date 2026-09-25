@@ -1,12 +1,12 @@
 """
-Adapter de entrada: router HTTP /v1/ocorrencias (RF01*, RF13, RF04*, RF14, RF19).
+Adapter de entrada: router HTTP /v1/ocorrencias (RF01*, RF13, RF04*, RF14, RF19, RF20).
 
 Só este arquivo (e os demais routers) importa FastAPI — domain e application não sabem
 da sua existência. Toda rota exige token; o ator vem do JWT, nunca do body.
 """
 from datetime import datetime
-from uuid import UUID
 from urllib.parse import quote
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import Response
@@ -27,10 +27,12 @@ from application.ports.inbound.interface_acessar_evidencia import (
 from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     EnvolvidoInputDTO,
     InterfaceRegistrarOcorrenciaPolicial,
+    ItemApreendidoInputDTO,
     RegistrarOcorrenciaInput,
     TipificacaoInputDTO,
 )
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
+from adapters.inbound.http.v1.apreensoes_router import RegistrarItemApreendidoRequest
 from domain.usuario.entity import Papel
 from infrastructure.config.settings import settings
 from infrastructure.database.connection import get_session
@@ -69,6 +71,8 @@ class RegistrarOcorrenciaRequest(BaseModel):
     data_hora_fato: datetime
     tipificacoes: list[TipificacaoSchema] = []
     envolvidos: list[EnvolvidoSchema] = []
+    # RF03 — opcional: apreensão concomitante ao registro (mesma transação; lacre único na base)
+    itens_apreendidos: list[RegistrarItemApreendidoRequest] = []
 
 
 class OcorrenciaResponse(BaseModel):
@@ -113,6 +117,10 @@ class ConsultaPublicaResponse(BaseModel):
     localizacao: str
     criada_em: str
     desfecho: str | None = None
+
+
+def _envolvido_dto(e: EnvolvidoSchema) -> EnvolvidoInputDTO:
+    return EnvolvidoInputDTO(nome=e.nome, tipo=e.tipo, documento=e.documento, email=e.email, telefone=e.telefone)
 
 
 # -------------------------------------------------------------------- rotas
@@ -205,7 +213,7 @@ async def registrar_ocorrencia(
     ator: Ator = Depends(exigir_papel(Papel.AGENTE)),
     use_case: InterfaceRegistrarOcorrenciaPolicial = Depends(get_registrar_ocorrencia),
 ) -> OcorrenciaResponse:
-    """Registra uma nova ocorrência policial (RF01*). Somente AGENTE."""
+    """Registra uma nova ocorrência policial (RF01*), opcionalmente já com itens apreendidos (RF03). Somente AGENTE."""
     input_dto = RegistrarOcorrenciaInput(
         natureza=body.natureza,
         descricao=body.descricao,
@@ -214,7 +222,8 @@ async def registrar_ocorrencia(
         longitude=body.longitude,
         data_hora_fato=body.data_hora_fato,
         tipificacoes=tuple(TipificacaoInputDTO(artigo=t.artigo, descricao=t.descricao) for t in body.tipificacoes),
-        envolvidos=tuple(EnvolvidoInputDTO(nome=e.nome, tipo=e.tipo, documento=e.documento) for e in body.envolvidos),
+        envolvidos=tuple(_envolvido_dto(e) for e in body.envolvidos),
+        itens_apreendidos=tuple(ItemApreendidoInputDTO(**i.model_dump()) for i in body.itens_apreendidos),
     )
     out = await use_case.executar(ator, input_dto)
     return OcorrenciaResponse(
@@ -265,6 +274,7 @@ async def verificar_integridade_evidencia(
     ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
     use_case: InterfaceVerificarIntegridadeEvidencia = Depends(get_verificar_integridade_evidencia),
 ) -> IntegridadeEvidenciaSchema:
+    """Confere o SHA-256 do arquivo armazenado contra o hash registrado (RF22)."""
     out = await use_case.executar(ator, ocorrencia_id, evidencia_id)
     return IntegridadeEvidenciaSchema(**out.__dict__)
 
@@ -276,6 +286,7 @@ async def download_evidencia(
     ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
     use_case: InterfaceObterEvidenciaParaDownload = Depends(get_obter_evidencia_para_download),
 ) -> Response:
+    """Download autorizado da evidência; bloqueado (409) se a integridade divergir (RF22)."""
     out = await use_case.executar(ator, ocorrencia_id, evidencia_id)
     nome_codificado = quote(out.nome_original, safe="")
     return Response(
@@ -299,6 +310,11 @@ from application.ports.inbound.interface_consultar_ocorrencias import (  # noqa:
     OcorrenciaDetalheOutput,
     OcorrenciaResumoOutput,
 )
+from application.ports.inbound.interface_arquivar_ocorrencia import (  # noqa: E402
+    AutorizacaoDelegadoInput,
+    InterfaceArquivarOcorrencia,
+    InterfaceExcluirOcorrencia,
+)
 from application.ports.inbound.interface_revisar_ocorrencia import (  # noqa: E402
     CorrigirOcorrenciaInput,
     DecisaoRevisaoInput,
@@ -308,15 +324,19 @@ from application.ports.inbound.interface_revisar_ocorrencia import (  # noqa: E4
     InterfaceRejeitarOcorrencia,
     InterfaceValidarOcorrencia,
 )
+from adapters.inbound.http.v1.apreensoes_router import ItemApreendidoSchema, item_schema  # noqa: E402
 from infrastructure.di import (  # noqa: E402
+    get_arquivar_ocorrencia,
     get_corrigir_ocorrencia,
     get_devolver_para_correcao,
+    get_excluir_ocorrencia,
     get_listar_ocorrencias,
     get_obter_detalhe_ocorrencia,
     get_reenviar_ocorrencia,
     get_rejeitar_ocorrencia,
     get_validar_ocorrencia,
 )
+
 
 class OcorrenciaResumoSchema(BaseModel):
     ocorrencia_id: UUID
@@ -357,9 +377,14 @@ class OcorrenciaDetalheSchema(OcorrenciaResumoSchema):
     desfecho: str | None
     hash_narrativa: str | None
     narrativa_integra: bool | None
+    arquivada_por_id: UUID | None
+    motivo_arquivamento: str | None
+    excluida_por_id: UUID | None
+    motivo_exclusao: str | None
     envolvidos: list[EnvolvidoDetalheSchema]
     tipificacoes: list[TipificacaoSchema]
     evidencias: list[EvidenciaSchema]
+    itens_apreendidos: list[ItemApreendidoSchema]
     historico_status: list[HistoricoStatusSchema]
 
 
@@ -372,6 +397,12 @@ class PaginaOcorrenciasSchema(BaseModel):
 
 class JustificativaRequest(BaseModel):
     justificativa: str = Field(min_length=1, max_length=2000)
+
+
+class MotivoRequest(BaseModel):
+    """Motivo obrigatório dos atos administrativos do Delegado (RF20)."""
+
+    motivo: str = Field(min_length=1, max_length=2000)
 
 
 class CorrigirOcorrenciaRequest(BaseModel):
@@ -399,19 +430,19 @@ def _detalhe(o: OcorrenciaDetalheOutput) -> OcorrenciaDetalheSchema:
         desfecho=o.desfecho,
         hash_narrativa=o.hash_narrativa,
         narrativa_integra=o.narrativa_integra,
+        arquivada_por_id=o.arquivada_por_id,
+        motivo_arquivamento=o.motivo_arquivamento,
+        excluida_por_id=o.excluida_por_id,
+        motivo_exclusao=o.motivo_exclusao,
         envolvidos=[
             EnvolvidoDetalheSchema(
-                id=e.id,
-                nome=e.nome,
-                tipo=e.tipo,
-                documento=e.documento,
-                email=e.email,
-                telefone=e.telefone,
+                id=e.id, nome=e.nome, tipo=e.tipo, documento=e.documento, email=e.email, telefone=e.telefone
             )
             for e in o.envolvidos
         ],
         tipificacoes=[TipificacaoSchema(artigo=t.artigo, descricao=t.descricao) for t in o.tipificacoes],
         evidencias=[EvidenciaSchema(**e.__dict__) for e in o.evidencias],
+        itens_apreendidos=[item_schema(i) for i in o.itens_apreendidos],
         historico_status=[HistoricoStatusSchema(**h.__dict__) for h in o.historico_status],
     )
 
@@ -426,7 +457,8 @@ async def listar_ocorrencias(
     ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
     use_case: InterfaceListarOcorrencias = Depends(get_listar_ocorrencias),
 ) -> PaginaOcorrenciasSchema:
-    """Lista ocorrências por status, da mais antiga para a mais nova (RF13). Agente só vê as próprias."""
+    """Lista ocorrências por status, da mais antiga para a mais nova (RF13). Agente só vê as próprias.
+    Sem filtro de status, ocorrências EXCLUIDA (exclusão lógica) não são retornadas."""
     pagina = await use_case.executar(ator, ListarOcorrenciasInput(status=tuple(status), limit=limit, offset=offset, somente_minhas=somente_minhas))
     return PaginaOcorrenciasSchema(itens=[_resumo(i) for i in pagina.itens], total=pagina.total, limit=pagina.limit, offset=pagina.offset)
 
@@ -437,7 +469,7 @@ async def obter_ocorrencia(
     ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
     use_case: InterfaceObterDetalheOcorrencia = Depends(get_obter_detalhe_ocorrencia),
 ) -> OcorrenciaDetalheSchema:
-    """Detalhe completo com envolvidos, tipificações e histórico de status (RF13)."""
+    """Detalhe completo com envolvidos, tipificações, evidências, itens apreendidos e histórico (RF13)."""
     return _detalhe(await use_case.executar(ator, ocorrencia_id))
 
 
@@ -489,7 +521,7 @@ async def corrigir(
         latitude=body.latitude,
         longitude=body.longitude,
         data_hora_fato=body.data_hora_fato,
-        envolvidos=None if body.envolvidos is None else tuple(EnvolvidoInputDTO(nome=e.nome, tipo=e.tipo, documento=e.documento) for e in body.envolvidos),
+        envolvidos=None if body.envolvidos is None else tuple(_envolvido_dto(e) for e in body.envolvidos),
         tipificacoes=None if body.tipificacoes is None else tuple(TipificacaoInputDTO(artigo=t.artigo, descricao=t.descricao) for t in body.tipificacoes),
     )
     return _detalhe(await use_case.executar(ator, input_dto))
@@ -503,3 +535,26 @@ async def reenviar(
 ) -> OcorrenciaDetalheSchema:
     """EM_CORRECAO → AGUARDANDO_REVISAO pelo Agente autor (RF14)."""
     return _detalhe(await use_case.executar(ator, ocorrencia_id))
+
+
+@router.post("/{ocorrencia_id}/arquivar", response_model=OcorrenciaDetalheSchema)
+async def arquivar(
+    ocorrencia_id: UUID,
+    body: MotivoRequest,
+    ator: Ator = Depends(exigir_papel(Papel.DELEGADO)),
+    use_case: InterfaceArquivarOcorrencia = Depends(get_arquivar_ocorrencia),
+) -> OcorrenciaDetalheSchema:
+    """→ ARQUIVADA com motivo obrigatório (RF20). Somente DELEGADO; não permitido em EM_ATENDIMENTO."""
+    return _detalhe(await use_case.executar(ator, AutorizacaoDelegadoInput(ocorrencia_id=ocorrencia_id, motivo=body.motivo)))
+
+
+@router.post("/{ocorrencia_id}/excluir", response_model=OcorrenciaDetalheSchema)
+async def excluir(
+    ocorrencia_id: UUID,
+    body: MotivoRequest,
+    ator: Ator = Depends(exigir_papel(Papel.DELEGADO)),
+    use_case: InterfaceExcluirOcorrencia = Depends(get_excluir_ocorrencia),
+) -> OcorrenciaDetalheSchema:
+    """Exclusão *lógica* (→ EXCLUIDA) com motivo obrigatório (RF20, RNF03*). Somente DELEGADO.
+    Nada é apagado do banco: a ocorrência some das listagens padrão, mas segue consultável para auditoria."""
+    return _detalhe(await use_case.executar(ator, AutorizacaoDelegadoInput(ocorrencia_id=ocorrencia_id, motivo=body.motivo)))

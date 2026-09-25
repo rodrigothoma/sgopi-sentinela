@@ -1,0 +1,60 @@
+{
+  "saudacao": {
+    "manha": "Bom dia, {{nome}}",
+    "tarde": "Boa tarde, {{nome}}",
+    "noite": "Boa noite, {{nome}}"
+  },
+  "subtitulo": "Resumo operacional de {{data}}",
+  "turno_atual": "Turno atual",
+  "sessao_encerra": "Sessão encerra às {{hora}}",
+  "turnos": {
+    "MANHA": "Manhã",
+    "TARDE": "Tarde",
+    "NOITE": "Noite"
+  },
+  "kpi": {
+    "viaturas_ativas": "Viaturas em atividade",
+    "de_total": "de {{total}} cadastradas",
+    "funcionarios_campo": "Funcionários em campo",
+    "de_agentes": "de {{total}} agentes",
+    "investigacoes": "Investigações em andamento",
+    "em_atendimento": "{{n}} em atendimento",
+    "ocorrencias_hoje": "Ocorrências hoje",
+    "aguardando_revisao": "{{n}} aguardando revisão"
+  },
+  "viaturas": {
+    "titulo": "Viaturas em atividade",
+    "vazio": "Nenhuma viatura em atividade no momento.",
+    "viatura": "Viatura",
+    "situacao": "Situação",
+    "sinal": "Sinal",
+    "atendendo": "Atendendo",
+    "livre": "—"
+  },
+  "funcionarios": {
+    "titulo": "Funcionários em campo",
+    "vazio": "Nenhum agente cadastrado.",
+    "em_campo": "Em campo",
+    "prontidao": "De prontidão",
+    "ocorrencias": "{{n}} ocorrência(s) em andamento",
+    "somente_proprias": "Como agente, você vê apenas as suas ocorrências."
+  },
+  "ultimas": {
+    "titulo": "Últimas ocorrências",
+    "vazio": "Nenhuma ocorrência registrada.",
+    "ver_todas": "Ver todas"
+  },
+  "investigacoes": {
+    "titulo": "Investigações em andamento",
+    "vazio": "Nenhuma investigação em andamento.",
+    "fato_em": "Fato em {{quando}}",
+    "viatura": "Viatura {{prefixo}}"
+  },
+  "escala": {
+    "titulo": "Escala de trabalho",
+    "efetivo": "Efetivo do turno",
+    "voce": "você",
+    "horario": "{{inicio}} – {{fim}}",
+    "atual": "atual"
+  }
+}

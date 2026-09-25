@@ -74,8 +74,9 @@ CENARIOS_DEMO: tuple[CenarioDemo, ...] = (
 )
 
 # CPFs fixos válidos (mesmo padrão do seed) — nunca sorteados, só sorteia o índice.
+# Nomes sem dígitos: o domínio rejeita números em nome de envolvido.
 COMUNICANTES_DEMO: tuple[ComunicanteDemo, ...] = (
-    ComunicanteDemo(nome="Comunicante Simulado 1", documento="123.456.789-09"),
-    ComunicanteDemo(nome="Comunicante Simulado 2", documento="234.567.890-92"),
-    ComunicanteDemo(nome="Comunicante Simulado 3", documento="345.678.901-75"),
+    ComunicanteDemo(nome="Comunicante Simulado Um", documento="123.456.789-09"),
+    ComunicanteDemo(nome="Comunicante Simulado Dois", documento="234.567.890-92"),
+    ComunicanteDemo(nome="Comunicante Simulado Três", documento="345.678.901-75"),
 )

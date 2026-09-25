@@ -35,3 +35,11 @@ def ocorrencia_despachada(ocorrencia_id: UUID, em: datetime, **extra: object) ->
 
 def ocorrencia_encerrada(ocorrencia_id: UUID, em: datetime, **extra: object) -> EventoDominio:
     return _evento("OcorrenciaEncerrada", ocorrencia_id, "ENCERRADA", em, **extra)
+
+
+def ocorrencia_arquivada(ocorrencia_id: UUID, em: datetime, **extra: object) -> EventoDominio:
+    return _evento("OcorrenciaArquivada", ocorrencia_id, "ARQUIVADA", em, **extra)
+
+
+def ocorrencia_excluida(ocorrencia_id: UUID, em: datetime, **extra: object) -> EventoDominio:
+    return _evento("OcorrenciaExcluida", ocorrencia_id, "EXCLUIDA", em, **extra)

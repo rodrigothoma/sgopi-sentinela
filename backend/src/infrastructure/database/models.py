@@ -50,6 +50,11 @@ class OcorrenciaModel(Base):
     justificativa_revisao: Mapped[str | None] = mapped_column(Text, nullable=True)
     desfecho: Mapped[str | None] = mapped_column(Text, nullable=True)
     hash_narrativa: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # RF20: arquivamento / exclusão lógica autorizados pelo Delegado, sempre com motivo
+    arquivada_por_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True)
+    motivo_arquivamento: Mapped[str | None] = mapped_column(Text, nullable=True)
+    excluida_por_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True)
+    motivo_exclusao: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # optimistic locking (RNF11): ``versao`` é controlada pelo domínio e verificada
     # explicitamente pelo repositório (SELECT … FOR UPDATE + comparação).
@@ -61,6 +66,9 @@ class OcorrenciaModel(Base):
     )
     evidencias: Mapped[list[EvidenciaModel]] = relationship(
         "EvidenciaModel", order_by="EvidenciaModel.enviada_em", back_populates="ocorrencia"
+    )
+    itens_apreendidos: Mapped[list[ItemApreendidoModel]] = relationship(
+        "ItemApreendidoModel", order_by="ItemApreendidoModel.registrado_em", back_populates="ocorrencia"
     )
 
 
@@ -126,6 +134,48 @@ class EvidenciaModel(Base):
     enviada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
 
     ocorrencia: Mapped[OcorrenciaModel] = relationship("OcorrenciaModel", back_populates="evidencias")
+
+
+class ItemApreendidoModel(Base):
+    """Item apreendido (RF03): vínculo permanente à ocorrência; lacre único em toda a base (UC03 exc. I)."""
+
+    __tablename__ = "itens_apreendidos"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    ocorrencia_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("ocorrencias.id"), nullable=False, index=True)
+    tipo: Mapped[str] = mapped_column(String(20), nullable=False)
+    descricao: Mapped[str] = mapped_column(Text, nullable=False)
+    quantidade: Mapped[int] = mapped_column(Integer, nullable=False)
+    unidade: Mapped[str] = mapped_column(String(20), nullable=False, default="UNIDADE")
+    estado_conservacao: Mapped[str] = mapped_column(String(20), nullable=False)
+    numero_lacre: Mapped[str] = mapped_column(String(60), nullable=False, unique=True)
+    numero_serie: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    marca: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    calibre: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    localizacao_deposito: Mapped[str] = mapped_column(String(255), nullable=False)
+    registrado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    registrado_por_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=False)
+
+    ocorrencia: Mapped[OcorrenciaModel] = relationship("OcorrenciaModel", back_populates="itens_apreendidos")
+    movimentacoes: Mapped[list[MovimentacaoCustodiaModel]] = relationship(
+        "MovimentacaoCustodiaModel", order_by="MovimentacaoCustodiaModel.ordem"
+    )
+
+
+class MovimentacaoCustodiaModel(Base):
+    """Cadeia de custódia append-only (RF03 / RNF03*): quem, quando, de onde, para onde."""
+
+    __tablename__ = "movimentacoes_custodia"
+    __table_args__ = (UniqueConstraint("item_id", "ordem", name="uq_movimentacao_item_ordem"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    item_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("itens_apreendidos.id"), nullable=False, index=True)
+    ordem: Mapped[int] = mapped_column(Integer, nullable=False)
+    em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    por_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    origem: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    destino: Mapped[str] = mapped_column(String(255), nullable=False)
+    observacao: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class RegistroAuditoriaModel(Base):

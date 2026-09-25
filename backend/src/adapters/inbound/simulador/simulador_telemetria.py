@@ -3,9 +3,14 @@ SimuladorTelemetria (RF16) — *driving adapter*: chama a mesma porta que um GPS
 real chamaria (``InterfaceRegistrarPosicaoViatura``). Ligado/desligado pelo painel.
 
 A cada tick move todas as viaturas não-INDISPONIVEL; viaturas sem posição nascem
-em torno de um centro configurável. Viaturas despachadas (``EM_DESLOCAMENTO``
-com ordem ativa, issue #54) navegam pela rota até a ocorrência em vez do
-passeio aleatório; ``OPERANDO`` com ordem ativa aguarda no local com jitter.
+em torno de um centro configurável.
+- DISPONIVEL patrulha aleatoriamente dentro de um raio;
+- EM_DESLOCAMENTO com ordem ativa navega pela rota até a ocorrência (issue #54;
+  OSRM pelas ruas com fallback em linha reta) — sem resolvedor em lote, avança
+  em linha reta à velocidade configurada;
+- OPERANDO com ordem ativa aguarda no local com jitter (sem resolvedor em lote,
+  reemite a posição para manter o sinal GPS válido).
+A chegada (→ OPERANDO) é detectada pelo caso de uso de posição.
 """
 from __future__ import annotations
 
@@ -13,7 +18,7 @@ import asyncio
 import logging
 import math
 import random
-from collections.abc import AsyncIterator, Callable
+from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -45,11 +50,17 @@ class _RotaEmCache:
     indice: int = 0
     chegou: bool = False
 
+# Resolve o destino de uma viatura despachada (coordenada da ocorrência da ordem ativa).
+# Por viatura (via contexto, 3-tupla); o resolvedor em lote (issue #54) vive em resolvedor_destino.
+ResolvedorDestinoPorViatura = Callable[[UUID], Awaitable[Coordenada | None]]
+# O contexto entrega (repositório, caso de uso de posição) e, opcionalmente, o resolvedor por viatura.
+Contexto = tuple[RepositorioViatura, InterfaceRegistrarPosicaoViatura] | tuple[RepositorioViatura, InterfaceRegistrarPosicaoViatura, ResolvedorDestinoPorViatura]
+
 
 class SimuladorTelemetria:
     def __init__(
         self,
-        fabrica_contexto: Callable[[], AbstractAsyncContextManager[tuple[RepositorioViatura, InterfaceRegistrarPosicaoViatura]]],
+        fabrica_contexto: Callable[[], AbstractAsyncContextManager[Contexto]],
         relogio: Relogio,
         intervalo_segundos: float = 1.0,
         raio_metros: float = 150.0,
@@ -60,12 +71,14 @@ class SimuladorTelemetria:
         passo_destino_metros: float = 300.0,
         raio_chegada_metros: float = 50.0,
         jitter_chegada_metros: float = 5.0,
+        velocidade_kmh: float = 120.0,
     ) -> None:
         self._fabrica = fabrica_contexto
         self._relogio = relogio
         self.intervalo = intervalo_segundos
         self.raio = raio_metros
         self.centro = centro
+        self.velocidade_kmh = velocidade_kmh
         self._rng = random.Random(semente)
         self._tarefa: asyncio.Task | None = None
         self.ticks = 0
@@ -88,7 +101,7 @@ class SimuladorTelemetria:
             "ligado": self.ligado, "intervalo_segundos": self.intervalo, "raio_metros": self.raio,
             "ticks": self.ticks, "posicoes_emitidas": self.posicoes_emitidas,
             "passo_destino_metros": self.passo_destino, "raio_chegada_metros": self.raio_chegada,
-            "jitter_chegada_metros": self.jitter_chegada,
+            "jitter_chegada_metros": self.jitter_chegada, "velocidade_kmh": self.velocidade_kmh,
         }
 
     def ligar(self) -> None:
@@ -132,18 +145,30 @@ class SimuladorTelemetria:
         """Um ciclo de emissão; devolve quantas posições foram aceitas."""
         agora = self._relogio.agora()
         aceitas = 0
-        async with self._fabrica() as (repositorio, registrar):
+        async with self._fabrica() as contexto:
+            repositorio, registrar = contexto[0], contexto[1]
+            resolver_por_viatura: ResolvedorDestinoPorViatura | None = contexto[2] if len(contexto) > 2 else None
             viaturas = await repositorio.listar((SituacaoViatura.DISPONIVEL, SituacaoViatura.EM_DESLOCAMENTO, SituacaoViatura.OPERANDO))
             destinos = await self._resolvedor.destinos([v.id for v in viaturas]) if self._resolvedor else {}
             em_backoff = self._roteador_falhou_em is not None and (
                 agora - self._roteador_falhou_em
             ).total_seconds() < INTERVALO_RETENTATIVA_ROTEADOR_SEGUNDOS
             for v in viaturas:
-                destino = await self._proxima_posicao_navegada(v, destinos.get(v.id), agora, em_backoff)
-                if destino is None:
-                    destino = self._proxima_posicao(v)
+                destino = destinos.get(v.id)
+                if destino is None and v.situacao == SituacaoViatura.EM_DESLOCAMENTO and resolver_por_viatura is not None:
+                    destino = await resolver_por_viatura(v.id)
+                if self._resolvedor is not None and v.situacao != SituacaoViatura.DISPONIVEL:
+                    # Issue #54: navega pela rota (com fallback em linha reta); sem
+                    # destino, descarta a rota em cache e cai no passeio local.
+                    proxima = await self._proxima_posicao_navegada(v, destino, agora, em_backoff)
+                    if proxima is None:
+                        proxima = self._proxima_posicao(v, destino)
+                else:
+                    # Sem resolvedor em lote: OPERANDO reemite a posição, EM_DESLOCAMENTO
+                    # avança à velocidade configurada, demais patrulham.
+                    proxima = self._proxima_posicao(v, destino)
                 try:
-                    await registrar.executar(RegistrarPosicaoInput(viatura_id=v.id, latitude=destino.latitude, longitude=destino.longitude, registrada_em=agora, origem="simulador"))
+                    await registrar.executar(RegistrarPosicaoInput(viatura_id=v.id, latitude=proxima.latitude, longitude=proxima.longitude, registrada_em=agora, origem="simulador"))
                     aceitas += 1
                 except DomainError as exc:
                     log.warning("posição simulada rejeitada para %s: %s", v.prefixo, exc)
@@ -173,7 +198,7 @@ class SimuladorTelemetria:
     async def _proxima_posicao_navegada(
         self, v: Viatura, destino: Coordenada | None, agora: datetime, em_backoff: bool
     ) -> Coordenada | None:
-        """Posição seguinte pela rota (ou jitter no local); None = passeio aleatório.
+        """Posição seguinte pela rota (ou jitter no local); None = passeio local.
 
         ``OPERANDO`` com ordem ativa fica parada onde chegou navegando (jitter
         em torno do último ponto da rota) ou, sem histórico de navegação, onde
@@ -202,16 +227,46 @@ class SimuladorTelemetria:
             return self._ponto_aleatorio_em_torno(centro_chegada, self.jitter_chegada)
         return resultado.nova_posicao
 
-    def _proxima_posicao(self, v: Viatura) -> Coordenada:
-        origem = v.ultima_posicao.coordenada if v.ultima_posicao else self._ponto_inicial()
-        return self._ponto_aleatorio_em_torno(origem, self.raio)
-
     def _ponto_aleatorio_em_torno(self, centro: Coordenada, raio_metros: float) -> Coordenada:
         angulo = self._rng.uniform(0, 2 * math.pi)
         passo = self._rng.uniform(0, raio_metros)
         dlat = (passo * math.cos(angulo)) / METROS_POR_GRAU_LAT
         dlon = (passo * math.sin(angulo)) / (METROS_POR_GRAU_LAT * max(math.cos(math.radians(centro.latitude)), 1e-6))
         return Coordenada(round(centro.latitude + dlat, 6), round(centro.longitude + dlon, 6))
+
+    @property
+    def passo_deslocamento_metros(self) -> float:
+        """Quanto uma viatura despachada avança por tick (velocidade × intervalo)."""
+        return self.velocidade_kmh * 1000 / 3600 * self.intervalo
+
+    def _proxima_posicao(self, v: Viatura, destino: Coordenada | None) -> Coordenada:
+        origem = v.ultima_posicao.coordenada if v.ultima_posicao else self._ponto_inicial()
+        if v.situacao == SituacaoViatura.OPERANDO:
+            return origem  # no local do atendimento: só mantém o sinal
+        if v.situacao == SituacaoViatura.EM_DESLOCAMENTO and destino is not None:
+            return self._em_direcao_a(origem, destino)
+        return self._patrulha(origem)
+
+    def _patrulha(self, origem: Coordenada) -> Coordenada:
+        angulo = self._rng.uniform(0, 2 * math.pi)
+        passo = self._rng.uniform(0, self.raio)
+        return self._deslocar(origem, passo, angulo)
+
+    def _em_direcao_a(self, origem: Coordenada, destino: Coordenada) -> Coordenada:
+        """Avança ``passo_deslocamento_metros`` rumo ao destino; no último trecho para exatamente nele."""
+        restante = origem.distancia_km(destino) * 1000
+        if restante <= self.passo_deslocamento_metros:
+            return destino
+        dlat = destino.latitude - origem.latitude
+        dlon = (destino.longitude - origem.longitude) * math.cos(math.radians(origem.latitude))
+        angulo = math.atan2(dlon, dlat)  # 0 = norte, π/2 = leste — mesma convenção de _deslocar
+        return self._deslocar(origem, self.passo_deslocamento_metros, angulo)
+
+    @staticmethod
+    def _deslocar(origem: Coordenada, metros: float, angulo: float) -> Coordenada:
+        dlat = (metros * math.cos(angulo)) / METROS_POR_GRAU_LAT
+        dlon = (metros * math.sin(angulo)) / (METROS_POR_GRAU_LAT * max(math.cos(math.radians(origem.latitude)), 1e-6))
+        return Coordenada(round(origem.latitude + dlat, 6), round(origem.longitude + dlon, 6))
 
     def _ponto_inicial(self) -> Coordenada:
         raio_inicial = self.raio * 20  # espalha a frota num raio ~3 km

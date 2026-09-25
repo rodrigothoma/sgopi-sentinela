@@ -1,7 +1,12 @@
 // Contratos espelhados do OpenAPI do backend (RNF12). Manter sincronizado por revisão.
 export type Papel = 'AGENTE' | 'DELEGADO' | 'OPERADOR_CENTRAL' | 'SUPERVISOR' | 'PERITO' | 'ESCRIVAO';
 export type TipoEnvolvido = 'VITIMA' | 'TESTEMUNHA' | 'SUSPEITO' | 'COMUNICANTE';
-export type StatusOcorrencia = 'AGUARDANDO_REVISAO' | 'EM_CORRECAO' | 'REJEITADA' | 'VALIDADA' | 'EM_ATENDIMENTO' | 'ENCERRADA';
+export type StatusOcorrencia = 'AGUARDANDO_REVISAO' | 'EM_CORRECAO' | 'REJEITADA' | 'VALIDADA' | 'EM_ATENDIMENTO' | 'ENCERRADA' | 'ARQUIVADA' | 'EXCLUIDA';
+/** Atos administrativos do Delegado (RF20): não permitidos em EM_ATENDIMENTO; EXCLUIDA é terminal. */
+export const STATUS_ARQUIVAVEIS: readonly StatusOcorrencia[] = ['AGUARDANDO_REVISAO', 'EM_CORRECAO', 'REJEITADA', 'VALIDADA', 'ENCERRADA'];
+export const STATUS_EXCLUIVEIS: readonly StatusOcorrencia[] = [...STATUS_ARQUIVAVEIS, 'ARQUIVADA'];
+/** RF03 / UC03: apreensões só pelo Agente autor com a ocorrência registrada ou em andamento. */
+export const STATUS_ACEITAM_APREENSAO: readonly StatusOcorrencia[] = ['AGUARDANDO_REVISAO', 'EM_CORRECAO', 'VALIDADA', 'EM_ATENDIMENTO'];
 export type SituacaoViatura = 'DISPONIVEL' | 'EM_DESLOCAMENTO' | 'OPERANDO' | 'INDISPONIVEL';
 export type Sinal = 'OK' | 'SEM_SINAL' | 'SEM_POSICAO';
 
@@ -16,10 +21,39 @@ export interface Evidencia {
 export type EstadoIntegridadeEvidencia = 'INTEGRA' | 'DIVERGENTE';
 export interface IntegridadeEvidencia { evidencia_id: string; estado: EstadoIntegridadeEvidencia }
 
+// --- RF03: itens apreendidos e cadeia de custódia ---
+export type TipoItemApreendido = 'ARMA_DE_FOGO' | 'ARMA_BRANCA' | 'ENTORPECENTE' | 'VEICULO' | 'VALOR' | 'OBJETO';
+export type UnidadeMedida = 'UNIDADE' | 'GRAMA' | 'QUILOGRAMA' | 'MILILITRO' | 'LITRO';
+export type EstadoConservacao = 'NOVO' | 'BOM' | 'REGULAR' | 'DANIFICADO' | 'INSERVIVEL';
+export const TIPOS_ITEM_APREENDIDO: readonly TipoItemApreendido[] = ['ARMA_DE_FOGO', 'ARMA_BRANCA', 'ENTORPECENTE', 'VEICULO', 'VALOR', 'OBJETO'];
+export const UNIDADES_MEDIDA: readonly UnidadeMedida[] = ['UNIDADE', 'GRAMA', 'QUILOGRAMA', 'MILILITRO', 'LITRO'];
+export const ESTADOS_CONSERVACAO: readonly EstadoConservacao[] = ['NOVO', 'BOM', 'REGULAR', 'DANIFICADO', 'INSERVIVEL'];
+
+/** Entrada de cadastro (registro concomitante ou pela aba de apreensões). */
+export interface ItemApreendidoDTO {
+  tipo: TipoItemApreendido; descricao: string; quantidade: number; unidade: UnidadeMedida;
+  estado_conservacao: EstadoConservacao; numero_lacre: string; localizacao_deposito: string;
+  numero_serie?: string | null; marca?: string | null; calibre?: string | null;
+}
+export interface MovimentacaoCustodia { em: string; por_id: string; origem: string | null; destino: string; observacao: string | null }
+export interface ItemApreendido extends Required<Omit<ItemApreendidoDTO, 'numero_serie' | 'marca' | 'calibre'>> {
+  id: string; numero_serie: string | null; marca: string | null; calibre: string | null;
+  localizacao_atual: string; registrado_em: string; registrado_por_id: string; movimentacoes: MovimentacaoCustodia[];
+}
+export interface MovimentarCustodiaRequest { destino: string; observacao?: string | null }
+/** Auto de Apreensão: identificador único derivado do protocolo + hash SHA-256 do conteúdo (RNF03). */
+export interface AutoApreensao {
+  numero: string; ocorrencia_id: string; numero_protocolo: string; natureza: string; localizacao: string;
+  data_hora_fato: string; status: StatusOcorrencia; agente_policial_id: string;
+  emitido_em: string; emitido_por_id: string; hash_sha256: string; itens: ItemApreendido[];
+}
+
 export interface RegistrarOcorrenciaRequest {
   natureza: string; descricao: string; localizacao: string;
   latitude: number; longitude: number; data_hora_fato: string;
   tipificacoes: TipificacaoDTO[]; envolvidos: EnvolvidoDTO[];
+  /** RF03 — opcional: apreensão concomitante ao registro (mesma transação). */
+  itens_apreendidos?: ItemApreendidoDTO[];
 }
 export interface CorrigirOcorrenciaRequest extends Partial<RegistrarOcorrenciaRequest> {}
 
@@ -42,7 +76,10 @@ export interface HistoricoStatus { de: string | null; para: StatusOcorrencia; em
 export interface OcorrenciaDetalhe extends OcorrenciaResumo {
   descricao: string; validada_por_id: string | null; justificativa_revisao: string | null; desfecho: string | null;
   hash_narrativa: string | null; narrativa_integra: boolean | null;
+  arquivada_por_id: string | null; motivo_arquivamento: string | null;
+  excluida_por_id: string | null; motivo_exclusao: string | null;
   envolvidos: EnvolvidoDetalhe[]; tipificacoes: TipificacaoDTO[]; evidencias: Evidencia[]; historico_status: HistoricoStatus[];
+  itens_apreendidos: ItemApreendido[];
 }
 export interface Pagina<T> { itens: T[]; total: number; limit: number; offset: number }
 
@@ -56,7 +93,7 @@ export interface OrdemDespacho {
   id: string; numero: string; ocorrencia_id: string; viatura_id: string; operador_id: string;
   criada_em: string; observacoes: string | null; ativa: boolean; encerrada_em: string | null;
 }
-export interface StatusSimulador { ligado: boolean; intervalo_segundos: number; raio_metros: number; ticks: number; posicoes_emitidas: number }
+export interface StatusSimulador { ligado: boolean; intervalo_segundos: number; raio_metros: number; velocidade_kmh?: number; ticks: number; posicoes_emitidas: number }
 
 export interface EventoTempoReal { tipo: string; ocorrido_em: string; dados: Record<string, unknown> }
 

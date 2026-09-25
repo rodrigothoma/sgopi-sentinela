@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     # Issue #55 (RF01): gerador automático de ocorrências fictícias p/ demo — opt-in, nunca ativo em testes
     gerador_ocorrencias_ligado: bool = False
     gerador_ocorrencias_intervalo_segundos: float = Field(default=120.0, ge=1.0)
+    # velocidade da viatura despachada no simulador (deslocamento em linha reta até a ocorrência)
+    simulador_velocidade_kmh: float = 120.0
+    # RF18/RF19: a que distância da ocorrência a telemetria considera a viatura "no local"
+    despacho_raio_chegada_metros: float = 50.0
     # RF18: quantidade de sugestões de viatura
     despacho_qtd_sugestoes: int = 3
 
