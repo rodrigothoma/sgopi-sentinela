@@ -56,6 +56,23 @@ npm run dev
 * **Frontend:** `http://localhost:3000`
 * **API Swagger:** `http://localhost:8000/docs`
 
+### 🌱 Modo vivo — gerador de ocorrências fictícias (Issue #55, opt-in)
+
+Alimenta a **Fila do Delegado** com 1 ocorrência `AGUARDANDO_REVISAO` marcada com
+`[SIMULADO-DEMO]` (autor `simulador-demo`) a cada intervalo. Aparece na fila após
+refresh; **painel tático/heatmap só refletem após validação manual** (o painel lista
+só `VALIDADA`/`EM_ATENDIMENTO`).
+
+```bash
+cd backend
+# .env: GERADOR_OCORRENCIAS_LIGADO=true  (intervalo padrão 120s, mínimo 1s)
+uv run uvicorn --app-dir src main:app --reload
+```
+
+* Sem `simulador-demo` no banco: o gerador loga `rode o seed` e não inicia, sem derrubar o servidor — rode `uv run python -m scripts.seed`.
+* Limpeza: reset do banco demo (`docker compose down -v && docker compose up -d && uv run alembic upgrade head && uv run python -m scripts.seed`).
+* Fora de escopo: atualização da fila via WebSocket em tempo real e mudança no filtro do heatmap.
+
 ---
 
 ## 🎭 Roteiro Passo a Passo de Demonstração Ao Vivo

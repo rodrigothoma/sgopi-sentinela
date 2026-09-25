@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     # RF16: simulador de telemetria
     simulador_intervalo_segundos: float = 1.0
     simulador_raio_metros: float = 150.0
+    # Issue #54 (RF02): simulador com destino — vazio em roteador = linha reta, sem rede
+    simulador_passo_destino_metros: float = 300.0
+    simulador_raio_chegada_metros: float = 50.0
+    simulador_jitter_chegada_metros: float = 5.0
+    simulador_roteador_url: str = ""
+    # Issue #55 (RF01): gerador automático de ocorrências fictícias p/ demo — opt-in, nunca ativo em testes
+    gerador_ocorrencias_ligado: bool = False
+    gerador_ocorrencias_intervalo_segundos: float = Field(default=120.0, ge=1.0)
     # velocidade da viatura despachada no simulador (deslocamento em linha reta até a ocorrência)
     simulador_velocidade_kmh: float = 120.0
     # RF18/RF19: a que distância da ocorrência a telemetria considera a viatura "no local"

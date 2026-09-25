@@ -31,9 +31,16 @@ def criar_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         log.info("SGOPI Sentinela iniciando", extra={"app_env": settings.app_env})
-        yield
-        from infrastructure.di import simulador
+        if settings.gerador_ocorrencias_ligado:
+            from infrastructure.di import gerador_ocorrencias
 
+            # Sem simulador-demo no banco: loga 'rode o seed', não inicia, servidor segue no ar.
+            await gerador_ocorrencias.ligar()
+        yield
+        from infrastructure.di import gerador_ocorrencias, simulador
+
+        # Ajuste 8: cancela e aguarda as tasks do gerador e do simulador.
+        await gerador_ocorrencias.desligar()
         await simulador.desligar()
         log.info("SGOPI Sentinela encerrando")
 
