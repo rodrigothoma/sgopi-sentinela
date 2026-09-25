@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     # RF16: simulador de telemetria
     simulador_intervalo_segundos: float = 1.0
     simulador_raio_metros: float = 150.0
+    # Issue #54 (RF02): simulador com destino — vazio em roteador = linha reta, sem rede
+    simulador_passo_destino_metros: float = 300.0
+    simulador_raio_chegada_metros: float = 50.0
+    simulador_jitter_chegada_metros: float = 5.0
+    simulador_roteador_url: str = ""
     # RF18: quantidade de sugestões de viatura
     despacho_qtd_sugestoes: int = 3
 

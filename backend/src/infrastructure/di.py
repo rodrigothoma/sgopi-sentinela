@@ -14,6 +14,8 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
+from adapters.inbound.simulador.resolvedor_destino import ResolvedorDestinoSessao
+from adapters.inbound.simulador.roteador import RoteadorLinhaReta, RoteadorOSRM
 from adapters.inbound.websocket.gerenciador_conexoes import GerenciadorConexoes
 
 from adapters.outbound.arquivos.armazenamento_disco import ArmazenamentoDisco
@@ -315,7 +317,12 @@ def get_registrar_posicao_viatura(
 
 # ----------------------------------------------------------------- simulador
 def montar_simulador(session_factory: async_sessionmaker, relogio: Relogio | None = None, **kw) -> SimuladorTelemetria:
-    """Monta o simulador com a fábrica de sessão informada (a suíte usa SQLite)."""
+    """Monta o simulador com a fábrica de sessão informada (a suíte usa SQLite).
+
+    O resolvedor de destino (issue #54) abre/fecha uma sessão de leitura por
+    tick via a mesma fábrica; o roteador é OSRM quando ``roteador_url`` (ou
+    ``SIMULADOR_ROTEADOR_URL``) está configurada, senão linha reta sem rede.
+    """
     relogio = relogio or relogio_sistema
 
     @asynccontextmanager
@@ -327,12 +334,24 @@ def montar_simulador(session_factory: async_sessionmaker, relogio: Relogio | Non
             )
             yield repo, uc
 
+    @asynccontextmanager
+    async def contexto_destinos() -> AsyncIterator[tuple[RepositorioOrdemDespacho, RepositorioOcorrencia]]:
+        async with session_factory() as session:
+            yield OrdemDespachoRepositorioSQLAlchemy(session), OcorrenciaRepositorioSQLAlchemy(session)
+
+    url = kw.get("roteador_url", settings.simulador_roteador_url)
+    roteador = kw.get("roteador") or (RoteadorOSRM(url) if url.strip() else RoteadorLinhaReta())
     return SimuladorTelemetria(
         contexto,
         relogio,
         intervalo_segundos=kw.get("intervalo_segundos", settings.simulador_intervalo_segundos),
         raio_metros=kw.get("raio_metros", settings.simulador_raio_metros),
         semente=kw.get("semente"),
+        resolvedor=kw.get("resolvedor") or ResolvedorDestinoSessao(contexto_destinos),
+        roteador=roteador,
+        passo_destino_metros=kw.get("passo_destino_metros", settings.simulador_passo_destino_metros),
+        raio_chegada_metros=kw.get("raio_chegada_metros", settings.simulador_raio_chegada_metros),
+        jitter_chegada_metros=kw.get("jitter_chegada_metros", settings.simulador_jitter_chegada_metros),
     )
 
 
