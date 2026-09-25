@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from adapters.inbound.simulador.gerador_ocorrencias import GeradorOcorrencias
 from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
 from adapters.inbound.simulador.resolvedor_destino import ResolvedorDestinoSessao
 from adapters.inbound.simulador.roteador import RoteadorLinhaReta, RoteadorOSRM
@@ -360,6 +361,55 @@ simulador = montar_simulador(AsyncSessionLocal)
 
 def get_simulador() -> SimuladorTelemetria:
     return simulador
+
+
+# ------------------------------------------------------- gerador demo (iss.55)
+def montar_gerador(session_factory: async_sessionmaker, relogio: Relogio | None = None, **kw) -> GeradorOcorrencias:
+    """Monta o gerador de ocorrências fictícias (driving adapter, opt-in).
+
+    A fábrica abre/fecha uma sessão por tick e resolve o autor
+    ``simulador-demo``; se ausente, o gerador loga 'rode o seed' e não inicia.
+    """
+    from application.ports.inbound.ator import Ator
+
+    relogio_efetivo = relogio or relogio_sistema
+
+    @asynccontextmanager
+    async def contexto() -> AsyncIterator[tuple[Ator | None, InterfaceRegistrarOcorrenciaPolicial]]:
+        async with session_factory() as session:
+            usuario = await UsuarioRepositorioSQLAlchemy(session).buscar_por_login("simulador-demo")
+            if usuario is None:
+                yield None, RegistrarOcorrenciaPolicial(
+                    OcorrenciaRepositorioSQLAlchemy(session),
+                    UnidadeDeTrabalhoSQLAlchemy(session),
+                    relogio_efetivo,
+                    GeradorProtocoloSQLAlchemy(session),
+                    AuditoriaSQLAlchemy(session),
+                )
+                return
+            ator = Ator(id=usuario.id, login=usuario.login, papel=usuario.papel)
+            uc = RegistrarOcorrenciaPolicial(
+                OcorrenciaRepositorioSQLAlchemy(session),
+                UnidadeDeTrabalhoSQLAlchemy(session),
+                relogio_efetivo,
+                GeradorProtocoloSQLAlchemy(session),
+                AuditoriaSQLAlchemy(session),
+            )
+            yield ator, uc
+
+    return GeradorOcorrencias(
+        contexto,
+        relogio_efetivo,
+        intervalo_segundos=kw.get("intervalo_segundos", settings.gerador_ocorrencias_intervalo_segundos),
+        semente=kw.get("semente"),
+    )
+
+
+gerador_ocorrencias = montar_gerador(AsyncSessionLocal)
+
+
+def get_gerador_ocorrencias() -> GeradorOcorrencias:
+    return gerador_ocorrencias
 
 
 # ------------------------------------------------------------------ despacho
