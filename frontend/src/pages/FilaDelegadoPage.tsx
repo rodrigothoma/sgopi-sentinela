@@ -5,6 +5,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
+import { formatarNatureza } from '../utils/formatarNatureza';
 import { STATUS_ARQUIVAVEIS, STATUS_EXCLUIVEIS, type OcorrenciaDetalhe, type OcorrenciaResumo, type StatusOcorrencia } from '../types/api';
 
 const FILTROS: StatusOcorrencia[][] = [
@@ -118,7 +119,7 @@ export const FilaDelegadoPage: React.FC = () => {
         <ul className="lista clicavel">
           {pagina.itens.map((o) => (
             <li key={o.ocorrencia_id} className={detalhe?.ocorrencia_id === o.ocorrencia_id ? 'ativo' : ''} onClick={() => abrir(o.ocorrencia_id)}>
-              <span><strong>{o.numero_protocolo}</strong> · {o.natureza}<br /><small className="muted">{new Date(o.criada_em).toLocaleString()}</small></span>
+              <span><strong>{o.numero_protocolo}</strong> · {formatarNatureza(o.natureza, t)}<br /><small className="muted">{new Date(o.criada_em).toLocaleString()}</small></span>
               <StatusBadge status={o.status} />
             </li>
           ))}
@@ -133,7 +134,7 @@ export const FilaDelegadoPage: React.FC = () => {
               <div className="painel-decisao">
                 <label>
                   {t('ocorrencias:revisao.justificativa_label')}
-                  <textarea rows={3} value={justificativa} onChange={(e) => setJustificativa(e.target.value)} placeholder={t('ocorrencias:revisao.justificativa_placeholder')} />
+                  <textarea id="justificativa-revisao" rows={3} value={justificativa} onChange={(e) => setJustificativa(e.target.value)} placeholder={t('ocorrencias:revisao.justificativa_placeholder')} />
                 </label>
                 <div className="acoes">
                   <button className="btn btn-primary" disabled={ocupado} onClick={() => decidir('validar')}>{t('ocorrencias:revisao.validar')}</button>

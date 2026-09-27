@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EnvolvidoDTO, TipoEnvolvido } from '../../types/api';
+import { GlideSelect, type GlideSelectOption } from '../common/GlideSelect';
 import {
   TAMANHO_DOCUMENTO, formatarDocumento, limitarDigitos, semDigitos, somenteDigitos, validarDocumento, validarNome,
   type ProblemaDocumento, type ProblemaNome, type TipoDocumento,
@@ -20,6 +21,12 @@ export const EnvolvidoForm: React.FC<Props> = ({ onAdd }) => {
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento>('CPF');
   const [digitos, setDigitos] = useState('');
   const [erro, setErro] = useState<ProblemaNome | ProblemaDocumento>(null);
+
+  const opcoesTipo: GlideSelectOption[] = [
+    { value: 'VITIMA', label: t('envolvido.VITIMA') },
+    { value: 'TESTEMUNHA', label: t('envolvido.TESTEMUNHA') },
+    { value: 'SUSPEITO', label: t('envolvido.SUSPEITO') },
+  ];
 
   const trocarTipoDocumento = (novo: TipoDocumento) => {
     setTipoDocumento(novo);
@@ -87,11 +94,16 @@ export const EnvolvidoForm: React.FC<Props> = ({ onAdd }) => {
         </div>
         <div>
           <label htmlFor="envolvido-tipo">{t('envolvido.tipo_label')}</label>
-          <select id="envolvido-tipo" value={tipo} onChange={(e) => setTipo(e.target.value as TipoEnvolvido)}>
-            <option value="VITIMA">{t('envolvido.VITIMA')}</option>
-            <option value="TESTEMUNHA">{t('envolvido.TESTEMUNHA')}</option>
-            <option value="SUSPEITO">{t('envolvido.SUSPEITO')}</option>
-          </select>
+          <GlideSelect
+            id="envolvido-tipo"
+            options={opcoesTipo}
+            value={tipo}
+            onChange={(val) => setTipo(val as TipoEnvolvido)}
+            size="md"
+            fullWidth
+            menuWidth={180}
+            ariaLabel={t('envolvido.tipo_label')}
+          />
         </div>
         <div>
           <label htmlFor="envolvido-documento">
