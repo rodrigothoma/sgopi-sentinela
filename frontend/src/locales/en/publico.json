@@ -64,6 +64,7 @@
       "telefone_invalido": "Please enter a valid phone number with area code (at least 10 digits).",
       "declaracao_obrigatoria": "You must agree to the legal responsibility and age statement to proceed.",
       "localizacao_obrigatoria": "Please enter the approximate address or landmark.",
+      "coordenada_obrigatoria": "Mark the incident location on the interactive map.",
       "descricao_curta": "Incident description must have at least 20 characters.",
       "data_futura": "Incident date and time cannot be in the future.",
       "falha_registro": "Could not register incident. Please check your data and try again."

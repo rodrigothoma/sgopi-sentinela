@@ -4,6 +4,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { medidasService, type MedidaProtetiva } from '../services/medidasService';
+import { ocorrenciasService } from '../services/ocorrenciasService';
+import type { OcorrenciaResumo, EnvolvidoDetalhe } from '../types/api';
 import { SpringCheck } from '../components/common/SpringCheck';
 import { GlideSelect, type GlideSelectOption } from '../components/common/GlideSelect';
 
@@ -45,6 +47,14 @@ export const MedidasProtetivasPage: React.FC = () => {
   const [distanciaMinima, setDistanciaMinima] = useState<number>(300);
   const [condicoesEspecificas, setCondicoesEspecificas] = useState('');
 
+  // Seleção e Envolvidos da Ocorrência no Modal Conceder
+  const [listaOcorrencias, setListaOcorrencias] = useState<OcorrenciaResumo[]>([]);
+  const [modoManualOcorrencia, setModoManualOcorrencia] = useState(false);
+  const [envolvidosOcorrencia, setEnvolvidosOcorrencia] = useState<EnvolvidoDetalhe[]>([]);
+  const [carregandoEnvolvidos, setCarregandoEnvolvidos] = useState(false);
+  const [modoManualVitima, setModoManualVitima] = useState(false);
+  const [modoManualAgressor, setModoManualAgressor] = useState(false);
+
   // Form Renovar
   const [diasAdicionais, setDiasAdicionais] = useState<number>(30);
   const [justificativaRenovacao, setJustificativaRenovacao] = useState('');
@@ -61,6 +71,95 @@ export const MedidasProtetivasPage: React.FC = () => {
     ],
     [t],
   );
+
+  const opcoesOcorrenciasModal: GlideSelectOption[] = useMemo(() => {
+    return listaOcorrencias.map((oc) => {
+      const loc = oc.localizacao
+        ? oc.localizacao.length > 25
+          ? `${oc.localizacao.slice(0, 22)}...`
+          : oc.localizacao
+        : 'Sem local';
+      const labelCompleto = `${oc.numero_protocolo} — ${oc.natureza} (${loc})`;
+      const labelFormatado = labelCompleto.length > 55 ? `${labelCompleto.slice(0, 52)}...` : labelCompleto;
+      return {
+        value: oc.ocorrencia_id,
+        label: labelFormatado,
+      };
+    });
+  }, [listaOcorrencias]);
+
+  const opcoesVitimasModal: GlideSelectOption[] = useMemo(() => {
+    return envolvidosOcorrencia.map((env) => {
+      const nomeCurto = env.nome.length > 20 ? `${env.nome.slice(0, 17)}...` : env.nome;
+      const doc = env.documento ? ` · ${env.documento}` : '';
+      const labelCompleto = `${nomeCurto} (${env.tipo}${doc})`;
+      const labelFormatado = labelCompleto.length > 30 ? `${labelCompleto.slice(0, 27)}...` : labelCompleto;
+      return {
+        value: env.id,
+        label: labelFormatado,
+      };
+    });
+  }, [envolvidosOcorrencia]);
+
+  const opcoesAgressoresModal: GlideSelectOption[] = useMemo(() => {
+    return envolvidosOcorrencia.map((env) => {
+      const nomeCurto = env.nome.length > 20 ? `${env.nome.slice(0, 17)}...` : env.nome;
+      const doc = env.documento ? ` · ${env.documento}` : '';
+      const labelCompleto = `${nomeCurto} (${env.tipo}${doc})`;
+      const labelFormatado = labelCompleto.length > 30 ? `${labelCompleto.slice(0, 27)}...` : labelCompleto;
+      return {
+        value: env.id,
+        label: labelFormatado,
+      };
+    });
+  }, [envolvidosOcorrencia]);
+
+  const abrirModalConceder = async () => {
+    setOcorrenciaId('');
+    setVitimaId('');
+    setAgressorId('');
+    setEnvolvidosOcorrencia([]);
+    setModoManualOcorrencia(false);
+    setModoManualVitima(false);
+    setModoManualAgressor(false);
+    setRestricoesSelecionadas(['AFASTAMENTO_DO_LAR', 'PROIBICAO_DE_CONTATO']);
+    setPrazoDias(90);
+    setDistanciaMinima(300);
+    setCondicoesEspecificas('');
+    setModalConcederAberto(true);
+    try {
+      const res = await ocorrenciasService.listar([], 100);
+      setListaOcorrencias(res.itens);
+    } catch {
+      // Falha silenciosa
+    }
+  };
+
+  const selecionarOuCarregarOcorrencia = async (id: string) => {
+    setOcorrenciaId(id);
+    if (!id || id.trim() === '') {
+      setEnvolvidosOcorrencia([]);
+      return;
+    }
+    setCarregandoEnvolvidos(true);
+    try {
+      const detalhe = await ocorrenciasService.buscarPorId(id.trim());
+      const envs = detalhe.envolvidos || [];
+      setEnvolvidosOcorrencia(envs);
+      const primeiraVitima = envs.find((e) => e.tipo === 'VITIMA');
+      if (primeiraVitima) {
+        setVitimaId(primeiraVitima.id);
+      }
+      const primeiroSuspeito = envs.find((e) => e.tipo === 'SUSPEITO');
+      if (primeiroSuspeito) {
+        setAgressorId(primeiroSuspeito.id);
+      }
+    } catch {
+      setEnvolvidosOcorrencia([]);
+    } finally {
+      setCarregandoEnvolvidos(false);
+    }
+  };
 
   const carregarMedidas = useCallback(async () => {
     setCarregando(true);
@@ -195,7 +294,7 @@ export const MedidasProtetivasPage: React.FC = () => {
         {tem('DELEGADO') && (
           <button
             className="btn btn-primary"
-            onClick={() => setModalConcederAberto(true)}
+            onClick={abrirModalConceder}
             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.2rem', fontWeight: 600, height: '42px' }}
           >
             <span>+</span> {t('medidas:btn_conceder')}
@@ -321,49 +420,132 @@ export const MedidasProtetivasPage: React.FC = () => {
               {t('medidas:modal_conceder.subtitulo')}
             </p>
             <form onSubmit={executarConcessao}>
+              {/* Campo Ocorrência com GlideSelect e Toggle Manual */}
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
-                  {t('medidas:modal_conceder.campo_ocorrencia')}
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={ocorrenciaId}
-                  onChange={(e) => setOcorrenciaId(e.target.value)}
-                  placeholder={t('medidas:modal_conceder.placeholder_ocorrencia')}
-                  style={{ width: '100%', height: '42px', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
-                  required
-                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label style={{ fontWeight: 600, color: 'var(--ink)', margin: 0, fontSize: '0.88rem' }}>
+                    {t('medidas:modal_conceder.campo_ocorrencia')}
+                  </label>
+                  {listaOcorrencias.length > 0 && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-link"
+                      onClick={() => setModoManualOcorrencia(!modoManualOcorrencia)}
+                      style={{ fontSize: '0.75rem', padding: '0 4px', textDecoration: 'underline', color: 'var(--primary)' }}
+                    >
+                      {modoManualOcorrencia ? t('medidas:modal_conceder.selecionar_da_lista') : t('medidas:modal_conceder.digitar_id_manual')}
+                    </button>
+                  )}
+                </div>
+
+                {!modoManualOcorrencia && listaOcorrencias.length > 0 ? (
+                  <GlideSelect
+                    options={opcoesOcorrenciasModal}
+                    value={ocorrenciaId}
+                    onChange={(val) => selecionarOuCarregarOcorrencia(val)}
+                    placeholder={t('medidas:modal_conceder.selecionar_ocorrencia')}
+                    fullWidth
+                    menuWidth="100%"
+                    ariaLabel={t('medidas:modal_conceder.campo_ocorrencia')}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={ocorrenciaId}
+                    onChange={(e) => selecionarOuCarregarOcorrencia(e.target.value)}
+                    placeholder={t('medidas:modal_conceder.placeholder_ocorrencia')}
+                    style={{ width: '100%', height: '42px', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
+                    required
+                  />
+                )}
+                {carregandoEnvolvidos && (
+                  <small style={{ color: 'var(--muted)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
+                    {t('medidas:modal_conceder.carregando_envolvidos')}
+                  </small>
+                )}
               </div>
 
+              {/* Campos Vítima e Agressor com GlideSelect Inteligente */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
-                    {t('medidas:modal_conceder.campo_vitima')}
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={vitimaId}
-                    onChange={(e) => setVitimaId(e.target.value)}
-                    placeholder={t('medidas:modal_conceder.placeholder_vitima')}
-                    style={{ width: '100%', height: '42px', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
-                    required
-                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <label style={{ fontWeight: 600, color: 'var(--ink)', margin: 0, fontSize: '0.85rem' }}>
+                      {t('medidas:modal_conceder.campo_vitima')}
+                    </label>
+                    {envolvidosOcorrencia.length > 0 && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-link"
+                        onClick={() => setModoManualVitima(!modoManualVitima)}
+                        style={{ fontSize: '0.72rem', padding: '0 2px', textDecoration: 'underline', color: 'var(--primary)' }}
+                      >
+                        {modoManualVitima ? t('medidas:modal_conceder.selecionar_da_lista') : t('medidas:modal_conceder.digitar_id_manual')}
+                      </button>
+                    )}
+                  </div>
+
+                  {!modoManualVitima && envolvidosOcorrencia.length > 0 ? (
+                    <GlideSelect
+                      options={opcoesVitimasModal}
+                      value={vitimaId}
+                      onChange={(val) => setVitimaId(val)}
+                      placeholder={t('medidas:modal_conceder.selecionar_vitima')}
+                      fullWidth
+                      menuWidth="100%"
+                      ariaLabel={t('medidas:modal_conceder.campo_vitima')}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={vitimaId}
+                      onChange={(e) => setVitimaId(e.target.value)}
+                      placeholder={t('medidas:modal_conceder.placeholder_vitima')}
+                      style={{ width: '100%', height: '42px', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
+                      required
+                    />
+                  )}
                 </div>
+
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
-                    {t('medidas:modal_conceder.campo_agressor')}
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={agressorId}
-                    onChange={(e) => setAgressorId(e.target.value)}
-                    placeholder={t('medidas:modal_conceder.placeholder_agressor')}
-                    style={{ width: '100%', height: '42px', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
-                    required
-                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <label style={{ fontWeight: 600, color: 'var(--ink)', margin: 0, fontSize: '0.85rem' }}>
+                      {t('medidas:modal_conceder.campo_agressor')}
+                    </label>
+                    {envolvidosOcorrencia.length > 0 && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-link"
+                        onClick={() => setModoManualAgressor(!modoManualAgressor)}
+                        style={{ fontSize: '0.72rem', padding: '0 2px', textDecoration: 'underline', color: 'var(--primary)' }}
+                      >
+                        {modoManualAgressor ? t('medidas:modal_conceder.selecionar_da_lista') : t('medidas:modal_conceder.digitar_id_manual')}
+                      </button>
+                    )}
+                  </div>
+
+                  {!modoManualAgressor && envolvidosOcorrencia.length > 0 ? (
+                    <GlideSelect
+                      options={opcoesAgressoresModal}
+                      value={agressorId}
+                      onChange={(val) => setAgressorId(val)}
+                      placeholder={t('medidas:modal_conceder.selecionar_agressor')}
+                      fullWidth
+                      menuWidth="100%"
+                      ariaLabel={t('medidas:modal_conceder.campo_agressor')}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={agressorId}
+                      onChange={(e) => setAgressorId(e.target.value)}
+                      placeholder={t('medidas:modal_conceder.placeholder_agressor')}
+                      style={{ width: '100%', height: '42px', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
+                      required
+                    />
+                  )}
                 </div>
               </div>
 
@@ -415,9 +597,10 @@ export const MedidasProtetivasPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
+              {/* Prazos e Distâncias Alinhados na Mesma Altura */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem', alignItems: 'end' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-end', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)', fontSize: '0.85rem', minHeight: '2.5rem' }}>
                     {t('medidas:modal_conceder.campo_prazo')}
                   </label>
                   <input
@@ -430,8 +613,8 @@ export const MedidasProtetivasPage: React.FC = () => {
                     required
                   />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-end', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)', fontSize: '0.85rem', minHeight: '2.5rem' }}>
                     {t('medidas:modal_conceder.campo_distancia')}
                   </label>
                   <input

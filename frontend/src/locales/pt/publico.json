@@ -64,6 +64,7 @@
       "telefone_invalido": "Informe um telefone válido com DDD (mínimo 10 dígitos).",
       "declaracao_obrigatoria": "Você deve confirmar a declaração de maioridade e veracidade legal para prosseguir.",
       "localizacao_obrigatoria": "Informe o endereço ou ponto de referência do local do fato.",
+      "coordenada_obrigatoria": "Marque o ponto do fato no mapa interativo.",
       "descricao_curta": "A descrição do ocorrido deve ter pelo menos 20 caracteres.",
       "data_futura": "A data e hora do fato não podem estar no futuro.",
       "falha_registro": "Não foi possível registrar a ocorrência. Verifique os dados e tente novamente."

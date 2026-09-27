@@ -15,6 +15,9 @@ export const SeletorCoordenada: React.FC<Props> = ({ latitude, longitude, onChan
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
 
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
   useEffect(() => {
     if (!divRef.current || mapRef.current) return;
     corrigirIconesLeaflet();
@@ -35,12 +38,21 @@ export const SeletorCoordenada: React.FC<Props> = ({ latitude, longitude, onChan
     map.on('click', (e: L.LeafletMouseEvent) => {
       const lat = Number(e.latlng.lat.toFixed(6));
       const lng = Number(e.latlng.lng.toFixed(6));
-      onChange(lat, lng);
+      onChangeRef.current(lat, lng);
       map.panTo([lat, lng]);
     });
 
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
+
     mapRef.current = map;
     return () => {
+      clearTimeout(timer);
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
       map.remove();
       mapRef.current = null;
     };
@@ -59,7 +71,10 @@ export const SeletorCoordenada: React.FC<Props> = ({ latitude, longitude, onChan
       return;
     }
 
-    if (!markerRef.current) {
+    if (!markerRef.current || !map.hasLayer(markerRef.current)) {
+      if (markerRef.current) {
+        markerRef.current.remove();
+      }
       const pin = L.marker([latitude, longitude], {
         draggable: true,
         icon: iconePinFato('Local do Fato'),
@@ -73,7 +88,7 @@ export const SeletorCoordenada: React.FC<Props> = ({ latitude, longitude, onChan
 
       pin.on('dragend', () => {
         const p = pin.getLatLng();
-        onChange(Number(p.lat.toFixed(6)), Number(p.lng.toFixed(6)));
+        onChangeRef.current(Number(p.lat.toFixed(6)), Number(p.lng.toFixed(6)));
       });
 
       markerRef.current = pin;
@@ -83,7 +98,7 @@ export const SeletorCoordenada: React.FC<Props> = ({ latitude, longitude, onChan
         .setIcon(iconePinFato('Local do Fato'))
         .setTooltipContent(`Local do fato: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
     }
-  }, [latitude, longitude, onChange]);
+  }, [latitude, longitude]);
 
   return (
     <div className="seletor-coordenada">

@@ -34,6 +34,7 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .glide-select-trigger:hover:not(:disabled) {
@@ -53,15 +54,30 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.glide-select-trigger__label {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
 }
 
 .glide-select-trigger__icon {
   display: inline-flex;
   font-size: 1.1em;
+  flex-shrink: 0;
 }
 
 .glide-select-trigger__chevron {
   display: inline-flex;
+  flex-shrink: 0;
   color: var(--muted, #a1a1aa);
   transition: transform var(--glide-pop-duration, 180ms) ease;
 }
@@ -99,7 +115,9 @@
   position: absolute;
   z-index: 1200;
   min-width: var(--glide-menu-width, 100%);
-  width: max-content;
+  width: var(--glide-menu-width, max-content);
+  max-width: min(100%, calc(100vw - 32px));
+  box-sizing: border-box;
   background-color: var(--glide-surface, var(--glide-surface-default));
   border: 1px solid var(--glide-border-default);
   border-radius: var(--glide-radius, 8px);
@@ -108,6 +126,18 @@
   animation: glide-menu-appear var(--glide-pop-duration, 180ms) cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
+  max-height: 240px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.glide-select-root--full-width .glide-select-menu {
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
 }
 
 @keyframes glide-menu-appear {
@@ -158,6 +188,7 @@
   justify-content: space-between;
   gap: 10px;
   width: 100%;
+  box-sizing: border-box;
   padding: 8px 12px;
   background: transparent;
   color: var(--glide-text, var(--glide-text-default));
@@ -169,6 +200,7 @@
   font-weight: 500;
   text-align: left;
   transition: color 0.1s ease;
+  overflow: hidden;
 }
 
 .glide-select-item:disabled {
@@ -183,14 +215,20 @@
 
 .glide-select-item__icon {
   margin-right: 2px;
+  flex-shrink: 0;
 }
 
 .glide-select-item__label {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .glide-select-item__check {
   display: inline-flex;
+  flex-shrink: 0;
   color: var(--glide-accent, var(--glide-accent-default));
 }
 

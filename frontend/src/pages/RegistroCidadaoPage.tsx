@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavbarPublica } from '../components/layout/NavbarPublica';
 import { SeletorCoordenada } from '../components/painel/SeletorCoordenada';
-import { CENTRO_PADRAO } from '../components/painel/leaflet';
 import { paraInputLocal } from '../components/ocorrencias/OcorrenciaForm';
 import { mensagemDeErro, registrarOcorrenciaPublica } from '../services/api';
 import { Button } from '../components/common/Button';
@@ -50,8 +49,8 @@ export const RegistroCidadaoPage: React.FC = () => {
   const [naturezaPersonalizada, setNaturezaPersonalizada] = useState('');
   const [descricao, setDescricao] = useState('');
   const [localizacao, setLocalizacao] = useState('');
-  const [latitude, setLatitude] = useState<number>(CENTRO_PADRAO[0]);
-  const [longitude, setLongitude] = useState<number>(CENTRO_PADRAO[1]);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [dataHora, setDataHora] = useState(paraInputLocal(new Date()));
 
   const [ocupado, setOcupado] = useState(false);
@@ -113,6 +112,10 @@ export const RegistroCidadaoPage: React.FC = () => {
     // Validações do Fato
     if (!localizacao.trim()) {
       setErro(t('publico:registro.erros.localizacao_obrigatoria'));
+      return;
+    }
+    if (latitude === null || longitude === null) {
+      setErro(t('publico:registro.erros.coordenada_obrigatoria'));
       return;
     }
     if (descricao.trim().length < 20) {
@@ -220,6 +223,8 @@ export const RegistroCidadaoPage: React.FC = () => {
                   setDeclaracaoMaioridade(false);
                   setDescricao('');
                   setLocalizacao('');
+                  setLatitude(null);
+                  setLongitude(null);
                 }}
               >
                 {t('publico:registro.novo_registro')}
