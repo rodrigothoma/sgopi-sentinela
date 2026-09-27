@@ -55,4 +55,12 @@ export const ocorrenciasService = {
   async encerrar(id: string, desfecho: string): Promise<OcorrenciaDetalhe> {
     return (await api.post<OcorrenciaDetalhe>(`/v1/ocorrencias/${id}/encerrar`, { desfecho })).data;
   },
+  /** Somente DELEGADO; motivo obrigatório (RF20). */
+  async arquivar(id: string, motivo: string): Promise<OcorrenciaDetalhe> {
+    return (await api.post<OcorrenciaDetalhe>(`/v1/ocorrencias/${id}/arquivar`, { motivo })).data;
+  },
+  /** Exclusão lógica — somente DELEGADO; motivo obrigatório (RF20). */
+  async excluir(id: string, motivo: string): Promise<OcorrenciaDetalhe> {
+    return (await api.post<OcorrenciaDetalhe>(`/v1/ocorrencias/${id}/excluir`, { motivo })).data;
+  },
 };

@@ -12,16 +12,7 @@ export const RequireRole: React.FC<{ papeis?: Papel[]; children: React.ReactElem
   return children;
 };
 
-export function rotaInicial(papel: Papel): string {
-  switch (papel) {
-    case 'AGENTE':
-      return '/registrar';
-    case 'DELEGADO':
-      return '/fila';
-    case 'OPERADOR_CENTRAL':
-    case 'SUPERVISOR':
-      return '/painel';
-    default:
-      return '/painel';
-  }
+export function rotaInicial(_papel: Papel): string {
+  // Todos os papéis entram pela tela inicial (resumo operacional); a navegação por papel fica no AppShell.
+  return '/inicio';
 }

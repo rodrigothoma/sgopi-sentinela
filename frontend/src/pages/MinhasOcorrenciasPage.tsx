@@ -35,11 +35,20 @@ export const MinhasOcorrenciasPage: React.FC = () => {
     setDetalhe(await ocorrenciasService.buscarPorId(id));
   };
 
+  const recarregarDetalhe = async () => {
+    if (!detalhe) return;
+    try {
+      setDetalhe(await ocorrenciasService.buscarPorId(detalhe.ocorrencia_id));
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    }
+  };
+
   const valoresDe = (o: OcorrenciaDetalhe): ValoresOcorrencia => ({
     natureza: o.natureza, descricao: o.descricao, localizacao: o.localizacao, latitude: o.latitude, longitude: o.longitude,
     dataHoraFatoLocal: paraInputLocal(new Date(o.data_hora_fato)),
     envolvidos: o.envolvidos.map((e) => ({ nome: e.nome, tipo: e.tipo, documento: e.documento ?? undefined })),
-    tipificacoes: o.tipificacoes, evidencias: [],
+    tipificacoes: o.tipificacoes, evidencias: [], itensApreendidos: [],
   });
 
   const reenviar = async () => {
@@ -74,7 +83,7 @@ export const MinhasOcorrenciasPage: React.FC = () => {
         {!detalhe && <p className="muted">{t('ocorrencias:minhas.selecione')}</p>}
         {detalhe && !editando && (
           <>
-            <OcorrenciaDetalheView o={detalhe} />
+            <OcorrenciaDetalheView o={detalhe} onAlterada={() => void recarregarDetalhe()} />
             {detalhe.status === 'EM_CORRECAO' && (
               <div className="acoes">
                 <button className="btn" onClick={() => setEditando(true)}>{t('ocorrencias:correcao.editar')}</button>

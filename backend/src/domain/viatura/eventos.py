@@ -23,3 +23,8 @@ def posicao_atualizada(v: Viatura, em: datetime) -> EventoDominio:
 
 def viatura_situacao_alterada(v: Viatura, em: datetime, **extra: object) -> EventoDominio:
     return EventoDominio(tipo="ViaturaSituacaoAlterada", ocorrido_em=em, dados={**_dados(v), **extra})
+
+
+def viatura_chegou_ao_local(v: Viatura, em: datetime, **extra: object) -> EventoDominio:
+    """EM_DESLOCAMENTO → OPERANDO detectado pela telemetria: avisa o Operador que o atendimento começou."""
+    return EventoDominio(tipo="ViaturaChegouAoLocal", ocorrido_em=em, dados={**_dados(v), **extra})

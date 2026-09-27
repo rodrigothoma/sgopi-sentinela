@@ -45,13 +45,19 @@ async def test_data_fato_futura_422(client):
     assert r.status_code == 422 and r.json()["code"] == "ocorrencia.data_fato_futura"
 
 
-async def test_cpf_invalido_422(client):
+async def test_documento_com_tamanho_invalido_422(client):
     r = await client.post(
         "/v1/ocorrencias",
-        json=corpo_ocorrencia(envolvidos=[{"nome": "X", "tipo": "SUSPEITO", "documento": "123.456.789-00"}]),
+        json=corpo_ocorrencia(envolvidos=[{"nome": "X", "tipo": "SUSPEITO", "documento": "123.456.78"}]),
         headers=await auth(client, "agente"),
     )
-    assert r.status_code == 422 and r.json()["code"] == "envolvido.cpf_invalido"
+    assert r.status_code == 422 and r.json()["code"] == "envolvido.documento_tamanho_invalido"
+    r = await client.post(
+        "/v1/ocorrencias",
+        json=corpo_ocorrencia(envolvidos=[{"nome": "X", "tipo": "SUSPEITO", "documento": "MG-12.345.678"}]),
+        headers=await auth(client, "agente"),
+    )
+    assert r.status_code == 422 and r.json()["code"] == "envolvido.documento_nao_numerico"
 
 
 async def test_descricao_curta_422_com_extra(client):

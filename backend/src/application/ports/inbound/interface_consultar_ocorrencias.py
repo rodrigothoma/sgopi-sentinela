@@ -5,6 +5,7 @@ from uuid import UUID
 
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_anexar_evidencia import EvidenciaOutput
+from application.ports.inbound.interface_gerir_apreensoes import ItemApreendidoOutput
 
 
 @dataclass(frozen=True)
@@ -64,9 +65,14 @@ class OcorrenciaDetalheOutput(OcorrenciaResumoOutput):
     desfecho: str | None = None
     hash_narrativa: str | None = None
     narrativa_integra: bool | None = None
+    arquivada_por_id: UUID | None = None
+    motivo_arquivamento: str | None = None
+    excluida_por_id: UUID | None = None
+    motivo_exclusao: str | None = None
     envolvidos: tuple[EnvolvidoOutput, ...] = field(default_factory=tuple)
     tipificacoes: tuple[TipificacaoOutput, ...] = field(default_factory=tuple)
     evidencias: tuple[EvidenciaOutput, ...] = field(default_factory=tuple)
+    itens_apreendidos: tuple[ItemApreendidoOutput, ...] = field(default_factory=tuple)
     historico_status: tuple[HistoricoStatusOutput, ...] = field(default_factory=tuple)
 
 

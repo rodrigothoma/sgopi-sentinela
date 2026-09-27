@@ -1,5 +1,7 @@
 {
-  "app": { "title": "SGOPI Sentinela" },
+  "app": {
+    "title": "SGOPI Sentinela"
+  },
   "idioma": "Idioma",
   "nav": {
     "home": "Início",
@@ -10,7 +12,8 @@
     "frota": "Frota",
     "auditoria": "Trilha de auditoria",
     "lookup": "Consultar protocolo",
-    "police_access": "Acesso Policial"
+    "police_access": "Acesso Policial",
+    "inicio": "Início"
   },
   "actions": {
     "save": "Salvar",
@@ -19,7 +22,8 @@
     "submit": "Registrar ocorrência",
     "remover": "Remover",
     "sair": "Sair",
-    "atualizar": "Atualizar"
+    "atualizar": "Atualizar",
+    "confirmar": "Confirmar"
   },
   "papel": {
     "AGENTE": "Agente",
@@ -35,7 +39,9 @@
     "REJEITADA": "Rejeitada",
     "VALIDADA": "Validada",
     "EM_ATENDIMENTO": "Em atendimento",
-    "ENCERRADA": "Encerrada"
+    "ENCERRADA": "Encerrada",
+    "ARQUIVADA": "Arquivada",
+    "EXCLUIDA": "Excluída"
   },
   "situacao": {
     "DISPONIVEL": "Disponível",
@@ -252,5 +258,3 @@
     }
   }
 }
-
-

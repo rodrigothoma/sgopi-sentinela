@@ -147,3 +147,106 @@ async def test_encerrar_exige_em_atendimento(validada, encerrar):
 async def test_agente_nao_encerra(validada, encerrar):
     with pytest.raises(AcessoNegadoError):
         await encerrar.executar(AGENTE, EncerrarInput(validada, "x"))
+
+
+# ------------------------------------------------ deslocamento e chegada ao local (RF18/RF19)
+def _telemetria_com_chegada(viaturas, ordens, repositorio, relogio, publicador, auditoria, raio=50.0):
+    from application.use_cases.viatura.registrar_posicao_viatura import RegistrarPosicaoViatura
+    from tests.fakes.portas_fake import UnidadeDeTrabalhoFake
+
+    return RegistrarPosicaoViatura(
+        viaturas, UnidadeDeTrabalhoFake(), relogio, publicador, 60,
+        ordens=ordens, ocorrencias=repositorio, auditoria=auditoria, raio_chegada_metros=raio,
+    )
+
+
+async def test_telemetria_detecta_chegada_e_avisa_operador(validada, frota, despachar, viaturas, ordens, repositorio, relogio, publicador, auditoria):
+    from application.ports.inbound.interface_gerir_viaturas import RegistrarPosicaoInput
+
+    ordem = await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-01"]))
+    telemetria = _telemetria_com_chegada(viaturas, ordens, repositorio, relogio, publicador, auditoria)
+    ocorrencia = await repositorio.buscar_por_id(validada)
+
+    # ainda longe (≈ 1,3 km): segue EM_DESLOCAMENTO, sem evento de chegada
+    relogio.avancar(seconds=1)
+    await telemetria.executar(RegistrarPosicaoInput(frota["VTR-01"], -29.795, -55.795, relogio.agora(), origem="simulador"))
+    assert (await viaturas.buscar_por_id(frota["VTR-01"])).situacao == SituacaoViatura.EM_DESLOCAMENTO
+    assert "ViaturaChegouAoLocal" not in publicador.tipos()
+
+    # a 20 m da ocorrência: chega → OPERANDO, audita e avisa o painel
+    relogio.avancar(seconds=1)
+    out = await telemetria.executar(RegistrarPosicaoInput(
+        frota["VTR-01"], ocorrencia.coordenada.latitude + 0.00018, ocorrencia.coordenada.longitude, relogio.agora(), origem="simulador",
+    ))
+    assert out.situacao == "OPERANDO"
+    chegada = [e for e in publicador.eventos if e.tipo == "ViaturaChegouAoLocal"]
+    assert len(chegada) == 1
+    assert chegada[0].dados["ocorrencia_id"] == str(validada) and chegada[0].dados["numero_ordem"] == ordem.numero
+    assert chegada[0].dados["numero_protocolo"] == ocorrencia.numero_protocolo and chegada[0].dados["situacao"] == "OPERANDO"
+    assert chegada[0].dados["distancia_metros"] <= 50
+    assert auditoria.operacoes()[-1] == "viatura.chegada_ao_local"
+    # a ordem continua ativa (o encerramento é decisão do operador — RF19)
+    assert (await ordens.buscar_ativa_por_viatura(frota["VTR-01"])).ativa
+
+    # já no local: novas posições não geram segunda chegada
+    relogio.avancar(seconds=1)
+    await telemetria.executar(RegistrarPosicaoInput(frota["VTR-01"], ocorrencia.coordenada.latitude, ocorrencia.coordenada.longitude, relogio.agora()))
+    assert publicador.tipos().count("ViaturaChegouAoLocal") == 1
+
+
+async def test_telemetria_sem_ordem_ativa_ou_sem_repositorios_nao_muda_situacao(frota, viaturas, ordens, repositorio, relogio, publicador, auditoria):
+    from application.ports.inbound.interface_gerir_viaturas import RegistrarPosicaoInput
+    from application.use_cases.viatura.registrar_posicao_viatura import RegistrarPosicaoViatura
+    from tests.fakes.portas_fake import UnidadeDeTrabalhoFake
+
+    v = await viaturas.buscar_por_id(frota["VTR-01"])
+    v.despachar(AGORA)  # EM_DESLOCAMENTO sem ordem (estado inconsistente hipotético)
+    await viaturas.salvar(v)
+    relogio.avancar(seconds=1)
+    await _telemetria_com_chegada(viaturas, ordens, repositorio, relogio, publicador, auditoria).executar(
+        RegistrarPosicaoInput(frota["VTR-01"], -29.78, -55.79, relogio.agora())
+    )
+    assert (await viaturas.buscar_por_id(frota["VTR-01"])).situacao == SituacaoViatura.EM_DESLOCAMENTO
+    # sem repositórios de ordens/ocorrências (telemetria "pura"), nunca detecta chegada
+    simples = RegistrarPosicaoViatura(viaturas, UnidadeDeTrabalhoFake(), relogio, publicador, 60)
+    await simples.executar(RegistrarPosicaoInput(frota["VTR-01"], -29.78, -55.79, relogio.agora()))
+    assert "ViaturaChegouAoLocal" not in publicador.tipos()
+
+
+async def test_simulador_conduz_viatura_despachada_ate_a_ocorrencia(validada, frota, despachar, viaturas, ordens, repositorio, relogio, publicador, auditoria):
+    from contextlib import asynccontextmanager
+
+    from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
+
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-03"]))  # ≈ 12 km de distância
+    ocorrencia = await repositorio.buscar_por_id(validada)
+    telemetria = _telemetria_com_chegada(viaturas, ordens, repositorio, relogio, publicador, auditoria)
+
+    async def destino_de(viatura_id):
+        ordem = await ordens.buscar_ativa_por_viatura(viatura_id)
+        return (await repositorio.buscar_por_id(ordem.ocorrencia_id)).coordenada if ordem else None
+
+    @asynccontextmanager
+    async def contexto():
+        yield viaturas, telemetria, destino_de
+
+    sim = SimuladorTelemetria(contexto, relogio, intervalo_segundos=1.0, raio_metros=100, semente=7, velocidade_kmh=3600.0)  # 1 km/tick
+    distancias = []
+    for _ in range(15):
+        relogio.avancar(seconds=1)
+        await sim.tick()
+        v = await viaturas.buscar_por_id(frota["VTR-03"])
+        distancias.append(v.ultima_posicao.coordenada.distancia_km(ocorrencia.coordenada))
+        if v.situacao == SituacaoViatura.OPERANDO:
+            break
+    # aproxima-se monotonicamente ~1 km por tick e para exatamente no local
+    assert all(b < a for a, b in zip(distancias, distancias[1:]))
+    assert v.situacao == SituacaoViatura.OPERANDO and distancias[-1] == 0.0
+    assert publicador.tipos().count("ViaturaChegouAoLocal") == 1
+
+    # no local, permanece parada (mantendo o sinal) enquanto as disponíveis seguem patrulhando
+    relogio.avancar(seconds=1)
+    await sim.tick()
+    parada = await viaturas.buscar_por_id(frota["VTR-03"])
+    assert parada.ultima_posicao.coordenada == ocorrencia.coordenada and parada.ultima_posicao.registrada_em == relogio.agora()
+    assert (await viaturas.buscar_por_id(frota["VTR-01"])).ultima_posicao.coordenada != Coordenada(-29.80, -55.80)

@@ -26,6 +26,7 @@ export const RegistrarOcorrenciaPage: React.FC = () => {
         rotuloEnviar={t('common:actions.submit')}
         ocupado={ocupado}
         permitirEvidencias
+        permitirApreensoes
         onSubmit={async (v) => {
           setOcupado(true);
           try {

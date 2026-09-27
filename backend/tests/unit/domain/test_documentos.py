@@ -21,13 +21,28 @@ def test_validar_documento_aceita_none_e_vazio():
     assert validar_documento("   ") is None
 
 
-def test_validar_documento_aceita_rg_como_texto_livre():
-    assert validar_documento("MG-12.345.678") == "MG-12.345.678"
+@pytest.mark.parametrize("rg", ["1234567890", "123.456.789-0", "1 234 567 890"])
+def test_validar_documento_aceita_rg_com_exatamente_10_digitos(rg):
+    assert validar_documento(rg) == rg
 
 
-def test_validar_documento_rejeita_cpf_invalido():
-    with pytest.raises(ValorInvalidoError):
-        validar_documento("123.456.789-00")
+@pytest.mark.parametrize("valor", ["MG-12.345.678", "12.345.678-X", "abc", "１２３４５"])
+def test_validar_documento_rejeita_letras(valor):
+    with pytest.raises(ValorInvalidoError) as exc:
+        validar_documento(valor)
+    assert exc.value.chave == "envolvido.documento_nao_numerico"
+
+
+@pytest.mark.parametrize("valor", ["123456789", "12345", "123456789012", "1"])
+def test_validar_documento_rejeita_tamanho_diferente_de_10_ou_11(valor):
+    with pytest.raises(ValorInvalidoError) as exc:
+        validar_documento(valor)
+    assert exc.value.chave == "envolvido.documento_tamanho_invalido"
+
+
+@pytest.mark.parametrize("cpf", ["123.456.789-00", "12345678900", "111.111.111-11", "123.456.789-09"])
+def test_validar_documento_aceita_cpf_com_11_digitos_sem_conferir_verificadores(cpf):
+    assert validar_documento(cpf) == cpf
 
 
 def test_mascarar_cpf():

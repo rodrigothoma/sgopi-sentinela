@@ -1,0 +1,60 @@
+{
+  "saudacao": {
+    "manha": "Good morning, {{nome}}",
+    "tarde": "Good afternoon, {{nome}}",
+    "noite": "Good evening, {{nome}}"
+  },
+  "subtitulo": "Operational summary for {{data}}",
+  "turno_atual": "Current shift",
+  "sessao_encerra": "Session ends at {{hora}}",
+  "turnos": {
+    "MANHA": "Morning",
+    "TARDE": "Afternoon",
+    "NOITE": "Night"
+  },
+  "kpi": {
+    "viaturas_ativas": "Active vehicles",
+    "de_total": "of {{total}} registered",
+    "funcionarios_campo": "Staff in the field",
+    "de_agentes": "of {{total}} officers",
+    "investigacoes": "Ongoing investigations",
+    "em_atendimento": "{{n}} being attended",
+    "ocorrencias_hoje": "Occurrences today",
+    "aguardando_revisao": "{{n}} awaiting review"
+  },
+  "viaturas": {
+    "titulo": "Active vehicles",
+    "vazio": "No active vehicles right now.",
+    "viatura": "Vehicle",
+    "situacao": "Status",
+    "sinal": "Signal",
+    "atendendo": "Attending",
+    "livre": "—"
+  },
+  "funcionarios": {
+    "titulo": "Staff in the field",
+    "vazio": "No officers registered.",
+    "em_campo": "In the field",
+    "prontidao": "On standby",
+    "ocorrencias": "{{n}} ongoing occurrence(s)",
+    "somente_proprias": "As an officer, you only see your own occurrences."
+  },
+  "ultimas": {
+    "titulo": "Latest occurrences",
+    "vazio": "No occurrences registered.",
+    "ver_todas": "See all"
+  },
+  "investigacoes": {
+    "titulo": "Ongoing investigations",
+    "vazio": "No ongoing investigations.",
+    "fato_em": "Fact on {{quando}}",
+    "viatura": "Vehicle {{prefixo}}"
+  },
+  "escala": {
+    "titulo": "Work schedule",
+    "efetivo": "Shift staff",
+    "voce": "you",
+    "horario": "{{inicio}} – {{fim}}",
+    "atual": "current"
+  }
+}

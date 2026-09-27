@@ -12,7 +12,7 @@ def test_fluxo_completo_registro_validacao_despacho_encerramento(client: httpx.C
         "localizacao": "Rua dos Andradas, 100",
         "latitude": -29.79, "longitude": -55.79,
         "data_hora_fato": datetime.now(UTC).isoformat().replace("+00:00", "+00:00"),
-        "envolvidos": [{"nome": "João Teste E2E", "tipo": "VITIMA"}],
+        "envolvidos": [{"nome": "João Teste", "tipo": "VITIMA"}],
     }, headers=auth("agente"))
     assert r.status_code == 201, r.text
     oc = r.json()

@@ -16,3 +16,8 @@ class RepositorioOrdemDespacho(ABC):
     async def listar(self, ocorrencia_id: UUID | None = None, somente_ativas: bool = False, limit: int = 100) -> list[OrdemDeDespacho]:
         """Mais recente primeiro."""
         ...
+
+    @abstractmethod
+    async def buscar_ativa_por_viatura(self, viatura_id: UUID) -> OrdemDeDespacho | None:
+        """A ordem ativa (no máximo uma) que empenha a viatura — o destino do deslocamento."""
+        ...

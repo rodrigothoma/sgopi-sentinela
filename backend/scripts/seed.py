@@ -23,9 +23,9 @@ from infrastructure.database.connection import AsyncSessionLocal  # noqa: E402
 SENHA_PADRAO = "Senha@123"
 
 USUARIOS = [
-    ("Agente Silva", "agente", Papel.AGENTE),
-    ("Delegada Souza", "delegado", Papel.DELEGADO),
-    ("Operador Lima", "operador", Papel.OPERADOR_CENTRAL),
+    ("Agente Rodrigo", "agente", Papel.AGENTE),
+    ("Delegado Fade", "delegado", Papel.DELEGADO),
+    ("Operador Matheus", "operador", Papel.OPERADOR_CENTRAL),
 ]
 
 

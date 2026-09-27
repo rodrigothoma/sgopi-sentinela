@@ -40,3 +40,6 @@ class RepositorioOcorrenciaFake(RepositorioOcorrencia):
 
     async def contar(self, filtro: FiltroOcorrencias) -> int:
         return len(self._filtrar(filtro))
+
+    async def lacre_em_uso(self, numero_lacre: str) -> bool:
+        return any(i.numero_lacre == numero_lacre for o in self._store.values() for i in o.itens_apreendidos)

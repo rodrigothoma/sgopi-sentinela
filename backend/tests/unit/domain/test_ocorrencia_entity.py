@@ -12,7 +12,7 @@ from domain.ocorrencia.entity import (
     TipificacaoPenal,
     TipoEnvolvido,
 )
-from domain.ocorrencia.status import StatusOcorrencia, TRANSICOES
+from domain.ocorrencia.status import ESTADOS_ARQUIVAVEIS, ESTADOS_EXCLUIVEIS, StatusOcorrencia, TRANSICOES
 from domain.shared.exceptions import (
     AcessoNegadoError,
     CampoObrigatorioError,
@@ -141,13 +141,14 @@ def test_envolvido_nome_vazio():
         _envolvido(nome=" ")
 
 
-def test_envolvido_cpf_invalido():
+def test_envolvido_documento_com_tamanho_invalido():
     with pytest.raises(ValorInvalidoError):
-        _envolvido(documento="123.456.789-00")
+        _envolvido(documento="123.456.789")
 
 
-def test_envolvido_cpf_valido():
+def test_envolvido_cpf_so_exige_11_digitos():
     assert _envolvido(documento="123.456.789-09").documento == "123.456.789-09"
+    assert _envolvido(documento="123.456.789-00").documento == "123.456.789-00"
 
 
 def test_tipificacao_campos_obrigatorios():
@@ -196,8 +197,57 @@ def test_evidencia_valida_metadados():
 
 # --------------------------------------------------------------- transições
 
-def test_tabela_de_transicoes_tem_seis_arestas():
-    assert len(TRANSICOES) == 6
+def test_tabela_de_transicoes_fluxo_operacional_tem_seis_arestas():
+    operacionais = {k: v for k, v in TRANSICOES.items() if k[1] not in ("arquivar", "excluir")}
+    assert len(operacionais) == 6
+
+
+def test_arquivar_e_excluir_nao_sao_permitidos_em_atendimento_nem_apos_exclusao():
+    assert StatusOcorrencia.EM_ATENDIMENTO not in ESTADOS_ARQUIVAVEIS | ESTADOS_EXCLUIVEIS
+    assert StatusOcorrencia.EXCLUIDA not in ESTADOS_ARQUIVAVEIS | ESTADOS_EXCLUIVEIS
+    assert StatusOcorrencia.ARQUIVADA in ESTADOS_EXCLUIVEIS and StatusOcorrencia.ARQUIVADA not in ESTADOS_ARQUIVAVEIS
+    assert all(TRANSICOES[(s, "arquivar")] is StatusOcorrencia.ARQUIVADA for s in ESTADOS_ARQUIVAVEIS)
+    assert all(TRANSICOES[(s, "excluir")] is StatusOcorrencia.EXCLUIDA for s in ESTADOS_EXCLUIVEIS)
+
+
+def test_arquivar_exige_motivo_e_registra_delegado():
+    o = _registrar()
+    with pytest.raises(ValorInvalidoError) as exc:
+        o.arquivar(DELEGADO, "curto", AGORA)
+    assert exc.value.chave == "ocorrencia.motivo_curto" and o.status == StatusOcorrencia.AGUARDANDO_REVISAO
+    o.arquivar(DELEGADO, "  Registro em duplicidade.  ", AGORA)
+    assert o.status == StatusOcorrencia.ARQUIVADA
+    assert o.arquivada_por_id == DELEGADO and o.motivo_arquivamento == "Registro em duplicidade."
+    assert o.historico_status[-1].justificativa == "Registro em duplicidade." and o.historico_status[-1].por_id == DELEGADO
+    with pytest.raises(TransicaoInvalidaError):
+        o.validar(DELEGADO, AGORA)
+    with pytest.raises(TransicaoInvalidaError):
+        o.arquivar(DELEGADO, "Registro em duplicidade.", AGORA)
+
+
+def test_excluir_e_logico_e_terminal():
+    o = _registrar()
+    o.excluir(DELEGADO, "Registro de teste criado por engano.", AGORA)
+    assert o.status == StatusOcorrencia.EXCLUIDA
+    assert o.excluida_por_id == DELEGADO and o.motivo_exclusao == "Registro de teste criado por engano."
+    # nada é apagado: narrativa, envolvidos e histórico permanecem
+    assert o.descricao and o.envolvidos and len(o.historico_status) == 2
+    for acao in (lambda: o.arquivar(DELEGADO, "Motivo qualquer válido.", AGORA), lambda: o.excluir(DELEGADO, "Motivo qualquer válido.", AGORA)):
+        with pytest.raises(TransicaoInvalidaError):
+            acao()
+
+
+def test_arquivada_pode_ser_excluida_mas_em_atendimento_nao():
+    o = _registrar()
+    o.arquivar(DELEGADO, "Registro em duplicidade.", AGORA)
+    o.excluir(DELEGADO, "Consolidado no protocolo original.", AGORA)
+    assert o.status == StatusOcorrencia.EXCLUIDA and o.motivo_arquivamento and o.motivo_exclusao
+
+    em_atendimento = _validada()
+    em_atendimento.despachar(uuid4(), AGORA)
+    with pytest.raises(TransicaoInvalidaError) as exc:
+        em_atendimento.arquivar(DELEGADO, "Motivo qualquer válido.", AGORA)
+    assert exc.value.detalhes["status_atual"] == "EM_ATENDIMENTO"
 
 
 def test_validar_congela_narrativa_e_registra_delegado():
@@ -248,6 +298,13 @@ def test_rejeitar_e_terminal():
         o.reenviar(AGENTE, AGORA)
     with pytest.raises(TransicaoInvalidaError):
         o.validar(DELEGADO, AGORA)
+
+
+@pytest.mark.parametrize("nome", ["Maria 2", "123", "Jo4o"])
+def test_envolvido_rejeita_nome_com_numeros(nome):
+    with pytest.raises(ValorInvalidoError) as exc:
+        _envolvido(nome=nome)
+    assert exc.value.chave == "envolvido.nome_invalido"
 
 
 def test_rejeitar_exige_justificativa():
