@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { laudosService, type Laudo } from '../services/laudosService';
+import { GlideSelect, type GlideSelectOption } from '../components/common/GlideSelect';
 
 const TIPOS_PERICIA = [
   'BALISTICA',
@@ -43,6 +44,36 @@ export const LaudosPage: React.FC = () => {
   const [conclusoesTecnicas, setConclusoesTecnicas] = useState('');
   const [arquivoPdf, setArquivoPdf] = useState<File | null>(null);
   const [enviando, setEnviando] = useState(false);
+
+  const opcoesStatus: GlideSelectOption[] = useMemo(
+    () => [
+      { value: 'TODOS', label: t('laudos:filtros.todos_status') },
+      { value: 'SOLICITADO', label: t('laudos:status.SOLICITADO') },
+      { value: 'EM_ANALISE', label: t('laudos:status.EM_ANALISE') },
+      { value: 'CONCLUIDO', label: t('laudos:status.CONCLUIDO') },
+    ],
+    [t],
+  );
+
+  const opcoesTiposFiltro: GlideSelectOption[] = useMemo(
+    () => [
+      { value: 'TODOS', label: t('laudos:filtros.todas_especialidades') },
+      ...TIPOS_PERICIA.map((tp) => ({
+        value: tp,
+        label: t(`laudos:tipos.${tp}`, { defaultValue: tp.replace(/_/g, ' ') }),
+      })),
+    ],
+    [t],
+  );
+
+  const opcoesTiposModal: GlideSelectOption[] = useMemo(
+    () =>
+      TIPOS_PERICIA.map((tp) => ({
+        value: tp,
+        label: t(`laudos:tipos.${tp}`, { defaultValue: tp.replace(/_/g, ' ') }),
+      })),
+    [t],
+  );
 
   const carregarLaudos = useCallback(async () => {
     setCarregando(true);
@@ -140,48 +171,42 @@ export const LaudosPage: React.FC = () => {
           <button
             className="btn btn-primary"
             onClick={() => setModalSolicitarAberto(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.2rem', fontWeight: 600 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.2rem', fontWeight: 600, height: '42px' }}
           >
             <span>+</span> {t('laudos:btn_solicitar')}
           </button>
         )}
       </div>
 
-      {/* Filtros */}
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.25rem', background: 'var(--card)', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--line)', flexWrap: 'wrap' }}>
-        <div>
-          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: '0.2rem' }}>
+      {/* Filtros com GlideSelect */}
+      <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', marginBottom: '1.25rem', background: 'var(--card)', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid var(--line)', flexWrap: 'wrap' }}>
+        <div style={{ minWidth: '200px' }}>
+          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: '0.35rem' }}>
             {t('laudos:filtros.status_label')}
           </label>
-          <select
+          <GlideSelect
+            options={opcoesStatus}
             value={filtroStatus}
-            onChange={(e) => setFiltroStatus(e.target.value)}
-            style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)' }}
-          >
-            <option value="TODOS">{t('laudos:filtros.todos_status')}</option>
-            <option value="SOLICITADO">{t('laudos:status.SOLICITADO')}</option>
-            <option value="EM_ANALISE">{t('laudos:status.EM_ANALISE')}</option>
-            <option value="CONCLUIDO">{t('laudos:status.CONCLUIDO')}</option>
-          </select>
+            onChange={(val) => setFiltroStatus(val)}
+            fullWidth
+            ariaLabel={t('laudos:filtros.status_label')}
+          />
         </div>
 
-        <div>
-          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: '0.2rem' }}>
+        <div style={{ minWidth: '260px' }}>
+          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: '0.35rem' }}>
             {t('laudos:filtros.especialidade_label')}
           </label>
-          <select
+          <GlideSelect
+            options={opcoesTiposFiltro}
             value={filtroTipo}
-            onChange={(e) => setFiltroTipo(e.target.value)}
-            style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)' }}
-          >
-            <option value="TODOS">{t('laudos:filtros.todas_especialidades')}</option>
-            {TIPOS_PERICIA.map((tp) => (
-              <option key={tp} value={tp}>{t(`laudos:tipos.${tp}`, { defaultValue: tp.replace('_', ' ') })}</option>
-            ))}
-          </select>
+            onChange={(val) => setFiltroTipo(val)}
+            fullWidth
+            ariaLabel={t('laudos:filtros.especialidade_label')}
+          />
         </div>
 
-        <div style={{ marginLeft: 'auto', fontSize: '0.9rem', color: 'var(--muted)' }}>
+        <div style={{ marginLeft: 'auto', alignSelf: 'center', fontSize: '0.9rem', color: 'var(--muted)' }}>
           {t('laudos:total_registrado')}: <strong style={{ color: 'var(--ink)' }}>{total}</strong>
         </div>
       </div>
@@ -256,7 +281,7 @@ export const LaudosPage: React.FC = () => {
                           target="_blank"
                           rel="noreferrer"
                           className="btn btn-sm btn-outline"
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', height: '36px' }}
                         >
                           <span>⬇</span> {t('laudos:acoes.download')}
                         </a>
@@ -264,6 +289,7 @@ export const LaudosPage: React.FC = () => {
                         <button
                           className="btn btn-sm btn-primary"
                           onClick={() => abrirModalAnexar(l)}
+                          style={{ height: '36px' }}
                         >
                           {t('laudos:acoes.anexar')}
                         </button>
@@ -287,22 +313,20 @@ export const LaudosPage: React.FC = () => {
             </p>
             <form onSubmit={executarSolicitacao}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                   {t('laudos:modal_solicitar.campo_tipo')}
                 </label>
-                <select
+                <GlideSelect
+                  options={opcoesTiposModal}
                   value={tipoPericia}
-                  onChange={(e) => setTipoPericia(e.target.value)}
-                  style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)' }}
-                >
-                  {TIPOS_PERICIA.map((tp) => (
-                    <option key={tp} value={tp}>{t(`laudos:tipos.${tp}`, { defaultValue: tp.replace('_', ' ') })}</option>
-                  ))}
-                </select>
+                  onChange={(val) => setTipoPericia(val)}
+                  fullWidth
+                  ariaLabel={t('laudos:modal_solicitar.campo_tipo')}
+                />
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                   {t('laudos:modal_solicitar.campo_ocorrencia')}
                 </label>
                 <input
@@ -311,13 +335,13 @@ export const LaudosPage: React.FC = () => {
                   value={ocorrenciaId}
                   onChange={(e) => setOcorrenciaId(e.target.value)}
                   placeholder={t('laudos:modal_solicitar.placeholder_ocorrencia')}
-                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                  style={{ width: '100%', padding: '0.6rem', height: '42px', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                   required
                 />
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                   {t('laudos:modal_solicitar.campo_demanda')}
                 </label>
                 <textarea
@@ -326,14 +350,14 @@ export const LaudosPage: React.FC = () => {
                   value={descricaoSolicitacao}
                   onChange={(e) => setDescricaoSolicitacao(e.target.value)}
                   placeholder={t('laudos:modal_solicitar.placeholder_demanda')}
-                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                   required
                 />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setModalSolicitarAberto(false)}>{t('laudos:acoes.cancelar')}</button>
-                <button type="submit" className="btn btn-primary">{t('laudos:modal_solicitar.btn_submit')}</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setModalSolicitarAberto(false)} style={{ height: '42px' }}>{t('laudos:acoes.cancelar')}</button>
+                <button type="submit" className="btn btn-primary" style={{ height: '42px' }}>{t('laudos:modal_solicitar.btn_submit')}</button>
               </div>
             </form>
           </div>
@@ -350,14 +374,14 @@ export const LaudosPage: React.FC = () => {
             </p>
             <form onSubmit={executarAnexacao}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                   {t('laudos:modal_anexar.campo_arquivo')}
                 </label>
                 <input
                   type="file"
                   accept="application/pdf"
                   onChange={(e) => setArquivoPdf(e.target.files ? e.target.files[0] : null)}
-                  style={{ width: '100%', padding: '0.5rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                  style={{ width: '100%', padding: '0.5rem', height: '42px', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                   required
                 />
                 <span style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.25rem', display: 'block' }}>
@@ -366,7 +390,7 @@ export const LaudosPage: React.FC = () => {
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                   {t('laudos:modal_anexar.campo_conclusoes')}
                 </label>
                 <textarea
@@ -375,14 +399,14 @@ export const LaudosPage: React.FC = () => {
                   value={conclusoesTecnicas}
                   onChange={(e) => setConclusoesTecnicas(e.target.value)}
                   placeholder={t('laudos:modal_anexar.placeholder_conclusoes')}
-                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                   required
                 />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setModalAnexarAberto(false)} disabled={enviando}>{t('laudos:acoes.cancelar')}</button>
-                <button type="submit" className="btn btn-primary" disabled={enviando}>
+                <button type="button" className="btn btn-ghost" onClick={() => setModalAnexarAberto(false)} disabled={enviando} style={{ height: '42px' }}>{t('laudos:acoes.cancelar')}</button>
+                <button type="submit" className="btn btn-primary" disabled={enviando} style={{ height: '42px' }}>
                   {enviando ? t('laudos:modal_anexar.submetendo') : t('laudos:modal_anexar.btn_submit')}
                 </button>
               </div>

@@ -94,5 +94,18 @@
     "relatorio_min": "O relatório final deve conter no mínimo 10 caracteres."
   },
   "ocorrencias_vinculadas_qtd": "ocorrência(s) vinculada(s)",
-  "total": "Total"
+  "total": "Total",
+  "paginacao": {
+    "pagina": "Página",
+    "de": "de",
+    "registros": "ocorrências"
+  },
+  "busca_placeholder": "Filtrar por protocolo, natureza ou local...",
+  "adicionar_manual_placeholder": "Digitar protocolo (SGOPI-...) ou ID UUID",
+  "btn_adicionar_id": "Adicionar",
+  "fato_principal": "Fato Principal",
+  "tornar_principal": "Definir como Principal",
+  "ocorrencias_selecionadas": "Ocorrências Selecionadas",
+  "vinculada": "Vinculada",
+  "nenhum_resultado_busca": "Nenhuma ocorrência encontrada para o filtro informado."
 }

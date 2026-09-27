@@ -94,5 +94,18 @@
     "relatorio_min": "The final report must contain at least 10 characters."
   },
   "ocorrencias_vinculadas_qtd": "linked incident(s)",
-  "total": "Total"
+  "total": "Total",
+  "paginacao": {
+    "pagina": "Page",
+    "de": "of",
+    "registros": "incidents"
+  },
+  "busca_placeholder": "Filter by protocol, nature or location...",
+  "adicionar_manual_placeholder": "Enter protocol (SGOPI-...) or UUID ID",
+  "btn_adicionar_id": "Add",
+  "fato_principal": "Primary Incident",
+  "tornar_principal": "Set as Primary",
+  "ocorrencias_selecionadas": "Selected Incidents",
+  "vinculada": "Linked",
+  "nenhum_resultado_busca": "No incidents found matching the criteria."
 }

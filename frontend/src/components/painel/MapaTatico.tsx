@@ -1,8 +1,15 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { OcorrenciaResumo, OrdemDespacho, Viatura } from '../../types/api';
-import { CENTRO_PADRAO, corrigirIconesLeaflet, iconeOcorrencia, iconeViatura, iconeAlvoDespacho } from './leaflet';
+import {
+  CENTRO_PADRAO,
+  corrigirIconesLeaflet,
+  iconeOcorrencia,
+  iconeViatura,
+  iconeAlvoDespacho,
+  iconePinTatico,
+} from './leaflet';
 
 interface Props {
   viaturas: Viatura[];
@@ -11,25 +18,57 @@ interface Props {
   onSelecionarOcorrencia: (id: string) => void;
   /** Ordens ativas: desenha o trajeto viatura → ocorrência enquanto ela está EM_DESLOCAMENTO. */
   ordens?: OrdemDespacho[];
+  pontoTatico?: { latitude: number; longitude: number } | null;
+  onCliqueMapa?: (lat: number, lon: number) => void;
 }
 
-/** Mapa Leaflet/OSM com marcadores atualizados incrementalmente (sem recriar o mapa a cada evento). */
-export const MapaTatico: React.FC<Props> = ({ viaturas, ocorrencias, selecionada, onSelecionarOcorrencia, ordens = [] }) => {
+/** Mapa Leaflet/OSM com marcadores atualizados incrementalmente e pin tático interativo. */
+export const MapaTatico: React.FC<Props> = ({
+  viaturas,
+  ocorrencias,
+  selecionada,
+  onSelecionarOcorrencia,
+  ordens = [],
+  pontoTatico: pontoExterno,
+  onCliqueMapa,
+}) => {
   const divRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const viaturasRef = useRef<Map<string, L.Marker>>(new Map());
   const ocorrenciasRef = useRef<Map<string, L.Marker>>(new Map());
   const alvoRef = useRef<L.Marker | null>(null);
+  const pontoTaticoRef = useRef<L.Marker | null>(null);
   const rotasRef = useRef<Map<string, L.Polyline>>(new Map());
   const selecionarRef = useRef(onSelecionarOcorrencia);
+  const cliqueRef = useRef(onCliqueMapa);
+
+  const [pontoInterno, setPontoInterno] = useState<{ latitude: number; longitude: number } | null>(null);
 
   selecionarRef.current = onSelecionarOcorrencia;
+  cliqueRef.current = onCliqueMapa;
+
+  const pontoAtual = pontoExterno ?? pontoInterno;
 
   useEffect(() => {
     if (!divRef.current || mapRef.current) return;
     corrigirIconesLeaflet();
-    const map = L.map(divRef.current).setView(CENTRO_PADRAO, 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+    const map = L.map(divRef.current, {
+      zoomControl: true,
+      attributionControl: true,
+    }).setView(CENTRO_PADRAO, 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    map.on('click', (e: L.LeafletMouseEvent) => {
+      const lat = Number(e.latlng.lat.toFixed(6));
+      const lng = Number(e.latlng.lng.toFixed(6));
+      setPontoInterno({ latitude: lat, longitude: lng });
+      cliqueRef.current?.(lat, lng);
+    });
+
     mapRef.current = map;
     return () => {
       map.remove();
@@ -37,6 +76,7 @@ export const MapaTatico: React.FC<Props> = ({ viaturas, ocorrencias, selecionada
     };
   }, []);
 
+  // Marcadores de Viaturas
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -62,6 +102,7 @@ export const MapaTatico: React.FC<Props> = ({ viaturas, ocorrencias, selecionada
     }
   }, [viaturas]);
 
+  // Marcadores de Ocorrências
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -105,8 +146,37 @@ export const MapaTatico: React.FC<Props> = ({ viaturas, ocorrencias, selecionada
     }
   }, [ocorrencias, selecionada]);
 
+  // Pin tático visual para clique manual
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
 
-  // trajeto tracejado da viatura despachada até a ocorrência (some quando ela chega — OPERANDO)
+    if (!pontoAtual) {
+      pontoTaticoRef.current?.remove();
+      pontoTaticoRef.current = null;
+      return;
+    }
+
+    if (!pontoTaticoRef.current) {
+      const pin = L.marker([pontoAtual.latitude, pontoAtual.longitude], {
+        icon: iconePinTatico('Ponto Marcado'),
+        zIndexOffset: 2500,
+      }).addTo(map);
+
+      pin.bindTooltip(`Ponto Tático: ${pontoAtual.latitude.toFixed(5)}, ${pontoAtual.longitude.toFixed(5)}`, {
+        direction: 'top',
+        offset: [0, -38],
+      });
+
+      pontoTaticoRef.current = pin;
+    } else {
+      pontoTaticoRef.current
+        .setLatLng([pontoAtual.latitude, pontoAtual.longitude])
+        .setTooltipContent(`Ponto Tático: ${pontoAtual.latitude.toFixed(5)}, ${pontoAtual.longitude.toFixed(5)}`);
+    }
+  }, [pontoAtual]);
+
+  // Trajeto tracejado da viatura despachada até a ocorrência
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -138,5 +208,7 @@ export const MapaTatico: React.FC<Props> = ({ viaturas, ocorrencias, selecionada
     if (map && o) map.panTo([o.latitude, o.longitude]);
   }, [selecionada, ocorrencias]);
 
-  return <div ref={divRef} className="mapa mapa-grande" />;
+  return <div ref={divRef} className="mapa mapa-grande" style={{ cursor: 'crosshair' }} />;
 };
+
+export default MapaTatico;

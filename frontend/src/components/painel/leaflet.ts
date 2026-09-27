@@ -45,18 +45,9 @@ export function iconePinFato(rotulo?: string): L.DivIcon {
       <div class="sgopi-pin-wrap">
         <div class="sgopi-pin-pulse"></div>
         <svg class="sgopi-pin-svg" width="36" height="46" viewBox="0 0 36 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <filter id="pin-shadow" x="0" y="0" width="36" height="46" filterUnits="userSpaceOnUse">
-              <feDropShadow dx="0" dy="2.5" stdDeviation="2" flood-color="#000000" flood-opacity="0.4"/>
-            </filter>
-            <linearGradient id="pin-grad" x1="18" y1="2" x2="18" y2="40" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#ef4444"/>
-              <stop offset="100%" stop-color="#991b1b"/>
-            </linearGradient>
-          </defs>
-          <path filter="url(#pin-shadow)" d="M18 2C9.163 2 2 9.163 2 18C2 28.5 16.2 39.5 17.2 40.2C17.7 40.6 18.3 40.6 18.8 40.2C19.8 39.5 34 28.5 34 18C34 9.163 26.837 2 18 2Z" fill="url(#pin-grad)" stroke="#ffffff" stroke-width="2"/>
-          <circle cx="18" cy="18" r="6" fill="#ffffff"/>
-          <circle cx="18" cy="18" r="3" fill="#991b1b"/>
+          <path d="M18 2C9.163 2 2 9.163 2 18C2 28.5 16.2 39.5 17.2 40.2C17.7 40.6 18.3 40.6 18.8 40.2C19.8 39.5 34 28.5 34 18C34 9.163 26.837 2 18 2Z" fill="#dc2626" stroke="#ffffff" stroke-width="2.5"/>
+          <circle cx="18" cy="18" r="6.5" fill="#ffffff"/>
+          <circle cx="18" cy="18" r="3.5" fill="#b91c1c"/>
         </svg>
         ${rotulo ? `<span class="sgopi-pin-badge">${rotulo}</span>` : ''}
       </div>
@@ -74,7 +65,7 @@ export function iconeAlvoDespacho(): L.DivIcon {
       <div class="sgopi-alvo-wrap">
         <div class="sgopi-alvo-radar"></div>
         <svg class="sgopi-alvo-svg" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="20" r="15" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="4 2" fill="rgba(37, 99, 235, 0.18)"/>
+          <circle cx="20" cy="20" r="15" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="4 2" fill="rgba(37, 99, 235, 0.22)"/>
           <circle cx="20" cy="20" r="5" fill="#2563eb"/>
           <line x1="20" y1="0" x2="20" y2="8" stroke="#2563eb" stroke-width="2.5"/>
           <line x1="20" y1="32" x2="20" y2="40" stroke="#2563eb" stroke-width="2.5"/>
@@ -85,6 +76,26 @@ export function iconeAlvoDespacho(): L.DivIcon {
     `,
     iconSize: [40, 40],
     iconAnchor: [20, 20],
+  });
+}
+
+/** Pin tático azul/âmbar para cliques manuais do despachador/operador no mapa. */
+export function iconePinTatico(rotulo?: string): L.DivIcon {
+  return L.divIcon({
+    className: 'marker-pin-custom',
+    html: `
+      <div class="sgopi-pin-wrap">
+        <div class="sgopi-pin-pulse" style="background: rgba(37, 99, 235, 0.45);"></div>
+        <svg class="sgopi-pin-svg" width="36" height="46" viewBox="0 0 36 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 2C9.163 2 2 9.163 2 18C2 28.5 16.2 39.5 17.2 40.2C17.7 40.6 18.3 40.6 18.8 40.2C19.8 39.5 34 28.5 34 18C34 9.163 26.837 2 18 2Z" fill="#2563eb" stroke="#ffffff" stroke-width="2.5"/>
+          <circle cx="18" cy="18" r="6.5" fill="#ffffff"/>
+          <circle cx="18" cy="18" r="3.5" fill="#1d4ed8"/>
+        </svg>
+        ${rotulo ? `<span class="sgopi-pin-badge" style="background: #2563eb;">${rotulo}</span>` : ''}
+      </div>
+    `,
+    iconSize: [36, 46],
+    iconAnchor: [18, 42],
   });
 }
 

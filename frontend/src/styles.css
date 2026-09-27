@@ -1374,9 +1374,21 @@ dl.grid2 dd { margin: 0 0 8px; }
 /* KPI Summary Cards Grid */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 1024px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .kpi-card {
@@ -1421,8 +1433,20 @@ dl.grid2 dd { margin: 0 0 8px; }
 .inicio-turno { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
 .inicio-turno .kpi-label, .kpi-label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
 .kpi-card .kpi-sub { font-size: .8rem; color: var(--muted); margin-top: 2px; }
-.inicio-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; align-items: start; }
-.inicio-grid .card { margin-bottom: 0; }
+.inicio-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+.inicio-grid .card {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+.inicio-grid .card .lista {
+  flex: 1;
+}
 .inicio-grid .card h3 { display: flex; align-items: center; gap: 8px; margin-top: 0; }
 .inicio-ver-todas { margin-left: auto; font-weight: 500; text-transform: none; }
 .inicio-escala { grid-column: 1 / -1; }
@@ -1433,6 +1457,7 @@ dl.grid2 dd { margin: 0 0 8px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .chip { background: var(--bg-surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font-size: .85rem; }
 .chip.voce { border-color: var(--primary); color: var(--primary); }
+@media (max-width: 1280px) { .inicio-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .inicio-grid { grid-template-columns: 1fr; } .inicio-turno { align-items: flex-start; text-align: left; } }
 
 /* --- Apreensões (RF03): subformulário, aba e Auto de Apreensão --- */

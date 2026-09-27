@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,8 @@ import type { Evidencia, OcorrenciaDetalhe as Detalhe } from '../../types/api';
 import { StatusBadge } from '../StatusBadge';
 import { formatarNatureza } from '../../utils/formatarNatureza';
 import { ApreensoesAba } from './ApreensoesAba';
+import { SpringCheck } from '../common/SpringCheck';
+import { GlideSelect, type GlideSelectOption } from '../common/GlideSelect';
 
 const fmt = (iso: string) => new Date(iso).toLocaleString();
 
@@ -119,6 +121,37 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
   const [distanciaMetros, setDistanciaMetros] = useState<number>(500);
   const [observacoesMedida, setObservacoesMedida] = useState('');
   const [enviandoMedida, setEnviandoMedida] = useState(false);
+
+  const opcoesTipoPericia: GlideSelectOption[] = useMemo(
+    () =>
+      TIPOS_PERICIA.map((tp) => ({
+        value: tp,
+        label: t(`laudos:tipos.${tp}`, { defaultValue: tp.replace(/_/g, ' ') }),
+      })),
+    [t],
+  );
+
+  const opcoesVitima: GlideSelectOption[] = useMemo(
+    () => [
+      { value: '', label: t('medidas:modal_conceder.placeholder_vitima') },
+      ...o.envolvidos.map((e) => ({
+        value: e.id,
+        label: `${e.nome} (${e.tipo})`,
+      })),
+    ],
+    [o.envolvidos, t],
+  );
+
+  const opcoesAgressor: GlideSelectOption[] = useMemo(
+    () => [
+      { value: '', label: t('medidas:modal_conceder.placeholder_agressor') },
+      ...o.envolvidos.map((e) => ({
+        value: e.id,
+        label: `${e.nome} (${e.tipo})`,
+      })),
+    ],
+    [o.envolvidos, t],
+  );
 
   useEffect(() => {
     setAba('detalhe');
@@ -431,22 +464,19 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
                   type="text"
                   readOnly
                   value={`${o.numero_protocolo} — ${formatarNatureza(o.natureza, t)}`}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--bg)', border: '1px solid var(--line)', opacity: 0.8 }}
+                  style={{ width: '100%', height: '42px', padding: '8px 12px', borderRadius: 8, background: 'var(--bg)', border: '1px solid var(--line)', opacity: 0.8 }}
                 />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
                   {t('laudos:modal_solicitar.campo_tipo')}
                 </label>
-                <select
+                <GlideSelect
                   value={tipoPericia}
-                  onChange={(e) => setTipoPericia(e.target.value)}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
-                >
-                  {TIPOS_PERICIA.map((tp) => (
-                    <option key={tp} value={tp}>{t(`laudos:tipos.${tp}`, { defaultValue: tp.replace(/_/g, ' ') })}</option>
-                  ))}
-                </select>
+                  options={opcoesTipoPericia}
+                  onChange={(val) => setTipoPericia(val)}
+                  fullWidth
+                />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
@@ -517,37 +547,25 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
                     {t('medidas:modal_conceder.campo_vitima')}
                   </label>
-                  <select
-                    required
+                  <GlideSelect
                     value={vitimaId}
-                    onChange={(e) => setVitimaId(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
-                  >
-                    <option value="">{t('medidas:modal_conceder.placeholder_vitima')}</option>
-                    {o.envolvidos.map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {e.nome} ({e.tipo})
-                      </option>
-                    ))}
-                  </select>
+                    options={opcoesVitima}
+                    onChange={(val) => setVitimaId(val)}
+                    placeholder={t('medidas:modal_conceder.placeholder_vitima')}
+                    fullWidth
+                  />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
                     {t('medidas:modal_conceder.campo_agressor')}
                   </label>
-                  <select
-                    required
+                  <GlideSelect
                     value={agressorId}
-                    onChange={(e) => setAgressorId(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
-                  >
-                    <option value="">{t('medidas:modal_conceder.placeholder_agressor')}</option>
-                    {o.envolvidos.map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {e.nome} ({e.tipo})
-                      </option>
-                    ))}
-                  </select>
+                    options={opcoesAgressor}
+                    onChange={(val) => setAgressorId(val)}
+                    placeholder={t('medidas:modal_conceder.placeholder_agressor')}
+                    fullWidth
+                  />
                 </div>
               </div>
 
@@ -561,7 +579,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
                   max={365}
                   value={prazoDias}
                   onChange={(e) => setPrazoDias(Number(e.target.value))}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
+                  style={{ width: '100%', height: '42px', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
                 />
               </div>
 
@@ -569,17 +587,34 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 8 }}>
                   {t('medidas:modal_conceder.campo_restricoes')}
                 </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {TIPOS_RESTRICAO_OPCOES.map((opt) => (
-                    <label key={opt.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={restricoes.includes(opt.id)}
-                        onChange={() => alternarRestricao(opt.id)}
-                      />
-                      <span>{t(`medidas:restricoes.${opt.id}`, { defaultValue: opt.label })}</span>
-                    </label>
-                  ))}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+                  {TIPOS_RESTRICAO_OPCOES.map((opt) => {
+                    const isChecked = restricoes.includes(opt.id);
+                    return (
+                      <div
+                        key={opt.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          minHeight: '42px',
+                          padding: '0 10px',
+                          borderRadius: '6px',
+                          background: isChecked ? 'var(--card-hover)' : 'transparent',
+                          border: isChecked ? '1px solid var(--primary)' : '1px solid var(--line)',
+                          transition: 'all 0.15s ease',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => alternarRestricao(opt.id)}
+                      >
+                        <SpringCheck
+                          checked={isChecked}
+                          strike="none"
+                          label={t(`medidas:restricoes.${opt.id}`, { defaultValue: opt.label })}
+                          onChange={() => alternarRestricao(opt.id)}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -594,7 +629,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
                     step={10}
                     value={distanciaMetros}
                     onChange={(e) => setDistanciaMetros(Number(e.target.value))}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
+                    style={{ width: '100%', height: '42px', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
                   />
                 </div>
               )}

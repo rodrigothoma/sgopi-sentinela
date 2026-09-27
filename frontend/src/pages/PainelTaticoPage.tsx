@@ -31,6 +31,7 @@ export const PainelTaticoPage: React.FC = () => {
   const [ultimoEvento, setUltimoEvento] = useState<string>('');
   // comunicados operacionais (chegada ao local etc.) — ficam listados, não só no toast
   const [comunicados, setComunicados] = useState<{ id: string; em: string; texto: string }[]>([]);
+  const [pontoTatico, setPontoTatico] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const carregar = useCallback(async () => {
     try {
@@ -199,7 +200,30 @@ export const PainelTaticoPage: React.FC = () => {
 
       <div className="painel-grid">
         <div className="painel-mapa">
-          <MapaTatico viaturas={viaturas} ocorrencias={ocorrencias} ordens={ordens} selecionada={selecionada} onSelecionarOcorrencia={selecionar} />
+          <MapaTatico
+            viaturas={viaturas}
+            ocorrencias={ocorrencias}
+            ordens={ordens}
+            selecionada={selecionada}
+            onSelecionarOcorrencia={selecionar}
+            pontoTatico={pontoTatico}
+            onCliqueMapa={(lat, lon) => setPontoTatico({ latitude: lat, longitude: lon })}
+          />
+          {pontoTatico && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, padding: '8px 12px', background: 'var(--card)', borderRadius: 8, border: '1px solid var(--line)', fontSize: '0.85rem' }}>
+              <span>
+                📍 <strong>Ponto Tático Marcado:</strong> {pontoTatico.latitude.toFixed(5)}, {pontoTatico.longitude.toFixed(5)}
+              </span>
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost"
+                onClick={() => setPontoTatico(null)}
+                style={{ fontSize: '0.75rem', padding: '2px 8px' }}
+              >
+                Limpar Ponto
+              </button>
+            </div>
+          )}
           {semSinal.length > 0 && (
             <div className="alerta aviso">
               ⚠ {t('painel:sem_sinal.alerta', { n: semSinal.length })}

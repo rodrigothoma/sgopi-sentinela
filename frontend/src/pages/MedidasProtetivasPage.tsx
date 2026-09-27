@@ -1,9 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { medidasService, type MedidaProtetiva } from '../services/medidasService';
+import { SpringCheck } from '../components/common/SpringCheck';
+import { GlideSelect, type GlideSelectOption } from '../components/common/GlideSelect';
 
 const TIPOS_RESTRICAO_CHAVES = [
   'AFASTAMENTO_DO_LAR',
@@ -49,6 +51,16 @@ export const MedidasProtetivasPage: React.FC = () => {
 
   // Form Revogar
   const [motivoRevogacao, setMotivoRevogacao] = useState('');
+
+  const opcoesStatusMedidas: GlideSelectOption[] = useMemo(
+    () => [
+      { value: 'TODOS', label: t('medidas:filtros.todas') },
+      { value: 'ATIVA', label: t('medidas:filtros.ativas') },
+      { value: 'RENOVADA', label: t('medidas:filtros.renovadas') },
+      { value: 'REVOGADA', label: t('medidas:filtros.revogadas') },
+    ],
+    [t],
+  );
 
   const carregarMedidas = useCallback(async () => {
     setCarregando(true);
@@ -184,38 +196,24 @@ export const MedidasProtetivasPage: React.FC = () => {
           <button
             className="btn btn-primary"
             onClick={() => setModalConcederAberto(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.2rem', fontWeight: 600 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.2rem', fontWeight: 600, height: '42px' }}
           >
             <span>+</span> {t('medidas:btn_conceder')}
           </button>
         )}
       </div>
 
-      {/* Barra de Filtros */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--line)', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
-        {[
-          { key: 'TODOS', label: t('medidas:filtros.todas') },
-          { key: 'ATIVA', label: t('medidas:filtros.ativas') },
-          { key: 'RENOVADA', label: t('medidas:filtros.renovadas') },
-          { key: 'REVOGADA', label: t('medidas:filtros.revogadas') },
-        ].map((item) => (
-          <button
-            key={item.key}
-            onClick={() => setFiltroStatus(item.key)}
-            style={{
-              padding: '0.4rem 0.8rem',
-              borderRadius: '6px',
-              border: 'none',
-              background: filtroStatus === item.key ? 'var(--primary)' : 'transparent',
-              color: filtroStatus === item.key ? '#fff' : 'var(--ink)',
-              cursor: 'pointer',
-              fontWeight: 500,
-              transition: 'background 0.15s ease',
-            }}
-          >
-            {item.label}
-          </button>
-        ))}
+      {/* Barra de Filtros com GlideSelect */}
+      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.25rem', background: 'var(--card)', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid var(--line)', flexWrap: 'wrap' }}>
+        <div style={{ minWidth: '220px' }}>
+          <GlideSelect
+            options={opcoesStatusMedidas}
+            value={filtroStatus}
+            onChange={(val) => setFiltroStatus(val)}
+            fullWidth
+            ariaLabel={t('medidas:titulo')}
+          />
+        </div>
         <span style={{ marginLeft: 'auto', alignSelf: 'center', color: 'var(--muted)', fontSize: '0.9rem' }}>
           {t('medidas:total_registrado')}: <strong style={{ color: 'var(--ink)' }}>{total}</strong>
         </span>
@@ -291,12 +289,13 @@ export const MedidasProtetivasPage: React.FC = () => {
                         setJustificativaRenovacao('');
                         setModalRenovarAberto(true);
                       }}
+                      style={{ height: '36px' }}
                     >
                       {t('medidas:acoes.renovar')}
                     </button>
                     <button
                       className="btn btn-sm btn-ghost"
-                      style={{ color: 'var(--danger)' }}
+                      style={{ color: 'var(--danger)', height: '36px' }}
                       onClick={() => {
                         setMedidaAlvo(m);
                         setMotivoRevogacao('');
@@ -316,14 +315,14 @@ export const MedidasProtetivasPage: React.FC = () => {
       {/* Modal Conceder */}
       {modalConcederAberto && (
         <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1200 }}>
-          <div style={{ background: 'var(--card)', color: 'var(--ink)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--line)', maxWidth: '600px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-pop)' }}>
+          <div style={{ background: 'var(--card)', color: 'var(--ink)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--line)', maxWidth: '620px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-pop)' }}>
             <h2 style={{ marginTop: 0, color: 'var(--ink)' }}>{t('medidas:modal_conceder.titulo')}</h2>
             <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginTop: '-0.5rem', marginBottom: '1rem' }}>
               {t('medidas:modal_conceder.subtitulo')}
             </p>
             <form onSubmit={executarConcessao}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                   {t('medidas:modal_conceder.campo_ocorrencia')}
                 </label>
                 <input
@@ -332,14 +331,14 @@ export const MedidasProtetivasPage: React.FC = () => {
                   value={ocorrenciaId}
                   onChange={(e) => setOcorrenciaId(e.target.value)}
                   placeholder={t('medidas:modal_conceder.placeholder_ocorrencia')}
-                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                  style={{ width: '100%', height: '42px', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                   required
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                     {t('medidas:modal_conceder.campo_vitima')}
                   </label>
                   <input
@@ -348,12 +347,12 @@ export const MedidasProtetivasPage: React.FC = () => {
                     value={vitimaId}
                     onChange={(e) => setVitimaId(e.target.value)}
                     placeholder={t('medidas:modal_conceder.placeholder_vitima')}
-                    style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                    style={{ width: '100%', height: '42px', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                     required
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                     {t('medidas:modal_conceder.campo_agressor')}
                   </label>
                   <input
@@ -362,39 +361,63 @@ export const MedidasProtetivasPage: React.FC = () => {
                     value={agressorId}
                     onChange={(e) => setAgressorId(e.target.value)}
                     placeholder={t('medidas:modal_conceder.placeholder_agressor')}
-                    style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                    style={{ width: '100%', height: '42px', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                     required
                   />
                 </div>
               </div>
 
+              {/* Seletor de Restrições em Checkbox com SpringCheck */}
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                   {t('medidas:modal_conceder.campo_restricoes')}
                 </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', background: 'var(--bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--line)' }}>
-                  {TIPOS_RESTRICAO_CHAVES.map((optKey) => (
-                    <label key={optKey} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--ink)', cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={restricoesSelecionadas.includes(optKey)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setRestricoesSelecionadas([...restricoesSelecionadas, optKey]);
-                          } else {
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: 'var(--bg)', padding: '10px', borderRadius: '8px', border: '1px solid var(--line)' }}>
+                  {TIPOS_RESTRICAO_CHAVES.map((optKey) => {
+                    const isChecked = restricoesSelecionadas.includes(optKey);
+                    return (
+                      <div
+                        key={optKey}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          minHeight: '40px',
+                          padding: '0 10px',
+                          borderRadius: '6px',
+                          background: isChecked ? 'var(--card-hover)' : 'transparent',
+                          border: isChecked ? '1px solid var(--primary)' : '1px solid transparent',
+                          transition: 'all 0.15s ease',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => {
+                          if (isChecked) {
                             setRestricoesSelecionadas(restricoesSelecionadas.filter((id) => id !== optKey));
+                          } else {
+                            setRestricoesSelecionadas([...restricoesSelecionadas, optKey]);
                           }
                         }}
-                      />
-                      <span>{t(`medidas:restricoes.${optKey}`, { defaultValue: optKey.replace(/_/g, ' ') })}</span>
-                    </label>
-                  ))}
+                      >
+                        <SpringCheck
+                          checked={isChecked}
+                          strike="none"
+                          label={t(`medidas:restricoes.${optKey}`, { defaultValue: optKey.replace(/_/g, ' ') })}
+                          onChange={(checked) => {
+                            if (checked) {
+                              if (!restricoesSelecionadas.includes(optKey)) setRestricoesSelecionadas([...restricoesSelecionadas, optKey]);
+                            } else {
+                              setRestricoesSelecionadas(restricoesSelecionadas.filter((id) => id !== optKey));
+                            }
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                     {t('medidas:modal_conceder.campo_prazo')}
                   </label>
                   <input
@@ -403,12 +426,12 @@ export const MedidasProtetivasPage: React.FC = () => {
                     max="730"
                     value={prazoDias}
                     onChange={(e) => setPrazoDias(Number(e.target.value))}
-                    style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                    style={{ width: '100%', height: '42px', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                     required
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                     {t('medidas:modal_conceder.campo_distancia')}
                   </label>
                   <input
@@ -417,13 +440,13 @@ export const MedidasProtetivasPage: React.FC = () => {
                     max="50000"
                     value={distanciaMinima}
                     onChange={(e) => setDistanciaMinima(Number(e.target.value))}
-                    style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                    style={{ width: '100%', height: '42px', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                   />
                 </div>
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                   {t('medidas:modal_conceder.campo_condicoes')}
                 </label>
                 <textarea
@@ -432,13 +455,13 @@ export const MedidasProtetivasPage: React.FC = () => {
                   value={condicoesEspecificas}
                   onChange={(e) => setCondicoesEspecificas(e.target.value)}
                   placeholder={t('medidas:modal_conceder.placeholder_condicoes')}
-                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                  style={{ width: '100%', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                 />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setModalConcederAberto(false)}>{t('medidas:acoes.cancelar')}</button>
-                <button type="submit" className="btn btn-primary">{t('medidas:modal_conceder.btn_submit')}</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setModalConcederAberto(false)} style={{ height: '42px' }}>{t('medidas:acoes.cancelar')}</button>
+                <button type="submit" className="btn btn-primary" style={{ height: '42px' }}>{t('medidas:modal_conceder.btn_submit')}</button>
               </div>
             </form>
           </div>
@@ -455,7 +478,7 @@ export const MedidasProtetivasPage: React.FC = () => {
             </p>
             <form onSubmit={executarRenovacao}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                   {t('medidas:modal_renovar.campo_dias')}
                 </label>
                 <input
@@ -464,13 +487,13 @@ export const MedidasProtetivasPage: React.FC = () => {
                   max="365"
                   value={diasAdicionais}
                   onChange={(e) => setDiasAdicionais(Number(e.target.value))}
-                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                  style={{ width: '100%', height: '42px', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                   required
                 />
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                   {t('medidas:modal_renovar.campo_justificativa')}
                 </label>
                 <textarea
@@ -479,14 +502,14 @@ export const MedidasProtetivasPage: React.FC = () => {
                   value={justificativaRenovacao}
                   onChange={(e) => setJustificativaRenovacao(e.target.value)}
                   placeholder={t('medidas:modal_renovar.placeholder_justificativa')}
-                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                  style={{ width: '100%', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                   required
                 />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setModalRenovarAberto(false)}>{t('medidas:acoes.cancelar')}</button>
-                <button type="submit" className="btn btn-primary">{t('medidas:modal_renovar.btn_submit')}</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setModalRenovarAberto(false)} style={{ height: '42px' }}>{t('medidas:acoes.cancelar')}</button>
+                <button type="submit" className="btn btn-primary" style={{ height: '42px' }}>{t('medidas:modal_renovar.btn_submit')}</button>
               </div>
             </form>
           </div>
@@ -503,7 +526,7 @@ export const MedidasProtetivasPage: React.FC = () => {
             </p>
             <form onSubmit={executarRevogacao}>
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
                   {t('medidas:modal_revogar.campo_motivo')}
                 </label>
                 <textarea
@@ -512,14 +535,14 @@ export const MedidasProtetivasPage: React.FC = () => {
                   value={motivoRevogacao}
                   onChange={(e) => setMotivoRevogacao(e.target.value)}
                   placeholder={t('medidas:modal_revogar.placeholder_motivo')}
-                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
+                  style={{ width: '100%', padding: '0.6rem 0.8rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
                   required
                 />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setModalRevogarAberto(false)}>{t('medidas:acoes.cancelar')}</button>
-                <button type="submit" className="btn btn-danger">{t('medidas:modal_revogar.btn_submit')}</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setModalRevogarAberto(false)} style={{ height: '42px' }}>{t('medidas:acoes.cancelar')}</button>
+                <button type="submit" className="btn btn-danger" style={{ height: '42px' }}>{t('medidas:modal_revogar.btn_submit')}</button>
               </div>
             </form>
           </div>

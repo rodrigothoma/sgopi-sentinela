@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
 import { StatusBadge } from '../components/StatusBadge';
+import { GlideSelect, type GlideSelectOption } from '../components/common/GlideSelect';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { STATUS_ARQUIVAVEIS, STATUS_EXCLUIVEIS, type OcorrenciaDetalhe, type OcorrenciaResumo, type StatusOcorrencia } from '../types/api';
@@ -23,6 +24,15 @@ export const FilaDelegadoPage: React.FC = () => {
   const [filtro, setFiltro] = useState(0);
   const [pagina, setPagina] = useState<{ itens: OcorrenciaResumo[]; total: number }>({ itens: [], total: 0 });
   const [detalhe, setDetalhe] = useState<OcorrenciaDetalhe | null>(null);
+
+  const opcoesFiltro: GlideSelectOption[] = useMemo(
+    () =>
+      FILTROS.map((_, i) => ({
+        value: String(i),
+        label: t(`ocorrencias:fila.filtro_${i}`),
+      })),
+    [t],
+  );
   const [justificativa, setJustificativa] = useState('');
   const [motivo, setMotivo] = useState('');
   const [ocupado, setOcupado] = useState(false);
@@ -110,10 +120,14 @@ export const FilaDelegadoPage: React.FC = () => {
     <div className="pagina duas-colunas">
       <section className="card">
         <h2>{t('ocorrencias:fila.titulo')} <span className="muted">({pagina.total})</span></h2>
-        <div className="tabs">
-          {FILTROS.map((_, i) => (
-            <button key={i} className={`tab ${i === filtro ? 'ativo' : ''}`} onClick={() => setFiltro(i)}>{t(`ocorrencias:fila.filtro_${i}`)}</button>
-          ))}
+        <div style={{ marginBottom: '1.25rem' }}>
+          <GlideSelect
+            options={opcoesFiltro}
+            value={String(filtro)}
+            onChange={(val) => setFiltro(Number(val))}
+            fullWidth
+            ariaLabel={t('ocorrencias:fila.titulo')}
+          />
         </div>
         {pagina.itens.length === 0 && <p className="muted">{t('ocorrencias:fila.vazia')}</p>}
         <ul className="lista clicavel">

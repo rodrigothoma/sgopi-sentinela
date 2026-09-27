@@ -31,7 +31,7 @@ async def test_seed_completo_e_idempotente(session_factory, monkeypatch):
             assert v.longitude is not None
 
         ocorrencias = (await s.execute(select(OcorrenciaModel))).scalars().all()
-        assert len(ocorrencias) == 5
+        assert len(ocorrencias) == 12
         statuses = {o.status for o in ocorrencias}
         assert StatusOcorrencia.AGUARDANDO_REVISAO.value in statuses
         assert StatusOcorrencia.VALIDADA.value in statuses
@@ -48,7 +48,7 @@ async def test_seed_completo_e_idempotente(session_factory, monkeypatch):
         total_o = len((await s.execute(select(OcorrenciaModel))).scalars().all())
         assert total_u >= 4
         assert total_v == 5
-        assert total_o == 5
+        assert total_o == 12
 
 
 @pytest.mark.asyncio

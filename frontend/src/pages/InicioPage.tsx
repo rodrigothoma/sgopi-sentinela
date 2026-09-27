@@ -144,7 +144,7 @@ export const InicioPage: React.FC = () => {
         <div>
           <h1>{t(`inicio:saudacao.${saudacaoDe(hora)}`, { nome: usuario.nome })}</h1>
           <p className="muted">
-            {t('inicio:subtitulo', { data: agora.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' }) })} · <span className="pill">{t(`common:papel.${usuario.papel}`)}</span>
+            {t('inicio:subtitulo', { data: agora.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' }) })} · {t(`common:papel.${usuario.papel}`)}
           </p>
         </div>
         <div className="inicio-turno">
