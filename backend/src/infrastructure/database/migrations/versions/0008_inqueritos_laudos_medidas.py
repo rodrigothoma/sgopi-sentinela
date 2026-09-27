@@ -38,8 +38,10 @@ def upgrade() -> None:
     op.create_index("ix_inqueritos_data_abertura", "inqueritos", ["data_abertura"])
 
     # 2. Vínculo de Ocorrências a Inquérito
-    op.add_column("ocorrencias", sa.Column("inquerito_id", sa.Uuid(), sa.ForeignKey("inqueritos.id"), nullable=True))
-    op.create_index("ix_ocorrencias_inquerito_id", "ocorrencias", ["inquerito_id"])
+    with op.batch_alter_table("ocorrencias") as batch_op:
+        batch_op.add_column(sa.Column("inquerito_id", sa.Uuid(), nullable=True))
+        batch_op.create_foreign_key("fk_ocorrencias_inquerito_id_inqueritos", "inqueritos", ["inquerito_id"], ["id"])
+        batch_op.create_index("ix_ocorrencias_inquerito_id", ["inquerito_id"])
 
     # 3. Laudos Periciais (RF07 / UC07)
     op.create_table(
@@ -128,6 +130,8 @@ def downgrade() -> None:
     op.drop_table("sequencias_inquerito")
     op.drop_table("medidas_protetivas")
     op.drop_table("laudos_periciais")
-    op.drop_index("ix_ocorrencias_inquerito_id", "ocorrencias")
-    op.drop_column("ocorrencias", "inquerito_id")
+    with op.batch_alter_table("ocorrencias") as batch_op:
+        batch_op.drop_index("ix_ocorrencias_inquerito_id")
+        batch_op.drop_constraint("fk_ocorrencias_inquerito_id_inqueritos", type_="foreignkey")
+        batch_op.drop_column("inquerito_id")
     op.drop_table("inqueritos")
