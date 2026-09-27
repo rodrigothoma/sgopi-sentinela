@@ -160,6 +160,7 @@ class Ocorrencia:
     motivo_arquivamento: str | None = None
     excluida_por_id: UUID | None = None
     motivo_exclusao: str | None = None
+    inquerito_id: UUID | None = None
     tipificacoes: list[TipificacaoPenal] = field(default_factory=list)
     envolvidos: list[Envolvido] = field(default_factory=list)
     evidencias: list[Evidencia] = field(default_factory=list)
@@ -169,6 +170,25 @@ class Ocorrencia:
     def __post_init__(self) -> None:
         if self.atualizada_em is None:
             self.atualizada_em = self.criada_em
+
+    def vincular_inquerito(self, inquerito_id: UUID) -> None:
+        if self.status != StatusOcorrencia.VALIDADA:
+            raise ConflitoError(
+                f"Apenas ocorrências com status VALIDADA podem ser vinculadas a inquéritos (status atual: {self.status.value}).",
+                chave="ocorrencia.status_invalido_para_inquerito",
+            )
+        if self.inquerito_id is not None and self.inquerito_id != inquerito_id:
+            raise ConflitoError(
+                "A ocorrência já se encontra vinculada a outro inquérito policial.",
+                chave="ocorrencia.ja_vinculada_a_inquerito",
+            )
+        self.inquerito_id = inquerito_id
+        self.versao += 1
+
+    def desvincular_inquerito(self) -> None:
+        self.inquerito_id = None
+        self.versao += 1
+
 
     # ------------------------------------------------------------------ factory
     @classmethod

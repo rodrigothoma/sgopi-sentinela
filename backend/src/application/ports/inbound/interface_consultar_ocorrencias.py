@@ -55,6 +55,7 @@ class OcorrenciaResumoOutput:
     atualizada_em: str
     agente_policial_id: UUID
     versao: int
+    inquerito_id: UUID | None = None
 
 
 @dataclass(frozen=True)

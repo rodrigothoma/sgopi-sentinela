@@ -59,6 +59,7 @@ def para_resumo(o: Ocorrencia) -> OcorrenciaResumoOutput:
         atualizada_em=(o.atualizada_em or o.criada_em).isoformat(),
         agente_policial_id=o.agente_policial_id,
         versao=o.versao,
+        inquerito_id=o.inquerito_id,
     )
 
 
