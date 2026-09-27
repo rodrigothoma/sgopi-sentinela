@@ -13,7 +13,10 @@
     "auditoria": "Trilha de auditoria",
     "lookup": "Consultar protocolo",
     "police_access": "Acesso Policial",
-    "inicio": "Início"
+    "inicio": "Início",
+    "inqueritos": "Inquéritos",
+    "laudos": "Laudos Periciais",
+    "medidas": "Medidas Protetivas"
   },
   "actions": {
     "save": "Salvar",

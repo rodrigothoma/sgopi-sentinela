@@ -32,6 +32,9 @@ export const AppShell: React.FC = () => {
           {tem('AGENTE') && <NavLink to="/registrar">{t('nav.registrar')}</NavLink>}
           {tem('AGENTE') && <NavLink to="/minhas">{t('nav.minhas')}</NavLink>}
           {tem('DELEGADO', 'SUPERVISOR') && <NavLink to="/fila">{t('nav.fila')}</NavLink>}
+          {tem('DELEGADO', 'SUPERVISOR') && <NavLink to="/inqueritos">{t('nav.inqueritos')}</NavLink>}
+          {tem('DELEGADO', 'PERITO', 'SUPERVISOR') && <NavLink to="/laudos">{t('nav.laudos')}</NavLink>}
+          {tem('DELEGADO', 'SUPERVISOR', 'AGENTE') && <NavLink to="/medidas">{t('nav.medidas')}</NavLink>}
           {tem('OPERADOR_CENTRAL', 'SUPERVISOR', 'DELEGADO') && <NavLink to="/painel">{t('nav.painel')}</NavLink>}
           {tem('OPERADOR_CENTRAL', 'SUPERVISOR') && <NavLink to="/frota">{t('nav.frota')}</NavLink>}
           {tem('DELEGADO', 'SUPERVISOR') && <NavLink to="/auditoria">{t('nav.auditoria')}</NavLink>}

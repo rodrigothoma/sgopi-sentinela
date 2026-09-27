@@ -63,6 +63,7 @@ export interface OcorrenciaResumo {
   ocorrencia_id: string; numero_protocolo: string; natureza: string; localizacao: string;
   latitude: number; longitude: number; status: StatusOcorrencia; data_hora_fato: string;
   criada_em: string; atualizada_em: string; agente_policial_id: string; versao: number;
+  inquerito_id?: string | null;
 }
 export interface EnvolvidoDetalhe {
   id: string;

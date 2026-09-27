@@ -13,7 +13,10 @@
     "auditoria": "Audit Trail",
     "lookup": "Lookup Protocol",
     "police_access": "Police Portal",
-    "inicio": "Home"
+    "inicio": "Home",
+    "inqueritos": "Inquests",
+    "laudos": "Forensic Reports",
+    "medidas": "Protective Orders"
   },
   "actions": {
     "save": "Save",
