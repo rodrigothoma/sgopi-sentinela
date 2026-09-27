@@ -15,6 +15,7 @@ import urllib.error
 
 parser = argparse.ArgumentParser(description="Cadastro de novas issues e Kanban no GitHub Projects")
 parser.add_argument("--token", help="GitHub Personal Access Token (PAT)")
+parser.add_argument("--status", default="Done", choices=["Backlog", "Sprint Backlog", "In progress", "In review", "Done"], help="Coluna de status no Kanban (padrão: Done)")
 args, _ = parser.parse_known_args()
 
 TOKEN = args.token or os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN", "")
@@ -36,7 +37,7 @@ NOVAS_ISSUES = [
         "title": "Pin Interativo SVG de Localização e Despacho no Mapa (DEC-03 / RF02)",
         "labels": ["frontend", "ui/ux", "enhancement"],
         "assignees": ["fadekanaan"],
-        "status": "In progress",
+        "status": args.status,
         "body": """### Objetivo
 Implementar marcadores visuais modernos vetoriais em SVG (*Pin de Local do Fato* e *Alvo de Despacho*) com pulso de radar (*ripple pulse*) e ancoragem precisa no mapa Leaflet, substituindo marcadores padrão cinzas/azuis e permitindo seleção intuitiva de localização no registro de ocorrência e no painel de despacho.
 
@@ -46,10 +47,10 @@ Implementar marcadores visuais modernos vetoriais em SVG (*Pin de Local do Fato*
 - Utilizado tanto no formulário de registro de ocorrência (cidadão e agente) quanto no painel tático de despacho.
 
 ### Tarefas / Critérios de Aceitação
-- [ ] Criar geradores de ícones vetoriais SVG `iconePinFato` e `iconeAlvoDespacho` em `leaflet.ts`.
-- [ ] Integrar o pin animado com sombra e anel de pulso no componente `SeletorCoordenada.tsx`.
-- [ ] Integrar o destaque do ponto de despacho da ocorrência selecionada no `MapaTatico.tsx`.
-- [ ] Garantir que o arraste e o clique atualizem as coordenadas e posicionem a ponta do pin com exatidão geodésica.
+- [x] Criar geradores de ícones vetoriais SVG `iconePinFato` e `iconeAlvoDespacho` em `leaflet.ts`.
+- [x] Integrar o pin animado com sombra e anel de pulso no componente `SeletorCoordenada.tsx`.
+- [x] Integrar o destaque do ponto de despacho da ocorrência selecionada no `MapaTatico.tsx`.
+- [x] Garantir que o arraste e o clique atualizem as coordenadas e posicionem a ponta do pin com exatidão geodésica.
 """
     },
     {
@@ -57,7 +58,7 @@ Implementar marcadores visuais modernos vetoriais em SVG (*Pin de Local do Fato*
         "title": "Gestão de Inquéritos Policiais e Vinculação de Ocorrências com Sugestão de Conexões (RF06 / UC06)",
         "labels": ["backend", "frontend", "feature"],
         "assignees": ["fadekanaan"],
-        "status": "In progress",
+        "status": args.status,
         "body": """### Objetivo
 Implementar o módulo completo de Gestão de Inquéritos Policiais (IP) para o Delegado de Polícia, permitindo a instauração formal de inquéritos e o agrupamento de múltiplas ocorrências policiais validadas sob o mesmo inquérito, com motor inteligente de sugestão de conexões criminais conforme o caso de uso UC06 e diagrama de sequência sq06.
 
@@ -69,15 +70,15 @@ Implementar o módulo completo de Gestão de Inquéritos Policiais (IP) para o D
 - Arquitetura Hexagonal estrita com persistência relacional auditada (RNF03 / RNF05).
 
 ### Tarefas / Critérios de Aceitação
-- [ ] Criar entidade de domínio `Inquerito` e enums de status (`EM_ANDAMENTO`, `CONCLUIDO`, `ARQUIVADO`).
-- [ ] Adicionar relacionamento e regras de vinculação na entidade `Ocorrencia`.
-- [ ] Criar portas inbound (`InterfaceGerirInqueritos`) e outbound (`RepositorioInquerito`).
-- [ ] Criar casos de uso `InstaurarInquerito`, `ListarInqueritos`, `VincularOcorrenciasInquerito` e `SugerirConexoesOcorrencias`.
-- [ ] Modelar tabela `inqueritos`, foreign key `inquerito_id` em `ocorrencias` e tabela sequencial de numeração `IP-AAAA-NNNNNN`.
-- [ ] Criar migration Alembic para PostgreSQL.
-- [ ] Implementar rotas REST FastAPI em `/v1/inqueritos` com controle RBAC (Delegado).
-- [ ] Desenvolver interface frontend (`InqueritosPage.tsx`, modal de instauração e assistente de vinculação com sugestões de conexões).
-- [ ] Cobertura de testes unitários, testes de integração e testes E2E.
+- [x] Criar entidade de domínio `Inquerito` e enums de status (`EM_ANDAMENTO`, `CONCLUIDO`, `ARQUIVADO`).
+- [x] Adicionar relacionamento e regras de vinculação na entidade `Ocorrencia`.
+- [x] Criar portas inbound (`InterfaceGerirInqueritos`) e outbound (`RepositorioInquerito`).
+- [x] Criar casos de uso `InstaurarInquerito`, `ListarInqueritos`, `VincularOcorrenciasInquerito` e `SugerirConexoesOcorrencias`.
+- [x] Modelar tabela `inqueritos`, foreign key `inquerito_id` em `ocorrencias` e tabela sequencial de numeração `IP-AAAA-NNNNNN`.
+- [x] Criar migration Alembic para PostgreSQL e SQLite (CI).
+- [x] Implementar rotas REST FastAPI em `/v1/inqueritos` com controle RBAC (Delegado).
+- [x] Desenvolver interface frontend (`InqueritosPage.tsx`, modal de instauração e assistente de vinculação com sugestões de conexões).
+- [x] Cobertura de testes unitários, testes de integração e testes E2E.
 """
     },
     {
@@ -85,7 +86,7 @@ Implementar o módulo completo de Gestão de Inquéritos Policiais (IP) para o D
         "title": "Gestão e Juntada de Laudos Periciais com Validação Digital e Integridade SHA-256 (RF07 / UC07)",
         "labels": ["backend", "frontend", "feature", "security"],
         "assignees": ["fadekanaan"],
-        "status": "In progress",
+        "status": args.status,
         "body": """### Objetivo
 Implementar o módulo de Gestão de Laudos Periciais emitidos pela Polícia Científica/Perícia Técnica, permitindo a solicitação pelo Delegado, confecção, upload do laudo oficial em PDF assinado digitalmente, validação de integridade criptográfica com hash SHA-256 e juntada aos autos da ocorrência, inquérito ou itens apreendidos (RF07 / UC07).
 
@@ -96,13 +97,13 @@ Implementar o módulo de Gestão de Laudos Periciais emitidos pela Polícia Cien
 - Validação criptográfica do arquivo com cálculo automático de hash SHA-256 no momento do upload.
 
 ### Tarefas / Critérios de Aceitação
-- [ ] Criar entidade de domínio `LaudoPericial` com regras de integridade e tipos de perícia (Balística, Toxicológica, Local de Crime, etc.).
-- [ ] Criar portas e casos de uso: `SolicitarPericia`, `AnexarLaudoPericial`, `ConsultarLaudos` e `DownloadLaudoPericial`.
-- [ ] Modelar tabela `laudos_periciais` e tabela sequencial de referência `LP-AAAA-NNNNNN`.
-- [ ] Criar migration Alembic para PostgreSQL.
-- [ ] Implementar rotas FastAPI em `/v1/laudos` com proteção por papel (`PERITO`, `DELEGADO`).
-- [ ] Desenvolver interface frontend (`LaudosPage.tsx` e aba de laudos no detalhe da ocorrência e inquérito).
-- [ ] Testes unitários e de integração de upload com verificação do hash SHA-256.
+- [x] Criar entidade de domínio `LaudoPericial` com regras de integridade e tipos de perícia (Balística, Toxicológica, Local de Crime, etc.).
+- [x] Criar portas e casos de uso: `SolicitarPericia`, `AnexarLaudoPericial`, `ConsultarLaudos` e `DownloadLaudoPericial`.
+- [x] Modelar tabela `laudos_periciais` e tabela sequencial de referência `LP-AAAA-NNNNNN`.
+- [x] Criar migration Alembic para PostgreSQL e SQLite (CI).
+- [x] Implementar rotas FastAPI em `/v1/laudos` com proteção por papel (`PERITO`, `DELEGADO`).
+- [x] Desenvolver interface frontend (`LaudosPage.tsx` e aba de laudos no detalhe da ocorrência e inquérito).
+- [x] Testes unitários e de integração de upload com verificação do hash SHA-256.
 """
     },
     {
@@ -110,7 +111,7 @@ Implementar o módulo de Gestão de Laudos Periciais emitidos pela Polícia Cien
         "title": "Gestão e Monitoramento de Medidas Protetivas de Urgência e Prazos Judiciais (RF09 / UC09)",
         "labels": ["backend", "frontend", "feature"],
         "assignees": ["fadekanaan"],
-        "status": "In progress",
+        "status": args.status,
         "body": """### Objetivo
 Implementar o módulo de Medidas Protetivas de Urgência e Restrições Judiciais vinculadas a indivíduos qualificados em ocorrências policiais, permitindo o cadastramento de restrições (afastamento, proibição de contato, perímetro mínimo), controle ativo de prazos de vigência e prorrogações auditadas pelo Delegado (RF09 / UC09).
 
@@ -121,13 +122,13 @@ Implementar o módulo de Medidas Protetivas de Urgência e Restrições Judiciai
 - Prorrogação e revogação exigem fundamentação formal do Delegado de Polícia gravada na trilha de auditoria.
 
 ### Tarefas / Critérios de Aceitação
-- [ ] Criar entidade de domínio `MedidaProtetiva` com cálculo de vigência, status (`ATIVA`, `RENOVADA`, `REVOGADA`, `EXPIRADA`) e tipos de restrição.
-- [ ] Criar portas e casos de uso: `ConcederMedidaProtetiva`, `RenovarMedidaProtetiva`, `RevogarMedidaProtetiva` e `ListarMedidasProtetivas`.
-- [ ] Modelar tabela `medidas_protetivas` e sequencial `MP-AAAA-NNNNNN`.
-- [ ] Criar migration Alembic para PostgreSQL.
-- [ ] Implementar endpoints FastAPI em `/v1/medidas-protetivas` restritos ao perfil `DELEGADO`.
-- [ ] Desenvolver interface frontend (`MedidasProtetivasPage.tsx` com badges de dias restantes e modal de concessão e renovação).
-- [ ] Testes unitários e de integração para validação de prazos e segurança RBAC.
+- [x] Criar entidade de domínio `MedidaProtetiva` com cálculo de vigência, status (`ATIVA`, `RENOVADA`, `REVOGADA`, `EXPIRADA`) e tipos de restrição.
+- [x] Criar portas e casos de uso: `ConcederMedidaProtetiva`, `RenovarMedidaProtetiva`, `RevogarMedidaProtetiva` e `ListarMedidasProtetivas`.
+- [x] Modelar tabela `medidas_protetivas` e sequencial `MP-AAAA-NNNNNN`.
+- [x] Criar migration Alembic para PostgreSQL e SQLite (CI).
+- [x] Implementar endpoints FastAPI em `/v1/medidas-protetivas` restritos ao perfil `DELEGADO`.
+- [x] Desenvolver interface frontend (`MedidasProtetivasPage.tsx` com badges de dias restantes e modal de concessão e renovação).
+- [x] Testes unitários e de integração para validação de prazos e segurança RBAC.
 """
     }
 ]
@@ -245,7 +246,7 @@ def main():
             print(f"  ! Erro ao cadastrar issue '{iss['title']}': {e}")
 
     print("\n" + "=" * 60)
-    print(f"  CONCLUÍDO: {sucessos}/{len(NOVAS_ISSUES)} issues criadas e vinculadas ao Kanban em 'In progress'.")
+    print(f"  CONCLUÍDO: {sucessos}/{len(NOVAS_ISSUES)} issues criadas e vinculadas ao Kanban na coluna '{args.status}'.")
     print(f"  Quadro: https://github.com/users/rodrigothoma/projects/2")
     print("=" * 60)
 
