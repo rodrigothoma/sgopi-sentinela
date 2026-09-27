@@ -1374,14 +1374,17 @@ dl.grid2 dd { margin: 0 0 8px; }
 /* KPI Summary Cards Grid */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1431,8 +1434,10 @@ dl.grid2 dd { margin: 0 0 8px; }
   max-width: 100% !important;
   width: 100% !important;
   margin: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
 }
-.inicio-cabecalho { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; width: 100%; }
+.inicio-cabecalho { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; width: 100%; box-sizing: border-box; }
 .inicio-cabecalho h1 { margin: 0 0 4px; }
 .inicio-cabecalho p { margin: 0; }
 .inicio-turno { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
@@ -1440,10 +1445,12 @@ dl.grid2 dd { margin: 0 0 8px; }
 .kpi-card .kpi-sub { font-size: .8rem; color: var(--muted); margin-top: 2px; }
 .inicio-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   align-items: stretch;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .inicio-grid .card {
   margin-bottom: 0;
@@ -1451,12 +1458,38 @@ dl.grid2 dd { margin: 0 0 8px; }
   flex-direction: column;
   min-height: 420px;
   max-height: 480px;
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden;
 }
-.inicio-grid .card h3 { display: flex; align-items: center; gap: 8px; margin-top: 0; margin-bottom: 12px; }
+.inicio-grid .card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0;
+  margin-bottom: 12px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.inicio-grid table.tabela {
+  width: 100%;
+  min-width: 100%;
+  table-layout: auto;
+  font-size: 0.78rem;
+}
+.inicio-grid table.tabela th,
+.inicio-grid table.tabela td {
+  padding: 6px 4px;
+}
 .card-corpo-scroll {
   flex: 1;
   overflow-y: auto;
+  overflow-x: auto;
   padding-right: 4px;
+  min-width: 0;
 }
 .inicio-item-row {
   display: flex;
@@ -1465,10 +1498,12 @@ dl.grid2 dd { margin: 0 0 8px; }
   gap: 8px;
   padding: 8px 0;
   border-bottom: 1px solid var(--line);
+  min-width: 0;
 }
 .inicio-item-texto {
   min-width: 0;
   flex: 1;
+  overflow: hidden;
 }
 .inicio-item-titulo {
   font-weight: 600;
@@ -1496,15 +1531,18 @@ dl.grid2 dd { margin: 0 0 8px; }
   grid-column: 1 / -1 !important;
   min-height: auto !important;
   max-height: none !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
-.escala-turnos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
-.escala-turno { flex: 1 1 140px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-surface); }
+.escala-turnos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; width: 100%; box-sizing: border-box; }
+.escala-turno { flex: 1 1 120px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-surface); box-sizing: border-box; }
 .escala-turno.atual { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-glow); }
-.efetivo-grupo { margin-top: 10px; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.efetivo-grupo { margin-top: 10px; width: 100%; box-sizing: border-box; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; width: 100%; box-sizing: border-box; }
 .chip { background: var(--bg-surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font-size: .85rem; }
 .chip.voce { border-color: var(--primary); color: var(--primary); }
-@media (max-width: 1280px) { .inicio-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1200px) { .inicio-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .inicio-grid { grid-template-columns: 1fr; } .inicio-turno { align-items: flex-start; text-align: left; } }
 
 /* --- Apreensões (RF03): subformulário, aba e Auto de Apreensão --- */

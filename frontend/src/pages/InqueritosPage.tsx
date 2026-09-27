@@ -12,6 +12,7 @@ import { ocorrenciasService } from '../services/ocorrenciasService';
 import { type OcorrenciaResumo } from '../types/api';
 import { SpringCheck } from '../components/common/SpringCheck';
 import { GlideSelect, type GlideSelectOption } from '../components/common/GlideSelect';
+import { ActionBtn } from '../components/common/ActionBtn';
 
 const ITENS_POR_PAGINA = 10;
 
@@ -52,9 +53,10 @@ export const InqueritosPage: React.FC = () => {
   const [inputManualVincularId, setInputManualVincularId] = useState<string>('');
   const [buscandoManualVincular, setBuscandoManualVincular] = useState<boolean>(false);
 
-  // Motor de sugestão de conexões
+  // Motor de sugestão de conexões no detalhe do inquérito
   const [sugestoes, setSugestoes] = useState<ConexaoSugerida[]>([]);
   const [carregandoSugestoes, setCarregandoSugestoes] = useState(false);
+  const [ocorrenciaConexoesAbertaId, setOcorrenciaConexoesAbertaId] = useState<string | null>(null);
 
   // Conexões no Modal de Instauração
   const [sugestoesInstaurar, setSugestoesInstaurar] = useState<ConexaoSugerida[]>([]);
@@ -273,13 +275,15 @@ export const InqueritosPage: React.FC = () => {
     }
   };
 
+  const dispararBuscaConexoes = (ocorrenciaId: string) => {
+    setOcorrenciaConexoesAbertaId(ocorrenciaId);
+    carregarSugestoesConexao(ocorrenciaId);
+  };
+
   const selecionarInquerito = async (inq: Inquerito) => {
     setSelecionado(inq);
     setSugestoes([]);
-    // Se o inquérito tem ocorrências, busca sugestões da primeira
-    if (inq.ocorrencias.length > 0) {
-      carregarSugestoesConexao(inq.ocorrencias[0].id);
-    }
+    setOcorrenciaConexoesAbertaId(null);
   };
 
   const executarVinculacao = async (ocorrenciaId: string) => {
@@ -547,9 +551,10 @@ export const InqueritosPage: React.FC = () => {
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
+                        gap: '0.75rem',
                       }}
                     >
-                      <div>
+                      <div style={{ flex: 1, minWidth: 0, paddingRight: '0.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                           <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--ink)' }}>{oc.numero_protocolo}</span>
                           {index === 0 ? (
@@ -587,14 +592,13 @@ export const InqueritosPage: React.FC = () => {
                           {oc.localizacao} &bull; {new Date(oc.data_hora_fato).toLocaleString()}
                         </div>
                       </div>
-                      <button
-                        className="btn btn-sm btn-ghost"
-                        onClick={() => carregarSugestoesConexao(oc.id)}
-                        title={t('inqueritos:acoes.buscar_conexoes')}
-                        style={{ fontSize: '0.75rem' }}
-                      >
-                        🔍 {t('inqueritos:acoes.buscar_conexoes')}
-                      </button>
+                      <ActionBtn
+                        variant="ghost"
+                        icon="🔍"
+                        label={t('inqueritos:acoes.buscar_conexoes')}
+                        onClick={() => dispararBuscaConexoes(oc.id)}
+                        width="155px"
+                      />
                     </div>
                   ))}
                 </div>
@@ -602,15 +606,26 @@ export const InqueritosPage: React.FC = () => {
             </div>
 
             {/* Painel do Motor de Conexões Inteligentes */}
-            {selecionado.status === 'EM_ANDAMENTO' && (
+            {selecionado.status === 'EM_ANDAMENTO' && ocorrenciaConexoesAbertaId && (
               <div style={{ marginBottom: '1.25rem', border: '1px solid var(--primary-glow, var(--line))', borderRadius: '8px', padding: '0.85rem', background: 'var(--card-hover)' }}>
-                <h4 style={{ margin: '0 0 0.5rem', color: 'var(--primary)', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  {t('inqueritos:modal_conexoes.titulo')}
-                </h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <h4 style={{ margin: 0, color: 'var(--primary)', fontSize: '0.95rem' }}>
+                    {t('inqueritos:modal_conexoes.titulo')}
+                  </h4>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => setOcorrenciaConexoesAbertaId(null)}
+                    style={{ fontSize: '1.1rem', lineHeight: 1, padding: '2px 8px', color: 'var(--muted)', border: 'none', background: 'none', cursor: 'pointer' }}
+                    title="Fechar sugestões"
+                  >
+                    &times;
+                  </button>
+                </div>
                 {carregandoSugestoes ? (
-                  <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>{t('inqueritos:modal_conexoes.subtitulo')}</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0 }}>{t('inqueritos:modal_conexoes.subtitulo')}</p>
                 ) : sugestoes.length === 0 ? (
-                  <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>{t('inqueritos:modal_conexoes.nenhuma_sugestao')}</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0 }}>{t('inqueritos:modal_conexoes.nenhuma_sugestao')}</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {sugestoes.map((sug) => (
@@ -624,9 +639,10 @@ export const InqueritosPage: React.FC = () => {
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
+                          gap: '0.75rem',
                         }}
                       >
-                        <div>
+                        <div style={{ flex: 1, minWidth: 0, paddingRight: '0.5rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--ink)' }}>{sug.numero_protocolo}</span>
                             <span
@@ -648,13 +664,13 @@ export const InqueritosPage: React.FC = () => {
                           </div>
                         </div>
                         {tem('DELEGADO') && (
-                          <button
-                            className="btn btn-sm btn-primary"
+                          <ActionBtn
+                            variant="primary"
+                            icon="+"
+                            label={t('inqueritos:acoes.vincular')}
                             onClick={() => executarVinculacao(sug.ocorrencia_id)}
-                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', height: '32px' }}
-                          >
-                            + {t('inqueritos:acoes.vincular')}
-                          </button>
+                            width="155px"
+                          />
                         )}
                       </div>
                     ))}
@@ -977,9 +993,10 @@ export const InqueritosPage: React.FC = () => {
                                   {sug.natureza} &bull; <span style={{ color: 'var(--muted)', fontSize: '0.72rem' }}>{sug.motivos.join('; ')}</span>
                                 </div>
                               </div>
-                              <button
-                                type="button"
-                                className={jaAdicionada ? 'btn btn-sm btn-outline' : 'btn btn-sm btn-primary'}
+                              <ActionBtn
+                                variant={jaAdicionada ? 'outline' : 'primary'}
+                                icon={jaAdicionada ? '✓' : '+'}
+                                label={jaAdicionada ? t('inqueritos:modal_conexoes.ja_incluida') : t('inqueritos:modal_conexoes.btn_incluir')}
                                 disabled={jaAdicionada}
                                 onClick={() => {
                                   if (!jaAdicionada) {
@@ -1005,10 +1022,8 @@ export const InqueritosPage: React.FC = () => {
                                     }
                                   }
                                 }}
-                                style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', height: '28px', flexShrink: 0 }}
-                              >
-                                {jaAdicionada ? `✓ ${t('inqueritos:modal_conexoes.ja_incluida')}` : `+ ${t('inqueritos:modal_conexoes.btn_incluir')}`}
-                              </button>
+                                width="155px"
+                              />
                             </div>
                           );
                         })}
@@ -1147,25 +1162,23 @@ export const InqueritosPage: React.FC = () => {
                           {oc.localizacao} • {new Date(oc.data_hora_fato).toLocaleDateString()}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-ghost"
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                        <ActionBtn
+                          variant="ghost"
+                          icon="🔍"
+                          label={t('inqueritos:acoes.buscar_conexoes')}
                           onClick={() => buscarConexoesVincular(oc.ocorrencia_id)}
-                          style={{ height: '32px', padding: '0 0.6rem', fontSize: '0.75rem', color: 'var(--primary)' }}
-                          title="Analisar conexões criminais desta ocorrência"
-                        >
-                          🔍 {t('inqueritos:acoes.buscar_conexoes')}
-                        </button>
-                        <button
-                          className="btn btn-sm btn-primary"
+                          width="155px"
+                        />
+                        <ActionBtn
+                          variant="primary"
+                          icon="+"
+                          label={t('inqueritos:acoes.vincular')}
                           onClick={async () => {
                             await executarVinculacao(oc.ocorrencia_id);
                           }}
-                          style={{ height: '32px', padding: '0 0.8rem', fontSize: '0.8rem' }}
-                        >
-                          + {t('inqueritos:acoes.vincular')}
-                        </button>
+                          width="155px"
+                        />
                       </div>
                     </div>
                   ))}
@@ -1267,16 +1280,15 @@ export const InqueritosPage: React.FC = () => {
                           {sug.motivos.join('; ')}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-primary"
+                      <ActionBtn
+                        variant="primary"
+                        icon="+"
+                        label={t('inqueritos:acoes.vincular')}
                         onClick={async () => {
                           await executarVinculacao(sug.ocorrencia_id);
                         }}
-                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem', height: '30px', flexShrink: 0 }}
-                      >
-                        + {t('inqueritos:acoes.vincular')}
-                      </button>
+                        width="155px"
+                      />
                     </div>
                   ))}
                 </div>
