@@ -89,15 +89,21 @@ def _registrar_routers(app: FastAPI) -> None:
     from adapters.inbound.http.v1.apreensoes_router import router as apreensoes_router
     from adapters.inbound.http.v1.auditoria_router import router as auditoria_router
     from adapters.inbound.http.v1.auth_router import router as auth_router
+    from adapters.inbound.http.v1.despacho_router import router as despacho_router
+    from adapters.inbound.http.v1.inqueritos_router import router as inqueritos_router
+    from adapters.inbound.http.v1.laudos_router import router as laudos_router
+    from adapters.inbound.http.v1.medidas_router import router as medidas_router
     from adapters.inbound.http.v1.ocorrencias_router import router as ocorrencias_router
     from adapters.inbound.http.v1.usuarios_router import router as usuarios_router
-    from adapters.inbound.http.v1.despacho_router import router as despacho_router
     from adapters.inbound.http.v1.viaturas_router import router as viaturas_router
     from adapters.inbound.websocket.tempo_real_router import router as tempo_real_router
 
     app.include_router(auth_router)
     app.include_router(usuarios_router)
     app.include_router(ocorrencias_router)
+    app.include_router(inqueritos_router)
+    app.include_router(laudos_router)
+    app.include_router(medidas_router)
     app.include_router(apreensoes_router)
     app.include_router(auditoria_router)
     app.include_router(viaturas_router)

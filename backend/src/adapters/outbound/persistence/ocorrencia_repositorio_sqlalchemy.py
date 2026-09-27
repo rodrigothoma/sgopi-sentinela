@@ -142,6 +142,7 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             motivo_arquivamento=ocorrencia.motivo_arquivamento,
             excluida_por_id=ocorrencia.excluida_por_id,
             motivo_exclusao=ocorrencia.motivo_exclusao,
+            inquerito_id=ocorrencia.inquerito_id,
         )
 
     def _to_model(self, ocorrencia: Ocorrencia) -> OcorrenciaModel:
@@ -312,6 +313,7 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             motivo_arquivamento=model.motivo_arquivamento,
             excluida_por_id=model.excluida_por_id,
             motivo_exclusao=model.motivo_exclusao,
+            inquerito_id=model.inquerito_id,
         )
         ocorrencia.envolvidos = [
             Envolvido(
