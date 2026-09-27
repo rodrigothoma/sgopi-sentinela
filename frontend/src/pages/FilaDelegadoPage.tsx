@@ -4,8 +4,9 @@ import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetal
 import { StatusBadge } from '../components/StatusBadge';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
-import { ocorrenciasService } from '../services/ocorrenciasService';
 import { STATUS_ARQUIVAVEIS, STATUS_EXCLUIVEIS, type OcorrenciaDetalhe, type OcorrenciaResumo, type StatusOcorrencia } from '../types/api';
+import { ocorrenciasService } from '../services/ocorrenciasService';
+import { formatarNatureza } from '../utils/formatarNatureza';
 
 const FILTROS: StatusOcorrencia[][] = [
   ['AGUARDANDO_REVISAO'], ['EM_CORRECAO'], ['VALIDADA', 'EM_ATENDIMENTO'], ['REJEITADA', 'ENCERRADA'], ['ARQUIVADA', 'EXCLUIDA'],
@@ -118,7 +119,7 @@ export const FilaDelegadoPage: React.FC = () => {
         <ul className="lista clicavel">
           {pagina.itens.map((o) => (
             <li key={o.ocorrencia_id} className={detalhe?.ocorrencia_id === o.ocorrencia_id ? 'ativo' : ''} onClick={() => abrir(o.ocorrencia_id)}>
-              <span><strong>{o.numero_protocolo}</strong> · {o.natureza}<br /><small className="muted">{new Date(o.criada_em).toLocaleString()}</small></span>
+              <span><strong>{o.numero_protocolo}</strong> · {formatarNatureza(o.natureza, t)}<br /><small className="muted">{new Date(o.criada_em).toLocaleString()}</small></span>
               <StatusBadge status={o.status} />
             </li>
           ))}

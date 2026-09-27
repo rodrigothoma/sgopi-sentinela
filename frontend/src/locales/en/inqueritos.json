@@ -1,0 +1,98 @@
+{
+  "titulo": "Police Investigations (IP)",
+  "subtitulo": "Official investigative proceedings presided over by the Police Delegate.",
+  "btn_instaurar": "Open Police Investigation",
+  "carregando": "Loading investigations...",
+  "nenhum_encontrado": "No police investigations found for the selected filter.",
+  "nenhuma_ocorrencia": "No incidents linked to this police investigation.",
+  "filtros": {
+    "todos": "All",
+    "em_andamento": "In Progress",
+    "concluidos": "Concluded",
+    "arquivados": "Archived"
+  },
+  "tabela": {
+    "numero": "Case Number (Ordinance)",
+    "titulo": "Investigation Title / Subject",
+    "delegado": "Presiding Delegate",
+    "ocorrencias": "Incidents",
+    "status": "Status",
+    "data_abertura": "Opened",
+    "acoes": "Actions"
+  },
+  "status": {
+    "EM_ANDAMENTO": "In Progress",
+    "CONCLUIDO": "Concluded",
+    "ARQUIVADO": "Archived"
+  },
+  "acoes": {
+    "detalhes": "View Details",
+    "vincular": "Link Incidents",
+    "buscar_conexoes": "Find Connections",
+    "concluir": "Conclude IP",
+    "arquivar": "Archive IP",
+    "cancelar": "Cancel",
+    "fechar": "Close",
+    "confirmar": "Confirm"
+  },
+  "detalhes": {
+    "titulo": "Police Investigation Panel",
+    "informacoes_gerais": "General Proceeding Information",
+    "portaria": "Inception Ordinance",
+    "data_abertura": "Inception Date",
+    "delegado_id": "Police Delegate (ID)",
+    "descricao_linhas": "Factual Narrative & Investigative Lines",
+    "relatorio_final": "Final Conclusive Report",
+    "ocorrencias_vinculadas": "Linked Police Incidents",
+    "status_atual": "Current Status"
+  },
+  "modal_instaurar": {
+    "titulo": "Open New Police Investigation (IP)",
+    "campo_titulo": "Investigation Title / Subject *",
+    "placeholder_titulo": "E.g.: Operation Tracking — Armed Robbery Gang",
+    "campo_portaria": "Inception Ordinance (Optional)",
+    "placeholder_portaria": "E.g.: Ordinance nº 042/2026 - 1st Precinct",
+    "campo_descricao": "Facts Description & Investigative Lines *",
+    "placeholder_descricao": "Describe the circumstances warranting the opening of this investigative case...",
+    "btn_submit": "Open Investigation",
+    "submetendo": "Opening..."
+  },
+  "modal_vincular": {
+    "titulo": "Link Validated Incidents to Investigation",
+    "subtitulo": "Select eligible police incidents for evidentiary consolidation into this case.",
+    "nenhuma_elegivel": "No validated incidents available for linking.",
+    "btn_submit": "Link Selected",
+    "submetendo": "Linking..."
+  },
+  "modal_conexoes": {
+    "titulo": "Criminal Connection Suggestions",
+    "subtitulo": "Automated cross-referencing by shared involved persons, offense nature, and geodetic proximity.",
+    "nenhuma_sugestao": "No criminal connections detected for the incidents in this case.",
+    "score": "Connection Score",
+    "motivos": "Detected Correlation Criteria",
+    "motivo_envolvidos": "Shared Involved Persons",
+    "motivo_natureza": "Same Offense Nature",
+    "motivo_proximidade": "Geographical Proximity (Radius < 2 km)",
+    "btn_vincular": "Link to Investigation"
+  },
+  "modal_concluir": {
+    "titulo": "Conclude Police Investigation",
+    "subtitulo": "Preparation of Detailed Final Conclusive Report for referral to the Public Prosecutor / Judiciary.",
+    "campo_relatorio": "Final Conclusive Report *",
+    "placeholder_relatorio": "Present the summary of investigative steps, authorship, materiality, and indictment...",
+    "btn_submit": "Conclude Proceeding",
+    "submetendo": "Concluding..."
+  },
+  "notificacoes": {
+    "instaurado_sucesso": "Police investigation opened successfully!",
+    "vinculado_sucesso": "Incident(s) successfully linked to the police investigation!",
+    "concluido_sucesso": "Police investigation concluded successfully!",
+    "arquivado_sucesso": "Police investigation formally archived."
+  },
+  "validacoes": {
+    "ementa_min": "The summary must contain at least 10 characters.",
+    "relatorio_min": "The final report must contain at least 10 characters."
+  },
+  "ocorrencias_vinculadas_qtd": "linked incident(s)",
+  "total": "Total"
+}

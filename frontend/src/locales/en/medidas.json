@@ -1,0 +1,116 @@
+{
+  "titulo": "Urgent Protective Measures",
+  "subtitulo": "Precautionary protection for vulnerable victims (Maria da Penha Act) and legal validity monitoring.",
+  "btn_conceder": "Grant Protective Measure",
+  "carregando": "Loading protective measures...",
+  "nenhuma_encontrada": "No protective measures found for the selected filter.",
+  "filtros": {
+    "todas": "All",
+    "ativas": "Active",
+    "renovadas": "Renewed",
+    "revogadas": "Revoked",
+    "expiradas": "Expired"
+  },
+  "tabela": {
+    "referencia": "Warrant / Reference Number",
+    "partes": "Protected Victim & Aggressor",
+    "restricoes": "Applied Restrictions",
+    "prazo": "Validity & Deadlines",
+    "status": "Status",
+    "acoes": "Actions"
+  },
+  "status": {
+    "ATIVA": "Active",
+    "RENOVADA": "Renewed",
+    "REVOGADA": "Revoked",
+    "EXPIRADA": "Expired"
+  },
+  "restricoes": {
+    "AFASTAMENTO_DO_LAR": "Eviction from Household / Domicile",
+    "PROIBICAO_DE_CONTATO": "Prohibition of Contact by Any Means",
+    "LIMITE_DISTANCIA_METROS": "Minimum Distance Restriction (Meters)",
+    "SUSPENSAO_PORTE_ARMAS": "Suspension of Firearm Possession/Carrying",
+    "OUTRA": "Other Judicial Restrictions"
+  },
+  "vigencia": {
+    "dias_restantes": "{{dias}} days remaining",
+    "vence_hoje": "Expires today!",
+    "expirada": "Expired {{dias}} days ago",
+    "vence_em": "Expires on {{data}}"
+  },
+  "acoes": {
+    "detalhes": "View Details",
+    "renovar": "Extend Validity",
+    "revogar": "Revoke Measure",
+    "cancelar": "Cancel",
+    "fechar": "Close"
+  },
+  "detalhes": {
+    "titulo": "Urgent Protective Measure Record",
+    "dados_gerais": "Identification & Record",
+    "delegado_id": "Granting Delegate (ID)",
+    "ocorrencia_id": "Linked Police Incident (ID)",
+    "vitima_id": "Protected Person (ID)",
+    "agressor_id": "Perpetrator / Investigated (ID)",
+    "prazos_vigencia": "Temporal Validity Control",
+    "distancia_minima": "Minimum Precautionary Distance",
+    "restricoes_impostas": "Imposed Precautionary Restrictions",
+    "condicoes_especificas": "Judicial Determinations & Conditions",
+    "historico_renovacao": "Extension History",
+    "motivo_revogacao": "Legal Basis of Revocation"
+  },
+  "modal_conceder": {
+    "titulo": "Grant Urgent Protective Measure",
+    "subtitulo": "Exclusive issuance by the Police Authority to ensure physical and psychological integrity of the victim.",
+    "campo_ocorrencia": "Linked Police Incident (ID) *",
+    "placeholder_ocorrencia": "UUID of registered incident",
+    "campo_vitima": "Protected Person (Involved ID) *",
+    "placeholder_vitima": "UUID of victim in incident",
+    "campo_agressor": "Perpetrator / Notified (Involved ID) *",
+    "placeholder_agressor": "UUID of perpetrator/investigated",
+    "campo_prazo": "Initial Validity Period (Days) *",
+    "campo_restricoes": "Types of Restrictions Imposed *",
+    "campo_distancia": "Minimum Keeping Distance (Meters) *",
+    "campo_condicoes": "Specific Determinations & Precautionary Directives",
+    "placeholder_condicoes": "Notes on precautionary measures, referral, or police protection...",
+    "btn_submit": "Grant Measure",
+    "submetendo": "Issuing measure..."
+  },
+  "modal_renovar": {
+    "titulo": "Extension of Protective Measure",
+    "subtitulo": "Extension of precautionary period grounded in court order or imminent risk.",
+    "campo_dias": "Additional Validity Days *",
+    "campo_justificativa": "Formal Grounds for Extension *",
+    "placeholder_justificativa": "Provide the factual and legal grounds for protective term extension...",
+    "btn_submit": "Extend Validity",
+    "submetendo": "Extending..."
+  },
+  "modal_revogar": {
+    "titulo": "Revocation of Protective Measure",
+    "subtitulo": "Formal termination of restriction due to court order or cessation of risk situation.",
+    "campo_motivo": "Grounds for Revocation *",
+    "placeholder_motivo": "Describe legal cause and judicial authorization for measure revocation...",
+    "btn_submit": "Confirm Revocation",
+    "submetendo": "Revoking..."
+  },
+  "notificacoes": {
+    "concedida_sucesso": "Urgent protective measure granted successfully!",
+    "renovada_sucesso": "Protective measure extended successfully!",
+    "revogada_sucesso": "Protective measure formally revoked."
+  },
+  "total_registrado": "Total registered",
+  "card": {
+    "ocorrencia": "Incident",
+    "inicio": "Start",
+    "vencimento": "Expiry",
+    "distancia_minima": "Minimum Distance",
+    "metros": "meters"
+  },
+  "validacoes": {
+    "campos_obrigatorios": "Please provide the IDs for incident, victim, and perpetrator.",
+    "vitima_igual_agressor": "Victim and perpetrator cannot be the same person.",
+    "restricao_min": "Please select at least one precautionary restriction.",
+    "justificativa_min": "Technical grounds for extension must contain at least 10 characters.",
+    "motivo_revogacao_min": "Grounds for revocation must contain at least 10 characters."
+  }
+}

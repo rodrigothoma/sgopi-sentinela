@@ -101,7 +101,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
   const navigate = useNavigate();
   const { tem } = useAuth();
   const { avisar } = useToast();
-  const { t } = useTranslation(['ocorrencias', 'common']);
+  const { t } = useTranslation(['ocorrencias', 'inqueritos', 'laudos', 'medidas', 'common']);
   const [aba, setAba] = useState<Aba>('detalhe');
   const isOnline = o.envolvidos.some((e) => e.tipo === 'COMUNICANTE');
 
@@ -139,7 +139,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
   const submeterLaudo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!descricaoDemanda.trim()) {
-      avisar('Informe a descrição da demanda pericial solicitada.', 'info');
+      avisar(t('laudos:validacoes.quesitos_min'), 'info');
       return;
     }
     setEnviandoLaudo(true);
@@ -149,7 +149,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
         tipo_pericia: tipoPericia,
         descricao_solicitacao: descricaoDemanda.trim(),
       });
-      avisar('Requisição pericial protocolada com sucesso!', 'sucesso');
+      avisar(t('laudos:notificacoes.solicitado_sucesso'), 'sucesso');
       setModalLaudoAberto(false);
       setDescricaoDemanda('');
       onAlterada?.();
@@ -169,15 +169,15 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
   const submeterMedida = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vitimaId || !agressorId) {
-      avisar('Selecione a vítima e o agressor entre os envolvidos.', 'info');
+      avisar(t('medidas:validacoes.campos_obrigatorios'), 'info');
       return;
     }
     if (vitimaId === agressorId) {
-      avisar('A vítima e o agressor não podem ser a mesma pessoa.', 'erro');
+      avisar(t('medidas:validacoes.vitima_igual_agressor'), 'erro');
       return;
     }
     if (restricoes.length === 0) {
-      avisar('Selecione pelo menos um tipo de restrição cautelar.', 'info');
+      avisar(t('medidas:validacoes.restricao_min'), 'info');
       return;
     }
     setEnviandoMedida(true);
@@ -191,7 +191,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
         distancia_minima_metros: restricoes.includes('LIMITE_DISTANCIA_METROS') ? distanciaMetros : undefined,
         condicoes_especificas: observacoesMedida.trim() || undefined,
       });
-      avisar('Medida protetiva de urgência expedida com sucesso!', 'sucesso');
+      avisar(t('medidas:notificacoes.concedida_sucesso'), 'sucesso');
       setModalMedidaAberta(false);
       setObservacoesMedida('');
       onAlterada?.();
@@ -263,7 +263,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
         }}
       >
         <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--muted)', marginRight: 4 }}>
-          Ações Procedimentais:
+          {t('ocorrencias:acoes_procedimentais.titulo')}
         </span>
         {tem('DELEGADO', 'PERITO') && (
           <button
@@ -272,7 +272,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
             style={{ fontSize: '0.8rem', padding: '4px 10px' }}
             onClick={() => setModalLaudoAberto(true)}
           >
-            🔬 Requisitar Laudo Pericial
+            🔬 {t('ocorrencias:acoes_procedimentais.requisitar_laudo')}
           </button>
         )}
         {tem('DELEGADO') && (
@@ -282,7 +282,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
             style={{ fontSize: '0.8rem', padding: '4px 10px' }}
             onClick={() => setModalMedidaAberta(true)}
           >
-            🛡️ Conceder Medida Protetiva
+            🛡️ {t('ocorrencias:acoes_procedimentais.conceder_medida')}
           </button>
         )}
         {tem('DELEGADO') && !o.inquerito_id && (
@@ -292,7 +292,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
             style={{ fontSize: '0.8rem', padding: '4px 10px' }}
             onClick={() => navigate('/inqueritos')}
           >
-            📁 Vincular a Inquérito
+            📁 {t('ocorrencias:acoes_procedimentais.vincular_inquerito')}
           </button>
         )}
       </div>
@@ -419,24 +419,24 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
             }}
           >
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>🔬 Requisitar Laudo Pericial Técnico</h3>
+              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>🔬 {t('laudos:modal_solicitar.titulo')}</h3>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModalLaudoAberto(false)}>✕</button>
             </div>
             <form onSubmit={submeterLaudo} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                  Ocorrência Vinculada
+                  {t('laudos:modal_solicitar.campo_ocorrencia')}
                 </label>
                 <input
                   type="text"
                   readOnly
-                  value={`${o.numero_protocolo} — ${o.natureza}`}
+                  value={`${o.numero_protocolo} — ${formatarNatureza(o.natureza, t)}`}
                   style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--bg)', border: '1px solid var(--line)', opacity: 0.8 }}
                 />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                  Especialidade / Tipo de Perícia *
+                  {t('laudos:modal_solicitar.campo_tipo')}
                 </label>
                 <select
                   value={tipoPericia}
@@ -444,29 +444,29 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
                   style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
                 >
                   {TIPOS_PERICIA.map((tp) => (
-                    <option key={tp} value={tp}>{tp.replace(/_/g, ' ')}</option>
+                    <option key={tp} value={tp}>{t(`laudos:tipos.${tp}`, { defaultValue: tp.replace(/_/g, ' ') })}</option>
                   ))}
                 </select>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                  Quesitos e Demanda Pericial Solicitada *
+                  {t('laudos:modal_solicitar.campo_demanda')}
                 </label>
                 <textarea
                   rows={4}
                   value={descricaoDemanda}
                   onChange={(e) => setDescricaoDemanda(e.target.value)}
-                  placeholder="Descreva detalhadamente o exame requerido pelo perito criminal ou autoridade..."
+                  placeholder={t('laudos:modal_solicitar.placeholder_demanda')}
                   required
                   style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
                 />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setModalLaudoAberto(false)} disabled={enviandoLaudo}>
-                  Cancelar
+                  {t('common:actions.cancel')}
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={enviandoLaudo}>
-                  {enviandoLaudo ? 'Protocolando...' : 'Requisitar Laudo'}
+                  {enviandoLaudo ? t('laudos:modal_solicitar.submetendo') : t('laudos:modal_solicitar.btn_submit')}
                 </button>
               </div>
             </form>
@@ -508,14 +508,14 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
             }}
           >
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>🛡️ Conceder Medida Protetiva de Urgência</h3>
+              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>🛡️ {t('medidas:modal_conceder.titulo')}</h3>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModalMedidaAberta(false)}>✕</button>
             </div>
             <form onSubmit={submeterMedida} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                    Vítima (Pessoa Protegida) *
+                    {t('medidas:modal_conceder.campo_vitima')}
                   </label>
                   <select
                     required
@@ -523,7 +523,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
                     onChange={(e) => setVitimaId(e.target.value)}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
                   >
-                    <option value="">Selecione a vítima...</option>
+                    <option value="">{t('medidas:modal_conceder.placeholder_vitima')}</option>
                     {o.envolvidos.map((e) => (
                       <option key={e.id} value={e.id}>
                         {e.nome} ({e.tipo})
@@ -533,7 +533,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                    Agressor / Notificado (Investigado) *
+                    {t('medidas:modal_conceder.campo_agressor')}
                   </label>
                   <select
                     required
@@ -541,7 +541,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
                     onChange={(e) => setAgressorId(e.target.value)}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
                   >
-                    <option value="">Selecione o agressor...</option>
+                    <option value="">{t('medidas:modal_conceder.placeholder_agressor')}</option>
                     {o.envolvidos.map((e) => (
                       <option key={e.id} value={e.id}>
                         {e.nome} ({e.tipo})
@@ -553,7 +553,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                  Prazo de Vigência Inicial (Dias) *
+                  {t('medidas:modal_conceder.campo_prazo')}
                 </label>
                 <input
                   type="number"
@@ -567,7 +567,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 8 }}>
-                  Restrições Cautelares Aplicadas *
+                  {t('medidas:modal_conceder.campo_restricoes')}
                 </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {TIPOS_RESTRICAO_OPCOES.map((opt) => (
@@ -577,7 +577,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
                         checked={restricoes.includes(opt.id)}
                         onChange={() => alternarRestricao(opt.id)}
                       />
-                      <span>{opt.label}</span>
+                      <span>{t(`medidas:restricoes.${opt.id}`, { defaultValue: opt.label })}</span>
                     </label>
                   ))}
                 </div>
@@ -586,7 +586,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
               {restricoes.includes('LIMITE_DISTANCIA_METROS') && (
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                    Distância Mínima Cautelar (Metros) *
+                    {t('medidas:modal_conceder.campo_distancia')}
                   </label>
                   <input
                     type="number"
@@ -601,23 +601,23 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                  Observações / Especificações Judiciais
+                  {t('medidas:modal_conceder.campo_condicoes')}
                 </label>
                 <textarea
                   rows={3}
                   value={observacoesMedida}
                   onChange={(e) => setObservacoesMedida(e.target.value)}
-                  placeholder="Detalhes ou encaminhamentos para a central de monitoramento..."
+                  placeholder={t('medidas:modal_conceder.placeholder_condicoes')}
                   style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
                 />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setModalMedidaAberta(false)} disabled={enviandoMedida}>
-                  Cancelar
+                  {t('common:actions.cancel')}
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={enviandoMedida}>
-                  {enviandoMedida ? 'Expedindo...' : 'Conceder Medida'}
+                  {enviandoMedida ? t('medidas:modal_conceder.submetendo') : t('medidas:modal_conceder.btn_submit')}
                 </button>
               </div>
             </form>

@@ -1,0 +1,116 @@
+{
+  "titulo": "Medidas Protetivas de Urgência",
+  "subtitulo": "Gestão cautelar de proteção a vítimas vulneráveis (Lei Maria da Penha) e monitoramento de vigência legal.",
+  "btn_conceder": "Conceder Medida Protetiva",
+  "carregando": "Carregando medidas protetivas...",
+  "nenhuma_encontrada": "Nenhuma medida protetiva encontrada para o filtro selecionado.",
+  "filtros": {
+    "todas": "Todas",
+    "ativas": "Ativas",
+    "renovadas": "Renovadas",
+    "revogadas": "Revogadas",
+    "expiradas": "Expiradas"
+  },
+  "tabela": {
+    "referencia": "Nº Mandado / Referência",
+    "partes": "Vítima e Agressor",
+    "restricoes": "Restrições Aplicadas",
+    "prazo": "Vigência & Prazos",
+    "status": "Situação",
+    "acoes": "Ações"
+  },
+  "status": {
+    "ATIVA": "Ativa",
+    "RENOVADA": "Renovada",
+    "REVOGADA": "Revogada",
+    "EXPIRADA": "Expirada"
+  },
+  "restricoes": {
+    "AFASTAMENTO_DO_LAR": "Afastamento do Lar / Domicílio",
+    "PROIBICAO_DE_CONTATO": "Proibição de Contato por Qualquer Meio",
+    "LIMITE_DISTANCIA_METROS": "Limite Mínimo de Distância (Metros)",
+    "SUSPENSAO_PORTE_ARMAS": "Suspensão da Posse ou Porte de Armas",
+    "OUTRA": "Outras Restrições Judiciais"
+  },
+  "vigencia": {
+    "dias_restantes": "{{dias}} dias restantes",
+    "vence_hoje": "Vence hoje!",
+    "expirada": "Expirada há {{dias}} dias",
+    "vence_em": "Vence em {{data}}"
+  },
+  "acoes": {
+    "detalhes": "Ver Detalhes",
+    "renovar": "Prorrogar Vigência",
+    "revogar": "Revogar Medida",
+    "cancelar": "Cancelar",
+    "fechar": "Fechar"
+  },
+  "detalhes": {
+    "titulo": "Ficha da Medida Protetiva de Urgência",
+    "dados_gerais": "Identificação e Registro",
+    "delegado_id": "Delegado Concedente (ID)",
+    "ocorrencia_id": "Ocorrência Policial Vinculada (ID)",
+    "vitima_id": "Pessoa Protegida (ID)",
+    "agressor_id": "Autor / Investigado (ID)",
+    "prazos_vigencia": "Controle Temporal de Vigência",
+    "distancia_minima": "Distância Mínima Cautelar",
+    "restricoes_impostas": "Restrições Cautelares Impostas",
+    "condicoes_especificas": "Determinações e Condições Judiciais",
+    "historico_renovacao": "Histórico de Prorrogação",
+    "motivo_revogacao": "Motivação Legal da Revogação"
+  },
+  "modal_conceder": {
+    "titulo": "Conceder Medida Protetiva de Urgência",
+    "subtitulo": "Expedição privativa da Autoridade Policial para garantia da integridade física e psicológica da vítima.",
+    "campo_ocorrencia": "Ocorrência Policial Vinculada (ID) *",
+    "placeholder_ocorrencia": "UUID da ocorrência registrada",
+    "campo_vitima": "Pessoa Protegida (ID Envolvido) *",
+    "placeholder_vitima": "UUID da vítima na ocorrência",
+    "campo_agressor": "Autor / Notificado (ID Envolvido) *",
+    "placeholder_agressor": "UUID do agressor/investigado",
+    "campo_prazo": "Prazo Inicial de Vigência (Dias) *",
+    "campo_restricoes": "Tipos de Restrições Aplicadas *",
+    "campo_distancia": "Distância Mínima de Afastamento (Metros) *",
+    "campo_condicoes": "Determinações e Medidas Específicas",
+    "placeholder_condicoes": "Observações sobre medidas cautelares, encaminhamentos ou proteção policial...",
+    "btn_submit": "Conceder Medida",
+    "submetendo": "Expedindo medida..."
+  },
+  "modal_renovar": {
+    "titulo": "Prorrogação de Medida Protetiva",
+    "subtitulo": "Prorrogação do período cautelar fundamentada em decisão judicial ou risco iminente.",
+    "campo_dias": "Dias Adicionais de Vigência *",
+    "campo_justificativa": "Fundamentação Formal da Prorrogação *",
+    "placeholder_justificativa": "Apresente o fundamento fático-jurídico para dilação do prazo protetivo...",
+    "btn_submit": "Prorrogar Vigência",
+    "submetendo": "Prorrogando..."
+  },
+  "modal_revogar": {
+    "titulo": "Revogação de Medida Protetiva",
+    "subtitulo": "Encerramento formal da restrição por determinação judicial ou cessação da situação de risco.",
+    "campo_motivo": "Motivo da Revogação *",
+    "placeholder_motivo": "Descreva o motivo legal e a autorização judicial para revogação da medida...",
+    "btn_submit": "Confirmar Revogação",
+    "submetendo": "Revogando..."
+  },
+  "notificacoes": {
+    "concedida_sucesso": "Medida protetiva de urgência concedida com sucesso!",
+    "renovada_sucesso": "Medida protetiva prorrogada com sucesso!",
+    "revogada_sucesso": "Medida protetiva revogada formalmente."
+  },
+  "total_registrado": "Total registrado",
+  "card": {
+    "ocorrencia": "Ocorrência",
+    "inicio": "Início",
+    "vencimento": "Vencimento",
+    "distancia_minima": "Distância Mínima",
+    "metros": "metros"
+  },
+  "validacoes": {
+    "campos_obrigatorios": "Preencha os IDs da ocorrência, vítima e agressor.",
+    "vitima_igual_agressor": "Vítima e agressor não podem ser a mesma pessoa.",
+    "restricao_min": "Selecione ao menos um tipo de restrição cautelar.",
+    "justificativa_min": "A justificativa técnica de prorrogação deve conter no mínimo 10 caracteres.",
+    "motivo_revogacao_min": "O motivo da revogação deve conter no mínimo 10 caracteres."
+  }
+}

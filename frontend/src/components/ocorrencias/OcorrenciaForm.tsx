@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EnvolvidoForm } from './EnvolvidoForm';
-import { LocalOcorrencia } from './LocalOcorrencia';
+import { SeletorCoordenada } from '../painel/SeletorCoordenada';
 import { TipificacaoForm } from './TipificacaoForm';
 import { ItemApreendidoForm } from './ItemApreendidoForm';
 import type { EnvolvidoDTO, ItemApreendidoDTO, RegistrarOcorrenciaRequest, TipificacaoDTO } from '../../types/api';
@@ -99,10 +99,23 @@ export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnvia
       </section>
 
       <section className="secao">
-        <h3>{t('ocorrencias:form.secao_local')}</h3>
-        <LocalOcorrencia
-          valor={{ localizacao: v.localizacao, latitude: v.latitude, longitude: v.longitude }}
-          onChange={(patch) => setV((x) => ({ ...x, ...patch }))}
+        <label htmlFor="localizacao">
+          {t('ocorrencias:form.localizacao_label')} <span className="obrigatorio">*</span>
+          <input
+            id="localizacao"
+            maxLength={150}
+            value={v.localizacao}
+            onChange={(e) => set('localizacao', e.target.value)}
+            placeholder={t('ocorrencias:form.localizacao_placeholder')}
+          />
+        </label>
+        <label style={{ marginTop: 12 }}>
+          {t('ocorrencias:form.coordenada_label')} <span className="muted">({t('ocorrencias:form.coordenada_ajuda')})</span>
+        </label>
+        <SeletorCoordenada
+          latitude={v.latitude}
+          longitude={v.longitude}
+          onChange={(lat, lon) => setV((x) => ({ ...x, latitude: lat, longitude: lon }))}
         />
       </section>
 

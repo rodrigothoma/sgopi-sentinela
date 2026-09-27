@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
@@ -11,6 +12,7 @@ import { ocorrenciasService } from '../services/ocorrenciasService';
 import { type OcorrenciaResumo } from '../types/api';
 
 export const InqueritosPage: React.FC = () => {
+  const { t } = useTranslation(['inqueritos', 'common']);
   const { tem } = useAuth();
   const { avisar } = useToast();
 
@@ -74,28 +76,19 @@ export const InqueritosPage: React.FC = () => {
   const executarInstauracao = async (e: React.FormEvent) => {
     e.preventDefault();
     if (ementa.trim().length < 10) {
-      avisar('A ementa deve conter no mínimo 10 caracteres.', 'erro');
+      avisar(t('inqueritos:validacoes.ementa_min'), 'erro');
       return;
     }
     try {
-      const novo = await inqueritosService.instaurar({
+      await inqueritosService.instaurar({
         ementa: ementa.trim(),
         ocorrencias_iniciais_ids: ocorrenciasSelecionadasIds,
       });
-      avisar(`Inquérito ${novo.numero} instaurado com sucesso!`, 'sucesso');
+      avisar(t('inqueritos:notificacoes.instaurado_sucesso'), 'sucesso');
       setModalInstaurarAberto(false);
       carregarInqueritos();
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
-    }
-  };
-
-  const selecionarInquerito = async (inq: Inquerito) => {
-    setSelecionado(inq);
-    setSugestoes([]);
-    // Se o inquérito tem ocorrências, busca sugestões da primeira
-    if (inq.ocorrencias.length > 0) {
-      carregarSugestoesConexao(inq.ocorrencias[0].id);
     }
   };
 
@@ -111,12 +104,21 @@ export const InqueritosPage: React.FC = () => {
     }
   };
 
+  const selecionarInquerito = async (inq: Inquerito) => {
+    setSelecionado(inq);
+    setSugestoes([]);
+    // Se o inquérito tem ocorrências, busca sugestões da primeira
+    if (inq.ocorrencias.length > 0) {
+      carregarSugestoesConexao(inq.ocorrencias[0].id);
+    }
+  };
+
   const executarVinculacao = async (ocorrenciaId: string) => {
     if (!selecionado) return;
     try {
       const atualizado = await inqueritosService.vincularOcorrencias(selecionado.id, [ocorrenciaId]);
       setSelecionado(atualizado);
-      avisar('Ocorrência vinculada com sucesso ao inquérito!', 'sucesso');
+      avisar(t('inqueritos:notificacoes.vinculado_sucesso'), 'sucesso');
       carregarInqueritos();
       // Atualiza sugestões
       carregarSugestoesConexao(ocorrenciaId);
@@ -129,40 +131,32 @@ export const InqueritosPage: React.FC = () => {
     e.preventDefault();
     if (!selecionado) return;
     if (relatorioFinal.trim().length < 10) {
-      avisar('O relatório final deve conter no mínimo 10 caracteres.', 'erro');
+      avisar(t('inqueritos:validacoes.relatorio_min'), 'erro');
       return;
     }
     try {
       const atualizado = await inqueritosService.concluir(selecionado.id, relatorioFinal.trim());
       setSelecionado(atualizado);
       setModalConcluirAberto(false);
-      avisar(`Inquérito ${atualizado.numero} concluído com sucesso!`, 'sucesso');
+      avisar(t('inqueritos:notificacoes.concluido_sucesso'), 'sucesso');
       carregarInqueritos();
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
     }
   };
 
-  const badgeStatus = (status: string) => {
-    switch (status) {
-      case 'EM_ANDAMENTO':
-        return <span className="status-badge" style={{ backgroundColor: 'var(--primary-bg, #e0f2fe)', color: 'var(--primary, #0284c7)' }}>Em andamento</span>;
-      case 'CONCLUIDO':
-        return <span className="status-badge" style={{ backgroundColor: 'var(--success-bg, #dcfce7)', color: 'var(--success, #16a34a)' }}>Concluído</span>;
-      case 'ARQUIVADO':
-        return <span className="status-badge" style={{ backgroundColor: 'var(--surface-sunken, #f1f5f9)', color: 'var(--text-muted, #64748b)' }}>Arquivado</span>;
-      default:
-        return <span className="status-badge">{status}</span>;
-    }
+  const renderBadgeStatus = (status: string) => {
+    const texto = t(`inqueritos:status.${status}`, { defaultValue: status });
+    return <span className={`badge badge-${status}`}>{texto}</span>;
   };
 
   return (
     <div className="inqueritos-page" style={{ padding: '1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700 }}>Inquéritos Policiais (IP)</h1>
-          <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)' }}>
-            Gestão formal de procedimentos investigativos criminais e correlação de fatos (RF06 / UC06).
+          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700, color: 'var(--ink)' }}>{t('inqueritos:titulo')}</h1>
+          <p style={{ margin: '0.25rem 0 0', color: 'var(--muted)' }}>
+            {t('inqueritos:subtitulo')}
           </p>
         </div>
         {tem('DELEGADO') && (
@@ -171,43 +165,49 @@ export const InqueritosPage: React.FC = () => {
             onClick={abrirModalInstaurar}
             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.2rem', fontWeight: 600 }}
           >
-            <span>+</span> Instaurar Inquérito
+            <span>+</span> {t('inqueritos:btn_instaurar')}
           </button>
         )}
       </div>
 
       {/* Filtros por status */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
-        {['TODOS', 'EM_ANDAMENTO', 'CONCLUIDO', 'ARQUIVADO'].map((st) => (
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid var(--line)', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
+        {[
+          { key: 'TODOS', label: t('inqueritos:filtros.todos') },
+          { key: 'EM_ANDAMENTO', label: t('inqueritos:filtros.em_andamento') },
+          { key: 'CONCLUIDO', label: t('inqueritos:filtros.concluidos') },
+          { key: 'ARQUIVADO', label: t('inqueritos:filtros.arquivados') },
+        ].map((item) => (
           <button
-            key={st}
-            onClick={() => setFiltroStatus(st)}
+            key={item.key}
+            onClick={() => setFiltroStatus(item.key)}
             style={{
               padding: '0.4rem 0.8rem',
               borderRadius: '6px',
               border: 'none',
-              background: filtroStatus === st ? 'var(--primary, #0284c7)' : 'transparent',
-              color: filtroStatus === st ? '#fff' : 'var(--text)',
+              background: filtroStatus === item.key ? 'var(--primary)' : 'transparent',
+              color: filtroStatus === item.key ? '#fff' : 'var(--ink)',
               cursor: 'pointer',
               fontWeight: 500,
+              transition: 'background 0.15s ease',
             }}
           >
-            {st === 'TODOS' ? 'Todos' : st === 'EM_ANDAMENTO' ? 'Em Andamento' : st === 'CONCLUIDO' ? 'Concluídos' : 'Arquivados'}
+            {item.label}
           </button>
         ))}
-        <span style={{ marginLeft: 'auto', alignSelf: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-          Total: {total}
+        <span style={{ marginLeft: 'auto', alignSelf: 'center', color: 'var(--muted)', fontSize: '0.9rem' }}>
+          {t('inqueritos:total')}: {total}
         </span>
       </div>
 
       {/* Grid Principal */}
       <div style={{ display: 'grid', gridTemplateColumns: selecionado ? '1fr 1fr' : '1fr', gap: '1.5rem' }}>
         {/* Lista de Inquéritos */}
-        <div style={{ background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)', padding: '1rem' }}>
+        <div style={{ background: 'var(--card)', borderRadius: '8px', border: '1px solid var(--line)', padding: '1rem' }}>
           {carregando ? (
-            <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Carregando inquéritos...</p>
+            <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>{t('inqueritos:carregando')}</p>
           ) : inqueritos.length === 0 ? (
-            <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Nenhum inquérito encontrado.</p>
+            <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>{t('inqueritos:nenhum_encontrado')}</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {inqueritos.map((inq) => (
@@ -217,22 +217,22 @@ export const InqueritosPage: React.FC = () => {
                   style={{
                     padding: '1rem',
                     borderRadius: '6px',
-                    border: selecionado?.id === inq.id ? '2px solid var(--primary)' : '1px solid var(--border)',
-                    background: selecionado?.id === inq.id ? 'var(--surface-hover, #f8fafc)' : 'var(--surface)',
+                    border: selecionado?.id === inq.id ? '2px solid var(--primary)' : '1px solid var(--line)',
+                    background: selecionado?.id === inq.id ? 'var(--card-hover)' : 'var(--card)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                     <span style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--primary)' }}>{inq.numero}</span>
-                    {badgeStatus(inq.status)}
+                    {renderBadgeStatus(inq.status)}
                   </div>
-                  <p style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', color: 'var(--text)' }}>
+                  <p style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', color: 'var(--ink)' }}>
                     {inq.ementa.length > 120 ? `${inq.ementa.substring(0, 120)}...` : inq.ementa}
                   </p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    <span>Abertura: {new Date(inq.data_abertura).toLocaleDateString()}</span>
-                    <span>{inq.ocorrencias.length} ocorrência(s) vinculada(s)</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--muted)' }}>
+                    <span>{t('inqueritos:tabela.data_abertura')}: {new Date(inq.data_abertura).toLocaleDateString()}</span>
+                    <span>{inq.ocorrencias.length} {t('inqueritos:ocorrencias_vinculadas_qtd')}</span>
                   </div>
                 </div>
               ))}
@@ -242,19 +242,20 @@ export const InqueritosPage: React.FC = () => {
 
         {/* Detalhes do Inquérito Selecionado */}
         {selecionado && (
-          <div style={{ background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)', padding: '1.25rem', position: 'sticky', top: '1rem', maxHeight: 'calc(100vh - 2rem)', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
+          <div style={{ background: 'var(--card)', borderRadius: '8px', border: '1px solid var(--line)', padding: '1.25rem', position: 'sticky', top: '5rem', maxHeight: 'calc(100vh - 6rem)', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--line)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--primary)' }}>{selecionado.numero}</h2>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  Instaurado em {new Date(selecionado.data_abertura).toLocaleString()}
+                <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
+                  {t('inqueritos:detalhes.data_abertura')}: {new Date(selecionado.data_abertura).toLocaleString()}
                 </span>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                {badgeStatus(selecionado.status)}
+                {renderBadgeStatus(selecionado.status)}
                 <button
                   onClick={() => setSelecionado(null)}
-                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)' }}
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--muted)' }}
+                  aria-label={t('inqueritos:acoes.fechar')}
                 >
                   &times;
                 </button>
@@ -262,16 +263,20 @@ export const InqueritosPage: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <h4 style={{ margin: '0 0 0.25rem', fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ementa do Fato</h4>
-              <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.5, background: 'var(--surface-sunken)', padding: '0.75rem', borderRadius: '4px' }}>
+              <h4 style={{ margin: '0 0 0.25rem', fontSize: '0.9rem', color: 'var(--muted)', textTransform: 'uppercase' }}>
+                {t('inqueritos:detalhes.descricao_linhas')}
+              </h4>
+              <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.5, background: 'var(--card-hover)', padding: '0.75rem', borderRadius: '4px', color: 'var(--ink)' }}>
                 {selecionado.ementa}
               </p>
             </div>
 
             {selecionado.relatorio_final && (
               <div style={{ marginBottom: '1rem' }}>
-                <h4 style={{ margin: '0 0 0.25rem', fontSize: '0.9rem', color: 'var(--success)', textTransform: 'uppercase' }}>Relatório Conclusivo</h4>
-                <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.5, background: 'var(--success-bg, #dcfce7)', padding: '0.75rem', borderRadius: '4px', color: 'var(--text)' }}>
+                <h4 style={{ margin: '0 0 0.25rem', fontSize: '0.9rem', color: 'var(--ok)', textTransform: 'uppercase' }}>
+                  {t('inqueritos:detalhes.relatorio_final')}
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.5, background: 'var(--card-hover)', borderLeft: '3px solid var(--ok)', padding: '0.75rem', borderRadius: '4px', color: 'var(--ink)' }}>
                   {selecionado.relatorio_final}
                 </p>
               </div>
@@ -280,7 +285,9 @@ export const InqueritosPage: React.FC = () => {
             {/* Ocorrências Vinculadas */}
             <div style={{ marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600 }}>Ocorrências Vinculadas ({selecionado.ocorrencias.length})</h3>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: 'var(--ink)' }}>
+                  {t('inqueritos:detalhes.ocorrencias_vinculadas')} ({selecionado.ocorrencias.length})
+                </h3>
                 {selecionado.status === 'EM_ANDAMENTO' && tem('DELEGADO') && (
                   <button
                     className="btn btn-sm btn-outline"
@@ -290,14 +297,14 @@ export const InqueritosPage: React.FC = () => {
                     }}
                     style={{ fontSize: '0.8rem', padding: '0.2rem 0.6rem' }}
                   >
-                    + Vincular Ocorrência
+                    + {t('inqueritos:acoes.vincular')}
                   </button>
                 )}
               </div>
 
               {selecionado.ocorrencias.length === 0 ? (
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                  Nenhuma ocorrência vinculada até o momento.
+                <p style={{ fontSize: '0.9rem', color: 'var(--muted)', fontStyle: 'italic' }}>
+                  {t('inqueritos:nenhuma_ocorrencia')}
                 </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -306,29 +313,29 @@ export const InqueritosPage: React.FC = () => {
                       key={oc.id}
                       style={{
                         padding: '0.6rem 0.75rem',
-                        border: '1px solid var(--border)',
+                        border: '1px solid var(--line)',
                         borderRadius: '4px',
-                        background: 'var(--surface)',
+                        background: 'var(--card-hover)',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
                       }}
                     >
                       <div>
-                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{oc.numero_protocolo}</span>
-                        <span style={{ margin: '0 0.5rem', color: 'var(--text-muted)' }}>&bull;</span>
-                        <span style={{ fontSize: '0.85rem' }}>{oc.natureza}</span>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                        <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--ink)' }}>{oc.numero_protocolo}</span>
+                        <span style={{ margin: '0 0.5rem', color: 'var(--muted)' }}>&bull;</span>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--ink)' }}>{oc.natureza}</span>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.2rem' }}>
                           {oc.localizacao} &bull; {new Date(oc.data_hora_fato).toLocaleString()}
                         </div>
                       </div>
                       <button
                         className="btn btn-sm btn-ghost"
                         onClick={() => carregarSugestoesConexao(oc.id)}
-                        title="Buscar conexões criminais semelhantes"
+                        title={t('inqueritos:acoes.buscar_conexoes')}
                         style={{ fontSize: '0.75rem' }}
                       >
-                        🔍 Conexões
+                        🔍 {t('inqueritos:acoes.buscar_conexoes')}
                       </button>
                     </div>
                   ))}
@@ -338,24 +345,24 @@ export const InqueritosPage: React.FC = () => {
 
             {/* Painel do Motor de Conexões Inteligentes */}
             {selecionado.status === 'EM_ANDAMENTO' && (
-              <div style={{ marginBottom: '1.25rem', border: '1px solid var(--primary)', borderRadius: '6px', padding: '0.75rem', background: 'var(--primary-bg, #f0f9ff)' }}>
+              <div style={{ marginBottom: '1.25rem', border: '1px solid var(--primary-glow)', borderRadius: '6px', padding: '0.75rem', background: 'var(--card-hover)' }}>
                 <h4 style={{ margin: '0 0 0.5rem', color: 'var(--primary)', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span>⚡</span> Sugestões de Conexões Criminais (IA/Motor)
+                  <span>⚡</span> {t('inqueritos:modal_conexoes.titulo')}
                 </h4>
                 {carregandoSugestoes ? (
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Analisando cruzamento de dados...</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>{t('inqueritos:modal_conexoes.subtitulo')}</p>
                 ) : sugestoes.length === 0 ? (
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Nenhuma conexão forte sugerida no momento.</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>{t('inqueritos:modal_conexoes.nenhuma_sugestao')}</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {sugestoes.map((sug) => (
                       <div
                         key={sug.ocorrencia_id}
                         style={{
-                          background: 'var(--surface)',
+                          background: 'var(--card)',
                           padding: '0.6rem',
                           borderRadius: '4px',
-                          border: '1px solid var(--border)',
+                          border: '1px solid var(--line)',
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
@@ -363,23 +370,23 @@ export const InqueritosPage: React.FC = () => {
                       >
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{sug.numero_protocolo}</span>
+                            <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--ink)' }}>{sug.numero_protocolo}</span>
                             <span
                               style={{
                                 fontSize: '0.75rem',
                                 padding: '0.1rem 0.4rem',
                                 borderRadius: '10px',
-                                background: sug.score_similaridade >= 100 ? '#fecaca' : '#fed7aa',
-                                color: sug.score_similaridade >= 100 ? '#b91c1c' : '#c2410c',
+                                background: sug.score_similaridade >= 100 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                color: sug.score_similaridade >= 100 ? 'var(--danger)' : 'var(--warn)',
                                 fontWeight: 700,
                               }}
                             >
-                              Score: {sug.score_similaridade}
+                              {t('inqueritos:modal_conexoes.score')}: {sug.score_similaridade}
                             </span>
                           </div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text)' }}>{sug.natureza}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            Motivos: {sug.motivos.join('; ')}
+                          <div style={{ fontSize: '0.8rem', color: 'var(--ink)' }}>{sug.natureza}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                            {t('inqueritos:modal_conexoes.motivos')}: {sug.motivos.join('; ')}
                           </div>
                         </div>
                         {tem('DELEGADO') && (
@@ -388,7 +395,7 @@ export const InqueritosPage: React.FC = () => {
                             onClick={() => executarVinculacao(sug.ocorrencia_id)}
                             style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
                           >
-                            + Vincular
+                            + {t('inqueritos:acoes.vincular')}
                           </button>
                         )}
                       </div>
@@ -400,16 +407,16 @@ export const InqueritosPage: React.FC = () => {
 
             {/* Ações de Conclusão */}
             {selecionado.status === 'EM_ANDAMENTO' && tem('DELEGADO') && (
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              <div style={{ borderTop: '1px solid var(--line)', paddingTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                 <button
-                  className="btn btn-success"
+                  className="btn btn-primary"
                   onClick={() => {
                     setRelatorioFinal('');
                     setModalConcluirAberto(true);
                   }}
                   style={{ fontWeight: 600, padding: '0.5rem 1rem' }}
                 >
-                  Concluir Inquérito com Relatório Final
+                  {t('inqueritos:modal_concluir.btn_submit')}
                 </button>
               </div>
             )}
@@ -419,31 +426,35 @@ export const InqueritosPage: React.FC = () => {
 
       {/* Modal de Instauração */}
       {modalInstaurarAberto && (
-        <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: '8px', maxWidth: '600px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ marginTop: 0 }}>Instaurar Inquérito Policial</h2>
+        <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1200 }}>
+          <div style={{ background: 'var(--card)', color: 'var(--ink)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--line)', maxWidth: '600px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-pop)' }}>
+            <h2 style={{ marginTop: 0, color: 'var(--ink)' }}>{t('inqueritos:modal_instaurar.titulo')}</h2>
             <form onSubmit={executarInstauracao}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>Ementa do Inquérito *</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                  {t('inqueritos:modal_instaurar.campo_descricao')}
+                </label>
                 <textarea
                   className="form-control"
                   rows={4}
                   value={ementa}
                   onChange={(e) => setEmenta(e.target.value)}
-                  placeholder="Descreva de forma clara e circunstanciada os fatos a serem investigados..."
-                  style={{ width: '100%', padding: '0.5rem' }}
+                  placeholder={t('inqueritos:modal_instaurar.placeholder_descricao')}
+                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
                   required
                 />
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>Vincular Ocorrências Iniciais (Validadas)</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                  {t('inqueritos:modal_vincular.titulo')}
+                </label>
                 {ocorrenciasValidadas.length === 0 ? (
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Nenhuma ocorrência validada disponível.</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>{t('inqueritos:modal_vincular.nenhuma_elegivel')}</p>
                 ) : (
-                  <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '4px', padding: '0.5rem' }}>
+                  <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--line)', borderRadius: '6px', padding: '0.5rem', background: 'var(--bg)' }}>
                     {ocorrenciasValidadas.map((oc) => (
-                      <label key={oc.ocorrencia_id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0', fontSize: '0.85rem' }}>
+                      <label key={oc.ocorrencia_id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0', fontSize: '0.85rem', color: 'var(--ink)', cursor: 'pointer' }}>
                         <input
                           type="checkbox"
                           checked={ocorrenciasSelecionadasIds.includes(oc.ocorrencia_id)}
@@ -463,8 +474,8 @@ export const InqueritosPage: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setModalInstaurarAberto(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary">Instaurar</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setModalInstaurarAberto(false)}>{t('inqueritos:acoes.cancelar')}</button>
+                <button type="submit" className="btn btn-primary">{t('inqueritos:modal_instaurar.btn_submit')}</button>
               </div>
             </form>
           </div>
@@ -473,26 +484,28 @@ export const InqueritosPage: React.FC = () => {
 
       {/* Modal de Conclusão */}
       {modalConcluirAberto && (
-        <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: '8px', maxWidth: '600px', width: '90%' }}>
-            <h2 style={{ marginTop: 0 }}>Concluir Inquérito {selecionado?.numero}</h2>
+        <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1200 }}>
+          <div style={{ background: 'var(--card)', color: 'var(--ink)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--line)', maxWidth: '600px', width: '90%', boxShadow: 'var(--shadow-pop)' }}>
+            <h2 style={{ marginTop: 0, color: 'var(--ink)' }}>{t('inqueritos:modal_concluir.titulo')} ({selecionado?.numero})</h2>
             <form onSubmit={executarConclusao}>
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>Relatório Final Conclusivo *</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>
+                  {t('inqueritos:modal_concluir.campo_relatorio')}
+                </label>
                 <textarea
                   className="form-control"
                   rows={6}
                   value={relatorioFinal}
                   onChange={(e) => setRelatorioFinal(e.target.value)}
-                  placeholder="Relatório detalhado sobre autoria, materialidade e indiciamento dos envolvidos..."
-                  style={{ width: '100%', padding: '0.5rem' }}
+                  placeholder={t('inqueritos:modal_concluir.placeholder_relatorio')}
+                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '6px' }}
                   required
                 />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setModalConcluirAberto(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-success">Homologar Conclusão</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setModalConcluirAberto(false)}>{t('inqueritos:acoes.cancelar')}</button>
+                <button type="submit" className="btn btn-primary">{t('inqueritos:modal_concluir.btn_submit')}</button>
               </div>
             </form>
           </div>
@@ -501,35 +514,39 @@ export const InqueritosPage: React.FC = () => {
 
       {/* Modal Vincular Ocorrência Avulsa */}
       {modalVincularAberto && (
-        <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: '8px', maxWidth: '600px', width: '90%' }}>
-            <h2 style={{ marginTop: 0 }}>Vincular Ocorrência ao Inquérito</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Selecione uma ocorrência validada para associar a esta investigação:</p>
+        <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1200 }}>
+          <div style={{ background: 'var(--card)', color: 'var(--ink)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--line)', maxWidth: '600px', width: '90%', boxShadow: 'var(--shadow-pop)' }}>
+            <h2 style={{ marginTop: 0, color: 'var(--ink)' }}>{t('inqueritos:modal_vincular.titulo')}</h2>
+            <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>{t('inqueritos:modal_vincular.subtitulo')}</p>
 
-            <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '4px', padding: '0.5rem', marginBottom: '1.5rem' }}>
-              {ocorrenciasValidadas.map((oc) => (
-                <div
-                  key={oc.ocorrencia_id}
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--border)' }}
-                >
-                  <span style={{ fontSize: '0.9rem' }}>
-                    <strong>{oc.numero_protocolo}</strong> — {oc.natureza}
-                  </span>
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={async () => {
-                      await executarVinculacao(oc.ocorrencia_id);
-                      setModalVincularAberto(false);
-                    }}
+            <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--line)', borderRadius: '6px', padding: '0.5rem', marginBottom: '1.5rem', background: 'var(--bg)' }}>
+              {ocorrenciasValidadas.length === 0 ? (
+                <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>{t('inqueritos:modal_vincular.nenhuma_elegivel')}</p>
+              ) : (
+                ocorrenciasValidadas.map((oc) => (
+                  <div
+                    key={oc.ocorrencia_id}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--line)' }}
                   >
-                    Vincular
-                  </button>
-                </div>
-              ))}
+                    <span style={{ fontSize: '0.9rem', color: 'var(--ink)' }}>
+                      <strong>{oc.numero_protocolo}</strong> — {oc.natureza}
+                    </span>
+                    <button
+                      className="btn btn-sm btn-primary"
+                      onClick={async () => {
+                        await executarVinculacao(oc.ocorrencia_id);
+                        setModalVincularAberto(false);
+                      }}
+                    >
+                      {t('inqueritos:acoes.vincular')}
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-ghost" onClick={() => setModalVincularAberto(false)}>Fechar</button>
+              <button type="button" className="btn btn-ghost" onClick={() => setModalVincularAberto(false)}>{t('inqueritos:acoes.fechar')}</button>
             </div>
           </div>
         </div>
@@ -537,4 +554,5 @@ export const InqueritosPage: React.FC = () => {
     </div>
   );
 };
+
 export default InqueritosPage;

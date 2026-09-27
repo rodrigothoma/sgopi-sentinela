@@ -1,0 +1,88 @@
+{
+  "titulo": "Forensic Reports Central",
+  "subtitulo": "Requisition, processing, and attachment of scientific police expert reports with chain of custody.",
+  "btn_solicitar": "New Forensic Request",
+  "carregando": "Loading forensic reports...",
+  "nenhum_encontrado": "No forensic reports or requests found.",
+  "tabela": {
+    "numero": "Report / Request Number",
+    "tipo": "Forensic Specialty",
+    "solicitado_em": "Requested On",
+    "status": "Status",
+    "hash": "Chain of Custody (SHA-256)",
+    "acoes": "Actions"
+  },
+  "status": {
+    "SOLICITADO": "Requested (Pending)",
+    "EM_ANALISE": "Under Technical Examination",
+    "CONCLUIDO": "Report Concluded",
+    "CANCELADO": "Cancelled"
+  },
+  "tipos": {
+    "BALISTICA": "Forensic Ballistics",
+    "TOXICOLOGICA": "Forensic Toxicology",
+    "LOCAL_CRIME": "Crime Scene Investigation",
+    "VEICULAR": "Vehicle / Accident Reconstruction",
+    "NECROPSIA": "Medicolegal Autopsy",
+    "DOCUMENTOSCOPIA": "Questioned Documents",
+    "INFORMATICA_FORENSE": "Digital & Cyber Forensics",
+    "OUTRA": "Other Specialties"
+  },
+  "acoes": {
+    "detalhes": "View Details",
+    "anexar": "Attach Completed Report",
+    "download": "Download Official PDF",
+    "cancelar": "Cancel",
+    "fechar": "Close"
+  },
+  "detalhes": {
+    "titulo": "Forensic Request Technical Record",
+    "requisicao_info": "Request Details",
+    "demanda_quesitos": "Questions & Requested Scope",
+    "solicitante": "Requesting Authority",
+    "conclusoes_tecnicas": "Expert Technical Conclusions",
+    "integridade_custodia": "Cryptographic Integrity & Chain of Custody",
+    "hash_titulo": "SHA-256 Cryptographic Signature",
+    "documento_anexo": "Attached Forensic Document",
+    "sem_conclusao": "Awaiting technical analysis and report issuance by the Scientific Police."
+  },
+  "modal_solicitar": {
+    "titulo": "Request Forensic Examination",
+    "subtitulo": "Formalization of official forensic examination for the Criminalistics / Forensics Institute.",
+    "campo_tipo": "Specialty / Examination Type *",
+    "campo_ocorrencia": "Linked Police Incident (ID)",
+    "placeholder_ocorrencia": "Provide incident UUID",
+    "campo_demanda": "Technical Scope & Questions *",
+    "placeholder_demanda": "Specify the examinations to be performed, traces to analyze, and expert questions...",
+    "btn_submit": "Submit Request",
+    "submetendo": "Submitting..."
+  },
+  "modal_anexar": {
+    "titulo": "Attach Official Concluded Forensic Report",
+    "subtitulo": "Upload of signed final document with mandatory SHA-256 hash generation and chain-of-custody recording.",
+    "campo_conclusoes": "Technical Conclusions / Final Opinion *",
+    "placeholder_conclusoes": "Provide the objective expert findings, evidence evaluation, and methodology applied...",
+    "campo_arquivo": "Forensic Report PDF File *",
+    "ajuda_arquivo": "Only digitally signed PDF file up to 20 MB.",
+    "btn_submit": "Conclude & Attach Report",
+    "submetendo": "Processing upload and hash..."
+  },
+  "notificacoes": {
+    "solicitado_sucesso": "Forensic examination request submitted successfully!",
+    "anexado_sucesso": "Forensic report homologated and attached with SHA-256 integrity!"
+  },
+  "filtros": {
+    "status_label": "Status:",
+    "todos_status": "All Statuses",
+    "especialidade_label": "Forensic Specialty:",
+    "todas_especialidades": "All Specialties"
+  },
+  "total_registrado": "Total registered",
+  "pendente_anexacao": "Pending attachment",
+  "validacoes": {
+    "quesitos_min": "The scope/questions description must contain at least 10 characters.",
+    "ocorrencia_obrigatoria": "Please provide the linked incident identifier.",
+    "pdf_obrigatorio": "Please select the forensic report PDF file.",
+    "conclusoes_min": "Technical conclusions must contain at least 10 characters."
+  }
+}
