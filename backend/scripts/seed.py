@@ -10,6 +10,7 @@ Dados fictícios (LGPD). Senha padrão de todos os usuários: ``Senha@123``.
 from __future__ import annotations
 
 import asyncio
+import secrets
 import sys
 from pathlib import Path
 
@@ -39,6 +40,19 @@ async def semear_usuarios() -> None:
                 continue
             await repo.salvar(Usuario(nome=nome, login=login, senha_hash=hasher.gerar_hash(SENHA_PADRAO), papel=papel))
             print(f"  + usuário '{login}' ({papel.value})")
+        if not await repo.buscar_por_login("simulador-demo"):
+            # Issue #55: autor das ocorrências fictícias — senha aleatória, login sempre falha.
+            await repo.salvar(
+                Usuario(
+                    nome="Simulador Demo",
+                    login="simulador-demo",
+                    senha_hash=hasher.gerar_hash(secrets.token_urlsafe(48)),
+                    papel=Papel.AGENTE,
+                )
+            )
+            print("  + usuário 'simulador-demo' (AGENTE, senha inutilizável)")
+        else:
+            print("  = usuário 'simulador-demo' já existe")
         await session.commit()
 
 

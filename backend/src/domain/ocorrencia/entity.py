@@ -9,7 +9,8 @@ data_hora_fato obrigatórios), DEC-04 (Envolvido 1:N), DEC-09 (hash SHA-256 da
 narrativa na validação), HEX-06 (invariante ≥ 1 envolvido via factory),
 HEX-07 (instante recebido de fora — porta Relogio), HEX-08 (protocolo recebido
 de fora — porta GeradorProtocolo), RF03 (itens apreendidos + cadeia de custódia
-como filhos do agregado — ver ``domain/ocorrencia/apreensao.py``).
+como filhos do agregado — ver ``domain/ocorrencia/apreensao.py``), RF08 (chave
+pública de autenticidade emitida na validação — ver ``domain/ocorrencia/autenticidade.py``).
 """
 from __future__ import annotations
 
@@ -20,6 +21,7 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from domain.ocorrencia.apreensao import ItemApreendido, MovimentacaoCustodia
+from domain.ocorrencia.autenticidade import SituacaoDocumento, gerar_chave_autenticidade
 from domain.ocorrencia.status import (
     ESTADOS_ACEITAM_APREENSAO,
     ESTADOS_EDITAVEIS,
@@ -156,10 +158,12 @@ class Ocorrencia:
     justificativa_revisao: str | None = None
     desfecho: str | None = None
     hash_narrativa: str | None = None
+    chave_autenticidade: str | None = None
     arquivada_por_id: UUID | None = None
     motivo_arquivamento: str | None = None
     excluida_por_id: UUID | None = None
     motivo_exclusao: str | None = None
+    inquerito_id: UUID | None = None
     tipificacoes: list[TipificacaoPenal] = field(default_factory=list)
     envolvidos: list[Envolvido] = field(default_factory=list)
     evidencias: list[Evidencia] = field(default_factory=list)
@@ -169,6 +173,25 @@ class Ocorrencia:
     def __post_init__(self) -> None:
         if self.atualizada_em is None:
             self.atualizada_em = self.criada_em
+
+    def vincular_inquerito(self, inquerito_id: UUID) -> None:
+        if self.status != StatusOcorrencia.VALIDADA:
+            raise ConflitoError(
+                f"Apenas ocorrências com status VALIDADA podem ser vinculadas a inquéritos (status atual: {self.status.value}).",
+                chave="ocorrencia.status_invalido_para_inquerito",
+            )
+        if self.inquerito_id is not None and self.inquerito_id != inquerito_id:
+            raise ConflitoError(
+                "A ocorrência já se encontra vinculada a outro inquérito policial.",
+                chave="ocorrencia.ja_vinculada_a_inquerito",
+            )
+        self.inquerito_id = inquerito_id
+        self.versao += 1
+
+    def desvincular_inquerito(self) -> None:
+        self.inquerito_id = None
+        self.versao += 1
+
 
     # ------------------------------------------------------------------ factory
     @classmethod
@@ -343,11 +366,15 @@ class Ocorrencia:
         self.atualizada_em = em
 
     def validar(self, delegado_id: UUID, em: datetime) -> None:
-        """AGUARDANDO_REVISAO → VALIDADA; congela a narrativa por hash (DEC-09)."""
+        """
+        AGUARDANDO_REVISAO → VALIDADA; congela a narrativa por hash (DEC-09) e emite o
+        documento oficial com sua chave pública de autenticidade (RF08).
+        """
         self._transicionar("validar", delegado_id, em)
         self.validada_por_id = delegado_id
         self.justificativa_revisao = None
         self.hash_narrativa = self.calcular_hash_narrativa()
+        self.chave_autenticidade = gerar_chave_autenticidade()
 
     def devolver_para_correcao(self, delegado_id: UUID, justificativa: str, em: datetime) -> None:
         """AGUARDANDO_REVISAO → EM_CORRECAO (justificativa ≥ 10 caracteres)."""
@@ -475,3 +502,22 @@ class Ocorrencia:
         if self.hash_narrativa is None:
             return None
         return self.calcular_hash_narrativa() == self.hash_narrativa
+
+    # ------------------------------------------------- documento oficial (RF08)
+    def emitida_em(self) -> datetime | None:
+        """Instante em que o documento foi emitido (transição para VALIDADA)."""
+        for registro in self.historico_status:
+            if registro.para is StatusOcorrencia.VALIDADA:
+                return registro.em
+        return None
+
+    def situacao_documento(self) -> SituacaoDocumento | None:
+        """
+        UC08 passo 5: None se nenhum documento foi emitido; INDISPONIVEL se a ocorrência
+        foi anulada (exclusão lógica — UC08 regra 2); AUTENTICO se o hash confere; senão ADULTERADO.
+        """
+        if self.chave_autenticidade is None or self.hash_narrativa is None:
+            return None
+        if self.status is StatusOcorrencia.EXCLUIDA:
+            return SituacaoDocumento.INDISPONIVEL
+        return SituacaoDocumento.AUTENTICO if self.narrativa_integra() else SituacaoDocumento.ADULTERADO

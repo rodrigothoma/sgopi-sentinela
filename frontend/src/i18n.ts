@@ -7,6 +7,9 @@ import ptOcorrencias from './locales/pt/ocorrencias.json';
 import ptPainel from './locales/pt/painel.json';
 import ptPublico from './locales/pt/publico.json';
 import ptInicio from './locales/pt/inicio.json';
+import ptInqueritos from './locales/pt/inqueritos.json';
+import ptLaudos from './locales/pt/laudos.json';
+import ptMedidas from './locales/pt/medidas.json';
 
 import enCommon from './locales/en/common.json';
 import enAuth from './locales/en/auth.json';
@@ -14,6 +17,9 @@ import enOcorrencias from './locales/en/ocorrencias.json';
 import enPainel from './locales/en/painel.json';
 import enPublico from './locales/en/publico.json';
 import enInicio from './locales/en/inicio.json';
+import enInqueritos from './locales/en/inqueritos.json';
+import enLaudos from './locales/en/laudos.json';
+import enMedidas from './locales/en/medidas.json';
 
 export const IDIOMAS_SUPORTADOS = ['pt', 'en'] as const;
 export type Idioma = (typeof IDIOMAS_SUPORTADOS)[number];
@@ -28,6 +34,9 @@ export const resources = {
     painel: ptPainel,
     publico: ptPublico,
     inicio: ptInicio,
+    inqueritos: ptInqueritos,
+    laudos: ptLaudos,
+    medidas: ptMedidas,
   },
   en: {
     common: enCommon,
@@ -36,6 +45,9 @@ export const resources = {
     painel: enPainel,
     publico: enPublico,
     inicio: enInicio,
+    inqueritos: enInqueritos,
+    laudos: enLaudos,
+    medidas: enMedidas,
   },
 } as const;
 

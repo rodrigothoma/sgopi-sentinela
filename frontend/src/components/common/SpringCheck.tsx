@@ -59,7 +59,7 @@ export interface SpringCheckProps {
 
 export const SpringCheck: React.FC<SpringCheckProps> = ({
   id,
-  label = 'Ship the build',
+  label,
   checked,
   defaultChecked = false,
   onChange,

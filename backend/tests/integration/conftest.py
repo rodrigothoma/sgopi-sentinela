@@ -23,6 +23,7 @@ IDS = {
     "operador": UUID("00000000-0000-0000-0000-000000000003"),
     "agente2": UUID("00000000-0000-0000-0000-000000000004"),
     "supervisor": UUID("00000000-0000-0000-0000-000000000005"),
+    "perito": UUID("00000000-0000-0000-0000-000000000006"),
 }
 PAPEIS = {
     "agente": "AGENTE",
@@ -30,6 +31,7 @@ PAPEIS = {
     "operador": "OPERADOR_CENTRAL",
     "agente2": "AGENTE",
     "supervisor": "SUPERVISOR",
+    "perito": "PERITO",
 }
 SENHA_PADRAO = "Senha@123"
 

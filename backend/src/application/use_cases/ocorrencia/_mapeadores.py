@@ -59,6 +59,7 @@ def para_resumo(o: Ocorrencia) -> OcorrenciaResumoOutput:
         atualizada_em=(o.atualizada_em or o.criada_em).isoformat(),
         agente_policial_id=o.agente_policial_id,
         versao=o.versao,
+        inquerito_id=o.inquerito_id,
     )
 
 
@@ -73,6 +74,7 @@ def para_detalhe(o: Ocorrencia, ator: Ator) -> OcorrenciaDetalheOutput:
         desfecho=o.desfecho,
         hash_narrativa=o.hash_narrativa,
         narrativa_integra=o.narrativa_integra(),
+        chave_autenticidade=o.chave_autenticidade,
         arquivada_por_id=o.arquivada_por_id,
         motivo_arquivamento=o.motivo_arquivamento,
         excluida_por_id=o.excluida_por_id,

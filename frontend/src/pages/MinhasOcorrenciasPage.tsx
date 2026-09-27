@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
 import { OcorrenciaForm, paraInputLocal, paraRequest, type ValoresOcorrencia } from '../components/ocorrencias/OcorrenciaForm';
@@ -18,6 +19,9 @@ export const MinhasOcorrenciasPage: React.FC = () => {
   const [editando, setEditando] = useState(false);
   const [ocupado, setOcupado] = useState(false);
 
+  const [searchParams] = useSearchParams();
+  const paramOcorrenciaId = searchParams.get('ocorrencia');
+
   const carregar = useCallback(async () => {
     try {
       setItens((await ocorrenciasService.listar([], 100)).itens.slice().reverse());
@@ -30,10 +34,20 @@ export const MinhasOcorrenciasPage: React.FC = () => {
     carregar();
   }, [carregar]);
 
-  const abrir = async (id: string) => {
+  const abrir = useCallback(async (id: string) => {
     setEditando(false);
-    setDetalhe(await ocorrenciasService.buscarPorId(id));
-  };
+    try {
+      setDetalhe(await ocorrenciasService.buscarPorId(id));
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    }
+  }, [avisar]);
+
+  useEffect(() => {
+    if (paramOcorrenciaId) {
+      abrir(paramOcorrenciaId);
+    }
+  }, [paramOcorrenciaId, abrir]);
 
   const recarregarDetalhe = async () => {
     if (!detalhe) return;

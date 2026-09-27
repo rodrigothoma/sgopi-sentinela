@@ -44,7 +44,7 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
     cy.criarOcorrenciaApi().then((o) => {
       cy.login('delegado', '/fila');
       abrirNaFila(o.numero_protocolo);
-      cy.get('textarea').type('curta');
+      cy.get('#justificativa-revisao').type('curta');
       cy.contains('button', 'Devolver para correção').click();
       cy.contains('.toast', '10 caracteres').should('be.visible');
       cy.get('.detalhe').should('contain.text', 'Aguardando revisão');
@@ -56,7 +56,7 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
       // Delegado devolve
       cy.login('delegado', '/fila');
       abrirNaFila(o.numero_protocolo);
-      cy.get('textarea').type(JUSTIFICATIVA);
+      cy.get('#justificativa-revisao').type(JUSTIFICATIVA);
       cy.contains('button', 'Devolver para correção').click();
       cy.get('.detalhe').should('contain.text', 'Em correção');
 
@@ -77,7 +77,7 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
       cy.on('window:confirm', () => true);
       cy.login('delegado', '/fila');
       abrirNaFila(o.numero_protocolo);
-      cy.get('textarea').type('Fato atípico, sem materialidade delitiva.');
+      cy.get('#justificativa-revisao').type('Fato atípico, sem materialidade delitiva.');
       cy.contains('button', 'Rejeitar').click();
       cy.get('.detalhe').should('contain.text', 'Rejeitada');
       cy.contains('.tabs .tab', 'Rejeitadas').click();
