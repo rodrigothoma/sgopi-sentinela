@@ -1,15 +1,26 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.heat';
 import type { OcorrenciaResumo, OrdemDespacho, Viatura } from '../../types/api';
-import {
-  CENTRO_PADRAO,
-  corrigirIconesLeaflet,
-  iconeOcorrencia,
-  iconeViatura,
-  iconeAlvoDespacho,
-  iconePinTatico,
-} from './leaflet';
+import type { PontoCalor } from '../../utils/manchas';
+import { CENTRO_PADRAO, corrigirIconesLeaflet, iconeOcorrencia, iconeViatura } from './leaflet';
+
+/** Campo interno do leaflet.heat: redesenho agendado via requestAnimationFrame. */
+type HeatLayerInterno = L.HeatLayer & { _frame?: number | null };
+
+/**
+ * Remove a camada de calor cancelando antes o redesenho pendente — sem isso o frame agendado
+ * roda com `_map` nulo e lança "Cannot read properties of null (reading 'getSize')".
+ */
+const removerHeat = (camada: L.HeatLayer | null): void => {
+  const interna = camada as HeatLayerInterno | null;
+  if (interna?._frame) {
+    L.Util.cancelAnimFrame(interna._frame);
+    interna._frame = null;
+  }
+  camada?.remove();
+};
 
 interface Props {
   viaturas: Viatura[];
@@ -18,65 +29,35 @@ interface Props {
   onSelecionarOcorrencia: (id: string) => void;
   /** Ordens ativas: desenha o trajeto viatura → ocorrência enquanto ela está EM_DESLOCAMENTO. */
   ordens?: OrdemDespacho[];
-  pontoTatico?: { latitude: number; longitude: number } | null;
-  onCliqueMapa?: (lat: number, lon: number) => void;
+  heatAtivo: boolean;
+  pontosCalor: PontoCalor[];
 }
 
-/** Mapa Leaflet/OSM com marcadores atualizados incrementalmente e pin tático interativo. */
-export const MapaTatico: React.FC<Props> = ({
-  viaturas,
-  ocorrencias,
-  selecionada,
-  onSelecionarOcorrencia,
-  ordens = [],
-  pontoTatico: pontoExterno,
-  onCliqueMapa,
-}) => {
+/** Mapa Leaflet/OSM com marcadores atualizados incrementalmente (sem recriar o mapa a cada evento). */
+export const MapaTatico: React.FC<Props> = ({ viaturas, ocorrencias, selecionada, onSelecionarOcorrencia, ordens = [], heatAtivo, pontosCalor }) => {
   const divRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const viaturasRef = useRef<Map<string, L.Marker>>(new Map());
   const ocorrenciasRef = useRef<Map<string, L.Marker>>(new Map());
-  const alvoRef = useRef<L.Marker | null>(null);
-  const pontoTaticoRef = useRef<L.Marker | null>(null);
   const rotasRef = useRef<Map<string, L.Polyline>>(new Map());
+  const heatRef = useRef<L.HeatLayer | null>(null);
   const selecionarRef = useRef(onSelecionarOcorrencia);
-  const cliqueRef = useRef(onCliqueMapa);
-
-  const [pontoInterno, setPontoInterno] = useState<{ latitude: number; longitude: number } | null>(null);
-
   selecionarRef.current = onSelecionarOcorrencia;
-  cliqueRef.current = onCliqueMapa;
-
-  const pontoAtual = pontoExterno ?? pontoInterno;
 
   useEffect(() => {
     if (!divRef.current || mapRef.current) return;
     corrigirIconesLeaflet();
-    const map = L.map(divRef.current, {
-      zoomControl: true,
-      attributionControl: true,
-    }).setView(CENTRO_PADRAO, 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
-    }).addTo(map);
-
-    map.on('click', (e: L.LeafletMouseEvent) => {
-      const lat = Number(e.latlng.lat.toFixed(6));
-      const lng = Number(e.latlng.lng.toFixed(6));
-      setPontoInterno({ latitude: lat, longitude: lng });
-      cliqueRef.current?.(lat, lng);
-    });
-
+    const map = L.map(divRef.current).setView(CENTRO_PADRAO, 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
     mapRef.current = map;
     return () => {
+      removerHeat(heatRef.current);
+      heatRef.current = null;
       map.remove();
       mapRef.current = null;
     };
   }, []);
 
-  // Marcadores de Viaturas
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -102,7 +83,6 @@ export const MapaTatico: React.FC<Props> = ({
     }
   }, [viaturas]);
 
-  // Marcadores de Ocorrências
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -127,56 +107,9 @@ export const MapaTatico: React.FC<Props> = ({
         ocorrenciasRef.current.delete(id);
       }
     }
-
-    // Alvo de despacho na ocorrência selecionada
-    const oSel = ocorrencias.find((x) => x.ocorrencia_id === selecionada);
-    if (oSel && oSel.latitude !== null && oSel.longitude !== null) {
-      if (!alvoRef.current) {
-        alvoRef.current = L.marker([oSel.latitude, oSel.longitude], {
-          icon: iconeAlvoDespacho(),
-          interactive: false,
-          zIndexOffset: 2000,
-        }).addTo(map);
-      } else {
-        alvoRef.current.setLatLng([oSel.latitude, oSel.longitude]);
-      }
-    } else {
-      alvoRef.current?.remove();
-      alvoRef.current = null;
-    }
   }, [ocorrencias, selecionada]);
 
-  // Pin tático visual para clique manual
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    if (!pontoAtual) {
-      pontoTaticoRef.current?.remove();
-      pontoTaticoRef.current = null;
-      return;
-    }
-
-    if (!pontoTaticoRef.current) {
-      const pin = L.marker([pontoAtual.latitude, pontoAtual.longitude], {
-        icon: iconePinTatico('Ponto Marcado'),
-        zIndexOffset: 2500,
-      }).addTo(map);
-
-      pin.bindTooltip(`Ponto Tático: ${pontoAtual.latitude.toFixed(5)}, ${pontoAtual.longitude.toFixed(5)}`, {
-        direction: 'top',
-        offset: [0, -38],
-      });
-
-      pontoTaticoRef.current = pin;
-    } else {
-      pontoTaticoRef.current
-        .setLatLng([pontoAtual.latitude, pontoAtual.longitude])
-        .setTooltipContent(`Ponto Tático: ${pontoAtual.latitude.toFixed(5)}, ${pontoAtual.longitude.toFixed(5)}`);
-    }
-  }, [pontoAtual]);
-
-  // Trajeto tracejado da viatura despachada até a ocorrência
+  // trajeto tracejado da viatura despachada até a ocorrência (some quando ela chega — OPERANDO)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -204,11 +137,24 @@ export const MapaTatico: React.FC<Props> = ({
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map) return;
+    if (!heatAtivo || pontosCalor.length === 0) {
+      removerHeat(heatRef.current);
+      heatRef.current = null;
+      return;
+    }
+    if (heatRef.current) {
+      heatRef.current.setLatLngs(pontosCalor);
+    } else {
+      heatRef.current = L.heatLayer(pontosCalor, { radius: 30, blur: 20, maxZoom: 13 }).addTo(map);
+    }
+  }, [heatAtivo, pontosCalor]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     const o = ocorrencias.find((x) => x.ocorrencia_id === selecionada);
     if (map && o) map.panTo([o.latitude, o.longitude]);
   }, [selecionada, ocorrencias]);
 
-  return <div ref={divRef} className="mapa mapa-grande" style={{ cursor: 'crosshair' }} />;
+  return <div ref={divRef} className="mapa mapa-grande" />;
 };
-
-export default MapaTatico;

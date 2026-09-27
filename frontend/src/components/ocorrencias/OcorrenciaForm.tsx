@@ -126,7 +126,7 @@ export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnvia
           <span className={`contador ${descricaoLen < MINIMO_DESCRICAO ? 'obrigatorio' : 'muted'}`}>
             ({descricaoLen}/{MINIMO_DESCRICAO}+ · {t('ocorrencias:form.descricao_ajuda')})
           </span>
-          <textarea id="descricao" rows={6} value={v.descricao} onChange={(e) => set('descricao', e.target.value)} placeholder={t('ocorrencias:form.descricao_placeholder')} />
+          <textarea id="descricao" rows={6} maxLength={500} value={v.descricao} onChange={(e) => set('descricao', e.target.value)} placeholder={t('ocorrencias:form.descricao_placeholder')} />
         </label>
       </section>
 

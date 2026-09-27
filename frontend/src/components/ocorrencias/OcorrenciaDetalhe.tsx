@@ -1,19 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../hooks/useAuth';
-import { useToast } from '../../hooks/useToast';
 import { mensagemDeErro } from '../../services/api';
 import { ocorrenciasService } from '../../services/ocorrenciasService';
-import { laudosService } from '../../services/laudosService';
-import { medidasService } from '../../services/medidasService';
 import type { Evidencia, OcorrenciaDetalhe as Detalhe } from '../../types/api';
 import { StatusBadge } from '../StatusBadge';
 import { formatarNatureza } from '../../utils/formatarNatureza';
 import { ApreensoesAba } from './ApreensoesAba';
-import { SpringCheck } from '../common/SpringCheck';
-import { GlideSelect, type GlideSelectOption } from '../common/GlideSelect';
+import { ComprovanteOcorrencia } from './ComprovanteOcorrencia';
+import { formatarChave } from '../../utils/autenticidade';
 
 const fmt = (iso: string) => new Date(iso).toLocaleString();
 
@@ -80,160 +75,13 @@ interface Props {
   onAlterada?: () => void;
 }
 
-const TIPOS_PERICIA = [
-  'BALISTICA',
-  'TOXICOLOGICA',
-  'LOCAL_CRIME',
-  'VEICULAR',
-  'NECROPSIA',
-  'DOCUMENTOSCOPIA',
-  'INFORMATICA_FORENSE',
-  'OUTRA',
-];
-
-const TIPOS_RESTRICAO_OPCOES = [
-  { id: 'AFASTAMENTO_DO_LAR', label: 'Afastamento do Lar / Domicílio' },
-  { id: 'PROIBICAO_DE_CONTATO', label: 'Proibição de Contato por Qualquer Meio' },
-  { id: 'LIMITE_DISTANCIA_METROS', label: 'Limite Mínimo de Distância (Metros)' },
-  { id: 'SUSPENSAO_PORTE_ARMAS', label: 'Suspensão da Posse ou Porte de Armas' },
-  { id: 'OUTRA', label: 'Outras Restrições Judiciais' },
-];
-
 export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
-  const navigate = useNavigate();
-  const { tem } = useAuth();
-  const { avisar } = useToast();
-  const { t } = useTranslation(['ocorrencias', 'inqueritos', 'laudos', 'medidas', 'common']);
+  const { t } = useTranslation(['ocorrencias', 'common']);
   const [aba, setAba] = useState<Aba>('detalhe');
+  const [comprovante, setComprovante] = useState(false);
   const isOnline = o.envolvidos.some((e) => e.tipo === 'COMUNICANTE');
 
-  // Modais de ações procedimentais
-  const [modalLaudoAberto, setModalLaudoAberto] = useState(false);
-  const [tipoPericia, setTipoPericia] = useState('LOCAL_CRIME');
-  const [descricaoDemanda, setDescricaoDemanda] = useState('');
-  const [enviandoLaudo, setEnviandoLaudo] = useState(false);
-
-  const [modalMedidaAberta, setModalMedidaAberta] = useState(false);
-  const [vitimaId, setVitimaId] = useState('');
-  const [agressorId, setAgressorId] = useState('');
-  const [prazoDias, setPrazoDias] = useState(90);
-  const [restricoes, setRestricoes] = useState<string[]>(['AFASTAMENTO_DO_LAR', 'PROIBICAO_DE_CONTATO']);
-  const [distanciaMetros, setDistanciaMetros] = useState<number>(500);
-  const [observacoesMedida, setObservacoesMedida] = useState('');
-  const [enviandoMedida, setEnviandoMedida] = useState(false);
-
-  const opcoesTipoPericia: GlideSelectOption[] = useMemo(
-    () =>
-      TIPOS_PERICIA.map((tp) => ({
-        value: tp,
-        label: t(`laudos:tipos.${tp}`, { defaultValue: tp.replace(/_/g, ' ') }),
-      })),
-    [t],
-  );
-
-  const opcoesVitima: GlideSelectOption[] = useMemo(
-    () => [
-      { value: '', label: t('medidas:modal_conceder.placeholder_vitima') },
-      ...o.envolvidos.map((e) => ({
-        value: e.id,
-        label: `${e.nome} (${e.tipo})`,
-      })),
-    ],
-    [o.envolvidos, t],
-  );
-
-  const opcoesAgressor: GlideSelectOption[] = useMemo(
-    () => [
-      { value: '', label: t('medidas:modal_conceder.placeholder_agressor') },
-      ...o.envolvidos.map((e) => ({
-        value: e.id,
-        label: `${e.nome} (${e.tipo})`,
-      })),
-    ],
-    [o.envolvidos, t],
-  );
-
-  useEffect(() => {
-    setAba('detalhe');
-    const vitimas = o.envolvidos.filter((e) => e.tipo === 'VITIMA');
-    const suspeitos = o.envolvidos.filter((e) => e.tipo === 'SUSPEITO');
-    if (vitimas.length > 0) {
-      setVitimaId(vitimas[0].id);
-    } else if (o.envolvidos.length > 0) {
-      setVitimaId(o.envolvidos[0].id);
-    }
-    if (suspeitos.length > 0) {
-      setAgressorId(suspeitos[0].id);
-    } else if (o.envolvidos.length > 1) {
-      setAgressorId(o.envolvidos[1].id);
-    }
-  }, [o.ocorrencia_id, o.envolvidos]);
-
-  const submeterLaudo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!descricaoDemanda.trim()) {
-      avisar(t('laudos:validacoes.quesitos_min'), 'info');
-      return;
-    }
-    setEnviandoLaudo(true);
-    try {
-      await laudosService.solicitar({
-        ocorrencia_id: o.ocorrencia_id,
-        tipo_pericia: tipoPericia,
-        descricao_solicitacao: descricaoDemanda.trim(),
-      });
-      avisar(t('laudos:notificacoes.solicitado_sucesso'), 'sucesso');
-      setModalLaudoAberto(false);
-      setDescricaoDemanda('');
-      onAlterada?.();
-    } catch (err) {
-      avisar(mensagemDeErro(err), 'erro');
-    } finally {
-      setEnviandoLaudo(false);
-    }
-  };
-
-  const alternarRestricao = (id: string) => {
-    setRestricoes((atuais) =>
-      atuais.includes(id) ? atuais.filter((r) => r !== id) : [...atuais, id],
-    );
-  };
-
-  const submeterMedida = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!vitimaId || !agressorId) {
-      avisar(t('medidas:validacoes.campos_obrigatorios'), 'info');
-      return;
-    }
-    if (vitimaId === agressorId) {
-      avisar(t('medidas:validacoes.vitima_igual_agressor'), 'erro');
-      return;
-    }
-    if (restricoes.length === 0) {
-      avisar(t('medidas:validacoes.restricao_min'), 'info');
-      return;
-    }
-    setEnviandoMedida(true);
-    try {
-      await medidasService.conceder({
-        ocorrencia_id: o.ocorrencia_id,
-        vitima_id: vitimaId,
-        agressor_id: agressorId,
-        tipos_restricao: restricoes,
-        prazo_dias: prazoDias,
-        distancia_minima_metros: restricoes.includes('LIMITE_DISTANCIA_METROS') ? distanciaMetros : undefined,
-        condicoes_especificas: observacoesMedida.trim() || undefined,
-      });
-      avisar(t('medidas:notificacoes.concedida_sucesso'), 'sucesso');
-      setModalMedidaAberta(false);
-      setObservacoesMedida('');
-      onAlterada?.();
-    } catch (err) {
-      avisar(mensagemDeErro(err), 'erro');
-    } finally {
-      setEnviandoMedida(false);
-    }
-  };
+  useEffect(() => { setAba('detalhe'); setComprovante(false); }, [o.ocorrencia_id]);
 
   return (
     <div className="detalhe">
@@ -248,88 +96,6 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
           · {t('ocorrencias:detalhe.versao')} {o.versao} · {t('ocorrencias:detalhe.registrada_em')} {fmt(o.criada_em)}
         </span>
       </div>
-
-      {/* Indicador de Vinculação com Inquérito Policial (RF06) */}
-      {o.inquerito_id ? (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 16px',
-            margin: '12px 0 16px 0',
-            borderRadius: 8,
-            backgroundColor: 'rgba(99, 102, 241, 0.08)',
-            border: '1px solid rgba(99, 102, 241, 0.3)',
-          }}
-        >
-          <div>
-            <span style={{ fontWeight: 600, color: 'var(--primary)', display: 'block' }}>
-              📁 Vinculada ao Inquérito Policial
-            </span>
-            <small className="muted" style={{ fontFamily: 'monospace' }}>
-              ID: {o.inquerito_id}
-            </small>
-          </div>
-          <button
-            type="button"
-            className="btn btn-sm"
-            onClick={() => navigate('/inqueritos')}
-          >
-            Abrir Inquéritos →
-          </button>
-        </div>
-      ) : null}
-
-      {/* Barra de Ações Rápidas do Delegado / Perito (RF06, RF07, RF09) */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 8,
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          padding: '10px 14px',
-          margin: '8px 0 16px 0',
-          background: 'var(--surface-hover, rgba(255, 255, 255, 0.03))',
-          borderRadius: 8,
-          border: '1px solid var(--line, rgba(255, 255, 255, 0.08))',
-        }}
-      >
-        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--muted)', marginRight: 4 }}>
-          {t('ocorrencias:acoes_procedimentais.titulo')}
-        </span>
-        {tem('DELEGADO', 'PERITO') && (
-          <button
-            type="button"
-            className="btn btn-sm"
-            style={{ fontSize: '0.8rem', padding: '4px 10px' }}
-            onClick={() => setModalLaudoAberto(true)}
-          >
-            🔬 {t('ocorrencias:acoes_procedimentais.requisitar_laudo')}
-          </button>
-        )}
-        {tem('DELEGADO') && (
-          <button
-            type="button"
-            className="btn btn-sm"
-            style={{ fontSize: '0.8rem', padding: '4px 10px' }}
-            onClick={() => setModalMedidaAberta(true)}
-          >
-            🛡️ {t('ocorrencias:acoes_procedimentais.conceder_medida')}
-          </button>
-        )}
-        {tem('DELEGADO') && !o.inquerito_id && (
-          <button
-            type="button"
-            className="btn btn-sm"
-            style={{ fontSize: '0.8rem', padding: '4px 10px' }}
-            onClick={() => navigate('/inqueritos')}
-          >
-            📁 {t('ocorrencias:acoes_procedimentais.vincular_inquerito')}
-          </button>
-        )}
-      </div>
-
       <div className="tabs detalhe-abas" role="tablist">
         <button role="tab" aria-selected={aba === 'detalhe'} className={`tab ${aba === 'detalhe' ? 'ativo' : ''}`} onClick={() => setAba('detalhe')}>
           {t('ocorrencias:detalhe.aba_detalhe')}
@@ -352,6 +118,20 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
         <p className={o.narrativa_integra ? 'ok' : 'erro'}>
           {o.narrativa_integra ? t('ocorrencias:detalhe.integra') : t('ocorrencias:detalhe.adulterada')} · SHA-256 {o.hash_narrativa?.slice(0, 12)}…
         </p>
+      )}
+      {o.chave_autenticidade && (
+        <div className="callout comprovante-callout" data-cy="documento-emitido">
+          <div>
+            <strong>{t('ocorrencias:comprovante.chave')}:</strong> <code data-cy="chave-autenticidade">{formatarChave(o.chave_autenticidade)}</code>
+            <br /><small className="muted">{t('ocorrencias:comprovante.dica')}</small>
+          </div>
+          <button className="btn btn-sm" onClick={() => setComprovante(true)} data-cy="emitir-comprovante">
+            {t('ocorrencias:comprovante.emitir')}
+          </button>
+        </div>
+      )}
+      {comprovante && o.chave_autenticidade && (
+        <ComprovanteOcorrencia o={o} chave={o.chave_autenticidade} onFechar={() => setComprovante(false)} />
       )}
       {o.justificativa_revisao && (
         <div className="callout">
@@ -417,248 +197,6 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
         ))}
       </ol>
       </>)}
-
-      {/* Modal Requisitar Laudo Pericial */}
-      {modalLaudoAberto && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setModalLaudoAberto(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.65)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 3000,
-            padding: 16,
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'var(--card)',
-              borderRadius: 16,
-              border: '1px solid var(--line)',
-              boxShadow: 'var(--shadow-pop)',
-              width: '100%',
-              maxWidth: 580,
-              maxHeight: '90vh',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>🔬 {t('laudos:modal_solicitar.titulo')}</h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModalLaudoAberto(false)}>✕</button>
-            </div>
-            <form onSubmit={submeterLaudo} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                  {t('laudos:modal_solicitar.campo_ocorrencia')}
-                </label>
-                <input
-                  type="text"
-                  readOnly
-                  value={`${o.numero_protocolo} — ${formatarNatureza(o.natureza, t)}`}
-                  style={{ width: '100%', height: '42px', padding: '8px 12px', borderRadius: 8, background: 'var(--bg)', border: '1px solid var(--line)', opacity: 0.8 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                  {t('laudos:modal_solicitar.campo_tipo')}
-                </label>
-                <GlideSelect
-                  value={tipoPericia}
-                  options={opcoesTipoPericia}
-                  onChange={(val) => setTipoPericia(val)}
-                  fullWidth
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                  {t('laudos:modal_solicitar.campo_demanda')}
-                </label>
-                <textarea
-                  rows={4}
-                  value={descricaoDemanda}
-                  onChange={(e) => setDescricaoDemanda(e.target.value)}
-                  placeholder={t('laudos:modal_solicitar.placeholder_demanda')}
-                  required
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
-                />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setModalLaudoAberto(false)} disabled={enviandoLaudo}>
-                  {t('common:actions.cancel')}
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={enviandoLaudo}>
-                  {enviandoLaudo ? t('laudos:modal_solicitar.submetendo') : t('laudos:modal_solicitar.btn_submit')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Conceder Medida Protetiva */}
-      {modalMedidaAberta && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setModalMedidaAberta(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.65)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 3000,
-            padding: 16,
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'var(--card)',
-              borderRadius: 16,
-              border: '1px solid var(--line)',
-              boxShadow: 'var(--shadow-pop)',
-              width: '100%',
-              maxWidth: 640,
-              maxHeight: '90vh',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>🛡️ {t('medidas:modal_conceder.titulo')}</h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModalMedidaAberta(false)}>✕</button>
-            </div>
-            <form onSubmit={submeterMedida} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                    {t('medidas:modal_conceder.campo_vitima')}
-                  </label>
-                  <GlideSelect
-                    value={vitimaId}
-                    options={opcoesVitima}
-                    onChange={(val) => setVitimaId(val)}
-                    placeholder={t('medidas:modal_conceder.placeholder_vitima')}
-                    fullWidth
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                    {t('medidas:modal_conceder.campo_agressor')}
-                  </label>
-                  <GlideSelect
-                    value={agressorId}
-                    options={opcoesAgressor}
-                    onChange={(val) => setAgressorId(val)}
-                    placeholder={t('medidas:modal_conceder.placeholder_agressor')}
-                    fullWidth
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                  {t('medidas:modal_conceder.campo_prazo')}
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={365}
-                  value={prazoDias}
-                  onChange={(e) => setPrazoDias(Number(e.target.value))}
-                  style={{ width: '100%', height: '42px', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 8 }}>
-                  {t('medidas:modal_conceder.campo_restricoes')}
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
-                  {TIPOS_RESTRICAO_OPCOES.map((opt) => {
-                    const isChecked = restricoes.includes(opt.id);
-                    return (
-                      <div
-                        key={opt.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          minHeight: '42px',
-                          padding: '0 10px',
-                          borderRadius: '6px',
-                          background: isChecked ? 'var(--card-hover)' : 'transparent',
-                          border: isChecked ? '1px solid var(--primary)' : '1px solid var(--line)',
-                          transition: 'all 0.15s ease',
-                          cursor: 'pointer',
-                        }}
-                        onClick={() => alternarRestricao(opt.id)}
-                      >
-                        <SpringCheck
-                          checked={isChecked}
-                          strike="none"
-                          label={t(`medidas:restricoes.${opt.id}`, { defaultValue: opt.label })}
-                          onChange={() => alternarRestricao(opt.id)}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {restricoes.includes('LIMITE_DISTANCIA_METROS') && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                    {t('medidas:modal_conceder.campo_distancia')}
-                  </label>
-                  <input
-                    type="number"
-                    min={10}
-                    step={10}
-                    value={distanciaMetros}
-                    onChange={(e) => setDistanciaMetros(Number(e.target.value))}
-                    style={{ width: '100%', height: '42px', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
-                  />
-                </div>
-              )}
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>
-                  {t('medidas:modal_conceder.campo_condicoes')}
-                </label>
-                <textarea
-                  rows={3}
-                  value={observacoesMedida}
-                  onChange={(e) => setObservacoesMedida(e.target.value)}
-                  placeholder={t('medidas:modal_conceder.placeholder_condicoes')}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--line)' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setModalMedidaAberta(false)} disabled={enviandoMedida}>
-                  {t('common:actions.cancel')}
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={enviandoMedida}>
-                  {enviandoMedida ? t('medidas:modal_conceder.submetendo') : t('medidas:modal_conceder.btn_submit')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -110,5 +110,9 @@
     "movimentacao_retroativa": "A movimentação não pode ser anterior à última registrada",
     "data_sem_fuso": "A data deve informar o fuso horário",
     "sem_itens": "A ocorrência não possui itens apreendidos para emitir o auto"
+  },
+  "documento": {
+    "not_found": "Documento não localizado. Confira a chave impressa ou procure a delegacia emissora.",
+    "codigo_invalido": "Código de verificação inválido: informe a chave de 24 caracteres ou o hash SHA-256 impresso no documento."
   }
 }
