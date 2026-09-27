@@ -83,7 +83,7 @@ uv run uvicorn --app-dir src main:app --reload
 * **Falas-Chave:**
   > *"Boa tarde, professores Gilleanes e Fabio. O SGOPI Sentinela foi desenvolvido sob os princípios da Arquitetura Hexagonal com isolamento absoluto do domínio: nossa camada de domínio não importa nenhuma dependência externa, nem FastAPI nem SQLAlchemy. O sistema adota uma Arquitetura Dual: acolhe o registro público do cidadão sem burocracia e entrega à autoridade policial ferramentas de triagem e inteligência operacional em tempo real."*
 * **Destaques Técnicos:**
-  * Apresentar o resultado dos testes: 295 testes automatizados com cobertura superior a 97%;
+  * Apresentar o resultado dos testes: 505 testes automatizados com 100% de aprovação e cobertura superior a 97%;
   * Regra de ouro da arquitetura verificada pelo `import-linter`.
 
 ---
