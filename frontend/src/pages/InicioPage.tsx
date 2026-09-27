@@ -35,6 +35,12 @@ function rotaListagem(papel: Papel): string {
   return '/painel';
 }
 
+function linkVerificarOcorrencia(papel: Papel, id: string): string {
+  if (papel === 'AGENTE') return `/minhas?ocorrencia=${id}`;
+  if (papel === 'DELEGADO' || papel === 'SUPERVISOR') return `/fila?ocorrencia=${id}`;
+  return `/painel`;
+}
+
 /**
  * Tela inicial pós-login (delegado/agente/operador): frota em atividade, efetivo em campo,
  * últimas ocorrências, investigações em andamento e escala do turno. Carga por REST e
@@ -117,7 +123,7 @@ export const InicioPage: React.FC = () => {
       .sort((a, b) => STATUS_EM_ANDAMENTO.indexOf(a.status) - STATUS_EM_ANDAMENTO.indexOf(b.status) || b.atualizada_em.localeCompare(a.atualizada_em)),
     [ocorrencias],
   );
-  const ultimas = useMemo(() => [...ocorrencias].sort((a, b) => b.criada_em.localeCompare(a.criada_em)).slice(0, 8), [ocorrencias]);
+  const ultimas = useMemo(() => [...ocorrencias].sort((a, b) => b.criada_em.localeCompare(a.criada_em)).slice(0, 10), [ocorrencias]);
   const hoje = useMemo(() => ocorrencias.filter((o) => mesmoDia(o.criada_em, agora)), [ocorrencias, agora]);
   const agentes = useMemo(() => usuarios.filter((u) => u.papel === 'AGENTE'), [usuarios]);
   const ocorrenciasPorAgente = useMemo(() => {
@@ -184,26 +190,28 @@ export const InicioPage: React.FC = () => {
           <h3>🚓 {t('inicio:viaturas.titulo')} <span className="muted">({viaturasAtivas.length})</span></h3>
           {viaturasAtivas.length === 0 && <p className="muted">{t('inicio:viaturas.vazio')}</p>}
           {viaturasAtivas.length > 0 && (
-            <table className="tabela compacta">
-              <thead>
-                <tr>
-                  <th>{t('inicio:viaturas.viatura')}</th>
-                  <th>{t('inicio:viaturas.situacao')}</th>
-                  <th>{t('inicio:viaturas.sinal')}</th>
-                  {veOrdens && <th>{t('inicio:viaturas.atendendo')}</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {viaturasAtivas.map((v) => (
-                  <tr key={v.id}>
-                    <td><strong>{v.prefixo}</strong> <small className="muted">{v.placa}</small></td>
-                    <td><StatusBadge status={v.situacao} grupo="situacao" /></td>
-                    <td><StatusBadge status={v.sinal} grupo="sinal" /></td>
-                    {veOrdens && <td>{protocoloDaViatura(v.id) ?? <span className="muted">{t('inicio:viaturas.livre')}</span>}</td>}
+            <div className="card-corpo-scroll">
+              <table className="tabela compacta">
+                <thead>
+                  <tr>
+                    <th>{t('inicio:viaturas.viatura')}</th>
+                    <th>{t('inicio:viaturas.situacao')}</th>
+                    <th>{t('inicio:viaturas.sinal')}</th>
+                    {veOrdens && <th>{t('inicio:viaturas.atendendo')}</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {viaturasAtivas.map((v) => (
+                    <tr key={v.id}>
+                      <td><strong>{v.prefixo}</strong> <small className="muted">{v.placa}</small></td>
+                      <td><StatusBadge status={v.situacao} grupo="situacao" /></td>
+                      <td><StatusBadge status={v.sinal} grupo="sinal" /></td>
+                      {veOrdens && <td>{protocoloDaViatura(v.id) ?? <span className="muted">{t('inicio:viaturas.livre')}</span>}</td>}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
 
@@ -211,16 +219,22 @@ export const InicioPage: React.FC = () => {
           <h3>👮 {t('inicio:funcionarios.titulo')} <span className="muted">({emCampo.length}/{agentes.length})</span></h3>
           {tem('AGENTE') && <p className="muted small">{t('inicio:funcionarios.somente_proprias')}</p>}
           {agentes.length === 0 && <p className="muted">{t('inicio:funcionarios.vazio')}</p>}
-          <ul className="lista">
+          <ul className="lista card-corpo-scroll">
             {agentes.map((a) => {
               const n = ocorrenciasPorAgente.get(a.id) ?? 0;
               return (
-                <li key={a.id}>
-                  <span>
-                    <strong>{a.nome}</strong>{a.id === usuario.id && <span className="muted"> ({t('inicio:escala.voce')})</span>}
-                    <br /><small className="muted">{t('inicio:funcionarios.ocorrencias', { n })}</small>
-                  </span>
-                  <span className={`badge ${n > 0 ? 'badge-EM_ATENDIMENTO' : 'badge-DISPONIVEL'}`}>{n > 0 ? t('inicio:funcionarios.em_campo') : t('inicio:funcionarios.prontidao')}</span>
+                <li key={a.id} className="inicio-item-row">
+                  <div className="inicio-item-texto">
+                    <div className="inicio-item-titulo">
+                      <strong>{a.nome}</strong>{a.id === usuario.id && <span className="muted"> ({t('inicio:escala.voce')})</span>}
+                    </div>
+                    <div className="inicio-item-sub">
+                      {t('inicio:funcionarios.ocorrencias', { n })}
+                    </div>
+                  </div>
+                  <div className="inicio-item-acoes">
+                    <span className={`badge ${n > 0 ? 'badge-EM_ATENDIMENTO' : 'badge-DISPONIVEL'}`}>{n > 0 ? t('inicio:funcionarios.em_campo') : t('inicio:funcionarios.prontidao')}</span>
+                  </div>
                 </li>
               );
             })}
@@ -233,36 +247,66 @@ export const InicioPage: React.FC = () => {
             <Link className="btn btn-link btn-sm inicio-ver-todas" to={rotaListagem(usuario.papel)}>{t('inicio:ultimas.ver_todas')} →</Link>
           </h3>
           {ultimas.length === 0 && <p className="muted">{t('inicio:ultimas.vazio')}</p>}
-          <ul className="lista">
+          <ul className="lista card-corpo-scroll">
             {ultimas.map((o) => (
-              <li key={o.ocorrencia_id}>
-                <span>
-                  <strong>{o.numero_protocolo}</strong> · {o.natureza}
-                  <br /><small className="muted">{o.localizacao} · {new Date(o.criada_em).toLocaleString(i18n.language, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</small>
-                </span>
-                <StatusBadge status={o.status} />
+              <li key={o.ocorrencia_id} className="inicio-item-row">
+                <div className="inicio-item-texto">
+                  <div className="inicio-item-titulo" title={`${o.numero_protocolo} · ${o.natureza}`}>
+                    <strong>{o.numero_protocolo}</strong> · {o.natureza}
+                  </div>
+                  <div className="inicio-item-sub" title={o.localizacao}>
+                    {o.localizacao} · {new Date(o.criada_em).toLocaleString(i18n.language, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+                <div className="inicio-item-acoes">
+                  <StatusBadge status={o.status} />
+                  <Link
+                    to={linkVerificarOcorrencia(usuario.papel, o.ocorrencia_id)}
+                    className="btn btn-ghost btn-sm"
+                    style={{ padding: '2px 8px', fontSize: '0.75rem', height: '28px', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}
+                    title="Verificar ocorrência"
+                  >
+                    Verificar →
+                  </Link>
+                </div>
               </li>
             ))}
           </ul>
         </section>
 
         <section className="card">
-          <h3>🔎 {t('inicio:investigacoes.titulo')} <span className="muted">({emAndamento.length})</span></h3>
+          <h3>
+            🔎 {t('inicio:investigacoes.titulo')} <span className="muted">({emAndamento.length})</span>
+            <Link className="btn btn-link btn-sm inicio-ver-todas" to={tem('DELEGADO', 'SUPERVISOR') ? '/fila' : rotaListagem(usuario.papel)}>
+              {t('inicio:ultimas.ver_todas')} →
+            </Link>
+          </h3>
           {emAndamento.length === 0 && <p className="muted">{t('inicio:investigacoes.vazio')}</p>}
-          <ul className="lista">
-            {emAndamento.slice(0, 8).map((o) => {
+          <ul className="lista card-corpo-scroll">
+            {emAndamento.slice(0, 10).map((o) => {
               const prefixo = prefixoDaOcorrencia(o.ocorrencia_id);
               return (
-                <li key={o.ocorrencia_id}>
-                  <span>
-                    <strong>{o.numero_protocolo}</strong> · {o.natureza}
-                    <br />
-                    <small className="muted">
+                <li key={o.ocorrencia_id} className="inicio-item-row">
+                  <div className="inicio-item-texto">
+                    <div className="inicio-item-titulo" title={`${o.numero_protocolo} · ${o.natureza}`}>
+                      <strong>{o.numero_protocolo}</strong> · {o.natureza}
+                    </div>
+                    <div className="inicio-item-sub">
                       {t('inicio:investigacoes.fato_em', { quando: new Date(o.data_hora_fato).toLocaleString(i18n.language, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) })}
                       {prefixo && <> · 🚓 {t('inicio:investigacoes.viatura', { prefixo })}</>}
-                    </small>
-                  </span>
-                  <StatusBadge status={o.status} />
+                    </div>
+                  </div>
+                  <div className="inicio-item-acoes">
+                    <StatusBadge status={o.status} />
+                    <Link
+                      to={linkVerificarOcorrencia(usuario.papel, o.ocorrencia_id)}
+                      className="btn btn-ghost btn-sm"
+                      style={{ padding: '2px 8px', fontSize: '0.75rem', height: '28px', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}
+                      title="Verificar investigação"
+                    >
+                      Verificar →
+                    </Link>
+                  </div>
                 </li>
               );
             })}

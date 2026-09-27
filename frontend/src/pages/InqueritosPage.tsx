@@ -56,6 +56,15 @@ export const InqueritosPage: React.FC = () => {
   const [sugestoes, setSugestoes] = useState<ConexaoSugerida[]>([]);
   const [carregandoSugestoes, setCarregandoSugestoes] = useState(false);
 
+  // Conexões no Modal de Instauração
+  const [sugestoesInstaurar, setSugestoesInstaurar] = useState<ConexaoSugerida[]>([]);
+  const [carregandoSugestoesInstaurar, setCarregandoSugestoesInstaurar] = useState(false);
+
+  // Conexões no Modal de Vinculação
+  const [ocorrenciaFocoVincularId, setOcorrenciaFocoVincularId] = useState<string | null>(null);
+  const [sugestoesVincular, setSugestoesVincular] = useState<ConexaoSugerida[]>([]);
+  const [carregandoSugestoesVincular, setCarregandoSugestoesVincular] = useState(false);
+
   const opcoesStatusInquerito: GlideSelectOption[] = useMemo(
     () => [
       { value: 'TODOS', label: t('inqueritos:filtros.todos') },
@@ -97,6 +106,7 @@ export const InqueritosPage: React.FC = () => {
     setEmenta('');
     setOcorrenciasSelecionadasIds([]);
     setOcorrenciaPrincipalId(null);
+    setSugestoesInstaurar([]);
     setPaginaInstaurar(1);
     setBuscaInstaurar('');
     setInputManualId('');
@@ -109,8 +119,53 @@ export const InqueritosPage: React.FC = () => {
     setBuscaVincular('');
     setInputManualVincularId('');
     carregarValidadas();
+    const refId = selecionado?.ocorrencias?.[0]?.id || null;
+    setOcorrenciaFocoVincularId(refId);
+    setSugestoesVincular([]);
+    if (refId) {
+      buscarConexoesVincular(refId);
+    }
     setModalVincularAberto(true);
   };
+
+  const buscarConexoesVincular = async (id: string) => {
+    setOcorrenciaFocoVincularId(id);
+    setCarregandoSugestoesVincular(true);
+    try {
+      const res = await inqueritosService.buscarConexoes(id);
+      const idsExistentes = new Set(selecionado?.ocorrencias.map((o) => o.id) || []);
+      setSugestoesVincular(res.filter((s) => !idsExistentes.has(s.ocorrencia_id)));
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+      setSugestoesVincular([]);
+    } finally {
+      setCarregandoSugestoesVincular(false);
+    }
+  };
+
+  // Carrega conexões criminais sugeridas para a ocorrência principal ao instaurar
+  useEffect(() => {
+    if (!modalInstaurarAberto || !ocorrenciaPrincipalId) {
+      setSugestoesInstaurar([]);
+      return;
+    }
+    let ativo = true;
+    setCarregandoSugestoesInstaurar(true);
+    inqueritosService
+      .buscarConexoes(ocorrenciaPrincipalId)
+      .then((res) => {
+        if (ativo) setSugestoesInstaurar(res);
+      })
+      .catch(() => {
+        if (ativo) setSugestoesInstaurar([]);
+      })
+      .finally(() => {
+        if (ativo) setCarregandoSugestoesInstaurar(false);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [modalInstaurarAberto, ocorrenciaPrincipalId]);
 
   const executarInstauracao = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -234,6 +289,7 @@ export const InqueritosPage: React.FC = () => {
       setSelecionado(atualizado);
       avisar(t('inqueritos:notificacoes.vinculado_sucesso'), 'sucesso');
       carregarInqueritos();
+      setSugestoesVincular((prev) => prev.filter((s) => s.ocorrencia_id !== ocorrenciaId));
       carregarSugestoesConexao(ocorrenciaId);
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
@@ -549,7 +605,7 @@ export const InqueritosPage: React.FC = () => {
             {selecionado.status === 'EM_ANDAMENTO' && (
               <div style={{ marginBottom: '1.25rem', border: '1px solid var(--primary-glow, var(--line))', borderRadius: '8px', padding: '0.85rem', background: 'var(--card-hover)' }}>
                 <h4 style={{ margin: '0 0 0.5rem', color: 'var(--primary)', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span>⚡</span> {t('inqueritos:modal_conexoes.titulo')}
+                  {t('inqueritos:modal_conexoes.titulo')}
                 </h4>
                 {carregandoSugestoes ? (
                   <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>{t('inqueritos:modal_conexoes.subtitulo')}</p>
@@ -868,6 +924,98 @@ export const InqueritosPage: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Conexões Criminais Sugeridas para a Ocorrência Principal */}
+                {ocorrenciaPrincipalId && (
+                  <div style={{ marginTop: '0.85rem', border: '1px solid var(--line)', borderRadius: '8px', padding: '0.75rem', background: 'var(--card-hover)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)' }}>
+                        {t('inqueritos:modal_conexoes.titulo')}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                        {t('inqueritos:modal_conexoes.conexoes_para')}: {ocorrenciasValidadas.find((o) => o.ocorrencia_id === ocorrenciaPrincipalId)?.numero_protocolo || ocorrenciaPrincipalId.slice(0, 8)}
+                      </span>
+                    </div>
+                    {carregandoSugestoesInstaurar ? (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: 0 }}>{t('inqueritos:modal_conexoes.subtitulo')}</p>
+                    ) : sugestoesInstaurar.length === 0 ? (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: 0 }}>{t('inqueritos:modal_conexoes.nenhuma_sugestao')}</p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '160px', overflowY: 'auto' }}>
+                        {sugestoesInstaurar.map((sug) => {
+                          const jaAdicionada = ocorrenciasSelecionadasIds.includes(sug.ocorrencia_id);
+                          return (
+                            <div
+                              key={sug.ocorrencia_id}
+                              style={{
+                                background: 'var(--card)',
+                                padding: '0.45rem 0.65rem',
+                                borderRadius: '6px',
+                                border: '1px solid var(--line)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <div style={{ minWidth: 0, flex: 1, paddingRight: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <span style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--ink)' }}>{sug.numero_protocolo}</span>
+                                  <span
+                                    style={{
+                                      fontSize: '0.7rem',
+                                      padding: '0.05rem 0.35rem',
+                                      borderRadius: '8px',
+                                      background: sug.score_similaridade >= 100 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                      color: sug.score_similaridade >= 100 ? 'var(--danger)' : 'var(--warn)',
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {t('inqueritos:modal_conexoes.score')}: {sug.score_similaridade}
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {sug.natureza} &bull; <span style={{ color: 'var(--muted)', fontSize: '0.72rem' }}>{sug.motivos.join('; ')}</span>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                className={jaAdicionada ? 'btn btn-sm btn-outline' : 'btn btn-sm btn-primary'}
+                                disabled={jaAdicionada}
+                                onClick={() => {
+                                  if (!jaAdicionada) {
+                                    setOcorrenciasSelecionadasIds((prev) => [...prev, sug.ocorrencia_id]);
+                                    if (!ocorrenciasValidadas.some((o) => o.ocorrencia_id === sug.ocorrencia_id)) {
+                                      setOcorrenciasValidadas((prev) => [
+                                        {
+                                          ocorrencia_id: sug.ocorrencia_id,
+                                          numero_protocolo: sug.numero_protocolo,
+                                          natureza: sug.natureza,
+                                          localizacao: sug.localizacao || '',
+                                          latitude: 0,
+                                          longitude: 0,
+                                          status: 'VALIDADA',
+                                          data_hora_fato: new Date().toISOString(),
+                                          criada_em: new Date().toISOString(),
+                                          atualizada_em: new Date().toISOString(),
+                                          agente_policial_id: '',
+                                          versao: 1,
+                                        },
+                                        ...prev,
+                                      ]);
+                                    }
+                                  }
+                                }}
+                                style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', height: '28px', flexShrink: 0 }}
+                              >
+                                {jaAdicionada ? `✓ ${t('inqueritos:modal_conexoes.ja_incluida')}` : `+ ${t('inqueritos:modal_conexoes.btn_incluir')}`}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
@@ -983,12 +1131,13 @@ export const InqueritosPage: React.FC = () => {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         padding: '0.6rem 0.75rem',
-                        border: '1px solid var(--line)',
+                        border: ocorrenciaFocoVincularId === oc.ocorrencia_id ? '1px solid var(--primary)' : '1px solid var(--line)',
                         borderRadius: '8px',
-                        background: 'var(--card)',
+                        background: ocorrenciaFocoVincularId === oc.ocorrencia_id ? 'var(--card-hover)' : 'var(--card)',
+                        transition: 'all 0.15s ease',
                       }}
                     >
-                      <div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--ink)' }}>{oc.numero_protocolo}</span>
                           <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>•</span>
@@ -998,16 +1147,26 @@ export const InqueritosPage: React.FC = () => {
                           {oc.localizacao} • {new Date(oc.data_hora_fato).toLocaleDateString()}
                         </div>
                       </div>
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={async () => {
-                          await executarVinculacao(oc.ocorrencia_id);
-                          setModalVincularAberto(false);
-                        }}
-                        style={{ height: '32px', padding: '0 0.8rem', fontSize: '0.8rem' }}
-                      >
-                        + {t('inqueritos:acoes.vincular')}
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost"
+                          onClick={() => buscarConexoesVincular(oc.ocorrencia_id)}
+                          style={{ height: '32px', padding: '0 0.6rem', fontSize: '0.75rem', color: 'var(--primary)' }}
+                          title="Analisar conexões criminais desta ocorrência"
+                        >
+                          🔍 {t('inqueritos:acoes.buscar_conexoes')}
+                        </button>
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={async () => {
+                            await executarVinculacao(oc.ocorrencia_id);
+                          }}
+                          style={{ height: '32px', padding: '0 0.8rem', fontSize: '0.8rem' }}
+                        >
+                          + {t('inqueritos:acoes.vincular')}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1042,6 +1201,87 @@ export const InqueritosPage: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Lista Separada: Conexões Criminais Sugeridas */}
+            <div style={{ marginBottom: '1.25rem', border: '1px solid var(--primary-glow, var(--line))', borderRadius: '8px', padding: '0.85rem', background: 'var(--card-hover)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--primary)' }}>
+                  {t('inqueritos:modal_conexoes.titulo')}
+                </span>
+                {ocorrenciaFocoVincularId && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                    {t('inqueritos:modal_conexoes.conexoes_para')}: {
+                      ocorrenciasValidadas.find((o) => o.ocorrencia_id === ocorrenciaFocoVincularId)?.numero_protocolo ||
+                      selecionado?.ocorrencias.find((o) => o.id === ocorrenciaFocoVincularId)?.numero_protocolo ||
+                      ocorrenciaFocoVincularId.slice(0, 8)
+                    }
+                  </span>
+                )}
+              </div>
+
+              {!ocorrenciaFocoVincularId ? (
+                <p style={{ fontSize: '0.82rem', color: 'var(--muted)', margin: 0 }}>
+                  {t('inqueritos:modal_conexoes.selecionar_para_conexoes')}
+                </p>
+              ) : carregandoSugestoesVincular ? (
+                <p style={{ fontSize: '0.82rem', color: 'var(--muted)', margin: 0 }}>
+                  {t('inqueritos:modal_conexoes.subtitulo')}
+                </p>
+              ) : sugestoesVincular.length === 0 ? (
+                <p style={{ fontSize: '0.82rem', color: 'var(--muted)', margin: 0 }}>
+                  {t('inqueritos:modal_conexoes.nenhuma_sugestao')}
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '180px', overflowY: 'auto' }}>
+                  {sugestoesVincular.map((sug) => (
+                    <div
+                      key={sug.ocorrencia_id}
+                      style={{
+                        background: 'var(--card)',
+                        padding: '0.5rem 0.75rem',
+                        borderRadius: '6px',
+                        border: '1px solid var(--line)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <div style={{ minWidth: 0, flex: 1, paddingRight: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--ink)' }}>{sug.numero_protocolo}</span>
+                          <span
+                            style={{
+                              fontSize: '0.7rem',
+                              padding: '0.05rem 0.35rem',
+                              borderRadius: '8px',
+                              background: sug.score_similaridade >= 100 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                              color: sug.score_similaridade >= 100 ? 'var(--danger)' : 'var(--warn)',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {t('inqueritos:modal_conexoes.score')}: {sug.score_similaridade}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--ink)' }}>{sug.natureza}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
+                          {sug.motivos.join('; ')}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-primary"
+                        onClick={async () => {
+                          await executarVinculacao(sug.ocorrencia_id);
+                        }}
+                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem', height: '30px', flexShrink: 0 }}
+                      >
+                        + {t('inqueritos:acoes.vincular')}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-ghost" onClick={() => setModalVincularAberto(false)} style={{ height: '42px' }}>

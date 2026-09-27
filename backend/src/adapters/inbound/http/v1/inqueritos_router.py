@@ -168,8 +168,8 @@ async def buscar_conexoes_ocorrencia(
             numero_protocolo=s.numero_protocolo,
             natureza=s.natureza,
             localizacao=s.localizacao,
-            score_similaridade=s.score_similaridade,
-            motivos=s.motivos,
+            score_similaridade=s.pontuacao_relevancia,
+            motivos=[m.strip() for m in s.motivo_conexao.split(' · ')] if s.motivo_conexao else [],
         )
         for s in sugestoes
     ]

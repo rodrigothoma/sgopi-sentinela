@@ -73,7 +73,11 @@
     "motivo_envolvidos": "Shared Involved Persons",
     "motivo_natureza": "Same Offense Nature",
     "motivo_proximidade": "Geographical Proximity (Radius < 2 km)",
-    "btn_vincular": "Link to Investigation"
+    "btn_vincular": "Link to Investigation",
+    "btn_incluir": "Include in Selection",
+    "ja_incluida": "Already Included",
+    "conexoes_para": "Criminal connections detected for",
+    "selecionar_para_conexoes": "Select an incident to analyze automated criminal connections."
   },
   "modal_concluir": {
     "titulo": "Conclude Police Investigation",

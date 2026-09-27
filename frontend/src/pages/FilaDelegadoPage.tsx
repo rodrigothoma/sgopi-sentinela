@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
 import { StatusBadge } from '../components/StatusBadge';
@@ -37,6 +38,9 @@ export const FilaDelegadoPage: React.FC = () => {
   const [motivo, setMotivo] = useState('');
   const [ocupado, setOcupado] = useState(false);
 
+  const [searchParams] = useSearchParams();
+  const paramOcorrenciaId = searchParams.get('ocorrencia');
+
   const carregar = useCallback(async () => {
     try {
       const p = await ocorrenciasService.listar(FILTROS[filtro], 100);
@@ -50,11 +54,21 @@ export const FilaDelegadoPage: React.FC = () => {
     carregar();
   }, [carregar]);
 
-  const abrir = async (id: string) => {
+  const abrir = useCallback(async (id: string) => {
     setMotivo('');
     setJustificativa('');
-    setDetalhe(await ocorrenciasService.buscarPorId(id));
-  };
+    try {
+      setDetalhe(await ocorrenciasService.buscarPorId(id));
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    }
+  }, [avisar]);
+
+  useEffect(() => {
+    if (paramOcorrenciaId) {
+      abrir(paramOcorrenciaId);
+    }
+  }, [paramOcorrenciaId, abrir]);
 
   const recarregarDetalhe = async () => {
     if (!detalhe) return;

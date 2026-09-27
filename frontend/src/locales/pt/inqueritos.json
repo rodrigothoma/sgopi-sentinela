@@ -73,7 +73,11 @@
     "motivo_envolvidos": "Envolvidos em Comum",
     "motivo_natureza": "Mesma Natureza Penal",
     "motivo_proximidade": "Proximidade Geográfica (Raio < 2 km)",
-    "btn_vincular": "Vincular ao Inquérito"
+    "btn_vincular": "Vincular ao Inquérito",
+    "btn_incluir": "Incluir na Seleção",
+    "ja_incluida": "Já Incluída",
+    "conexoes_para": "Conexões criminais detectadas para",
+    "selecionar_para_conexoes": "Selecione uma ocorrência para analisar conexões criminais automáticas."
   },
   "modal_concluir": {
     "titulo": "Conclusão de Inquérito Policial",

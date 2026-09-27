@@ -1427,7 +1427,12 @@ dl.grid2 dd { margin: 0 0 8px; }
 .comunicados .lista li { display: block; }
 
 /* --- Tela inicial (resumo operacional pós-login) --- */
-.inicio-cabecalho { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.pagina.inicio {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+.inicio-cabecalho { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; width: 100%; }
 .inicio-cabecalho h1 { margin: 0 0 4px; }
 .inicio-cabecalho p { margin: 0; }
 .inicio-turno { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
@@ -1438,18 +1443,60 @@ dl.grid2 dd { margin: 0 0 8px; }
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   align-items: stretch;
+  width: 100%;
 }
 .inicio-grid .card {
   margin-bottom: 0;
   display: flex;
   flex-direction: column;
+  min-height: 420px;
+  max-height: 480px;
 }
-.inicio-grid .card .lista {
+.inicio-grid .card h3 { display: flex; align-items: center; gap: 8px; margin-top: 0; margin-bottom: 12px; }
+.card-corpo-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.inicio-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.inicio-item-texto {
+  min-width: 0;
   flex: 1;
 }
-.inicio-grid .card h3 { display: flex; align-items: center; gap: 8px; margin-top: 0; }
+.inicio-item-titulo {
+  font-weight: 600;
+  font-size: 0.86rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+.inicio-item-sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.inicio-item-acoes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
 .inicio-ver-todas { margin-left: auto; font-weight: 500; text-transform: none; }
-.inicio-escala { grid-column: 1 / -1; }
+.inicio-escala {
+  grid-column: 1 / -1 !important;
+  min-height: auto !important;
+  max-height: none !important;
+}
 .escala-turnos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
 .escala-turno { flex: 1 1 140px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-surface); }
 .escala-turno.atual { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-glow); }
