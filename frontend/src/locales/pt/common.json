@@ -259,5 +259,12 @@
       "tipo": "Tipo",
       "detalhe": "Detalhes Adicionais"
     }
+  },
+  "paginacao": {
+    "pagina": "Página",
+    "de": "de",
+    "registros": "ocorrências",
+    "anterior": "Página anterior",
+    "proxima": "Próxima página"
   }
 }

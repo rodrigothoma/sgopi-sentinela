@@ -34,6 +34,7 @@ export interface GlideSelectProps {
   style?: React.CSSProperties;
   disabled?: boolean;
   placeholder?: string;
+  selectedOptionFallback?: GlideSelectOption;
 }
 
 export const GlideSelect: React.FC<GlideSelectProps> = ({
@@ -61,6 +62,7 @@ export const GlideSelect: React.FC<GlideSelectProps> = ({
   style,
   disabled = false,
   placeholder = 'Selecione...',
+  selectedOptionFallback,
 }) => {
   const isControlled = controlledValue !== undefined;
   const [internalValue, setInternalValue] = useState<string>(() => {
@@ -80,10 +82,12 @@ export const GlideSelect: React.FC<GlideSelectProps> = ({
   const generatedId = useId();
   const id = customId || generatedId;
 
-  const selectedOption = useMemo(
-    () => options.find((opt) => opt.value === selectedValue) || options[0],
-    [options, selectedValue]
-  );
+  const selectedOption = useMemo(() => {
+    if (selectedValue) {
+      return options.find((opt) => opt.value === selectedValue) || selectedOptionFallback;
+    }
+    return placeholder ? undefined : options[0];
+  }, [options, selectedValue, selectedOptionFallback, placeholder]);
 
   const selectedIndex = useMemo(
     () => options.findIndex((opt) => opt.value === selectedValue),

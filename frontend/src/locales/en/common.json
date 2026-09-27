@@ -259,5 +259,12 @@
       "tipo": "Type",
       "detalhe": "Additional Details"
     }
+  },
+  "paginacao": {
+    "pagina": "Page",
+    "de": "of",
+    "registros": "incidents",
+    "anterior": "Previous page",
+    "proxima": "Next page"
   }
 }

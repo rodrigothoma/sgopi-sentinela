@@ -4,6 +4,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { laudosService, type Laudo } from '../services/laudosService';
+import { ocorrenciasService } from '../services/ocorrenciasService';
+import type { OcorrenciaResumo } from '../types/api';
 import { GlideSelect, type GlideSelectOption } from '../components/common/GlideSelect';
 
 const TIPOS_PERICIA = [
@@ -39,11 +41,69 @@ export const LaudosPage: React.FC = () => {
   const [tipoPericia, setTipoPericia] = useState('BALISTICA');
   const [descricaoSolicitacao, setDescricaoSolicitacao] = useState('');
   const [ocorrenciaId, setOcorrenciaId] = useState('');
+  const [listaOcorrencias, setListaOcorrencias] = useState<OcorrenciaResumo[]>([]);
+  const [modoManualOcorrencia, setModoManualOcorrencia] = useState(false);
+  const [paginaOcorrencias, setPaginaOcorrencias] = useState(1);
 
   // Form Anexar
   const [conclusoesTecnicas, setConclusoesTecnicas] = useState('');
   const [arquivoPdf, setArquivoPdf] = useState<File | null>(null);
   const [enviando, setEnviando] = useState(false);
+
+  const ITENS_POR_PAGINA_OCORRENCIAS = 10;
+  const totalPaginasOcorrencias = Math.max(1, Math.ceil(listaOcorrencias.length / ITENS_POR_PAGINA_OCORRENCIAS));
+  const ocorrenciasPaginadas = useMemo(() => {
+    const inicio = (paginaOcorrencias - 1) * ITENS_POR_PAGINA_OCORRENCIAS;
+    return listaOcorrencias.slice(inicio, inicio + ITENS_POR_PAGINA_OCORRENCIAS);
+  }, [listaOcorrencias, paginaOcorrencias]);
+
+  const opcoesOcorrenciasModal: GlideSelectOption[] = useMemo(() => {
+    return ocorrenciasPaginadas.map((oc) => {
+      const loc = oc.localizacao
+        ? oc.localizacao.length > 25
+          ? `${oc.localizacao.slice(0, 22)}...`
+          : oc.localizacao
+        : 'Sem local';
+      const labelCompleto = `${oc.numero_protocolo} — ${oc.natureza} (${loc})`;
+      const labelFormatado = labelCompleto.length > 55 ? `${labelCompleto.slice(0, 52)}...` : labelCompleto;
+      return {
+        value: oc.ocorrencia_id,
+        label: labelFormatado,
+      };
+    });
+  }, [ocorrenciasPaginadas]);
+
+  const selectedOcorrenciaFallback: GlideSelectOption | undefined = useMemo(() => {
+    if (!ocorrenciaId) return undefined;
+    const oc = listaOcorrencias.find((o) => o.ocorrencia_id === ocorrenciaId);
+    if (!oc) return undefined;
+    const loc = oc.localizacao
+      ? oc.localizacao.length > 25
+        ? `${oc.localizacao.slice(0, 22)}...`
+        : oc.localizacao
+      : 'Sem local';
+    const labelCompleto = `${oc.numero_protocolo} — ${oc.natureza} (${loc})`;
+    const labelFormatado = labelCompleto.length > 55 ? `${labelCompleto.slice(0, 52)}...` : labelCompleto;
+    return {
+      value: oc.ocorrencia_id,
+      label: labelFormatado,
+    };
+  }, [ocorrenciaId, listaOcorrencias]);
+
+  const abrirModalSolicitar = async () => {
+    setTipoPericia('BALISTICA');
+    setDescricaoSolicitacao('');
+    setOcorrenciaId('');
+    setModoManualOcorrencia(false);
+    setPaginaOcorrencias(1);
+    setModalSolicitarAberto(true);
+    try {
+      const res = await ocorrenciasService.listar([], 100);
+      setListaOcorrencias(res.itens);
+    } catch {
+      // silencioso
+    }
+  };
 
   const opcoesStatus: GlideSelectOption[] = useMemo(
     () => [
@@ -170,7 +230,7 @@ export const LaudosPage: React.FC = () => {
         {tem('DELEGADO', 'PERITO') && (
           <button
             className="btn btn-primary"
-            onClick={() => setModalSolicitarAberto(true)}
+            onClick={abrirModalSolicitar}
             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.2rem', fontWeight: 600, height: '42px' }}
           >
             <span>+</span> {t('laudos:btn_solicitar')}
@@ -325,19 +385,77 @@ export const LaudosPage: React.FC = () => {
                 />
               </div>
 
+              {/* Campo Ocorrência com GlideSelect Paginado (10/pág) e Toggle Manual */}
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
-                  {t('laudos:modal_solicitar.campo_ocorrencia')}
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={ocorrenciaId}
-                  onChange={(e) => setOcorrenciaId(e.target.value)}
-                  placeholder={t('laudos:modal_solicitar.placeholder_ocorrencia')}
-                  style={{ width: '100%', padding: '0.6rem', height: '42px', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
-                  required
-                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label style={{ fontWeight: 600, color: 'var(--ink)', margin: 0, fontSize: '0.88rem' }}>
+                    {t('laudos:modal_solicitar.campo_ocorrencia')}
+                  </label>
+                  {listaOcorrencias.length > 0 && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-link"
+                      onClick={() => setModoManualOcorrencia(!modoManualOcorrencia)}
+                      style={{ fontSize: '0.75rem', padding: '0 4px', textDecoration: 'underline', color: 'var(--primary)' }}
+                    >
+                      {modoManualOcorrencia ? t('laudos:modal_solicitar.selecionar_da_lista') : t('laudos:modal_solicitar.digitar_id_manual')}
+                    </button>
+                  )}
+                </div>
+
+                {!modoManualOcorrencia && listaOcorrencias.length > 0 ? (
+                  <>
+                    <GlideSelect
+                      options={opcoesOcorrenciasModal}
+                      value={ocorrenciaId}
+                      selectedOptionFallback={selectedOcorrenciaFallback}
+                      onChange={(val) => setOcorrenciaId(val)}
+                      placeholder={t('laudos:modal_solicitar.placeholder_ocorrencia')}
+                      fullWidth
+                      menuWidth="100%"
+                      ariaLabel={t('laudos:modal_solicitar.campo_ocorrencia')}
+                    />
+                    {totalPaginasOcorrencias > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.45rem', padding: '0 2px' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                          {t('common:paginacao.pagina')} {paginaOcorrencias} {t('common:paginacao.de')} {totalPaginasOcorrencias} ({listaOcorrencias.length} {t('common:paginacao.registros')})
+                        </span>
+                        <div style={{ display: 'flex', gap: '0.35rem' }}>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline"
+                            onClick={() => setPaginaOcorrencias((p) => Math.max(1, p - 1))}
+                            disabled={paginaOcorrencias <= 1}
+                            style={{ minWidth: '28px', height: '26px', padding: '0 6px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}
+                            title={t('common:paginacao.anterior')}
+                          >
+                            &lt;
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline"
+                            onClick={() => setPaginaOcorrencias((p) => Math.min(totalPaginasOcorrencias, p + 1))}
+                            disabled={paginaOcorrencias >= totalPaginasOcorrencias}
+                            style={{ minWidth: '28px', height: '26px', padding: '0 6px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}
+                            title={t('common:paginacao.proxima')}
+                          >
+                            &gt;
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={ocorrenciaId}
+                    onChange={(e) => setOcorrenciaId(e.target.value)}
+                    placeholder={t('laudos:modal_solicitar.placeholder_ocorrencia')}
+                    style={{ width: '100%', padding: '0.6rem', height: '42px', background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '8px' }}
+                    required
+                  />
+                )}
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>

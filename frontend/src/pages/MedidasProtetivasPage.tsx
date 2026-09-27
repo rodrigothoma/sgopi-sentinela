@@ -50,6 +50,7 @@ export const MedidasProtetivasPage: React.FC = () => {
   // Seleção e Envolvidos da Ocorrência no Modal Conceder
   const [listaOcorrencias, setListaOcorrencias] = useState<OcorrenciaResumo[]>([]);
   const [modoManualOcorrencia, setModoManualOcorrencia] = useState(false);
+  const [paginaOcorrencias, setPaginaOcorrencias] = useState(1);
   const [envolvidosOcorrencia, setEnvolvidosOcorrencia] = useState<EnvolvidoDetalhe[]>([]);
   const [carregandoEnvolvidos, setCarregandoEnvolvidos] = useState(false);
   const [modoManualVitima, setModoManualVitima] = useState(false);
@@ -62,6 +63,13 @@ export const MedidasProtetivasPage: React.FC = () => {
   // Form Revogar
   const [motivoRevogacao, setMotivoRevogacao] = useState('');
 
+  const ITENS_POR_PAGINA_OCORRENCIAS = 10;
+  const totalPaginasOcorrencias = Math.max(1, Math.ceil(listaOcorrencias.length / ITENS_POR_PAGINA_OCORRENCIAS));
+  const ocorrenciasPaginadas = useMemo(() => {
+    const inicio = (paginaOcorrencias - 1) * ITENS_POR_PAGINA_OCORRENCIAS;
+    return listaOcorrencias.slice(inicio, inicio + ITENS_POR_PAGINA_OCORRENCIAS);
+  }, [listaOcorrencias, paginaOcorrencias]);
+
   const opcoesStatusMedidas: GlideSelectOption[] = useMemo(
     () => [
       { value: 'TODOS', label: t('medidas:filtros.todas') },
@@ -73,7 +81,7 @@ export const MedidasProtetivasPage: React.FC = () => {
   );
 
   const opcoesOcorrenciasModal: GlideSelectOption[] = useMemo(() => {
-    return listaOcorrencias.map((oc) => {
+    return ocorrenciasPaginadas.map((oc) => {
       const loc = oc.localizacao
         ? oc.localizacao.length > 25
           ? `${oc.localizacao.slice(0, 22)}...`
@@ -86,7 +94,24 @@ export const MedidasProtetivasPage: React.FC = () => {
         label: labelFormatado,
       };
     });
-  }, [listaOcorrencias]);
+  }, [ocorrenciasPaginadas]);
+
+  const selectedOcorrenciaFallback: GlideSelectOption | undefined = useMemo(() => {
+    if (!ocorrenciaId) return undefined;
+    const oc = listaOcorrencias.find((o) => o.ocorrencia_id === ocorrenciaId);
+    if (!oc) return undefined;
+    const loc = oc.localizacao
+      ? oc.localizacao.length > 25
+        ? `${oc.localizacao.slice(0, 22)}...`
+        : oc.localizacao
+      : 'Sem local';
+    const labelCompleto = `${oc.numero_protocolo} — ${oc.natureza} (${loc})`;
+    const labelFormatado = labelCompleto.length > 55 ? `${labelCompleto.slice(0, 52)}...` : labelCompleto;
+    return {
+      value: oc.ocorrencia_id,
+      label: labelFormatado,
+    };
+  }, [ocorrenciaId, listaOcorrencias]);
 
   const opcoesVitimasModal: GlideSelectOption[] = useMemo(() => {
     return envolvidosOcorrencia.map((env) => {
@@ -120,6 +145,7 @@ export const MedidasProtetivasPage: React.FC = () => {
     setAgressorId('');
     setEnvolvidosOcorrencia([]);
     setModoManualOcorrencia(false);
+    setPaginaOcorrencias(1);
     setModoManualVitima(false);
     setModoManualAgressor(false);
     setRestricoesSelecionadas(['AFASTAMENTO_DO_LAR', 'PROIBICAO_DE_CONTATO']);
@@ -439,15 +465,47 @@ export const MedidasProtetivasPage: React.FC = () => {
                 </div>
 
                 {!modoManualOcorrencia && listaOcorrencias.length > 0 ? (
-                  <GlideSelect
-                    options={opcoesOcorrenciasModal}
-                    value={ocorrenciaId}
-                    onChange={(val) => selecionarOuCarregarOcorrencia(val)}
-                    placeholder={t('medidas:modal_conceder.selecionar_ocorrencia')}
-                    fullWidth
-                    menuWidth="100%"
-                    ariaLabel={t('medidas:modal_conceder.campo_ocorrencia')}
-                  />
+                  <>
+                    <GlideSelect
+                      options={opcoesOcorrenciasModal}
+                      value={ocorrenciaId}
+                      selectedOptionFallback={selectedOcorrenciaFallback}
+                      onChange={(val) => selecionarOuCarregarOcorrencia(val)}
+                      placeholder={t('medidas:modal_conceder.selecionar_ocorrencia')}
+                      fullWidth
+                      menuWidth="100%"
+                      ariaLabel={t('medidas:modal_conceder.campo_ocorrencia')}
+                    />
+                    {totalPaginasOcorrencias > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.45rem', padding: '0 2px' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                          {t('common:paginacao.pagina')} {paginaOcorrencias} {t('common:paginacao.de')} {totalPaginasOcorrencias} ({listaOcorrencias.length} {t('common:paginacao.registros')})
+                        </span>
+                        <div style={{ display: 'flex', gap: '0.35rem' }}>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline"
+                            onClick={() => setPaginaOcorrencias((p) => Math.max(1, p - 1))}
+                            disabled={paginaOcorrencias <= 1}
+                            style={{ minWidth: '28px', height: '26px', padding: '0 6px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}
+                            title={t('common:paginacao.anterior')}
+                          >
+                            &lt;
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline"
+                            onClick={() => setPaginaOcorrencias((p) => Math.min(totalPaginasOcorrencias, p + 1))}
+                            disabled={paginaOcorrencias >= totalPaginasOcorrencias}
+                            style={{ minWidth: '28px', height: '26px', padding: '0 6px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}
+                            title={t('common:paginacao.proxima')}
+                          >
+                            &gt;
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <input
                     type="text"
