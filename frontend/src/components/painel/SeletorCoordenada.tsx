@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { CENTRO_PADRAO, corrigirIconesLeaflet } from './leaflet';
+import { CENTRO_PADRAO, corrigirIconesLeaflet, iconePinFato } from './leaflet';
 
 interface Props { latitude: number | null; longitude: number | null; onChange: (lat: number, lon: number) => void }
 
@@ -34,15 +34,19 @@ export const SeletorCoordenada: React.FC<Props> = ({ latitude, longitude, onChan
       return;
     }
     if (!markerRef.current) {
-      markerRef.current = L.marker([latitude, longitude], { draggable: true }).addTo(map);
+      markerRef.current = L.marker([latitude, longitude], {
+        draggable: true,
+        icon: iconePinFato(),
+      }).addTo(map);
       markerRef.current.on('dragend', () => {
         const p = markerRef.current!.getLatLng();
         onChange(Number(p.lat.toFixed(6)), Number(p.lng.toFixed(6)));
       });
     } else {
-      markerRef.current.setLatLng([latitude, longitude]);
+      markerRef.current.setLatLng([latitude, longitude]).setIcon(iconePinFato());
     }
   }, [latitude, longitude, onChange]);
+
 
   return (
     <div className="seletor-coordenada">

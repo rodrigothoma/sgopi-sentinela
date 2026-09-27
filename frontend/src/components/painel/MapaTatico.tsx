@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { OcorrenciaResumo, OrdemDespacho, Viatura } from '../../types/api';
-import { CENTRO_PADRAO, corrigirIconesLeaflet, iconeOcorrencia, iconeViatura } from './leaflet';
+import { CENTRO_PADRAO, corrigirIconesLeaflet, iconeOcorrencia, iconeViatura, iconeAlvoDespacho } from './leaflet';
 
 interface Props {
   viaturas: Viatura[];
@@ -19,8 +19,10 @@ export const MapaTatico: React.FC<Props> = ({ viaturas, ocorrencias, selecionada
   const mapRef = useRef<L.Map | null>(null);
   const viaturasRef = useRef<Map<string, L.Marker>>(new Map());
   const ocorrenciasRef = useRef<Map<string, L.Marker>>(new Map());
+  const alvoRef = useRef<L.Marker | null>(null);
   const rotasRef = useRef<Map<string, L.Polyline>>(new Map());
   const selecionarRef = useRef(onSelecionarOcorrencia);
+
   selecionarRef.current = onSelecionarOcorrencia;
 
   useEffect(() => {
@@ -84,7 +86,25 @@ export const MapaTatico: React.FC<Props> = ({ viaturas, ocorrencias, selecionada
         ocorrenciasRef.current.delete(id);
       }
     }
+
+    // Alvo de despacho na ocorrência selecionada
+    const oSel = ocorrencias.find((x) => x.ocorrencia_id === selecionada);
+    if (oSel && oSel.latitude !== null && oSel.longitude !== null) {
+      if (!alvoRef.current) {
+        alvoRef.current = L.marker([oSel.latitude, oSel.longitude], {
+          icon: iconeAlvoDespacho(),
+          interactive: false,
+          zIndexOffset: 2000,
+        }).addTo(map);
+      } else {
+        alvoRef.current.setLatLng([oSel.latitude, oSel.longitude]);
+      }
+    } else {
+      alvoRef.current?.remove();
+      alvoRef.current = null;
+    }
   }, [ocorrencias, selecionada]);
+
 
   // trajeto tracejado da viatura despachada até a ocorrência (some quando ela chega — OPERANDO)
   useEffect(() => {
