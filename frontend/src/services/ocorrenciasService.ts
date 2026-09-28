@@ -37,8 +37,8 @@ export const ocorrenciasService = {
   async buscarPorId(id: string): Promise<OcorrenciaDetalhe> {
     return (await api.get<OcorrenciaDetalhe>(`/v1/ocorrencias/${id}`)).data;
   },
-  async validar(id: string): Promise<OcorrenciaDetalhe> {
-    return (await api.post<OcorrenciaDetalhe>(`/v1/ocorrencias/${id}/validar`)).data;
+  async validar(id: string, despacho?: string): Promise<OcorrenciaDetalhe> {
+    return (await api.post<OcorrenciaDetalhe>(`/v1/ocorrencias/${id}/validar`, { despacho: despacho || null })).data;
   },
   async devolver(id: string, justificativa: string): Promise<OcorrenciaDetalhe> {
     return (await api.post<OcorrenciaDetalhe>(`/v1/ocorrencias/${id}/devolver`, { justificativa })).data;

@@ -86,7 +86,7 @@ export const FilaDelegadoPage: React.FC = () => {
     setOcupado(true);
     try {
       const id = detalhe.ocorrencia_id;
-      const r = acao === 'validar' ? await ocorrenciasService.validar(id)
+      const r = acao === 'validar' ? await ocorrenciasService.validar(id, justificativa.trim())
         : acao === 'devolver' ? await ocorrenciasService.devolver(id, justificativa)
         : await ocorrenciasService.rejeitar(id, justificativa);
       setDetalhe(r);
@@ -163,8 +163,9 @@ export const FilaDelegadoPage: React.FC = () => {
             {detalhe.status === 'AGUARDANDO_REVISAO' && (
               <div className="painel-decisao">
                 <label>
-                  {t('ocorrencias:revisao.justificativa_label')}
-                  <textarea id="justificativa-revisao" rows={3} value={justificativa} onChange={(e) => setJustificativa(e.target.value)} placeholder={t('ocorrencias:revisao.justificativa_placeholder')} />
+                  <strong>{t('ocorrencias:revisao.despacho_label')}</strong>
+                  <small className="muted"> · {t('ocorrencias:revisao.justificativa_label')}</small>
+                  <textarea id="justificativa-revisao" rows={3} maxLength={2000} value={justificativa} onChange={(e) => setJustificativa(e.target.value)} placeholder={t('ocorrencias:revisao.justificativa_placeholder')} />
                 </label>
                 <div className="acoes">
                   <button className="btn btn-primary" disabled={ocupado} onClick={() => decidir('validar')}>{t('ocorrencias:revisao.validar')}</button>

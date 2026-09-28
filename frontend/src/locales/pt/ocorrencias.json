@@ -96,6 +96,7 @@
     "registrada_em": "registrada em",
     "integra": "Narrativa íntegra desde a validação",
     "adulterada": "ATENÇÃO: narrativa alterada após a validação",
+    "despacho": "Despacho da autoridade",
     "justificativa": "Justificativa do Delegado",
     "desfecho": "Desfecho",
     "historico": "Histórico de status",
@@ -131,8 +132,9 @@
     "filtro_4": "Arquivadas / excluídas"
   },
   "revisao": {
+    "despacho_label": "Despacho da autoridade (opcional ao validar)",
     "justificativa_label": "Justificativa (obrigatória para devolver ou rejeitar, mínimo 10 caracteres)",
-    "justificativa_placeholder": "Explique o motivo...",
+    "justificativa_placeholder": "Registre o despacho ou explique o motivo da devolução/rejeição...",
     "justificativa_curta": "Informe uma justificativa com ao menos 10 caracteres",
     "confirmar_rejeicao": "Rejeitar é definitivo. Confirmar?",
     "validar": "Validar",

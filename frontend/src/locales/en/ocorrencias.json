@@ -96,6 +96,7 @@
     "registrada_em": "registered at",
     "integra": "Narrative intact since validation",
     "adulterada": "WARNING: narrative changed after validation",
+    "despacho": "Authority decision",
     "justificativa": "Chief's justification",
     "desfecho": "Outcome",
     "historico": "Status history",
@@ -131,8 +132,9 @@
     "filtro_4": "Archived / deleted"
   },
   "revisao": {
+    "despacho_label": "Authority decision (optional when validating)",
     "justificativa_label": "Justification (required to return or reject, at least 10 characters)",
-    "justificativa_placeholder": "Explain the reason...",
+    "justificativa_placeholder": "Record the decision or explain the reason for returning/rejecting...",
     "justificativa_curta": "Provide a justification with at least 10 characters",
     "confirmar_rejeicao": "Rejecting is final. Confirm?",
     "validar": "Validate",

@@ -124,6 +124,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
   const [observacoesMedida, setObservacoesMedida] = useState('');
   const [enviandoMedida, setEnviandoMedida] = useState(false);
   const [comprovante, setComprovante] = useState(false);
+  const despachoValidacao = o.historico_status.find((registro) => registro.para === 'VALIDADA')?.justificativa;
 
   const opcoesTipoPericia: GlideSelectOption[] = useMemo(
     () =>
@@ -370,7 +371,12 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
       {comprovante && o.chave_autenticidade && (
         <ComprovanteOcorrencia o={o} chave={o.chave_autenticidade} onFechar={() => setComprovante(false)} />
       )}
-      {o.justificativa_revisao && (
+      {despachoValidacao && (
+        <div className="callout">
+          <strong>{t('ocorrencias:detalhe.despacho')}:</strong> {despachoValidacao}
+        </div>
+      )}
+      {o.justificativa_revisao && !despachoValidacao && (
         <div className="callout">
           <strong>{t('ocorrencias:detalhe.justificativa')}:</strong> {o.justificativa_revisao}
         </div>
@@ -429,7 +435,9 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
           <li key={i}>
             <span className="muted">{fmt(h.em)}</span> {h.de ? <><StatusBadge status={h.de} /> → </> : null}
             <StatusBadge status={h.para} />
-            {h.justificativa && <em> — {h.justificativa}</em>}
+            {h.justificativa && (
+              <em> — {h.para === 'VALIDADA' ? `${t('ocorrencias:detalhe.despacho')}: ` : ''}{h.justificativa}</em>
+            )}
           </li>
         ))}
       </ol>
