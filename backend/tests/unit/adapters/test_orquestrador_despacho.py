@@ -11,6 +11,7 @@ from adapters.inbound.simulador.orquestrador_despacho import (
     OrquestradorDespacho,
 )
 from application.ports.inbound.ator import Ator
+from application.ports.inbound.interface_despachar_viatura import DespacharInput
 from application.use_cases.despacho.despachar_viatura import DespacharViatura
 from application.use_cases.despacho.encerrar_ocorrencia import EncerrarOcorrencia
 from domain.ocorrencia.entity import Ocorrencia
@@ -215,3 +216,25 @@ async def test_tick_nao_derruba_quando_contexto_falha(caplog):
         await orq.tick()
     assert orq.ticks == 1
     assert orq.ocioso == 1
+
+
+async def test_apoio_manual_impede_encerramento_automatico():
+    """Issue #64: com apoio manual (2 ordens ativas) a ocorrência nunca é encerrada pelo orquestrador."""
+    env = _Ambiente()
+    ocorrencia = _ocorrencia(validada_em=AGORA - timedelta(minutes=5))
+    await _guardar(env, ocorrencia, _viatura("VTR-01"), _viatura("VTR-02"))
+    orq = env.orquestrador()
+    await orq.tick()  # despacho automático do principal
+    assert orq.despachados == 1
+    apoio = await env.viaturas.buscar_por_prefixo("VTR-02")
+    ordem_apoio = await env._despachar.executar(OPERADOR_SIMULADOR, DespacharInput(ocorrencia.id, apoio.id, "Apoio solicitado pelo operador."))
+    assert ordem_apoio.apoio is True
+    principal = await env.viaturas.buscar_por_prefixo("VTR-01")
+    principal.chegar_ao_local(env.relogio.agora())
+    await env.viaturas.salvar(principal)
+    await orq.tick()  # observa chegada do principal
+    env.relogio.avancar(seconds=46)
+    await orq.tick()  # prazo vencido, mas há apoio ativo
+    assert orq.encerrados == 0
+    o = await env.ocorrencias.buscar_por_id(ocorrencia.id)
+    assert o.status == StatusOcorrencia.EM_ATENDIMENTO
