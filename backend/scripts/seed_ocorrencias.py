@@ -522,7 +522,8 @@ async def semear_ocorrencias() -> None:
             print(f"  + ocorrência '{p11}' (VALIDADA) - Furto Qualificado / Santos Dumont")
 
         # ------------------------------------------------------------------
-        # 12. Ocorrência EM_ATENDIMENTO (Disparo de Arma de Fogo - Bairro Piola)
+        # 12. Ocorrência VALIDADA (Disparo de Arma de Fogo - Bairro Piola)
+        # Espera despacho (manual ou automático) — nunca EM_ATENDIMENTO sem ordem.
         # ------------------------------------------------------------------
         p12 = f"SGOPI-{ano_atual}-000012"
         res12 = await session.execute(select(OcorrenciaModel).where(OcorrenciaModel.numero_protocolo == p12))
@@ -545,9 +546,8 @@ async def semear_ocorrencias() -> None:
                 ],
             )
             oc12.validar(delegado.id, em=criada_em12 + timedelta(minutes=5))
-            oc12.despachar(operador.id, em=criada_em12 + timedelta(minutes=8))
             await ocorrencia_repo.salvar(oc12)
-            print(f"  + ocorrência '{p12}' (EM_ATENDIMENTO) - Disparos / Piola")
+            print(f"  + ocorrência '{p12}' (VALIDADA) - Disparos / Piola — aguardando despacho")
 
         # ------------------------------------------------------------------
         # Sincronização dos contadores sequenciais

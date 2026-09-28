@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from adapters.inbound.http.deps import exigir_papel
+from adapters.inbound.simulador.orquestrador_despacho import OrquestradorDespacho
 from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_gerir_viaturas import (
@@ -19,10 +20,12 @@ from application.ports.inbound.interface_gerir_viaturas import (
     ViaturaOutput,
 )
 from domain.usuario.entity import Papel
+from infrastructure.config.settings import settings
 from infrastructure.di import (
     get_alterar_situacao_viatura,
     get_cadastrar_viatura,
     get_listar_viaturas,
+    get_orquestrador_despacho,
     get_registrar_posicao_viatura,
     get_simulador,
 )
@@ -89,18 +92,35 @@ async def registrar_posicao(body: PosicaoRequest, ator: Ator = Depends(exigir_pa
 
 
 @router.get("/v1/simulador", tags=["telemetria"])
-async def status_simulador(ator: Ator = Depends(exigir_papel(*CONSULTA)), sim: SimuladorTelemetria = Depends(get_simulador)) -> dict:
-    return sim.status()
+async def status_simulador(
+    ator: Ator = Depends(exigir_papel(*CONSULTA)),
+    sim: SimuladorTelemetria = Depends(get_simulador),
+    orq: OrquestradorDespacho = Depends(get_orquestrador_despacho),
+) -> dict:
+    """Estado do simulador + orquestrador de despacho automático."""
+    return {**sim.status(), "orquestrador": orq.status()}
 
 
 @router.post("/v1/simulador/ligar", tags=["telemetria"])
-async def ligar_simulador(ator: Ator = Depends(exigir_papel(*GESTAO)), sim: SimuladorTelemetria = Depends(get_simulador)) -> dict:
-    """Liga o simulador de telemetria a 1 Hz (RF02)."""
+async def ligar_simulador(
+    ator: Ator = Depends(exigir_papel(*GESTAO)),
+    sim: SimuladorTelemetria = Depends(get_simulador),
+    orq: OrquestradorDespacho = Depends(get_orquestrador_despacho),
+) -> dict:
+    """Liga o simulador de telemetria a 1 Hz (RF02) e, se habilitado por flag, o despacho automático."""
     sim.ligar()
-    return sim.status()
+    if settings.despacho_automatico_ligado:
+        await orq.ligar()
+    return {**sim.status(), "orquestrador": orq.status()}
 
 
 @router.post("/v1/simulador/desligar", tags=["telemetria"])
-async def desligar_simulador(ator: Ator = Depends(exigir_papel(*GESTAO)), sim: SimuladorTelemetria = Depends(get_simulador)) -> dict:
+async def desligar_simulador(
+    ator: Ator = Depends(exigir_papel(*GESTAO)),
+    sim: SimuladorTelemetria = Depends(get_simulador),
+    orq: OrquestradorDespacho = Depends(get_orquestrador_despacho),
+) -> dict:
+    """Desliga o simulador e o orquestrador de despacho automático juntos."""
     await sim.desligar()
-    return sim.status()
+    await orq.desligar()
+    return {**sim.status(), "orquestrador": orq.status()}

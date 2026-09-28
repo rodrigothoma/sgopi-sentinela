@@ -138,3 +138,34 @@ async def test_telemetria_no_local_marca_viatura_operando_e_audita(client, sessi
     assert r.status_code == 200, r.text
     r = await client.get("/v1/viaturas", headers=ho)
     assert next(v for v in r.json() if v["id"] == frota["VTR-01"])["situacao"] == "DISPONIVEL"
+
+
+async def test_despacho_de_apoio_enriquece_atendimento(client):
+    """Issue #64: segunda viatura em EM_ATENDIMENTO vira apoio e o encerramento único libera todas."""
+    ho = await auth(client, "operador")
+    frota = await _frota(client, ho)
+    oid = await _validada(client)
+
+    r = await client.post("/v1/despachos", json={"ocorrencia_id": oid, "viatura_id": frota["VTR-01"]}, headers=ho)
+    assert r.status_code == 201 and r.json()["apoio"] is False
+
+    r = await client.post("/v1/despachos", json={"ocorrencia_id": oid, "viatura_id": frota["VTR-02"]}, headers=ho)
+    assert r.status_code == 201 and r.json()["apoio"] is True
+
+    r = await client.get(f"/v1/ocorrencias/{oid}", headers=ho)
+    assert r.json()["status"] == "EM_ATENDIMENTO"
+    r = await client.get("/v1/despachos", params={"ocorrencia_id": oid, "somente_ativas": "true"}, headers=ho)
+    assert len(r.json()) == 2
+
+    # sugestões de apoio excluem as viaturas empenhadas
+    r = await client.get(f"/v1/ocorrencias/{oid}/sugestoes-viaturas", headers=ho)
+    assert r.status_code == 200 and [s["viatura"]["prefixo"] for s in r.json()["sugestoes"]] == ["VTR-03"]
+
+    # encerramento único: ocorrência fecha e ambas as viaturas voltam a DISPONIVEL
+    r = await client.post(f"/v1/ocorrencias/{oid}/encerrar", json={"desfecho": "Atendimento e apoio concluídos."}, headers=ho)
+    assert r.status_code == 200 and r.json()["status"] == "ENCERRADA"
+    r = await client.get("/v1/viaturas", headers=ho)
+    situ = {v["prefixo"]: v["situacao"] for v in r.json()}
+    assert situ["VTR-01"] == "DISPONIVEL" and situ["VTR-02"] == "DISPONIVEL"
+    r = await client.get("/v1/despachos", params={"ocorrencia_id": oid}, headers=ho)
+    assert all(not o["ativa"] for o in r.json())

@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import StaticPool
 
 from infrastructure.database.connection import Base, get_session
+from infrastructure.di import get_orquestrador_despacho
 import infrastructure.database.models as models  # noqa: F401
 
 IDS = {
@@ -73,6 +74,28 @@ async def usuarios(session_factory):
     return IDS
 
 
+class _OrquestradorNoop:
+    """Noop para a suíte: ligar/desligar nunca tocam o Postgres real (flag #62 vem do .env)."""
+
+    def status(self) -> dict:
+        return {
+            "ligado": False,
+            "intervalo_segundos": 0,
+            "janela_carencia_segundos": 0,
+            "tempo_atendimento_segundos": 0,
+            "ticks": 0,
+            "ocioso": 0,
+            "despachados": 0,
+            "encerrados": 0,
+        }
+
+    async def ligar(self) -> bool:
+        return False
+
+    async def desligar(self) -> None:
+        return None
+
+
 @pytest.fixture
 async def app(session_factory, usuarios):
     from main import criar_app
@@ -84,6 +107,7 @@ async def app(session_factory, usuarios):
             yield s
 
     application.dependency_overrides[get_session] = _get_session
+    application.dependency_overrides[get_orquestrador_despacho] = lambda: _OrquestradorNoop()
     return application
 
 

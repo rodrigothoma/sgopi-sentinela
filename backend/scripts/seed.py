@@ -30,6 +30,17 @@ USUARIOS = [
 ]
 
 
+async def _semear_ator_simulador(
+    repo: UsuarioRepositorioSQLAlchemy, hasher: HasherArgon2, *, login: str, nome: str, papel: Papel
+) -> None:
+    """Autor da simulação com senha aleatória — login sempre falha."""
+    if await repo.buscar_por_login(login):
+        print(f"  = usuário '{login}' já existe")
+        return
+    await repo.salvar(Usuario(nome=nome, login=login, senha_hash=hasher.gerar_hash(secrets.token_urlsafe(48)), papel=papel))
+    print(f"  + usuário '{login}' ({papel.value}, senha inutilizável)")
+
+
 async def semear_usuarios() -> None:
     hasher = HasherArgon2()
     async with AsyncSessionLocal() as session:
@@ -53,6 +64,13 @@ async def semear_usuarios() -> None:
             print("  + usuário 'simulador-demo' (AGENTE, senha inutilizável)")
         else:
             print("  = usuário 'simulador-demo' já existe")
+
+        await _semear_ator_simulador(
+            repo, hasher, login="simulador-operador", nome="Simulador Operador", papel=Papel.OPERADOR_CENTRAL
+        )
+        await _semear_ator_simulador(
+            repo, hasher, login="simulador-delegado", nome="Simulador Delegado", papel=Papel.DELEGADO
+        )
         await session.commit()
 
 

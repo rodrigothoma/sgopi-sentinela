@@ -18,6 +18,8 @@ from domain.shared.geo import Coordenada
 
 log = logging.getLogger("sgopi.simulador")
 
+LIMITE_ORDENS_ATIVAS = 500
+
 
 class ResolvedorDestino(ABC):
     @abstractmethod
@@ -48,7 +50,7 @@ class ResolvedorDestinoRepositorios(ResolvedorDestino):
 
     async def _destinos(self, viatura_ids: list[UUID]) -> dict[UUID, Coordenada]:
         alvos = set(viatura_ids)
-        ativas = await self._ordens.listar(None, somente_ativas=True, limit=max(len(alvos), 1))
+        ativas = await self._ordens.listar(None, somente_ativas=True, limit=LIMITE_ORDENS_ATIVAS)
         resultado: dict[UUID, Coordenada] = {}
         for ordem in ativas:
             if ordem.viatura_id not in alvos or ordem.viatura_id in resultado:

@@ -40,6 +40,7 @@ class OrdemDespachoOutput:
     observacoes: str | None
     ativa: bool
     encerrada_em: str | None
+    apoio: bool
 
 
 @dataclass(frozen=True)
