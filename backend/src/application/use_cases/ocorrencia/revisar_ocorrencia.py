@@ -16,6 +16,7 @@ from application.ports.inbound.interface_revisar_ocorrencia import (
     InterfaceDevolverParaCorrecao,
     InterfaceRejeitarOcorrencia,
     InterfaceValidarOcorrencia,
+    ValidarOcorrenciaInput,
 )
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.publicador_eventos import PublicadorEventos
@@ -33,6 +34,7 @@ from domain.usuario.entity import Papel
 
 class _DecisaoBase:
     operacao: str
+    campo_texto_auditoria = "justificativa"
     papeis: tuple[Papel, ...] = (Papel.DELEGADO,)
 
     def __init__(
@@ -49,19 +51,19 @@ class _DecisaoBase:
         self._auditoria = auditoria
         self._publicador = publicador
 
-    def _aplicar(self, ocorrencia: Ocorrencia, ator: Ator, justificativa: str | None, agora: datetime) -> None:
+    def _aplicar(self, ocorrencia: Ocorrencia, ator: Ator, texto_decisao: str | None, agora: datetime) -> None:
         raise NotImplementedError
 
     def _evento(self, ocorrencia: Ocorrencia, agora: datetime) -> EventoDominio:
         raise NotImplementedError
 
-    async def _executar_decisao(self, ator: Ator, ocorrencia_id: UUID, justificativa: str | None) -> OcorrenciaDetalheOutput:
+    async def _executar_decisao(self, ator: Ator, ocorrencia_id: UUID, texto_decisao: str | None) -> OcorrenciaDetalheOutput:
         ator.exigir_papel(*self.papeis)
         agora = self._relogio.agora()
         async with self._uow:
             ocorrencia = await carregar_ou_404(self._repositorio, ocorrencia_id)
             antes = {"status": ocorrencia.status.value, "versao": ocorrencia.versao}
-            self._aplicar(ocorrencia, ator, justificativa, agora)
+            self._aplicar(ocorrencia, ator, texto_decisao, agora)
             await self._repositorio.salvar(ocorrencia)
             await self._auditoria.registrar(
                 RegistroAuditoria(
@@ -71,7 +73,11 @@ class _DecisaoBase:
                     entidade="Ocorrencia",
                     entidade_id=str(ocorrencia.id),
                     dados_antes=antes,
-                    dados_depois={"status": ocorrencia.status.value, "versao": ocorrencia.versao, "justificativa": justificativa},
+                    dados_depois={
+                        "status": ocorrencia.status.value,
+                        "versao": ocorrencia.versao,
+                        self.campo_texto_auditoria: ocorrencia.historico_status[-1].justificativa,
+                    },
                     ip=ator.ip,
                 )
             )
@@ -82,9 +88,10 @@ class _DecisaoBase:
 
 class ValidarOcorrencia(_DecisaoBase, InterfaceValidarOcorrencia):
     operacao = "ocorrencia.validar"
+    campo_texto_auditoria = "despacho"
 
-    def _aplicar(self, ocorrencia, ator, justificativa, agora):
-        ocorrencia.validar(ator.id, agora)
+    def _aplicar(self, ocorrencia, ator, despacho, agora):
+        ocorrencia.validar(ator.id, agora, despacho)
 
     def _evento(self, ocorrencia, agora):
         return eventos.ocorrencia_validada(
@@ -92,8 +99,8 @@ class ValidarOcorrencia(_DecisaoBase, InterfaceValidarOcorrencia):
             latitude=ocorrencia.coordenada.latitude, longitude=ocorrencia.coordenada.longitude,
         )
 
-    async def executar(self, ator: Ator, input_dto: DecisaoRevisaoInput) -> OcorrenciaDetalheOutput:
-        return await self._executar_decisao(ator, input_dto.ocorrencia_id, None)
+    async def executar(self, ator: Ator, input_dto: ValidarOcorrenciaInput) -> OcorrenciaDetalheOutput:
+        return await self._executar_decisao(ator, input_dto.ocorrencia_id, input_dto.despacho)
 
 
 class DevolverParaCorrecao(_DecisaoBase, InterfaceDevolverParaCorrecao):

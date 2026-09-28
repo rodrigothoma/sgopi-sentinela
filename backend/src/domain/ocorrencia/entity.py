@@ -365,14 +365,15 @@ class Ocorrencia:
         self.versao += 1
         self.atualizada_em = em
 
-    def validar(self, delegado_id: UUID, em: datetime) -> None:
+    def validar(self, delegado_id: UUID, em: datetime, despacho: str | None = None) -> None:
         """
         AGUARDANDO_REVISAO → VALIDADA; congela a narrativa por hash (DEC-09) e emite o
         documento oficial com sua chave pública de autenticidade (RF08).
         """
-        self._transicionar("validar", delegado_id, em)
+        despacho_normalizado = despacho.strip() if despacho and despacho.strip() else None
+        self._transicionar("validar", delegado_id, em, despacho_normalizado)
         self.validada_por_id = delegado_id
-        self.justificativa_revisao = None
+        self.justificativa_revisao = despacho_normalizado
         self.hash_narrativa = self.calcular_hash_narrativa()
         self.chave_autenticidade = gerar_chave_autenticidade()
 

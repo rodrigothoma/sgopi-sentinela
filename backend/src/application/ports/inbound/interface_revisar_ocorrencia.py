@@ -16,6 +16,12 @@ class DecisaoRevisaoInput:
 
 
 @dataclass(frozen=True)
+class ValidarOcorrenciaInput:
+    ocorrencia_id: UUID
+    despacho: str | None = None
+
+
+@dataclass(frozen=True)
 class CorrigirOcorrenciaInput:
     ocorrencia_id: UUID
     natureza: str | None = None
@@ -30,7 +36,7 @@ class CorrigirOcorrenciaInput:
 
 class InterfaceValidarOcorrencia(ABC):
     @abstractmethod
-    async def executar(self, ator: Ator, input_dto: DecisaoRevisaoInput) -> OcorrenciaDetalheOutput: ...
+    async def executar(self, ator: Ator, input_dto: ValidarOcorrenciaInput) -> OcorrenciaDetalheOutput: ...
 
 
 class InterfaceDevolverParaCorrecao(ABC):

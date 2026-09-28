@@ -323,6 +323,7 @@ from application.ports.inbound.interface_revisar_ocorrencia import (  # noqa: E4
     InterfaceReenviarOcorrencia,
     InterfaceRejeitarOcorrencia,
     InterfaceValidarOcorrencia,
+    ValidarOcorrenciaInput,
 )
 from adapters.inbound.http.v1.apreensoes_router import ItemApreendidoSchema, item_schema  # noqa: E402
 from infrastructure.di import (  # noqa: E402
@@ -399,6 +400,10 @@ class PaginaOcorrenciasSchema(BaseModel):
 
 class JustificativaRequest(BaseModel):
     justificativa: str = Field(min_length=1, max_length=2000)
+
+
+class DespachoValidacaoRequest(BaseModel):
+    despacho: str | None = Field(default=None, max_length=2000)
 
 
 class MotivoRequest(BaseModel):
@@ -478,11 +483,13 @@ async def obter_ocorrencia(
 @router.post("/{ocorrencia_id}/validar", response_model=OcorrenciaDetalheSchema)
 async def validar(
     ocorrencia_id: UUID,
+    body: DespachoValidacaoRequest | None = None,
     ator: Ator = Depends(exigir_papel(Papel.DELEGADO)),
     use_case: InterfaceValidarOcorrencia = Depends(get_validar_ocorrencia),
 ) -> OcorrenciaDetalheSchema:
     """AGUARDANDO_REVISAO → VALIDADA (RF04*). Somente DELEGADO."""
-    return _detalhe(await use_case.executar(ator, DecisaoRevisaoInput(ocorrencia_id=ocorrencia_id)))
+    despacho = body.despacho if body else None
+    return _detalhe(await use_case.executar(ator, ValidarOcorrenciaInput(ocorrencia_id, despacho)))
 
 
 @router.post("/{ocorrencia_id}/devolver", response_model=OcorrenciaDetalheSchema)
