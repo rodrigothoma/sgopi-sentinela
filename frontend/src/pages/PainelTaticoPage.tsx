@@ -20,7 +20,7 @@ import {
   listarNaturezas,
   resumirPorNatureza,
 } from '../utils/manchas';
-import type { EventoTempoReal, OcorrenciaResumo, OrdemDespacho, StatusSimulador, Sugestoes, Viatura } from '../types/api';
+import type { EventoTempoReal, OcorrenciaResumo, OrdemDespacho, StatusSimuladorCompleto, Sugestoes, Viatura } from '../types/api';
 
 /**
  * Painel tático (RF17/RF18/RF19): carga inicial por REST, atualizações por WebSocket,
@@ -36,7 +36,7 @@ export const PainelTaticoPage: React.FC = () => {
   const [ordens, setOrdens] = useState<OrdemDespacho[]>([]);
   const [selecionada, setSelecionada] = useState<string | null>(null);
   const [sugestoes, setSugestoes] = useState<Sugestoes | null>(null);
-  const [simulador, setSimulador] = useState<StatusSimulador | null>(null);
+  const [simulador, setSimulador] = useState<StatusSimuladorCompleto | null>(null);
   const [desfecho, setDesfecho] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [ultimoEvento, setUltimoEvento] = useState<string>('');
@@ -120,6 +120,14 @@ export const PainelTaticoPage: React.FC = () => {
 
   const conexao = useTempoReal(onEvento, carregar);
   const viaturasEmDeslocamento = viaturas.filter((v) => v.situacao === 'EM_DESLOCAMENTO');
+
+  useEffect(() => {
+    if (!simulador?.orquestrador?.ligado) return undefined;
+    const id = window.setInterval(() => {
+      viaturasService.simulador().then(setSimulador).catch(() => undefined);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [simulador?.orquestrador?.ligado]);
 
   const ocorrenciaSel = useMemo(() => ocorrencias.find((o) => o.ocorrencia_id === selecionada) ?? null, [ocorrencias, selecionada]);
   const semSinal = viaturas.filter((v) => v.sinal !== 'OK');
@@ -208,6 +216,11 @@ export const PainelTaticoPage: React.FC = () => {
           <button className={`btn ${simulador.ligado ? 'btn-warn' : 'btn-primary'}`} onClick={alternarSimulador}>
             {simulador.ligado ? t('painel:simulador.desligar') : t('painel:simulador.ligar')} ({simulador.ticks})
           </button>
+        )}
+        {podeDespachar && simulador?.orquestrador?.ligado && (
+          <span className="badge badge-OK">
+            {t('painel:simulador.despacho_auto')} · {t('painel:simulador.despacho_contador', { despachados: simulador.orquestrador.despachados, encerrados: simulador.orquestrador.encerrados })}
+          </span>
         )}
         <button className={`btn ${heatAtivo ? 'btn-warn' : 'btn-ghost'}`} onClick={() => setHeatAtivo((v) => !v)}>
           {heatAtivo ? t('painel:manchas.ocultar') : t('painel:manchas.mostrar')}

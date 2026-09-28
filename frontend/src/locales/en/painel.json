@@ -7,7 +7,9 @@
   },
   "simulador": {
     "ligar": "Start GPS simulator",
-    "desligar": "Stop simulator"
+    "desligar": "Stop simulator",
+    "despacho_auto": "Auto-dispatch active",
+    "despacho_contador": "{{despachados}} dispatched · {{encerrados}} closed"
   },
   "viatura": "Vehicle",
   "situacao": "Status",

@@ -7,7 +7,9 @@
   },
   "simulador": {
     "ligar": "Ligar simulador GPS",
-    "desligar": "Desligar simulador"
+    "desligar": "Desligar simulador",
+    "despacho_auto": "Despacho automático ativo",
+    "despacho_contador": "{{despachados}} despachadas · {{encerrados}} encerradas"
   },
   "viatura": "Viatura",
   "situacao": "Situação",
