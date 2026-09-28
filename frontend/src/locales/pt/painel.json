@@ -7,7 +7,9 @@
   },
   "simulador": {
     "ligar": "Ligar simulador GPS",
-    "desligar": "Desligar simulador"
+    "desligar": "Desligar simulador",
+    "despacho_auto": "Despacho automático ativo",
+    "despacho_contador": "{{despachados}} despachadas · {{encerrados}} encerradas"
   },
   "viatura": "Viatura",
   "situacao": "Situação",
@@ -28,9 +30,13 @@
   },
   "despacho": {
     "titulo": "Despachar {{protocolo}}",
+    "titulo_apoio": "Viatura de apoio — {{protocolo}}",
     "despachar": "Despachar",
+    "despachar_apoio": "Despachar apoio",
     "manual": "Despacho manual",
     "sem_elegiveis": "Nenhuma viatura disponível com GPS válido (≤ 60 s). Você pode despachar manualmente:",
+    "ordem_principal": "Principal",
+    "ordem_apoio": "Apoio",
     "ok": "Ordem de despacho {{numero}} emitida."
   },
   "encerrar": {
