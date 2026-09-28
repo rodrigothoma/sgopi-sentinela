@@ -2,7 +2,6 @@
 
 Fakes de ResolvedorDestino e Roteador: sem banco de ordens, sem rede.
 """
-import math
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from uuid import UUID
@@ -15,7 +14,7 @@ from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
 from application.ports.inbound.interface_gerir_viaturas import CadastrarViaturaInput
 from application.use_cases.viatura.gerir_viaturas import CadastrarViatura
 from application.use_cases.viatura.registrar_posicao_viatura import RegistrarPosicaoViatura
-from domain.shared.geo import RAIO_TERRA_KM, Coordenada
+from domain.shared.geo import Coordenada
 from tests.fakes.atores import OPERADOR
 from tests.fakes.portas_fake import AuditoriaFake, PublicadorEventosFake, RelogioFake, UnidadeDeTrabalhoFake
 from tests.fakes.repositorio_viatura_fake import RepositorioViaturaFake
@@ -315,9 +314,13 @@ async def test_backoff_do_roteador_e_global_nao_por_viatura(repo, relogio, regis
     assert roteador.chamadas == 2  # backoff global: nenhuma retentativa dentro da janela
 
 
-async def test_jitter_centrado_no_ultimo_ponto_da_rota(repo, relogio, registrar_posicao):
-    delta_30m = 30.0 / (RAIO_TERRA_KM * 1000.0) * 180.0 / math.pi
-    ajustado = Coordenada(DESTINO.latitude - delta_30m, DESTINO.longitude)  # OSRM ajustou à via
+async def test_jitter_centrado_na_ocorrencia_e_nao_no_fim_da_rota(repo, relogio, registrar_posicao):
+    """Issue #54 pedia jitter em torno da ocorrência; o fim da rua é onde o roteador encostou.
+
+    Com a rota encostada 30 m antes do destino, a viatura cobre o trecho final e
+    estaciona na ocorrência, não no limite da via.
+    """
+    encosta_na_rua = Coordenada(DESTINO.latitude - 30.0 / 111_320.0, DESTINO.longitude)
     viatura = await _despachada(repo, relogio)
     sim = SimuladorTelemetria(
         _contexto(repo, registrar_posicao),
@@ -326,16 +329,13 @@ async def test_jitter_centrado_no_ultimo_ponto_da_rota(repo, relogio, registrar_
         raio_metros=150.0,
         semente=42,
         resolvedor=ResolvedorDestinoFake({viatura.id: DESTINO}),
-        roteador=RoteadorRotaFixa([ORIGEM, ajustado]),
+        roteador=RoteadorRotaFixa([ORIGEM, encosta_na_rua]),
         passo_destino_metros=300.0,
+        jitter_chegada_metros=5.0,
     )
-    relogio.avancar(seconds=1)
-    await sim.tick()
-    relogio.avancar(seconds=1)
-    await sim.tick()  # chegou ao último ponto: jitter
-    relogio.avancar(seconds=1)
-    await sim.tick()
+    for _ in range(4):
+        relogio.avancar(seconds=1)
+        await sim.tick()
     v = await repo.buscar_por_id(viatura.id)
     assert v.ultima_posicao is not None
-    assert v.ultima_posicao.coordenada.distancia_km(ajustado) * 1000.0 < 10.0
-    assert 20.0 < v.ultima_posicao.coordenada.distancia_km(DESTINO) * 1000.0 < 40.0
+    assert v.ultima_posicao.coordenada.distancia_km(DESTINO) * 1000.0 < 5.0
