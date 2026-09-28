@@ -96,6 +96,42 @@ async def test_despacho_manual_de_viatura_sem_gps_e_permitido(validada, frota, d
     assert ordem.viatura_id == frota["VTR-04"]
 
 
+async def test_despacho_de_apoio_em_atendimento_cria_segunda_ordem_sem_transicao(validada, frota, despachar, repositorio, viaturas, ordens, publicador):
+    """Issue #64: ocorrência EM_ATENDIMENTO recebe viatura de apoio sem nova transição de estado (UC02 Cenário Alt. I)."""
+    principal = await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-01"]))
+    assert principal.apoio is False
+    apoio = await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
+    assert apoio.apoio is True
+    assert (await repositorio.buscar_por_id(validada)).status.value == "EM_ATENDIMENTO"
+    assert (await viaturas.buscar_por_id(frota["VTR-02"])).situacao == SituacaoViatura.EM_DESLOCAMENTO
+    # apenas o despacho principal emite o evento de transição
+    assert publicador.tipos().count("OcorrenciaDespachada") == 1
+    listadas = await ListarOrdensDespacho(ordens).executar(OPERADOR, ListarOrdensInput(ocorrencia_id=validada, somente_ativas=True))
+    assert len(listadas) == 2 and {o.apoio for o in listadas} == {True, False}
+
+
+async def test_sugestoes_de_apoio_excluem_viaturas_empenhadas(validada, frota, despachar, repositorio, viaturas, relogio):
+    """Issue #64: sugestões também valem para EM_ATENDIMENTO e não repetem viatura já empenhada."""
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
+    out = await SugerirViaturasProximas(repositorio, viaturas, relogio, 60, 3).executar(OPERADOR, validada)
+    assert [s.viatura.prefixo for s in out.sugestoes] == ["VTR-01", "VTR-03"]
+    assert not out.sem_elegiveis
+
+
+async def test_encerrar_libera_principal_e_apoio(validada, frota, despachar, encerrar, repositorio, viaturas, ordens, relogio, auditoria, publicador):
+    """Issue #64: encerramento único fecha a ocorrência e libera todas as viaturas (principal + apoio)."""
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-01"]))
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
+    relogio.avancar(hours=1)
+    det = await encerrar.executar(DELEGADO, EncerrarInput(validada, "Apoio liberado; cenário isolado e normalizado."))
+    assert det.status == "ENCERRADA"
+    for pid in (frota["VTR-01"], frota["VTR-02"]):
+        assert (await viaturas.buscar_por_id(pid)).situacao == SituacaoViatura.DISPONIVEL
+    assert all(not o.ativa for o in await ordens.listar(validada))
+    assert {"VTR-01", "VTR-02"} == set(auditoria.registros[-1].dados_depois["viaturas_liberadas"])
+    assert publicador.tipos().count("ViaturaSituacaoAlterada") >= 2
+
+
 async def test_despacho_de_viatura_nao_disponivel_409(validada, frota, despachar, registrar, deps, viaturas):
     await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
     outra = await registrar()
