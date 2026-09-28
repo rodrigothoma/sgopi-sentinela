@@ -454,7 +454,8 @@ def montar_simulador(session_factory: async_sessionmaker, relogio: Relogio | Non
             yield OrdemDespachoRepositorioSQLAlchemy(session), OcorrenciaRepositorioSQLAlchemy(session)
 
     url = kw.get("roteador_url", settings.simulador_roteador_url)
-    roteador = kw.get("roteador") or (RoteadorOSRM(url) if url.strip() else RoteadorLinhaReta())
+    timeout = kw.get("roteador_timeout_segundos", settings.simulador_roteador_timeout_segundos)
+    roteador = kw.get("roteador") or (RoteadorOSRM(url, timeout) if url.strip() else RoteadorLinhaReta())
     return SimuladorTelemetria(
         contexto,
         relogio,

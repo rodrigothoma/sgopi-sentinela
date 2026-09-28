@@ -57,6 +57,19 @@ ResolvedorDestinoPorViatura = Callable[[UUID], Awaitable[Coordenada | None]]
 Contexto = tuple[RepositorioViatura, InterfaceRegistrarPosicaoViatura] | tuple[RepositorioViatura, InterfaceRegistrarPosicaoViatura, ResolvedorDestinoPorViatura]
 
 
+def _com_trecho_final(rota: list[Coordenada], destino: Coordenada) -> list[Coordenada]:
+    """Prolonga a rota até a ocorrência quando o roteador parou no limite da malha viária.
+
+    O roteador só conhece ruas, então encosta a ocorrência na via mais próxima.
+    Sem este trecho a viatura estaciona no fim da rua e a detecção de chegada, que
+    mede a distância real até a ocorrência, nunca dispara: a viatura fica presa em
+    EM_DESLOCAMENTO e a ocorrência nunca é encerrada.
+    """
+    if rota[-1] == destino:
+        return rota
+    return [*rota, destino]
+
+
 class SimuladorTelemetria:
     def __init__(
         self,
@@ -193,7 +206,7 @@ class SimuladorTelemetria:
         if len(rota) < 2:
             log.warning("roteador devolveu rota vazia, usando linha reta")
             return [origem, destino]
-        return rota
+        return _com_trecho_final(rota, destino)
 
     async def _proxima_posicao_navegada(
         self, v: Viatura, destino: Coordenada | None, agora: datetime, em_backoff: bool
