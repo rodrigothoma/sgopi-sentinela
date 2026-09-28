@@ -339,3 +339,47 @@ async def test_jitter_centrado_na_ocorrencia_e_nao_no_fim_da_rota(repo, relogio,
     v = await repo.buscar_por_id(viatura.id)
     assert v.ultima_posicao is not None
     assert v.ultima_posicao.coordenada.distancia_km(DESTINO) * 1000.0 < 5.0
+
+
+async def test_ocorrencia_fora_da_malha_viaria_ainda_e_atendida(repo, relogio, registrar_posicao):
+    """Issue #66: ocorrência no "mato", longe da rua.
+
+    O roteador só conhece a malha viária e encosta o destino na rua mais próxima.
+    Sem o trecho final até a ocorrência, a viatura estaciona no limite da rota,
+    a detecção de chegada (raio de 50 m) nunca dispara e a ocorrência fica
+    presa em EM_ATENDIMENTO para sempre.
+    """
+    encosta_na_rua = Coordenada(DESTINO.latitude - 300.0 / 111_320.0, DESTINO.longitude)
+    viatura = await _despachada(repo, relogio)
+    sim = SimuladorTelemetria(
+        _contexto(repo, registrar_posicao),
+        relogio,
+        intervalo_segundos=0.01,
+        raio_metros=150.0,
+        semente=42,
+        resolvedor=ResolvedorDestinoFake({viatura.id: DESTINO}),
+        roteador=RoteadorRotaFixa([ORIGEM, encosta_na_rua]),
+        passo_destino_metros=300.0,
+    )
+    for _ in range(8):
+        relogio.avancar(seconds=1)
+        await sim.tick()
+    # Convergir para dentro do raio de chegada é o que destrava o encerramento automático.
+    assert await _distancia_ao_destino(repo, viatura.id) < 50.0
+
+
+async def test_trecho_final_nao_duplica_quando_rota_ja_termina_no_destino(repo, relogio, registrar_posicao):
+    viatura = await _despachada(repo, relogio)
+    sim = SimuladorTelemetria(
+        _contexto(repo, registrar_posicao),
+        relogio,
+        intervalo_segundos=0.01,
+        raio_metros=150.0,
+        semente=42,
+        resolvedor=ResolvedorDestinoFake({viatura.id: DESTINO}),
+        roteador=RoteadorRotaFixa([ORIGEM, DESTINO]),
+        passo_destino_metros=300.0,
+    )
+    relogio.avancar(seconds=1)
+    await sim.tick()
+    assert sim._rotas[viatura.id].rota == [ORIGEM, DESTINO]
