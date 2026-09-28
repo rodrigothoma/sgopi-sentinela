@@ -37,11 +37,12 @@ def criar_app() -> FastAPI:
             # Sem simulador-demo no banco: loga 'rode o seed', não inicia, servidor segue no ar.
             await gerador_ocorrencias.ligar()
         yield
-        from infrastructure.di import gerador_ocorrencias, simulador
+        from infrastructure.di import gerador_ocorrencias, orquestrador_despacho, simulador
 
-        # Ajuste 8: cancela e aguarda as tasks do gerador e do simulador.
+        # Ajuste 8: cancela e aguarda as tasks do gerador, do simulador e do orquestrador.
         await gerador_ocorrencias.desligar()
         await simulador.desligar()
+        await orquestrador_despacho.desligar()
         log.info("SGOPI Sentinela encerrando")
 
     app = FastAPI(
