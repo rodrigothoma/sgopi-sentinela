@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     despacho_raio_chegada_metros: float = 50.0
     # RF18: quantidade de sugestões de viatura
     despacho_qtd_sugestoes: int = 3
+    # RF02/RF18/RF19/RNF04: despacho e encerramento automáticos — opt-in, nunca em testes
+    despacho_automatico_ligado: bool = False
+    orquestrador_intervalo_segundos: float = Field(default=5.0, ge=1.0)
+    janela_carencia_segundos: int = 20
+    tempo_atendimento_segundos: int = 45
 
     # RF22: evidências digitais armazenadas localmente atrás de uma porta
     evidencias_diretorio: str = "storage/evidencias"
