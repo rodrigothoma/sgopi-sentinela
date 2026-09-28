@@ -53,6 +53,7 @@ class OrdemDespachoSchema(BaseModel):
     observacoes: str | None
     ativa: bool
     encerrada_em: str | None
+    apoio: bool
 
 
 class EncerrarRequest(BaseModel):
@@ -65,7 +66,7 @@ def _ordem(o: OrdemDespachoOutput) -> OrdemDespachoSchema:
 
 @router.get("/v1/ocorrencias/{ocorrencia_id}/sugestoes-viaturas", response_model=SugestoesSchema)
 async def sugerir_viaturas(ocorrencia_id: UUID, ator: Ator = Depends(exigir_papel(*DESPACHO)), uc: InterfaceSugerirViaturasProximas = Depends(get_sugerir_viaturas)):
-    """As N viaturas DISPONIVEL com posição válida mais próximas (Haversine) da ocorrência VALIDADA (RF18)."""
+    """As N viaturas DISPONIVEL com posição válida mais próximas (Haversine) da ocorrência VALIDADA/EM_ATENDIMENTO (RF18, #64)."""
     out = await uc.executar(ator, ocorrencia_id)
     return SugestoesSchema(
         ocorrencia_id=out.ocorrencia_id,
@@ -77,7 +78,7 @@ async def sugerir_viaturas(ocorrencia_id: UUID, ator: Ator = Depends(exigir_pape
 
 @router.post("/v1/despachos", response_model=OrdemDespachoSchema, status_code=201)
 async def despachar(body: DespacharRequest, ator: Ator = Depends(exigir_papel(*DESPACHO)), uc: InterfaceDespacharViatura = Depends(get_despachar_viatura)):
-    """Cria a ordem de despacho atomicamente: ocorrência → EM_ATENDIMENTO, viatura → EM_DESLOCAMENTO (RF18, RNF11)."""
+    """Cria a ordem atômica: ocorrência VALIDADA → EM_ATENDIMENTO (principal) ou segunda ordem de apoio em EM_ATENDIMENTO (RF18, RNF11, #64)."""
     return _ordem(await uc.executar(ator, DespacharInput(ocorrencia_id=body.ocorrencia_id, viatura_id=body.viatura_id, observacoes=body.observacoes)))
 
 

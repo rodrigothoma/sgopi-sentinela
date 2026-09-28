@@ -18,6 +18,8 @@ class OrdemDeDespacho:
     observacoes: str | None = None
     ativa: bool = True
     encerrada_em: datetime | None = None
+    # Issue #64 (UC02 Cenário Alt. I): True = viatura de apoio despachada com a ocorrência já EM_ATENDIMENTO.
+    apoio: bool = False
     id: UUID = field(default_factory=uuid4)
 
     def __post_init__(self) -> None:
