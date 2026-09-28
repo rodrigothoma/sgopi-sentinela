@@ -15,7 +15,7 @@ from infrastructure.database.connection import AsyncSessionLocal  # noqa: E402
 # Frota fictícia georreferenciada na malha urbana de Alegrete-RS
 VIATURAS = [
     ("VTR-01", "IAB1A23", -29.7842, -55.7932, SituacaoViatura.DISPONIVEL),       # Praça Getúlio Vargas / Centro
-    ("VTR-02", "IBC2B34", -29.7880, -55.7910, SituacaoViatura.EM_DESLOCAMENTO),  # Rua dos Andradas
+    ("VTR-02", "IBC2B34", -29.7863, -55.7930, SituacaoViatura.EM_DESLOCAMENTO),  # Centro (desloca até Rua dos Andradas)
     ("VTR-03", "ICD3C45", -29.7785, -55.7915, SituacaoViatura.DISPONIVEL),       # Parque Rui Ramos
     ("VTR-04", "IDE4D56", -29.7910, -55.7890, SituacaoViatura.DISPONIVEL),       # Av. Assis Brasil
     ("VTR-05", "IEF5E67", -29.7750, -55.8010, SituacaoViatura.DISPONIVEL),       # Cidade Alta
