@@ -243,6 +243,16 @@
       "assinatura_delegado": "Police Chief"
     }
   },
+  "acoes_procedimentais": {
+    "titulo": "Procedural Actions:",
+    "requisitar_laudo": "Request Forensic Report",
+    "conceder_medida": "Grant Protective Measure",
+    "vincular_inquerito": "Link to Investigation",
+    "modal_laudo_titulo": "Request Technical Forensic Report",
+    "modal_medida_titulo": "Grant Urgent Protective Measure",
+    "laudo_sucesso": "Forensic examination request submitted successfully!",
+    "medida_sucesso": "Urgent protective measure granted successfully!"
+  },
   "comprovante": {
     "emitir": "Receipt / QR Code",
     "chave": "Authenticity key",

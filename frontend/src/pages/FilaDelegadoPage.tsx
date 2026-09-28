@@ -1,7 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
 import { StatusBadge } from '../components/StatusBadge';
+import { GlideSelect, type GlideSelectOption } from '../components/common/GlideSelect';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
@@ -20,9 +22,21 @@ export const FilaDelegadoPage: React.FC = () => {
   const [filtro, setFiltro] = useState(0);
   const [pagina, setPagina] = useState<{ itens: OcorrenciaResumo[]; total: number }>({ itens: [], total: 0 });
   const [detalhe, setDetalhe] = useState<OcorrenciaDetalhe | null>(null);
+
+  const opcoesFiltro: GlideSelectOption[] = useMemo(
+    () =>
+      FILTROS.map((_, i) => ({
+        value: String(i),
+        label: t(`ocorrencias:fila.filtro_${i}`),
+      })),
+    [t],
+  );
   const [justificativa, setJustificativa] = useState('');
   const [motivo, setMotivo] = useState('');
   const [ocupado, setOcupado] = useState(false);
+
+  const [searchParams] = useSearchParams();
+  const paramOcorrenciaId = searchParams.get('ocorrencia');
 
   const carregar = useCallback(async () => {
     try {
@@ -37,11 +51,21 @@ export const FilaDelegadoPage: React.FC = () => {
     carregar();
   }, [carregar]);
 
-  const abrir = async (id: string) => {
+  const abrir = useCallback(async (id: string) => {
     setMotivo('');
     setJustificativa('');
-    setDetalhe(await ocorrenciasService.buscarPorId(id));
-  };
+    try {
+      setDetalhe(await ocorrenciasService.buscarPorId(id));
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    }
+  }, [avisar]);
+
+  useEffect(() => {
+    if (paramOcorrenciaId) {
+      abrir(paramOcorrenciaId);
+    }
+  }, [paramOcorrenciaId, abrir]);
 
   const recarregarDetalhe = async () => {
     if (!detalhe) return;
@@ -107,6 +131,15 @@ export const FilaDelegadoPage: React.FC = () => {
     <div className="pagina duas-colunas">
       <section className="card">
         <h2>{t('ocorrencias:fila.titulo')} <span className="muted">({pagina.total})</span></h2>
+        <div style={{ marginBottom: '1.25rem' }}>
+          <GlideSelect
+            options={opcoesFiltro}
+            value={String(filtro)}
+            onChange={(val) => setFiltro(Number(val))}
+            fullWidth
+            ariaLabel={t('ocorrencias:fila.titulo')}
+          />
+        </div>
         <div className="tabs">
           {FILTROS.map((_, i) => (
             <button key={i} className={`tab ${i === filtro ? 'ativo' : ''}`} onClick={() => setFiltro(i)}>{t(`ocorrencias:fila.filtro_${i}`)}</button>

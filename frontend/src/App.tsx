@@ -13,8 +13,11 @@ import { ConsultaProtocoloPage } from './pages/ConsultaProtocoloPage';
 import { FilaDelegadoPage } from './pages/FilaDelegadoPage';
 import { FrotaPage } from './pages/FrotaPage';
 import { InicioPage } from './pages/InicioPage';
+import { InqueritosPage } from './pages/InqueritosPage';
 import { LandingPage } from './pages/LandingPage';
+import { LaudosPage } from './pages/LaudosPage';
 import { LoginPage } from './pages/LoginPage';
+import { MedidasProtetivasPage } from './pages/MedidasProtetivasPage';
 import { MinhasOcorrenciasPage } from './pages/MinhasOcorrenciasPage';
 import { PainelTaticoPage } from './pages/PainelTaticoPage';
 import { RegistrarOcorrenciaPage } from './pages/RegistrarOcorrenciaPage';
@@ -49,6 +52,9 @@ export default function App() {
                   <Route path="/registrar" element={<RequireRole papeis={['AGENTE']}><RegistrarOcorrenciaPage /></RequireRole>} />
                   <Route path="/minhas" element={<RequireRole papeis={['AGENTE']}><MinhasOcorrenciasPage /></RequireRole>} />
                   <Route path="/fila" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><FilaDelegadoPage /></RequireRole>} />
+                  <Route path="/inqueritos" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><InqueritosPage /></RequireRole>} />
+                  <Route path="/laudos" element={<RequireRole papeis={['DELEGADO', 'PERITO', 'SUPERVISOR']}><LaudosPage /></RequireRole>} />
+                  <Route path="/medidas" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR', 'AGENTE']}><MedidasProtetivasPage /></RequireRole>} />
                   <Route path="/painel" element={<RequireRole papeis={['OPERADOR_CENTRAL', 'SUPERVISOR', 'DELEGADO']}><PainelTaticoPage /></RequireRole>} />
                   <Route path="/frota" element={<RequireRole papeis={['OPERADOR_CENTRAL', 'SUPERVISOR']}><FrotaPage /></RequireRole>} />
                   <Route path="/auditoria" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><TrilhaAuditoriaPage /></RequireRole>} />

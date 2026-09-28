@@ -14,6 +14,9 @@
     "lookup": "Consultar protocolo",
     "police_access": "Acesso Policial",
     "inicio": "Início",
+    "inqueritos": "Inquéritos",
+    "laudos": "Laudos Periciais",
+    "medidas": "Medidas Protetivas",
     "autenticar": "Autenticar documento"
   },
   "actions": {
@@ -260,5 +263,12 @@
       "tipo": "Tipo",
       "detalhe": "Detalhes Adicionais"
     }
+  },
+  "paginacao": {
+    "pagina": "Página",
+    "de": "de",
+    "registros": "ocorrências",
+    "anterior": "Página anterior",
+    "proxima": "Próxima página"
   }
 }

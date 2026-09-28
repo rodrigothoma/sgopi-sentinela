@@ -14,6 +14,9 @@
     "lookup": "Lookup Protocol",
     "police_access": "Police Portal",
     "inicio": "Home",
+    "inqueritos": "Inquests",
+    "laudos": "Forensic Reports",
+    "medidas": "Protective Orders",
     "autenticar": "Authenticate document"
   },
   "actions": {
@@ -260,5 +263,12 @@
       "tipo": "Type",
       "detalhe": "Additional Details"
     }
+  },
+  "paginacao": {
+    "pagina": "Page",
+    "de": "of",
+    "registros": "incidents",
+    "anterior": "Previous page",
+    "proxima": "Next page"
   }
 }

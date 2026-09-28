@@ -243,6 +243,16 @@
       "assinatura_delegado": "Delegado de Polícia"
     }
   },
+  "acoes_procedimentais": {
+    "titulo": "Ações Procedimentais:",
+    "requisitar_laudo": "Requisitar Laudo Pericial",
+    "conceder_medida": "Conceder Medida Protetiva",
+    "vincular_inquerito": "Vincular a Inquérito",
+    "modal_laudo_titulo": "Requisitar Laudo Pericial Técnico",
+    "modal_medida_titulo": "Conceder Medida Protetiva de Urgência",
+    "laudo_sucesso": "Requisição pericial protocolada com sucesso!",
+    "medida_sucesso": "Medida protetiva de urgência concedida com sucesso!"
+  },
   "comprovante": {
     "emitir": "Comprovante / QR Code",
     "chave": "Chave de autenticidade",
