@@ -14,6 +14,8 @@ Regras implementadas:
 - Teto de despachos simultâneos (tamanho da frota da demo) e unicidade por viatura;
 - Só encerra após a viatura chegar (``OPERANDO``) + ``tempo_atendimento_segundos``;
   instante da chegada é mantido em memória (``Viatura`` não tem ``chegou_em``);
+- Ocorrência com apoio manual (múltiplas ordens ativas, Issue #64) nunca é
+  encerrada automaticamente — o operador encerra quando quiser liberar todas;
 - Carência evita disputa com o despacho manual do painel (sem 409/422 espúrios).
 
 Ligado/desligado junto com a telemetria via ``/v1/simulador``; desligado por padrão
@@ -201,7 +203,12 @@ class OrquestradorDespacho:
         for viatura_id in list(self._chegadas):
             if viatura_id not in ids_ativos:
                 self._chegadas.pop(viatura_id, None)  # ordem encerrada manualmente: limpa rastro
+        ordens_por_ocorrencia: dict[UUID, int] = {}
         for ordem in ativas:
+            ordens_por_ocorrencia[ordem.ocorrencia_id] = ordens_por_ocorrencia.get(ordem.ocorrencia_id, 0) + 1
+        for ordem in ativas:
+            if ordens_por_ocorrencia[ordem.ocorrencia_id] != 1:
+                continue  # apoio manual (Issue #64): encerramento é decisão do operador
             viatura = await viaturas.buscar_por_id(ordem.viatura_id)
             if viatura is None or viatura.situacao != SituacaoViatura.OPERANDO:
                 continue
