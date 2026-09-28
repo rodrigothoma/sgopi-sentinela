@@ -42,6 +42,9 @@
    - [5.4 Diagrama de Classes de Domínio](#54-diagrama-de-classes-de-domínio)
    - [5.5 Diagrama de Implantação e Topologia](#55-diagrama-de-implantação-e-topologia)
    - [5.6 Mapeamento Objeto-Relacional (Esquema do Banco de Dados)](#56-mapeamento-objeto-relacional-esquema-do-banco-de-dados)
+   - [5.7 Diagramas de Máquinas de Estados](#57-diagramas-de-máquinas-de-estados)
+     - [5.7.1 Diagrama de Máquina de Estados da Ocorrência Policial](#571-diagrama-de-máquina-de-estados-da-ocorrência-policial)
+     - [5.7.2 Diagrama de Máquina de Estados da Viatura](#572-diagrama-de-máquina-de-estados-da-viatura)
 6. [Especificação Detalhada dos Casos de Uso & Diagramas de Sequência](#6-especificação-detalhada-dos-casos-de-uso--diagramas-de-sequência)
    - [UC01 — Registrar Ocorrência Policial](#uc01--registrar-ocorrência-policial-rf01)
    - [UC02 — Despachar Viatura Tática](#uc02--despachar-viatura-tática-rf02)
@@ -384,6 +387,26 @@ Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQL
 
 ---
 
+### 5.7 Diagramas de Máquinas de Estados
+
+Para assegurar o atendimento estrito às regras de transição de negócio e invariantes do domínio policial, foram elaborados diagramas de máquina de estados para as duas entidades fundamentais do sistema:
+
+#### 5.7.1 Diagrama de Máquina de Estados da Ocorrência Policial
+
+O ciclo de vida da entidade de domínio `Ocorrencia` (`backend/src/domain/ocorrencia/status.py` e `entity.py`) formaliza as etapas de registro, análise jurídica do Delegado, retificação pelo agente, homologação imutável com hash criptográfico, atendimento tático e atos administrativos privativos:
+
+![Diagrama de Máquina de Estados - Ocorrência](diagramas/diagrama-estados-ocorrencia.png)
+
+---
+
+#### 5.7.2 Diagrama de Máquina de Estados da Viatura
+
+O ciclo de vida operacional da entidade de domínio `Viatura` (`backend/src/domain/viatura/entity.py`) especifica as transições entre situações operacionais, guardas de autorização, ações internas (*entry* e *do*), o nó de decisão relativo à pré-condição de validação da ocorrência e os fluxos de liberação e cancelamento:
+
+![Diagrama de Máquina de Estados - Viatura](diagramas/diagrama-estados-viatura.png)
+
+---
+
 ## 6. Especificação Detalhada dos Casos de Uso & Diagramas de Sequência
 
 > [!NOTE]
@@ -427,6 +450,9 @@ Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQL
 #### Diagrama de Sequência — UC01
 ![Diagrama de Sequência UC01](diagramas/sequencia/sq01-registrar-ocorrencia-policial.png)
 
+> [!TIP]
+> O ciclo de vida integral e as transições de estado da ocorrência a partir do registro inicial estão formalizados na seção [5.7.1 Diagrama de Máquina de Estados da Ocorrência Policial](#571-diagrama-de-máquina-de-estados-da-ocorrência-policial).
+
 ---
 
 ### UC02 — Despachar Viatura Tática (RF02)
@@ -468,6 +494,9 @@ Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQL
 
 #### Diagrama de Sequência — UC02
 ![Diagrama de Sequência UC02](diagramas/sequencia/sq02-despachar-viatura-tatica.png)
+
+> [!TIP]
+> O ciclo de vida completo e a máquina de estados comportamental da viatura durante as fases de prontidão, deslocamento e operação estão formalizados na seção [5.7.2 Diagrama de Máquina de Estados da Viatura](#572-diagrama-de-máquina-de-estados-da-viatura).
 
 ---
 
@@ -541,6 +570,9 @@ Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQL
 
 #### Diagrama de Sequência — UC04
 ![Diagrama de Sequência UC04](diagramas/sequencia/sq04-validar-ocorrencia.png)
+
+> [!TIP]
+> A árvore de decisão do ato de validação do Delegado (`VALIDADA`, `REJEITADA` e `EM_CORRECAO`) e a geração do hash criptográfico SHA-256 estão detalhadas na seção [5.7.1 Diagrama de Máquina de Estados da Ocorrência Policial](#571-diagrama-de-máquina-de-estados-da-ocorrência-policial).
 
 ---
 
