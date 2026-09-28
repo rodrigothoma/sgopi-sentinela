@@ -30,9 +30,13 @@
   },
   "despacho": {
     "titulo": "Despachar {{protocolo}}",
+    "titulo_apoio": "Viatura de apoio — {{protocolo}}",
     "despachar": "Despachar",
+    "despachar_apoio": "Despachar apoio",
     "manual": "Despacho manual",
     "sem_elegiveis": "Nenhuma viatura disponível com GPS válido (≤ 60 s). Você pode despachar manualmente:",
+    "ordem_principal": "Principal",
+    "ordem_apoio": "Apoio",
     "ok": "Ordem de despacho {{numero}} emitida."
   },
   "encerrar": {

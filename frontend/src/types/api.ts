@@ -95,6 +95,8 @@ export interface Sugestoes { ocorrencia_id: string; sugestoes: ViaturaSugerida[]
 export interface OrdemDespacho {
   id: string; numero: string; ocorrencia_id: string; viatura_id: string; operador_id: string;
   criada_em: string; observacoes: string | null; ativa: boolean; encerrada_em: string | null;
+  /** Issue #64: true = viatura de apoio despachada com a ocorrência já em atendimento. */
+  apoio: boolean;
 }
 export interface StatusSimulador { ligado: boolean; intervalo_segundos: number; raio_metros: number; velocidade_kmh?: number; ticks: number; posicoes_emitidas: number }
 export interface StatusOrquestrador {

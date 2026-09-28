@@ -158,7 +158,7 @@ export const PainelTaticoPage: React.FC = () => {
     setSelecionada(id);
     setSugestoes(null);
     const o = ocorrencias.find((x) => x.ocorrencia_id === id);
-    if (o?.status === 'VALIDADA' && podeDespachar) {
+    if ((o?.status === 'VALIDADA' || o?.status === 'EM_ATENDIMENTO') && podeDespachar) {
       try {
         setSugestoes(await despachoService.sugestoes(id));
       } catch (err) {
@@ -369,16 +369,23 @@ export const PainelTaticoPage: React.FC = () => {
             </section>
           )}
 
-          {ocorrenciaSel && podeDespachar && ocorrenciaSel.status === 'VALIDADA' && (
+          {(ocorrenciaSel?.status === 'VALIDADA' || ocorrenciaSel?.status === 'EM_ATENDIMENTO') && podeDespachar && (
             <section className="card">
-              <h3>{t('painel:despacho.titulo', { protocolo: ocorrenciaSel.numero_protocolo })}</h3>
+              <h3>
+                {t(
+                  ocorrenciaSel.status === 'EM_ATENDIMENTO' ? 'painel:despacho.titulo_apoio' : 'painel:despacho.titulo',
+                  { protocolo: ocorrenciaSel.numero_protocolo },
+                )}
+              </h3>
               {!sugestoes && <p className="muted">{t('common:actions.loading')}</p>}
               {sugestoes && sugestoes.sugestoes.length > 0 && (
                 <ul className="lista">
                   {sugestoes.sugestoes.map((s, i) => (
                     <li key={s.viatura.id}>
                       <span>#{i + 1} <strong>{s.viatura.prefixo}</strong> · {s.distancia_km.toFixed(2)} km</span>
-                      <button className="btn btn-primary btn-sm" disabled={ocupado} onClick={() => despachar(s.viatura.id)}>{t('painel:despacho.despachar')}</button>
+                      <button className="btn btn-primary btn-sm" disabled={ocupado} onClick={() => despachar(s.viatura.id)}>
+                        {t(ocorrenciaSel.status === 'EM_ATENDIMENTO' ? 'painel:despacho.despachar_apoio' : 'painel:despacho.despachar')}
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -404,7 +411,14 @@ export const PainelTaticoPage: React.FC = () => {
               <h3>{t('painel:encerrar.titulo', { protocolo: ocorrenciaSel.numero_protocolo })}</h3>
               <ul className="lista">
                 {ordens.filter((o) => o.ocorrencia_id === ocorrenciaSel.ocorrencia_id).map((o) => (
-                  <li key={o.id}><span><strong>{o.numero}</strong> · {viaturas.find((v) => v.id === o.viatura_id)?.prefixo} · {new Date(o.criada_em).toLocaleTimeString()}</span></li>
+                  <li key={o.id}>
+                    <span>
+                      <strong>{o.numero}</strong> · {viaturas.find((v) => v.id === o.viatura_id)?.prefixo} · {new Date(o.criada_em).toLocaleTimeString()}{' '}
+                      <span className={`badge ${o.apoio ? 'badge-EM_ATENDIMENTO' : 'badge-OK'}`}>
+                        {t(o.apoio ? 'painel:despacho.ordem_apoio' : 'painel:despacho.ordem_principal')}
+                      </span>
+                    </span>
+                  </li>
                 ))}
               </ul>
               <label>

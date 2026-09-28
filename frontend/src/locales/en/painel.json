@@ -30,9 +30,13 @@
   },
   "despacho": {
     "titulo": "Dispatch {{protocolo}}",
+    "titulo_apoio": "Support vehicle — {{protocolo}}",
     "despachar": "Dispatch",
+    "despachar_apoio": "Dispatch support",
     "manual": "Manual dispatch",
     "sem_elegiveis": "No available vehicle with a valid GPS fix (≤ 60 s). You may dispatch manually:",
+    "ordem_principal": "Primary",
+    "ordem_apoio": "Support",
     "ok": "Dispatch order {{numero}} issued."
   },
   "encerrar": {
