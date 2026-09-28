@@ -4,6 +4,7 @@ Destino lido dos repositórios existentes, sem alterar portas nem domínio.
 """
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import timedelta
 from uuid import uuid4
 
 import pytest
@@ -68,6 +69,25 @@ async def test_ordem_encerrada_nao_resolve_destino():
     await ordens.salvar(ordem)
     destinos = await ResolvedorDestinoRepositorios(ordens, ocorrencias).destinos([viatura_id])
     assert destinos == {}
+
+
+async def test_le_todas_as_ordens_ativas_nao_apenas_o_tamanho_da_chamada():
+    """B4: o resolvedor lê até LIMITE_ORDENS_ATIVAS, não só len(viatura_ids)."""
+    ocorrencias, ordens = RepositorioOcorrenciaFake(), RepositorioOrdemDespachoFake()
+    o = await _ocorrencia(ocorrencias)
+    viatura_antiga, viatura_nova = uuid4(), uuid4()
+    await ordens.salvar(
+        OrdemDeDespacho(
+            numero="OD-2026-000011", ocorrencia_id=o.id, viatura_id=viatura_antiga, operador_id=OPERADOR.id, criada_em=AGORA - timedelta(minutes=1),
+        )
+    )
+    await ordens.salvar(
+        OrdemDeDespacho(
+            numero="OD-2026-000012", ocorrencia_id=o.id, viatura_id=viatura_nova, operador_id=OPERADOR.id, criada_em=AGORA,
+        )
+    )
+    destinos = await ResolvedorDestinoRepositorios(ordens, ocorrencias).destinos([viatura_antiga])
+    assert destinos == {viatura_antiga: DESTINO}
 
 
 async def test_erro_de_leitura_vira_sem_destino_sem_derrubar_o_tick():
