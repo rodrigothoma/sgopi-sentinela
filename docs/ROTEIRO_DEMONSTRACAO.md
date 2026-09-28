@@ -73,6 +73,31 @@ uv run uvicorn --app-dir src main:app --reload
 * Limpeza: reset do banco demo (`docker compose down -v && docker compose up -d && uv run alembic upgrade head && uv run python -m scripts.seed`).
 * Fora de escopo: atualização da fila via WebSocket em tempo real e mudança no filtro do heatmap.
 
+### ⚙️ Despacho e encerramento automáticos (Issues #62/#63, opt-in)
+
+Um **orquestrador de despacho** observa o banco a cada `ORQUESTRADOR_INTERVALO_SEGUNDOS`
+(padrão 5s). Para cada ocorrência `VALIDADA` esperando além de `JANELA_CARENCIA_SEGUNDOS`
+(20s), ele escolhe a viatura `DISPONIVEL` mais próxima pelo **mesmo** serviço de sugestão
+do painel (Haversine + `posicao_valida`/RNF04) e despacha chamando os **mesmos casos de
+uso** do Operador (`DespacharViatura`/`EncerrarOcorrencia`). A viatura avança até o local
+(telemetria), e após `TEMPO_ATENDIMENTO_SEGUNDOS` (45s) desde a chegada o encerramento é
+feito pelo Delegado simulado — auditável e append-only como o fluxo manual.
+
+```bash
+cd backend
+# .env:
+#   DESPACHO_AUTOMATICO_LIGADO=true
+#   ORQUESTRADOR_INTERVALO_SEGUNDOS=5   (mínimo 1s)
+#   JANELA_CARENCIA_SEGUNDOS=20
+#   TEMPO_ATENDIMENTO_SEGUNDOS=45
+uv run uvicorn --app-dir src main:app --reload
+```
+
+* Liga junto com a telemetria (`POST /v1/simulador/ligar`); o indicador **"Despacho automático ativo"** aparece no Painel Tático ao lado do botão do simulador, com os contadores de despachadas/encerradas.
+* Atores: `simulador-operador` (despacho) e `simulador-delegado` (encerramento) — criados pelo seed com senha inutilizável; se ausentes, loga `rode o seed`.
+* **Demonstração:** 1) subir com as flags acima; 2) validar `SGOPI-YYYY-000012` (Disparos, Bairro Piola) como Delegada; 3) ligar o simulador no Painel Tático — o orquestrador despacha sozinho, a VTR avança no mapa, a ocorrência encerra em ~45s e sai da lista.
+* Reset do cenário: recriar o banco demo. O seed é **idempotente**: a VTR-02 só reposiciona (B2) em banco recriado.
+
 ---
 
 ## 🎭 Roteiro Passo a Passo de Demonstração Ao Vivo
@@ -172,7 +197,7 @@ uv run uvicorn --app-dir src main:app --reload
 | `SGOPI-2026-000004` | Perturbação de Sossego | Rua Barão do Cerro Largo | `ENCERRADA` | Exibir histórico e desfecho concluído |
 | `SGOPI-2026-000005` | Dano ao Patrimônio | Av. Assis Brasil | `EM_CORRECAO` | Exibir justificativa de devolução |
 | `VTR-01` | Viatura Ostensiva | Centro (-29.7842, -55.7932) | `DISPONIVEL` | Despachar para ocorrência 000002 |
-| `VTR-02` | Viatura Tática | Andradas (-29.7880, -55.7910) | `EM_DESLOCAMENTO` | Em atendimento da ocorrência 000003 |
+| `VTR-02` | Viatura Tática | Centro (–29.7863, –55.7930) — desloca até Rua dos Andradas | `EM_DESLOCAMENTO` | Em atendimento da ocorrência 000003 |
 | `VTR-03` | Viatura Ronda | Rui Ramos (-29.7785, -55.7915) | `DISPONIVEL` | Unidade de apoio |
 | `VTR-04` | Viatura Ronda | Assis Brasil (-29.7910, -55.7890) | `DISPONIVEL` | Unidade de apoio |
 | `VTR-05` | Viatura Patrulha | Cidade Alta (-29.7750, -55.8010) | `DISPONIVEL` | Unidade de apoio |
