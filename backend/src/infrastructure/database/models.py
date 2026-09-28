@@ -257,6 +257,8 @@ class OrdemDespachoModel(Base):
     criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     observacoes: Mapped[str | None] = mapped_column(Text, nullable=True)
     ativa: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+    # True = viatura de apoio (despacho com a ocorrência já EM_ATENDIMENTO)
+    apoio: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     encerrada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 

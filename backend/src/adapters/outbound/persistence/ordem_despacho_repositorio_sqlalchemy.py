@@ -36,6 +36,7 @@ class OrdemDespachoRepositorioSQLAlchemy(RepositorioOrdemDespacho):
             self._session.add(model)
         model.numero, model.ocorrencia_id, model.viatura_id, model.operador_id = ordem.numero, ordem.ocorrencia_id, ordem.viatura_id, ordem.operador_id
         model.criada_em, model.observacoes, model.ativa, model.encerrada_em = ordem.criada_em, ordem.observacoes, ordem.ativa, ordem.encerrada_em
+        model.apoio = ordem.apoio
         await self._session.flush()
 
     async def buscar_por_id(self, ordem_id: UUID) -> OrdemDeDespacho | None:
@@ -65,5 +66,5 @@ class OrdemDespachoRepositorioSQLAlchemy(RepositorioOrdemDespacho):
         return OrdemDeDespacho(
             id=m.id, numero=m.numero, ocorrencia_id=m.ocorrencia_id, viatura_id=m.viatura_id, operador_id=m.operador_id,
             criada_em=aware(m.criada_em), observacoes=m.observacoes, ativa=m.ativa,
-            encerrada_em=aware(m.encerrada_em) if m.encerrada_em else None,
+            encerrada_em=aware(m.encerrada_em) if m.encerrada_em else None, apoio=m.apoio,
         )
