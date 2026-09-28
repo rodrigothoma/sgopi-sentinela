@@ -23,6 +23,8 @@ def test_simulador_destino_defaults():
     assert s.simulador_raio_chegada_metros == 50.0
     assert s.simulador_jitter_chegada_metros == 5.0
     assert s.simulador_roteador_url == ""  # vazio = linha reta, sem rede
+    # Issue #66: o default de código segue sem rede; o .env.example liga um OSRM público.
+    assert s.simulador_roteador_timeout_segundos == 5.0
 
 
 def test_gerador_ocorrencias_desligado_por_padrao():
