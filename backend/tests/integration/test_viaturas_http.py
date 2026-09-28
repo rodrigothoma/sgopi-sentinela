@@ -47,7 +47,9 @@ async def test_telemetria_aceita_dentro_da_janela_e_rejeita_fora(client):
 async def test_simulador_liga_desliga_via_api(app, client, session_factory):
     from infrastructure.di import get_simulador, montar_simulador
 
-    sim = montar_simulador(session_factory, intervalo_segundos=0.02, semente=1)
+    sim = montar_simulador(
+        session_factory, intervalo_segundos=0.02, semente=1, roteador_url=""
+    )
     app.dependency_overrides[get_simulador] = lambda: sim
     ho = await auth(client, "operador")
     await _cadastrar(client, ho, "VTR-01", "AAA0001")
