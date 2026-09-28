@@ -59,7 +59,15 @@ def upgrade() -> None:
     op.create_index("ix_movimentacoes_custodia_item_id", _TABELA_APPEND_ONLY, ["item_id"])
 
     if op.get_bind().dialect.name == "postgresql":
-        # função sgopi_bloquear_alteracao() criada na migração 0001
+        op.execute(
+            """
+            CREATE OR REPLACE FUNCTION sgopi_bloquear_alteracao() RETURNS trigger AS $$
+            BEGIN
+                RAISE EXCEPTION 'Tabela % é append-only (RNF03): % não permitido', TG_TABLE_NAME, TG_OP;
+            END;
+            $$ LANGUAGE plpgsql;
+            """
+        )
         op.execute(
             f"CREATE TRIGGER trg_{_TABELA_APPEND_ONLY}_append_only BEFORE UPDATE OR DELETE ON {_TABELA_APPEND_ONLY} "
             "FOR EACH ROW EXECUTE FUNCTION sgopi_bloquear_alteracao();"
