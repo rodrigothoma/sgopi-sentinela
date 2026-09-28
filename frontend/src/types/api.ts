@@ -97,6 +97,11 @@ export interface OrdemDespacho {
   criada_em: string; observacoes: string | null; ativa: boolean; encerrada_em: string | null;
 }
 export interface StatusSimulador { ligado: boolean; intervalo_segundos: number; raio_metros: number; velocidade_kmh?: number; ticks: number; posicoes_emitidas: number }
+export interface StatusOrquestrador {
+  ligado: boolean; intervalo_segundos: number; janela_carencia_segundos: number; tempo_atendimento_segundos: number;
+  ticks: number; ocioso: number; despachados: number; encerrados: number;
+}
+export interface StatusSimuladorCompleto extends StatusSimulador { orquestrador: StatusOrquestrador }
 
 export interface EventoTempoReal { tipo: string; ocorrido_em: string; dados: Record<string, unknown> }
 
