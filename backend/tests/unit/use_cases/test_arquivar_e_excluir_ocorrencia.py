@@ -3,7 +3,7 @@ import pytest
 
 from application.ports.inbound.interface_arquivar_ocorrencia import AutorizacaoDelegadoInput
 from application.ports.inbound.interface_consultar_ocorrencias import ListarOcorrenciasInput
-from application.ports.inbound.interface_revisar_ocorrencia import DecisaoRevisaoInput
+from application.ports.inbound.interface_revisar_ocorrencia import ValidarOcorrenciaInput
 from application.use_cases.ocorrencia.arquivar_ocorrencia import ArquivarOcorrencia, ExcluirOcorrencia
 from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
 from application.use_cases.ocorrencia.revisar_ocorrencia import ValidarOcorrencia
@@ -67,4 +67,4 @@ async def test_arquivada_pode_ser_excluida_mas_excluida_e_terminal(registrar, de
     det = await ExcluirOcorrencia(*deps).executar(DELEGADO, AutorizacaoDelegadoInput(o.ocorrencia_id, MOTIVO))
     assert det.status == "EXCLUIDA" and det.motivo_arquivamento == MOTIVO
     with pytest.raises(TransicaoInvalidaError):
-        await ValidarOcorrencia(*deps).executar(DELEGADO, DecisaoRevisaoInput(o.ocorrencia_id))
+        await ValidarOcorrencia(*deps).executar(DELEGADO, ValidarOcorrenciaInput(o.ocorrencia_id))

@@ -264,6 +264,26 @@ def test_validar_congela_narrativa_e_registra_delegado():
     )
 
 
+def test_validar_preserva_despacho_normalizado_no_agregado_e_historico():
+    o = _registrar()
+    hash_esperado = o.calcular_hash_narrativa()
+
+    o.validar(DELEGADO, AGORA, "  Regularidade formal verificada.  ")
+
+    assert o.justificativa_revisao == "Regularidade formal verificada."
+    assert o.historico_status[-1].justificativa == "Regularidade formal verificada."
+    assert o.hash_narrativa == hash_esperado
+
+
+def test_validar_sem_despacho_continua_permitido():
+    o = _registrar()
+
+    o.validar(DELEGADO, AGORA, "   ")
+
+    assert o.justificativa_revisao is None
+    assert o.historico_status[-1].justificativa is None
+
+
 def test_narrativa_integra_detecta_adulteracao():
     o = _validada()
     o.descricao = "narrativa adulterada depois da validação, muito longa"

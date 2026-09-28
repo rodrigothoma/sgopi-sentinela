@@ -50,6 +50,62 @@ async def test_somente_delegado_valida_403_auditado(client, session):
     assert "auth.acesso_negado" in ops and "ocorrencia.validar" in ops
 
 
+async def test_validar_com_despacho_persiste_historico_consulta_e_auditoria(client, session):
+    ha, hd = await auth(client, "agente"), await auth(client, "delegado")
+    o = await registrar(client, ha)
+    oid = o["ocorrencia_id"]
+
+    r = await client.post(
+        f"/v1/ocorrencias/{oid}/validar",
+        json={"despacho": "  Regularidade formal verificada.  "},
+        headers=hd,
+    )
+
+    assert r.status_code == 200
+    corpo = r.json()
+    assert corpo["justificativa_revisao"] == "Regularidade formal verificada."
+    decisao = corpo["historico_status"][-1]
+    assert decisao["para"] == "VALIDADA"
+    assert decisao["justificativa"] == "Regularidade formal verificada."
+    assert decisao["por_id"] == str(IDS["delegado"])
+    assert decisao["em"]
+
+    consulta = await client.get(f"/v1/ocorrencias/{oid}", headers=ha)
+    assert consulta.status_code == 200
+    assert consulta.json()["justificativa_revisao"] == "Regularidade formal verificada."
+    assert consulta.json()["historico_status"][-1]["justificativa"] == "Regularidade formal verificada."
+
+    auditoria = (
+        await session.execute(
+            select(RegistroAuditoriaModel).where(
+                RegistroAuditoriaModel.entidade_id == oid,
+                RegistroAuditoriaModel.operacao == "ocorrencia.validar",
+            )
+        )
+    ).scalar_one()
+    assert auditoria.dados_depois["despacho"] == "Regularidade formal verificada."
+
+
+async def test_validar_aceita_despacho_vazio_e_rejeita_acima_de_2000(client):
+    ha, hd = await auth(client, "agente"), await auth(client, "delegado")
+    vazio = await registrar(client, ha)
+    r = await client.post(
+        f"/v1/ocorrencias/{vazio['ocorrencia_id']}/validar",
+        json={"despacho": "   "},
+        headers=hd,
+    )
+    assert r.status_code == 200
+    assert r.json()["justificativa_revisao"] is None
+
+    longo = await registrar(client, ha)
+    r = await client.post(
+        f"/v1/ocorrencias/{longo['ocorrencia_id']}/validar",
+        json={"despacho": "x" * 2001},
+        headers=hd,
+    )
+    assert r.status_code == 422
+
+
 async def test_validar_duas_vezes_422(client):
     o = await registrar(client, await auth(client, "agente"))
     hd = await auth(client, "delegado")

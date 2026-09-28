@@ -2,7 +2,7 @@
 import pytest
 
 from application.ports.inbound.interface_autenticar_documento import AutenticarDocumentoInput
-from application.ports.inbound.interface_revisar_ocorrencia import DecisaoRevisaoInput
+from application.ports.inbound.interface_revisar_ocorrencia import ValidarOcorrenciaInput
 from application.use_cases.documento.autenticar_documento import (
     ENTIDADE_DOCUMENTO,
     OPERACAO_CONSULTA,
@@ -28,7 +28,7 @@ def autenticar(repositorio, uow, relogio, auditoria):
 async def documento(registrar, deps):
     """Ocorrência validada pelo Delegado → documento emitido com chave e hash."""
     o = await registrar(tipificacoes=())
-    return await ValidarOcorrencia(*deps).executar(DELEGADO, DecisaoRevisaoInput(o.ocorrencia_id))
+    return await ValidarOcorrencia(*deps).executar(DELEGADO, ValidarOcorrenciaInput(o.ocorrencia_id))
 
 
 async def test_chave_valida_devolve_espelho_autentico_sem_dados_pessoais(autenticar, documento, auditoria, relogio):

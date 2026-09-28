@@ -62,7 +62,8 @@ async def test_transicao_persiste_historico_append_only(session, usuarios):
     await uow.commit()
 
     lida = await repo.buscar_por_id(o.id)
-    lida.validar(usuarios["delegado"], AGORA + timedelta(minutes=1))
+    validada_em = AGORA + timedelta(minutes=1)
+    lida.validar(usuarios["delegado"], validada_em, "  Despacho persistido.  ")
     await repo.salvar(lida)
     await uow.commit()
 
@@ -70,6 +71,10 @@ async def test_transicao_persiste_historico_append_only(session, usuarios):
     assert relida.status == StatusOcorrencia.VALIDADA
     assert relida.versao == 2
     assert relida.validada_por_id == usuarios["delegado"]
+    assert relida.justificativa_revisao == "Despacho persistido."
+    assert relida.historico_status[-1].justificativa == "Despacho persistido."
+    assert relida.historico_status[-1].por_id == usuarios["delegado"]
+    assert relida.historico_status[-1].em == validada_em
     assert relida.hash_narrativa and relida.narrativa_integra() is True
     assert [h.para for h in relida.historico_status] == [StatusOcorrencia.AGUARDANDO_REVISAO, StatusOcorrencia.VALIDADA]
     linhas = (await session.execute(select(HistoricoStatusModel))).scalars().all()

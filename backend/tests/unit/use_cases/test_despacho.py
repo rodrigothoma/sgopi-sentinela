@@ -4,7 +4,7 @@ from datetime import timedelta
 import pytest
 
 from application.ports.inbound.interface_despachar_viatura import DespacharInput, EncerrarInput, ListarOrdensInput
-from application.ports.inbound.interface_revisar_ocorrencia import DecisaoRevisaoInput
+from application.ports.inbound.interface_revisar_ocorrencia import ValidarOcorrenciaInput
 from application.use_cases.despacho.despachar_viatura import DespacharViatura, ListarOrdensDespacho, SugerirViaturasProximas
 from application.use_cases.despacho.encerrar_ocorrencia import EncerrarOcorrencia
 from application.use_cases.ocorrencia.revisar_ocorrencia import ValidarOcorrencia
@@ -44,7 +44,7 @@ async def frota(viaturas):
 @pytest.fixture
 async def validada(registrar, deps):
     o = await registrar()
-    await ValidarOcorrencia(*deps).executar(DELEGADO, DecisaoRevisaoInput(o.ocorrencia_id))
+    await ValidarOcorrencia(*deps).executar(DELEGADO, ValidarOcorrenciaInput(o.ocorrencia_id))
     return o.ocorrencia_id
 
 
@@ -135,7 +135,7 @@ async def test_encerrar_libera_principal_e_apoio(validada, frota, despachar, enc
 async def test_despacho_de_viatura_nao_disponivel_409(validada, frota, despachar, registrar, deps, viaturas):
     await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
     outra = await registrar()
-    await ValidarOcorrencia(*deps).executar(DELEGADO, DecisaoRevisaoInput(outra.ocorrencia_id))
+    await ValidarOcorrencia(*deps).executar(DELEGADO, ValidarOcorrenciaInput(outra.ocorrencia_id))
     with pytest.raises(ConflitoError) as e:
         await despachar.executar(OPERADOR, DespacharInput(outra.ocorrencia_id, frota["VTR-02"]))
     assert e.value.chave == "despacho.viatura_indisponivel"
