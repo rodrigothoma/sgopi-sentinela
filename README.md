@@ -102,7 +102,7 @@ Todas as etapas e fatias verticais do projeto estão mapeadas e organizadas no [
 
 ### 🚀 Fluxo de Demonstração Ponta a Ponta (Arquitetura Dual)
 1. **Cidadão (Portal Público):** Acessa `http://localhost:3000/` com animação mecânica retrô via `<SplitFlapText />` → Clica em *Registrar Ocorrência* (`/registrar-cidadao`) → Preenche o fato e clica no mapa Leaflet para marcar a coordenada → Recebe o protocolo oficial `SGOPI-AAAA-NNNNNN` e acompanha o status em tempo real em `/consulta`.
-2. **Delegado (Revisão & Triagem):** Clica em *Acesso Policial* (`/login`) e usa o atalho de demonstração da **Delegada** (`delegado` / `Senha@123`) → Acessa a *Fila de revisão* (`/fila`) → Identifica o registro do cidadão → *Valida* a ocorrência (gerando o hash SHA-256 da narrativa) ou devolve/rejeita com justificativa.
+2. **Delegado (Revisão & Triagem):** Clica em *Acesso Policial* (`/login`) e usa o atalho de demonstração da **Delegada** (`delegado` / `Senha@123`) → Acessa a *Fila de revisão* (`/fila`) → Identifica o registro do cidadão → Informa opcionalmente o **despacho da autoridade** e valida a ocorrência, gerando o hash SHA-256 da narrativa e preservando a decisão no histórico e na auditoria; nas decisões de devolução ou rejeição, informa a justificativa técnica obrigatória.
 3. **Operador da Central (Despacho Tático):** Autentica-se como **Operador** (`operador` / `Senha@123`) → Acessa o *Painel tático* (`/painel`) → Ativa o *Simulador GPS* → Seleciona a ocorrência validada → *Despacha* uma das 3 viaturas mais próximas sugeridas pelo algoritmo de Haversine → *Encerra atendimento* com desfecho circunstanciado.
 
 ### Qualidade

@@ -144,10 +144,11 @@ uv run uvicorn --app-dir src main:app --reload
      * Mostrar a qualificação formal dos envolvidos (Vítima e Comunicante);
      * Mostrar a tipificação legal vinculada (`Art. 155, CP`);
      * Mostrar integridade da cadeia de custódia e histórico de status;
-  6. Clicar em **"Validar Ocorrência"**;
-  7. **Resultado Imediato:** O status muda para `Validada`, é disparado evento de domínio e a ocorrência recebe seu `hash_narrativa` imutável em SHA-256.
+  6. No campo **Despacho da autoridade**, informar *"Regularidade formal verificada pela autoridade policial."* e clicar em **"Validar Ocorrência"**;
+  7. **Resultado Imediato:** O status muda para `Validada`, o despacho aparece no detalhe e no histórico, a operação é auditada e a ocorrência recebe seu `hash_narrativa` imutável em SHA-256;
+  8. Recarregar o detalhe para comprovar a persistência do despacho e alternar para o **Agente autor**, em **Minhas ocorrências**, para demonstrar sua consulta posterior.
 * **Falas-Chave:**
-  > *"Somente usuários com perfil de Delegado possuem autorização no backend para validar ocorrências. No momento da validação, o sistema calcula o hash criptográfico da narrativa: qualquer adulteração posterior na base de dados quebraria a integridade da prova."*
+  > *"Somente usuários com perfil de Delegado possuem autorização no backend para validar ocorrências. O despacho é opcional, mas, quando informado, integra a decisão formal e é preservado no agregado, no histórico append-only e na auditoria, sem alterar o hash da narrativa ou a máquina de estados."*
 
 ---
 

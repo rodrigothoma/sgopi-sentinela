@@ -322,6 +322,7 @@ Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQL
 2. **`ocorrencias`**: Entidade central de registro de fatos delituosos.
    - *Colunas:* `id` (UUID PK), `numero_protocolo` (String 50 Unique), `natureza` (String 255), `descricao` (Text), `localizacao` (String 500), `latitude` (Float), `longitude` (Float), `data_hora_fato` (Timestamp com timezone), `status` (String 30), `versao` (Integer), `criada_em` (Timestamp com timezone), `atualizada_em` (Timestamp com timezone), `agente_policial_id` (UUID FK `usuarios.id`), `validada_por_id` (UUID FK `usuarios.id` nullable), `inquerito_id` (UUID FK `inqueritos.id` nullable), `justificativa_revisao` (Text nullable), `desfecho` (Text nullable), `hash_narrativa` (String 64 nullable).
    - *Integridade:* `numero_protocolo` gerado no padrão oficial `SGOPI-AAAA-NNNNNN`. A coluna `versao` implementa bloqueio otimista (*optimistic locking*) para controle de concorrência.
+   - *Semântica de Revisão (RF04):* `justificativa_revisao` mantém o texto da decisão refletida no agregado. Na transição para `VALIDADA`, armazena o despacho opcional da autoridade; em devolução ou rejeição, armazena a respectiva justificativa técnica.
 
 3. **`envolvidos`**: Qualificação das partes envolvidas em uma ocorrência (vítimas, testemunhas, suspeitos).
    - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `nome` (String 255), `tipo` (String 20 — Enum `VITIMA`, `TESTEMUNHA`, `SUSPEITO`), `documento` (String 50 nullable), `email` (String 255 nullable), `telefone` (String 30 nullable), `ativo` (Boolean).
@@ -332,6 +333,7 @@ Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQL
 5. **`historico_status_ocorrencia`**: Tabela *append-only* de rastreabilidade temporal das ocorrências.
    - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `ordem` (Integer), `de` (String 30 nullable), `para` (String 30), `em` (Timestamp com timezone), `por_id` (UUID), `justificativa` (Text nullable).
    - *Regra & Integridade:* Restrição de unicidade composta `(ocorrencia_id, ordem)`. Não permite `UPDATE` ou `DELETE` (protegido por trigger no PostgreSQL), garantindo imutabilidade histórica das decisões tomadas.
+   - *Semântica de Decisão (RF04):* quando o destino é `VALIDADA`, a coluna legada `justificativa` registra o despacho da autoridade; quando o destino é `EM_CORRECAO` ou `REJEITADA`, registra a justificativa técnica do Delegado.
 
 6. **`evidencias`**: Metadados e integridade criptográfica dos arquivos anexados.
    - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `nome_original` (String 255), `formato` (String 10), `tamanho` (Integer), `hash_sha256` (String 64), `chave_armazenamento` (String 255 Unique), `enviada_em` (Timestamp com timezone).
@@ -345,6 +347,9 @@ Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQL
 
 9. **`registros_auditoria`**: Trilha de conformidade e auditoria de ações sensíveis (RNF03).
    - *Colunas:* `id` (UUID PK), `quem` (UUID nullable), `quando` (Timestamp com timezone), `operacao` (String 100), `entidade` (String 100), `entidade_id` (String 100 nullable), `dados_antes` (JSON), `dados_depois` (JSON), `ip` (String 64 nullable).
+   - *Auditoria da Validação (RF04):* a operação `ocorrencia.validar` registra o despacho normalizado em `dados_depois.despacho`, além do status e da versão resultantes.
+
+> **Compatibilidade de esquema do RF04:** A preservação do despacho reutiliza integralmente `ocorrencias.justificativa_revisao`, `historico_status_ocorrencia.justificativa` e `registros_auditoria.dados_depois`. Não foram criadas tabelas, colunas ou migrations.
 
 10. **`sequencias_protocolo`**: Tabela de controle de concorrência e atomicidade na geração sequencial de protocolos anuais (`SGOPI-AAAA-NNNNNN`).
     - *Colunas:* `ano` (Integer PK), `ultimo` (Integer).
@@ -396,6 +401,8 @@ Para assegurar o atendimento estrito às regras de transição de negócio e inv
 O ciclo de vida da entidade de domínio `Ocorrencia` (`backend/src/domain/ocorrencia/status.py` e `entity.py`) formaliza as etapas de registro, análise jurídica do Delegado, retificação pelo agente, homologação imutável com hash criptográfico, atendimento tático e atos administrativos privativos:
 
 ![Diagrama de Máquina de Estados - Ocorrência](diagramas/diagrama-estados-ocorrencia.png)
+
+> **Nota de implementação do RF04:** A preservação do despacho da autoridade não altera a topologia da máquina de estados. Na transição `AGUARDANDO_REVISAO` → `VALIDADA`, o texto opcional é normalizado e registrado no agregado, no histórico *append-only* e na auditoria. A composição do `hash_narrativa` e a tabela de transições permanecem inalteradas.
 
 ---
 
@@ -543,7 +550,7 @@ O ciclo de vida operacional da entidade de domínio `Viatura` (`backend/src/doma
 * **Ator Principal:** Delegado de Polícia
 * **Atores Secundários:** Agente Policial (notificado do resultado)
 * **Pré-condições:** A ocorrência deve estar com status `Aguardando Revisão`.
-* **Pós-condições:** A ocorrência passa para o status `Validada` (liberada para despacho e inquérito) ou `Rejeitada / Em Correção` com despacho fundamentado.
+* **Pós-condições:** A ocorrência passa para o status `Validada`, com despacho da autoridade opcional, ficando liberada para despacho tático e inquérito; ou passa para `Rejeitada / Em Correção`, com justificativa técnica do Delegado.
 
 #### Cenário Principal
 
@@ -554,15 +561,19 @@ O ciclo de vida operacional da entidade de domínio `Viatura` (`backend/src/doma
 | 3 | Selecionar uma ocorrência para análise. | |
 | 4 | | Exibir todos os detalhes: narrativa, envolvidos, evidências e autos de apreensão. |
 | 5 | Avaliar a tipificação penal e a consistência das informações. | |
-| 6 | Inserir despacho da autoridade e selecionar a opção `Validar Ocorrência`. | |
-| 7 | | Atualizar o status da ocorrência para `Validada`. |
-| 8 | | Assinar digitalmente o ato de validação e registrar no log de auditoria. |
-| 9 | | Notificar o Agente autor e liberar o registro para o painel tático de despacho. |
+| 6 | Opcionalmente, inserir o despacho da autoridade e selecionar a opção `Validar Ocorrência`. | |
+| 7 | | Atualizar o status para `Validada`, normalizar o despacho informado e persistir a decisão no agregado e no histórico *append-only* de status. |
+| 8 | | Calcular o `hash_narrativa` e registrar a operação `ocorrencia.validar` no log de auditoria, incluindo o despacho em `dados_depois` quando informado. |
+| 9 | | Notificar o Agente autor, disponibilizar o despacho para consulta posterior no detalhe da ocorrência e liberar o registro para o painel tático. |
 
 #### Regras de Negócio e Validações
 1. Apenas usuários com perfil formal de `Delegado` possuem permissão para executar a validação.
 2. A validação gera uma chave criptográfica de integridade que impede a edição direta da narrativa do fato.
-3. Caso a ocorrência seja rejeitada, o campo de justificativa técnica do Delegado torna-se obrigatório.
+3. Nas decisões de devolução para correção e rejeição, a justificativa técnica do Delegado é obrigatória; essa regra não se aplica ao despacho da validação.
+4. O despacho da autoridade é opcional na validação. Espaços externos são removidos e um texto vazio ou composto apenas por espaços é tratado como ausente.
+5. Quando informado, o despacho é espelhado em `ocorrencias.justificativa_revisao` e registrado na entrada da transição para `VALIDADA` em `historico_status_ocorrencia.justificativa`.
+6. A auditoria da operação `ocorrencia.validar` registra o despacho em `dados_depois.despacho`.
+7. O despacho não integra o cálculo do `hash_narrativa`; o hash continua protegendo exclusivamente a narrativa e seus elementos documentais.
 
 #### Cenários Alternativos e de Exceção
 * **Cenário Alternativo I — Solicitação de Diligências / Correção:** O Delegado identifica inconsistências e devolve a ocorrência com status `Em Correção`, descrevendo as pendências a serem sanadas pelo Agente.
