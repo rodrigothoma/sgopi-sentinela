@@ -1,5 +1,5 @@
 """
-Porta de saída: UnidadeDeTrabalho (HEX-09 / RNF11).
+Porta de saída: UnidadeDeTrabalho (HEX-09 / RNF03).
 
 Detém a transação; repositórios só fazem add/merge. O caso de uso decide
 quando confirmar. Uso:

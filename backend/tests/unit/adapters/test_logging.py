@@ -1,4 +1,4 @@
-"""RNF09/RNF10: formatador JSON com request_id e máscara de CPF."""
+"""Observabilidade e LGPD: formatador JSON com request_id e máscara de CPF."""
 import json
 import logging
 

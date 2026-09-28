@@ -1,5 +1,5 @@
 """
-Caso de uso: AutenticarUsuario (RF11 / RF12).
+Caso de uso: AutenticarUsuario (RNF02).
 
 Login + senha → token. Falhas (login inexistente, senha errada, usuário inativo)
 devolvem a MESMA exceção para não vazar existência de login, e são auditadas.

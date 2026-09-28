@@ -1,4 +1,4 @@
-"""Testes unitários da entidade Ocorrencia — sem banco, sem servidor (DEC-02/03, RF01*, RF04*, RF14, RF19)."""
+"""Testes unitários da entidade Ocorrencia — sem banco, sem servidor (DEC-02/03, RF01*, RF04*, RF02)."""
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 

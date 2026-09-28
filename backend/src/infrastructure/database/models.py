@@ -80,7 +80,7 @@ class OcorrenciaModel(Base):
     excluida_por_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True)
     motivo_exclusao: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # optimistic locking (RNF11): ``versao`` é controlada pelo domínio e verificada
+    # optimistic locking (RNF03): ``versao`` é controlada pelo domínio e verificada
     # explicitamente pelo repositório (SELECT … FOR UPDATE + comparação).
 
     inquerito: Mapped[InqueritoModel | None] = relationship("InqueritoModel", back_populates="ocorrencias")
@@ -204,7 +204,7 @@ class MovimentacaoCustodiaModel(Base):
 
 
 class RegistroAuditoriaModel(Base):
-    """Auditoria append-only (RF20 / RNF03*)."""
+    """Auditoria append-only (RNF03*)."""
 
     __tablename__ = "registros_auditoria"
 
@@ -229,7 +229,7 @@ class SequenciaProtocoloModel(Base):
 
 
 class ViaturaModel(Base):
-    """Frota (RF15) com última posição desnormalizada (RF16)."""
+    """Frota (RF02) com última posição desnormalizada."""
 
     __tablename__ = "viaturas"
 
@@ -245,7 +245,7 @@ class ViaturaModel(Base):
 
 
 class OrdemDespachoModel(Base):
-    """Ordem de despacho (RF18): data/hora, operador, viatura e ocorrência (critério 5 do MVP)."""
+    """Ordem de despacho (RF02): data/hora, operador, viatura e ocorrência (critério 5 do MVP)."""
 
     __tablename__ = "ordens_despacho"
 

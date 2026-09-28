@@ -49,7 +49,7 @@ function getBadgeClasse(operacao: string): string {
 }
 
 /**
- * Painel de Trilha de Auditoria Imutável (RF20 / RNF02 / RNF03).
+ * Painel de Trilha de Auditoria Imutável (RNF02 / RNF03).
  * Acesso exclusivo: DELEGADO e SUPERVISOR.
  */
 export const TrilhaAuditoriaPage: React.FC = () => {

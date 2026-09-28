@@ -1,4 +1,4 @@
-"""Entidade OrdemDeDespacho (RF18 / critério de aceite 5 do MVP)."""
+"""Entidade OrdemDeDespacho (RF02 / critério de aceite 5 do MVP)."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field

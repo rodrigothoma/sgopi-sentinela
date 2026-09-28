@@ -1,4 +1,4 @@
-"""Integração HTTP: fluxo ponta a ponta do MVP (registrar → validar → sugerir → despachar → encerrar) e atomicidade (RF18, RF19, RNF11)."""
+"""Integração HTTP: fluxo ponta a ponta do MVP (registrar → validar → sugerir → despachar → encerrar) e atomicidade (RF02, RNF03)."""
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -61,7 +61,7 @@ async def test_fluxo_mvp_ponta_a_ponta(client, session):
     assert {v["prefixo"]: v["situacao"] for v in r.json()}["VTR-02"] == "DISPONIVEL"
     r = await client.get("/v1/despachos", params={"ocorrencia_id": oid}, headers=ho)
     assert r.json()[0]["ativa"] is False and r.json()[0]["encerrada_em"]
-    # RF19 aceite 2: viatura volta a aparecer nas sugestões
+    # RF02 aceite 2: viatura volta a aparecer nas sugestões
     r = await client.get(f"/v1/ocorrencias/{oid2}/sugestoes-viaturas", headers=ho)
     assert [s["viatura"]["prefixo"] for s in r.json()["sugestoes"]] == ["VTR-02", "VTR-01", "VTR-03"]
 

@@ -1,4 +1,4 @@
-"""Middleware de correlação e log de requisições (RNF09)."""
+"""Middleware de correlação e log de requisições."""
 from __future__ import annotations
 
 import logging

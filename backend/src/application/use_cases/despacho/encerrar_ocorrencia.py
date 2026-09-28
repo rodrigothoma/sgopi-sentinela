@@ -1,4 +1,4 @@
-"""Caso de uso: EncerrarOcorrencia (RF19) — EM_ATENDIMENTO → ENCERRADA; libera as viaturas das ordens ativas."""
+"""Caso de uso: EncerrarOcorrencia (RF02) — EM_ATENDIMENTO → ENCERRADA; libera as viaturas das ordens ativas."""
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_consultar_ocorrencias import OcorrenciaDetalheOutput
 from application.ports.inbound.interface_despachar_viatura import EncerrarInput, InterfaceEncerrarOcorrencia

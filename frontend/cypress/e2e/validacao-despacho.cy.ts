@@ -51,7 +51,7 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
     });
   });
 
-  it('delegado devolve, agente corrige e reenvia para revisão (RF14)', () => {
+  it('delegado devolve, agente corrige e reenvia para revisão (RF04)', () => {
     cy.criarOcorrenciaApi().then((o) => {
       // Delegado devolve
       cy.login('delegado', '/fila');

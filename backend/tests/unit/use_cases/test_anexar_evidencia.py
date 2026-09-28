@@ -1,4 +1,4 @@
-"""Caso de uso de evidências digitais com armazenamento em memória (RF22)."""
+"""Caso de uso de evidências digitais com armazenamento em memória (RF01)."""
 from uuid import uuid4
 
 import pytest

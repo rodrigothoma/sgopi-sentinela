@@ -1,5 +1,5 @@
 """
-Integração WebSocket (RF17): token inválido recusado; painel recebe OcorrenciaValidada e
+Integração WebSocket (RF02 / RNF01): token inválido recusado; painel recebe OcorrenciaValidada e
 PosicaoAtualizada sem refresh. Usa o TestClient síncrono do Starlette (httpx não fala WS);
 o banco SQLite é criado dentro do loop do servidor de teste.
 """

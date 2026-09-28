@@ -1,5 +1,5 @@
 """
-GerenciadorConexoesWebSocket (RF17): assina o PublicadorEventos e faz fan-out
+GerenciadorConexoesWebSocket (RF02 / RNF01): assina o PublicadorEventos e faz fan-out
 para todos os painéis conectados. Conexões mortas são descartadas silenciosamente.
 """
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Integração: /health, handlers de erro padronizados, request_id e CORS (RNF02*, RNF08, RNF09)."""
+"""Integração: /health, handlers de erro padronizados, request_id e CORS (RNF02* e Observabilidade)."""
 from fastapi import APIRouter
 
 from domain.shared.exceptions import (

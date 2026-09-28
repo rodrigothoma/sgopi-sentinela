@@ -1,4 +1,4 @@
-"""Adapter de saída: ViaturaRepositorioSQLAlchemy (RF15) com optimistic locking por ``versao``."""
+"""Adapter de saída: ViaturaRepositorioSQLAlchemy (RF02) com optimistic locking por ``versao``."""
 from uuid import UUID
 
 from sqlalchemy import select

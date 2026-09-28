@@ -1,4 +1,4 @@
-"""Porta de saída: PortaAuditoria (RF20) — registro append-only de operações sensíveis."""
+"""Porta de saída: PortaAuditoria (RNF03) — registro append-only de operações sensíveis."""
 from abc import ABC, abstractmethod
 from uuid import UUID
 

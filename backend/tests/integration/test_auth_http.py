@@ -1,4 +1,4 @@
-"""Integração HTTP: login, token, RBAC e auditoria de negação (RF11, RF12, RF20, RNF02*)."""
+"""Integração HTTP: login, token, RBAC e auditoria de negação (RNF02*, RNF03)."""
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select

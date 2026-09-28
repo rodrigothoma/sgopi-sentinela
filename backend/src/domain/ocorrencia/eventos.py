@@ -1,4 +1,4 @@
-"""Eventos de domínio do contexto de ocorrências (consumidos por RF17)."""
+"""Eventos de domínio do contexto de ocorrências (consumidos por tempo real / RF02 e RNF01)."""
 from datetime import datetime
 from uuid import UUID
 

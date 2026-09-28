@@ -1,4 +1,4 @@
-"""Portas de entrada para conferir e baixar evidências digitais (RF01/RF22)."""
+"""Portas de entrada para conferir e baixar evidências digitais (RF01)."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Literal

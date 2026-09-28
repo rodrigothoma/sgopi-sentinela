@@ -1,4 +1,4 @@
-"""Porta de entrada: consulta de ocorrências (RF13) — listagem paginada e detalhe completo."""
+"""Porta de entrada: consulta de ocorrências (RF01) — listagem paginada e detalhe completo."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from uuid import UUID

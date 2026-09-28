@@ -6,7 +6,7 @@ import { mensagemDeErro } from '../services/api';
 import { viaturasService } from '../services/viaturasService';
 import type { Viatura } from '../types/api';
 
-/** Operador: cadastro e situação manual da frota (RF15). */
+/** Operador: cadastro e situação manual da frota (RF02). */
 export const FrotaPage: React.FC = () => {
   const { t } = useTranslation(['painel', 'common']);
   const { avisar } = useToast();

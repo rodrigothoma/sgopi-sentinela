@@ -1,4 +1,4 @@
-"""Porta de saída: RepositorioOrdemDespacho (RF18)."""
+"""Porta de saída: RepositorioOrdemDespacho (RF02)."""
 from abc import ABC, abstractmethod
 from uuid import UUID
 

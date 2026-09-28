@@ -1,8 +1,8 @@
 """
-Dependências de autenticação/autorização dos routers (RF11, RF12, RNF02*).
+Dependências de autenticação/autorização dos routers (RNF02*).
 
 ``ator_atual``  → decodifica o Bearer token e devolve o ``Ator`` (nunca vem do body).
-``exigir_papel`` → fábrica de dependência; negação é auditada (RF20) e devolve 403.
+``exigir_papel`` → fábrica de dependência; negação é auditada (RNF03) e devolve 403.
 """
 from __future__ import annotations
 

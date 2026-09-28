@@ -5,9 +5,8 @@ Implementação concreta de RepositorioOcorrencia usando SQLAlchemy async.
 Apenas este arquivo pode importar models SQLAlchemy — nunca domain/ nem application/.
 
 - Não confirma transação (papel da UnidadeDeTrabalho).
-- Nunca apaga filhos: envolvidos/tipificações removidos do agregado ficam ``ativo=False`` (RNF03*);
-  evidências, itens apreendidos e movimentações de custódia são append-only.
-- Optimistic locking via ``versao`` (RNF11): a versão carregada é rastreada por
+- Nunca apaga filhos: envolvidos/tipificações removidos do agregado ficam ``ativo=False`` (RNF03*).
+- Optimistic locking via ``versao`` (RNF03): a versão carregada é rastreada por
   instância (uma por request); ao salvar, a linha é travada (``FOR UPDATE`` no
   Postgres) e comparada — divergência → ConflitoError (409).
 """

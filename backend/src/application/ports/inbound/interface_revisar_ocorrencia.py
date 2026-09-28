@@ -1,4 +1,4 @@
-"""Porta de entrada: revisão pelo Delegado (RF04*) e correção/reenvio pelo Agente (RF14)."""
+"""Porta de entrada: revisão pelo Delegado e correção/reenvio pelo Agente (RF04)."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime

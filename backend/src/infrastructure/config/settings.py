@@ -1,5 +1,5 @@
 """
-Settings centralizados via pydantic-settings (RNF07: nada fixo em código).
+Settings centralizados via pydantic-settings (12-Factor: nada fixo em código).
 Carrega variáveis de ambiente do arquivo .env na raiz de backend/.
 """
 from __future__ import annotations
@@ -26,22 +26,22 @@ class Settings(BaseSettings):
 
     # RNF04*: idade máxima da posição GPS para ser considerada válida
     telemetria_max_idade_segundos: int = 60
-    # RF16: simulador de telemetria
+    # RF02: simulador de telemetria
     simulador_intervalo_segundos: float = 1.0
     simulador_raio_metros: float = 150.0
-    # Issue #54 (RF02): simulador com destino — vazio em roteador = linha reta, sem rede
+    # RF02: simulador com destino — vazio em roteador = linha reta, sem rede
     simulador_passo_destino_metros: float = 300.0
     simulador_raio_chegada_metros: float = 50.0
     simulador_jitter_chegada_metros: float = 5.0
     simulador_roteador_url: str = ""
-    # Issue #55 (RF01): gerador automático de ocorrências fictícias p/ demo — opt-in, nunca ativo em testes
+    # RF01: gerador automático de ocorrências fictícias p/ demo — opt-in, nunca ativo em testes
     gerador_ocorrencias_ligado: bool = False
     gerador_ocorrencias_intervalo_segundos: float = Field(default=120.0, ge=1.0)
-    # velocidade da viatura despachada no simulador (deslocamento em linha reta até a ocorrência)
+    # RF02: velocidade da viatura despachada no simulador (deslocamento em linha reta até a ocorrência)
     simulador_velocidade_kmh: float = 120.0
-    # RF18/RF19: a que distância da ocorrência a telemetria considera a viatura "no local"
+    # RF02: a que distância da ocorrência a telemetria considera a viatura "no local"
     despacho_raio_chegada_metros: float = 50.0
-    # RF18: quantidade de sugestões de viatura
+    # RF02: quantidade de sugestões de viatura
     despacho_qtd_sugestoes: int = 3
     # RF02/RF18/RF19/RNF04: despacho e encerramento automáticos — opt-in, nunca em testes
     despacho_automatico_ligado: bool = False
@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     janela_carencia_segundos: int = 20
     tempo_atendimento_segundos: int = 45
 
-    # RF22: evidências digitais armazenadas localmente atrás de uma porta
+    # RF01: evidências digitais armazenadas localmente atrás de uma porta
     evidencias_diretorio: str = "storage/evidencias"
     evidencias_tamanho_maximo_bytes: int = 10 * 1024 * 1024
 

@@ -13,10 +13,7 @@ const FILTROS: StatusOcorrencia[][] = [
 ];
 const MINIMO_MOTIVO = 10;
 
-/**
- * Delegado: fila de triagem (mais antiga primeiro), decisões validar/devolver/rejeitar (RF04*, RF13)
- * e atos administrativos arquivar/excluir com motivo obrigatório (RF20).
- */
+/** Delegado: fila de triagem (mais antiga primeiro) e decisões validar/devolver/rejeitar (RF04*, RF01). */
 export const FilaDelegadoPage: React.FC = () => {
   const { t } = useTranslation(['ocorrencias', 'common']);
   const { avisar } = useToast();

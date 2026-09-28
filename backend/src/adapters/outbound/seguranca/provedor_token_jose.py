@@ -1,4 +1,4 @@
-"""Adapter de saída: ProvedorTokenJose — JWT HS256 via python-jose (RF11, RNF02*)."""
+"""Adapter de saída: ProvedorTokenJose — JWT HS256 via python-jose (RNF02*)."""
 from datetime import datetime, timedelta
 from uuid import UUID
 

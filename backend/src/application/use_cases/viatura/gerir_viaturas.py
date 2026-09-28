@@ -1,4 +1,4 @@
-"""Casos de uso de frota (RF15): CadastrarViatura, AlterarSituacaoViatura, ListarViaturas."""
+"""Casos de uso de frota (RF02): CadastrarViatura, AlterarSituacaoViatura, ListarViaturas."""
 from __future__ import annotations
 
 from datetime import datetime

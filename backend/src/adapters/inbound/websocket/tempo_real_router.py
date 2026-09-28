@@ -1,4 +1,4 @@
-"""WS /v1/tempo-real (RF17): token no query string (navegadores não enviam headers no handshake)."""
+"""WS /v1/tempo-real (RF02 / RNF01): token no query string (navegadores não enviam headers no handshake)."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
