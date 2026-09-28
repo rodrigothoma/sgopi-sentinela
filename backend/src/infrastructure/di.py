@@ -14,6 +14,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from adapters.inbound.simulador.gerador_ocorrencias import GeradorOcorrencias
+from adapters.inbound.simulador.orquestrador_despacho import OrquestradorDespacho
 from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
 from adapters.inbound.simulador.resolvedor_destino import ResolvedorDestinoSessao
 from adapters.inbound.simulador.roteador import RoteadorLinhaReta, RoteadorOSRM
@@ -40,6 +41,7 @@ from adapters.outbound.persistence.medida_protetiva_repositorio_sqlalchemy impor
 from adapters.outbound.relogio.relogio_sistema import RelogioSistema
 from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
 from adapters.outbound.seguranca.provedor_token_jose import ProvedorTokenJose
+from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
 from application.ports.inbound.interface_listar_usuarios import InterfaceListarUsuarios
 from application.ports.inbound.interface_anexar_evidencia import InterfaceAnexarEvidencia
@@ -522,6 +524,75 @@ gerador_ocorrencias = montar_gerador(AsyncSessionLocal)
 
 def get_gerador_ocorrencias() -> GeradorOcorrencias:
     return gerador_ocorrencias
+
+
+# --------------------------------------------- orquestrador despacho (iss. 62/63)
+async def _resolver_ator(usuarios: UsuarioRepositorioSQLAlchemy, login: str) -> Ator | None:
+    """Ator do usuário demo (``simulador-operador``/``simulador-delegado``); None se o seed não rodou."""
+    usuario = await usuarios.buscar_por_login(login)
+    if usuario is None:
+        return None
+    return Ator(id=usuario.id, login=usuario.login, papel=usuario.papel)
+
+
+def montar_orquestrador_despacho(
+    session_factory: async_sessionmaker, relogio: Relogio | None = None, **kw
+) -> OrquestradorDespacho:
+    """Monta o orquestrador de despacho/encerramento automáticos (driving adapter, opt-in).
+
+    Cada ciclo abre/fecha uma sessão e resolve os atores ``simulador-operador`` e
+    ``simulador-delegado``; se ausentes, o orquestrador loga 'rode o seed' e não
+    inicia (padrão do gerador). Casos de uso concretos são injetados aqui, no
+    composition root — nunca instanciados dentro do adapter.
+    """
+    relogio_efetivo = relogio or relogio_sistema
+
+    @asynccontextmanager
+    async def contexto() -> AsyncIterator[tuple]:
+        async with session_factory() as session:
+            usuarios = UsuarioRepositorioSQLAlchemy(session)
+            yield (
+                ViaturaRepositorioSQLAlchemy(session),
+                OcorrenciaRepositorioSQLAlchemy(session),
+                OrdemDespachoRepositorioSQLAlchemy(session),
+                DespacharViatura(
+                    OcorrenciaRepositorioSQLAlchemy(session),
+                    ViaturaRepositorioSQLAlchemy(session),
+                    OrdemDespachoRepositorioSQLAlchemy(session),
+                    GeradorNumeroOrdemSQLAlchemy(session),
+                    UnidadeDeTrabalhoSQLAlchemy(session),
+                    relogio_efetivo,
+                    AuditoriaSQLAlchemy(session),
+                    publicador_eventos,
+                ),
+                EncerrarOcorrencia(
+                    OcorrenciaRepositorioSQLAlchemy(session),
+                    ViaturaRepositorioSQLAlchemy(session),
+                    OrdemDespachoRepositorioSQLAlchemy(session),
+                    UnidadeDeTrabalhoSQLAlchemy(session),
+                    relogio_efetivo,
+                    AuditoriaSQLAlchemy(session),
+                    publicador_eventos,
+                ),
+                await _resolver_ator(usuarios, "simulador-operador"),
+                await _resolver_ator(usuarios, "simulador-delegado"),
+            )
+
+    return OrquestradorDespacho(
+        contexto,
+        relogio_efetivo,
+        intervalo_segundos=kw.get("intervalo_segundos", settings.orquestrador_intervalo_segundos),
+        janela_carencia_segundos=kw.get("janela_carencia_segundos", settings.janela_carencia_segundos),
+        tempo_atendimento_segundos=kw.get("tempo_atendimento_segundos", settings.tempo_atendimento_segundos),
+        max_idade_segundos=kw.get("max_idade_segundos", settings.telemetria_max_idade_segundos),
+    )
+
+
+orquestrador_despacho = montar_orquestrador_despacho(AsyncSessionLocal)
+
+
+def get_orquestrador_despacho() -> OrquestradorDespacho:
+    return orquestrador_despacho
 
 
 # ------------------------------------------------------------------ despacho
