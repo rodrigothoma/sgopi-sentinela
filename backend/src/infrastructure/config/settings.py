@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     simulador_raio_chegada_metros: float = 50.0
     simulador_jitter_chegada_metros: float = 5.0
     simulador_roteador_url: str = ""
+    # services externos demoram a responder com cache frio; o timeout curto derruba a frota inteira
+    simulador_roteador_timeout_segundos: float = Field(default=5.0, gt=0.0)
     # RF01: gerador automático de ocorrências fictícias p/ demo — opt-in, nunca ativo em testes
     gerador_ocorrencias_ligado: bool = False
     gerador_ocorrencias_intervalo_segundos: float = Field(default=120.0, ge=1.0)
