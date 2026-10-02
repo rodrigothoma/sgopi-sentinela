@@ -105,6 +105,7 @@ describe('Issue #21 — Fluxo de registro', () => {
 
   it('operador não acessa a página de registro', () => {
     cy.login('operador', '/registrar');
-    cy.url().should('not.include', '/registrar');
+    cy.get('[data-cy="acesso-negado"]').should('contain.text', 'Acesso não autorizado');
+    cy.get('#natureza').should('not.exist');
   });
 });

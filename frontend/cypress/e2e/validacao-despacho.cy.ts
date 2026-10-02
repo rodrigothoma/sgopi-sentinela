@@ -101,7 +101,8 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
 
   it('agente não acessa a fila de revisão', () => {
     cy.login('agente', '/fila');
-    cy.url().should('not.include', '/fila');
+    cy.get('[data-cy="acesso-negado"]').should('contain.text', 'Acesso não autorizado');
+    cy.get('.lista.clicavel').should('not.exist');
   });
 });
 

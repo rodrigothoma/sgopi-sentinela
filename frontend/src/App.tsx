@@ -60,6 +60,11 @@ export default function App() {
                   <Route path="/auditoria" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><TrilhaAuditoriaPage /></RequireRole>} />
                 </Route>
 
+                {/* Redirecionamentos de aliases amigáveis */}
+                <Route path="/consultar" element={<Navigate to="/consulta" replace />} />
+                <Route path="/fila-delegado" element={<Navigate to="/fila" replace />} />
+                <Route path="/painel-tatico" element={<Navigate to="/painel" replace />} />
+
                 {/* Redirecionamento padrão */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
