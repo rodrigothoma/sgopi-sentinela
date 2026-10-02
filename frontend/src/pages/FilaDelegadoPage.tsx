@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
@@ -30,9 +30,15 @@ export const FilaDelegadoPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const paramOcorrenciaId = searchParams.get('ocorrencia');
 
+  // Só a resposta da requisição mais recente vale: trocar de aba rápido não deixa
+  // uma resposta atrasada da aba anterior sobrescrever a lista.
+  const ultimaRequisicao = useRef(0);
+
   const carregar = useCallback(async () => {
+    const requisicao = ++ultimaRequisicao.current;
     try {
       const p = await ocorrenciasService.listar(FILTROS[filtro], 100);
+      if (requisicao !== ultimaRequisicao.current) return;
       setPagina({ itens: p.itens, total: p.total });
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
