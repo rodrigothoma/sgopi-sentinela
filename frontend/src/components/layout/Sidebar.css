@@ -1,0 +1,385 @@
+/* ─── SGOPI Sentinela: Sidebar Tática Retrátil (Multi-Papel) ─────────── */
+
+.sidebar {
+  width: 250px;
+  min-width: 250px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+  user-select: none;
+}
+
+.sidebar.colapsada {
+  width: 68px;
+  min-width: 68px;
+}
+
+/* ── Topo: Brand + Botão de Recolher ── */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 14px;
+  border-bottom: 1px solid var(--line);
+  min-height: 64px;
+  box-sizing: border-box;
+}
+
+.sidebar-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sidebar-brand-text {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+  transition: opacity 0.15s ease;
+}
+
+.sidebar-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-toggle-btn:hover {
+  background: var(--card-hover);
+  color: var(--ink);
+  border-color: var(--primary);
+}
+
+.sidebar.colapsada .sidebar-header {
+  justify-content: center;
+  padding: 16px 8px;
+}
+
+.sidebar.colapsada .sidebar-brand-text {
+  display: none;
+}
+
+/* ── Navegação Central ── */
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Estilo para links de navegação */
+.sidebar-nav .sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--muted);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: all 0.15s ease;
+  position: relative;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.sidebar-nav .sidebar-link:hover {
+  background: var(--card-hover);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.sidebar-nav .sidebar-link.active {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.15);
+}
+
+[data-theme="light"] .sidebar-nav .sidebar-link.active {
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.sidebar-link .sidebar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.sidebar-link .sidebar-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar.colapsada .sidebar-nav .sidebar-link {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.sidebar.colapsada .sidebar-link .sidebar-label {
+  display: none;
+}
+
+/* ── Rodapé: Perfil, Utilitários e Sair ── */
+.sidebar-footer {
+  border-top: 1px solid var(--line);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-surface);
+}
+
+/* Card do Usuário */
+.sidebar-user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sidebar-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  line-height: 1.25;
+}
+
+.sidebar-user-name {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user-role {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Linha de Controles: Idioma e Tema */
+.sidebar-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sidebar-lang-toggle {
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.sidebar-lang-toggle:hover {
+  background: var(--card-hover);
+  border-color: var(--primary);
+}
+
+.sidebar.colapsada .sidebar-footer {
+  padding: 12px 6px;
+  align-items: center;
+}
+
+.sidebar.colapsada .sidebar-user-card {
+  padding: 0;
+  border: none;
+  background: transparent;
+  justify-content: center;
+}
+
+.sidebar.colapsada .sidebar-user-info {
+  display: none;
+}
+
+.sidebar.colapsada .sidebar-controls {
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Botão Sair */
+.sidebar-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--danger);
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sidebar-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--danger);
+}
+
+.sidebar.colapsada .sidebar-logout-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+.sidebar.colapsada .sidebar-logout-btn span {
+  display: none;
+}
+
+/* ── Layout Principal com Barra Lateral ── */
+.shell-with-sidebar {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+  background: var(--bg);
+  width: 100%;
+}
+
+.shell-main-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Barra superior minimalista para Mobile */
+.mobile-topbar {
+  display: none;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-menu-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--card-hover);
+  border-color: var(--primary);
+}
+
+@media (max-width: 900px) {
+  .mobile-topbar {
+    display: flex;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1200;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .sidebar.mobile-aberta {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1150;
+    backdrop-filter: blur(2px);
+  }
+}
