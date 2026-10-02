@@ -101,6 +101,9 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
         self._versoes_carregadas[model.id] = model.versao
         return self._to_domain(model)
 
+    async def buscar_por_protocolo(self, numero_protocolo: str) -> Ocorrencia | None:
+        return await self._buscar_primeira(select(OcorrenciaModel).where(OcorrenciaModel.numero_protocolo == numero_protocolo))
+
     async def buscar_por_chave_autenticidade(self, chave: str) -> Ocorrencia | None:
         return await self._buscar_primeira(select(OcorrenciaModel).where(OcorrenciaModel.chave_autenticidade == chave))
 

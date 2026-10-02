@@ -33,6 +33,11 @@ class RepositorioOcorrencia(ABC):
     async def buscar_por_id(self, ocorrencia_id: UUID) -> Ocorrencia | None: ...
 
     @abstractmethod
+    async def buscar_por_protocolo(self, numero_protocolo: str) -> Ocorrencia | None:
+        """Localiza a ocorrência pelo número de protocolo público (consulta do cidadão)."""
+        ...
+
+    @abstractmethod
     async def buscar_por_chave_autenticidade(self, chave: str) -> Ocorrencia | None:
         """Localiza o documento emitido pela chave pública (RF08); ``chave`` já na forma canônica."""
         ...

@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from adapters.inbound.http.deps import exigir_papel
+from adapters.inbound.http.deps import exigir_papel, limitar_registro_publico
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_anexar_evidencia import (
     AnexarEvidenciaInput,
@@ -31,19 +31,24 @@ from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     RegistrarOcorrenciaInput,
     TipificacaoInputDTO,
 )
+from application.ports.inbound.interface_consultar_ocorrencia_publica import InterfaceConsultarOcorrenciaPublica
+from application.ports.inbound.interface_registrar_ocorrencia_publica import (
+    InterfaceRegistrarOcorrenciaPublica,
+    RegistrarOcorrenciaPublicaInput,
+)
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from adapters.inbound.http.v1.apreensoes_router import RegistrarItemApreendidoRequest
 from domain.usuario.entity import Papel
 from infrastructure.config.settings import settings
-from infrastructure.database.connection import get_session
 from infrastructure.di import (
     get_anexar_evidencia,
+    get_consultar_ocorrencia_publica,
     get_obter_evidencia_para_download,
     get_registrar_ocorrencia,
+    get_registrar_ocorrencia_publica,
     get_repositorio_usuario,
     get_verificar_integridade_evidencia,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/v1/ocorrencias", tags=["ocorrencias"])
 
@@ -107,7 +112,7 @@ class RegistrarOcorrenciaPublicaRequest(BaseModel):
     documento: str = Field(min_length=5, max_length=50)
     email: str = Field(min_length=5, max_length=255)
     telefone: str = Field(min_length=8, max_length=30)
-    declaracao_maioridade: bool = True
+    declaracao_maioridade: bool
 
 
 class ConsultaPublicaResponse(BaseModel):
@@ -116,7 +121,6 @@ class ConsultaPublicaResponse(BaseModel):
     natureza: str
     localizacao: str
     criada_em: str
-    desfecho: str | None = None
 
 
 def _envolvido_dto(e: EnvolvidoSchema) -> EnvolvidoInputDTO:
@@ -124,29 +128,13 @@ def _envolvido_dto(e: EnvolvidoSchema) -> EnvolvidoInputDTO:
 
 
 # -------------------------------------------------------------------- rotas
-@router.post("/publico", response_model=OcorrenciaResponse, status_code=201)
+@router.post("/publico", response_model=OcorrenciaResponse, status_code=201, dependencies=[Depends(limitar_registro_publico)])
 async def registrar_ocorrencia_publica(
     body: RegistrarOcorrenciaPublicaRequest,
-    use_case: InterfaceRegistrarOcorrenciaPolicial = Depends(get_registrar_ocorrencia),
+    use_case: InterfaceRegistrarOcorrenciaPublica = Depends(get_registrar_ocorrencia_publica),
     usuario_repo: RepositorioUsuario = Depends(get_repositorio_usuario),
 ) -> OcorrenciaResponse:
     """Permite ao cidadão registrar uma ocorrência pública sem autenticação prévia."""
-    from fastapi import HTTPException
-    from domain.shared.documentos import cpf_valido, normalizar_cpf
-
-    if not body.declaracao_maioridade:
-        raise HTTPException(
-            status_code=422,
-            detail="É obrigatório confirmar a declaração de maioridade (+18 anos) e veracidade dos fatos.",
-        )
-
-    doc_limpo = normalizar_cpf(body.documento)
-    if len(doc_limpo) == 11 and not cpf_valido(doc_limpo):
-        raise HTTPException(
-            status_code=422,
-            detail="O CPF informado é inválido. Por favor, confira os números digitados.",
-        )
-
     agente = await usuario_repo.buscar_por_login("agente")
     if not agente:
         from uuid import uuid4
@@ -154,25 +142,22 @@ async def registrar_ocorrencia_publica(
     else:
         ator = Ator(id=agente.id, login="cidadao_web", papel=Papel.AGENTE)
 
-    input_dto = RegistrarOcorrenciaInput(
-        natureza=body.natureza,
-        descricao=body.descricao.strip(),
-        localizacao=body.localizacao,
-        latitude=body.latitude,
-        longitude=body.longitude,
-        data_hora_fato=body.data_hora_fato,
-        tipificacoes=(),
-        envolvidos=(
-            EnvolvidoInputDTO(
-                nome=body.nome_solicitante.strip(),
-                tipo="COMUNICANTE",
-                documento=body.documento.strip(),
-                email=body.email.strip(),
-                telefone=body.telefone.strip(),
-            ),
+    out = await use_case.executar(
+        ator,
+        RegistrarOcorrenciaPublicaInput(
+            nome_solicitante=body.nome_solicitante,
+            documento=body.documento,
+            email=body.email,
+            telefone=body.telefone,
+            declaracao_maioridade=body.declaracao_maioridade,
+            natureza=body.natureza,
+            descricao=body.descricao,
+            localizacao=body.localizacao,
+            latitude=body.latitude,
+            longitude=body.longitude,
+            data_hora_fato=body.data_hora_fato,
         ),
     )
-    out = await use_case.executar(ator, input_dto)
     return OcorrenciaResponse(
         ocorrencia_id=str(out.ocorrencia_id),
         numero_protocolo=out.numero_protocolo,
@@ -184,25 +169,16 @@ async def registrar_ocorrencia_publica(
 @router.get("/publico/{protocolo}", response_model=ConsultaPublicaResponse)
 async def consultar_ocorrencia_publica(
     protocolo: str,
-    session: AsyncSession = Depends(get_session),
+    use_case: InterfaceConsultarOcorrenciaPublica = Depends(get_consultar_ocorrencia_publica),
 ) -> ConsultaPublicaResponse:
     """Permite ao cidadão consultar o status simplificado de sua ocorrência por protocolo."""
-    from fastapi import HTTPException
-    from infrastructure.database.models import OcorrenciaModel
-    from sqlalchemy import select
-
-    stmt = select(OcorrenciaModel).where(OcorrenciaModel.numero_protocolo == protocolo.strip())
-    model = (await session.execute(stmt)).scalar_one_or_none()
-    if not model:
-        raise HTTPException(status_code=404, detail="Ocorrência não encontrada com o protocolo informado.")
-
+    out = await use_case.executar(protocolo)
     return ConsultaPublicaResponse(
-        numero_protocolo=model.numero_protocolo,
-        status=model.status,
-        natureza=model.natureza,
-        localizacao=model.localizacao,
-        criada_em=model.criada_em.isoformat() if hasattr(model.criada_em, "isoformat") else str(model.criada_em),
-        desfecho=model.desfecho,
+        numero_protocolo=out.numero_protocolo,
+        status=out.status,
+        natureza=out.natureza,
+        localizacao=out.localizacao,
+        criada_em=out.criada_em,
     )
 
 

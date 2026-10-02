@@ -94,3 +94,67 @@ async def test_consulta_publica_por_protocolo(client, corpo_publico):
     assert dados["numero_protocolo"] == protocolo
     assert dados["natureza"] == "Furto"
     assert dados["status"] == "AGUARDANDO_REVISAO"
+
+
+async def test_consulta_publica_nao_expoe_desfecho_nem_dados_pessoais(client, corpo_publico):
+    protocolo = (await client.post("/v1/ocorrencias/publico", json=corpo_publico)).json()["numero_protocolo"]
+    dados = (await client.get(f"/v1/ocorrencias/publico/{protocolo}")).json()
+    assert set(dados) == {"numero_protocolo", "status", "natureza", "localizacao", "criada_em"}
+
+
+async def test_consulta_publica_aceita_protocolo_em_minusculas(client, corpo_publico):
+    protocolo = (await client.post("/v1/ocorrencias/publico", json=corpo_publico)).json()["numero_protocolo"]
+    r = await client.get(f"/v1/ocorrencias/publico/{protocolo.lower()}")
+    assert r.status_code == 200 and r.json()["numero_protocolo"] == protocolo
+
+
+async def test_consulta_publica_protocolo_inexistente_404_com_mensagem_propria(client):
+    r = await client.get("/v1/ocorrencias/publico/SGOPI-2026-999999")
+    assert r.status_code == 404
+    assert r.json()["code"] == "ocorrencia.protocolo_nao_encontrado"
+    assert "protocolo informado" in r.json()["detail"]
+
+
+async def test_consulta_publica_trata_excluida_como_inexistente(client, corpo_publico):
+    from tests.integration.helpers import auth
+
+    reg = (await client.post("/v1/ocorrencias/publico", json=corpo_publico)).json()
+    r = await client.post(
+        f"/v1/ocorrencias/{reg['ocorrencia_id']}/excluir",
+        json={"motivo": "Registro de teste em duplicidade."},
+        headers=await auth(client, "delegado"),
+    )
+    assert r.status_code == 200, r.text
+    r = await client.get(f"/v1/ocorrencias/publico/{reg['numero_protocolo']}")
+    assert r.status_code == 404
+
+
+async def test_registro_publico_exige_declaracao_explicita(client, corpo_publico):
+    del corpo_publico["declaracao_maioridade"]
+    r = await client.post("/v1/ocorrencias/publico", json=corpo_publico)
+    assert r.status_code == 422
+
+
+async def test_registro_publico_limitado_por_ip_429(client, corpo_publico):
+    """A fixture limita a 5 comunicações por IP; a 6ª é recusada com Retry-After."""
+    for _ in range(4):
+        assert (await client.post("/v1/ocorrencias/publico", json=corpo_publico)).status_code == 201
+    r = await client.post("/v1/ocorrencias/publico", json=corpo_publico)
+    assert r.status_code == 201  # 5ª atinge a cota
+    r = await client.post("/v1/ocorrencias/publico", json=corpo_publico)
+    assert r.status_code == 429
+    assert r.json()["code"] == "generic.muitas_tentativas"
+    assert int(r.headers["Retry-After"]) > 0
+
+
+async def test_x_forwarded_for_de_cliente_nao_confiavel_e_ignorado(app, corpo_publico):
+    """IP forjado em X-Forwarded-For não burla a cota quando a conexão não vem de proxy confiável."""
+    from httpx import ASGITransport, AsyncClient
+
+    transporte = ASGITransport(app=app, raise_app_exceptions=False, client=("203.0.113.7", 5000))
+    async with AsyncClient(transport=transporte, base_url="http://test") as c:
+        status = [
+            (await c.post("/v1/ocorrencias/publico", json=corpo_publico, headers={"X-Forwarded-For": f"10.0.0.{i}"})).status_code
+            for i in range(6)
+        ]
+    assert status[-1] == 429
