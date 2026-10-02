@@ -61,7 +61,13 @@ class ListarOcorrencias(InterfaceListarOcorrencias):
         offset = max(0, input_dto.offset)
         # Agente só enxerga as próprias ocorrências
         agente = ator.id if (ator.papel == Papel.AGENTE or input_dto.somente_minhas) else None
-        filtro = FiltroOcorrencias(status=_status(input_dto.status), agente_policial_id=agente, limit=limit, offset=offset)
+        filtro = FiltroOcorrencias(
+            status=_status(input_dto.status),
+            agente_policial_id=agente,
+            limit=limit,
+            offset=offset,
+            mais_recentes_primeiro=input_dto.mais_recentes_primeiro,
+        )
         itens = await self._repositorio.listar(filtro)
         total = await self._repositorio.contar(filtro)
         return PaginaOcorrenciasOutput(itens=tuple(para_resumo(o) for o in itens), total=total, limit=limit, offset=offset)

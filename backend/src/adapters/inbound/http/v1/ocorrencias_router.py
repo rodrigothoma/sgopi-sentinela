@@ -438,11 +438,22 @@ async def listar_ocorrencias(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     somente_minhas: bool = Query(default=False),
+    mais_recentes_primeiro: bool = Query(default=False),
     ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
     use_case: InterfaceListarOcorrencias = Depends(get_listar_ocorrencias),
 ) -> PaginaOcorrenciasSchema:
-    """Lista ocorrências por status, da mais antiga para a mais nova (RF01). Agente só vê as próprias."""
-    pagina = await use_case.executar(ator, ListarOcorrenciasInput(status=tuple(status), limit=limit, offset=offset, somente_minhas=somente_minhas))
+    """Lista ocorrências por status, da mais antiga para a mais nova (RF01), ou o inverso com
+    ``mais_recentes_primeiro``. Agente só vê as próprias."""
+    pagina = await use_case.executar(
+        ator,
+        ListarOcorrenciasInput(
+            status=tuple(status),
+            limit=limit,
+            offset=offset,
+            somente_minhas=somente_minhas,
+            mais_recentes_primeiro=mais_recentes_primeiro,
+        ),
+    )
     return PaginaOcorrenciasSchema(itens=[_resumo(i) for i in pagina.itens], total=pagina.total, limit=pagina.limit, offset=pagina.offset)
 
 

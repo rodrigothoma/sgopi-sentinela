@@ -17,6 +17,17 @@ async def test_lista_fila_ordenada_mais_antiga_primeiro(registrar, repositorio, 
     assert pagina.total == 2
 
 
+async def test_mais_recentes_primeiro_inverte_a_ordem_antes_de_paginar(registrar, repositorio, relogio):
+    """"Minhas ocorrências": com mais itens que o limite, a página traz as MAIS NOVAS."""
+    criadas = []
+    for _ in range(3):
+        criadas.append(await registrar())
+        relogio.avancar(minutes=1)
+    pagina = await ListarOcorrencias(repositorio).executar(AGENTE, ListarOcorrenciasInput(limit=2, mais_recentes_primeiro=True))
+    assert [i.ocorrencia_id for i in pagina.itens] == [criadas[2].ocorrencia_id, criadas[1].ocorrencia_id]
+    assert pagina.total == 3
+
+
 async def test_agente_so_ve_as_proprias(registrar, repositorio):
     await registrar(AGENTE)
     await registrar(OUTRO_AGENTE)

@@ -14,6 +14,7 @@ class ListarOcorrenciasInput:
     limit: int = 50
     offset: int = 0
     somente_minhas: bool = False
+    mais_recentes_primeiro: bool = False
 
 
 @dataclass(frozen=True)

@@ -124,7 +124,8 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
 
     async def listar(self, filtro: FiltroOcorrencias) -> list[Ocorrencia]:
         stmt = self._aplicar_filtro(select(OcorrenciaModel), filtro)
-        stmt = stmt.options(*_CARREGAR_FILHOS).order_by(OcorrenciaModel.criada_em.asc()).limit(filtro.limit).offset(filtro.offset)
+        ordem = OcorrenciaModel.criada_em.desc() if filtro.mais_recentes_primeiro else OcorrenciaModel.criada_em.asc()
+        stmt = stmt.options(*_CARREGAR_FILHOS).order_by(ordem).limit(filtro.limit).offset(filtro.offset)
         models = (await self._session.execute(stmt)).scalars().all()
         for m in models:
             self._versoes_carregadas[m.id] = m.versao

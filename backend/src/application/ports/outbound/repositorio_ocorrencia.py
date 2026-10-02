@@ -19,6 +19,8 @@ class FiltroOcorrencias:
     agente_policial_id: UUID | None = None
     limit: int = 50
     offset: int = 0
+    # Padrão: mais antiga primeiro (fila do UC04); True para "minhas", que mostra as recentes
+    mais_recentes_primeiro: bool = False
 
 
 class RepositorioOcorrencia(ABC):
@@ -49,7 +51,7 @@ class RepositorioOcorrencia(ABC):
 
     @abstractmethod
     async def listar(self, filtro: FiltroOcorrencias) -> list[Ocorrencia]:
-        """Lista ordenada por criada_em ascendente (mais antiga primeiro — UC04)."""
+        """Lista ordenada por criada_em (ascendente por padrão — UC04; ver ``mais_recentes_primeiro``)."""
         ...
 
     @abstractmethod

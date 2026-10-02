@@ -24,7 +24,8 @@ export const MinhasOcorrenciasPage: React.FC = () => {
 
   const carregar = useCallback(async () => {
     try {
-      setItens((await ocorrenciasService.listar([], 100)).itens.slice().reverse());
+      // As 100 mais recentes: inverter a lista no cliente escondia as novas quando havia mais de 100.
+      setItens((await ocorrenciasService.listar([], 100, 0, true)).itens);
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
     }

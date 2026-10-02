@@ -27,11 +27,13 @@ export const ocorrenciasService = {
     link.remove();
     URL.revokeObjectURL(url);
   },
-  async listar(status: StatusOcorrencia[] = [], limit = 50, offset = 0): Promise<Pagina<OcorrenciaResumo>> {
+  /** Padrão: mais antiga primeiro (fila do UC04); ``maisRecentesPrimeiro`` inverte ANTES de paginar. */
+  async listar(status: StatusOcorrencia[] = [], limit = 50, offset = 0, maisRecentesPrimeiro = false): Promise<Pagina<OcorrenciaResumo>> {
     const params = new URLSearchParams();
     status.forEach((s) => params.append('status', s));
     params.set('limit', String(limit));
     params.set('offset', String(offset));
+    if (maisRecentesPrimeiro) params.set('mais_recentes_primeiro', 'true');
     return (await api.get<Pagina<OcorrenciaResumo>>('/v1/ocorrencias', { params })).data;
   },
   async buscarPorId(id: string): Promise<OcorrenciaDetalhe> {

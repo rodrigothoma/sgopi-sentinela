@@ -114,3 +114,14 @@ async def test_anexar_evidencia_rejeita_formato_e_ocorrencia_inexistente(client)
         headers=h,
     )
     assert r.status_code == 422 and r.json()["code"] == "evidencia.formato_invalido"
+
+
+async def test_listagem_mais_recentes_primeiro_traz_as_novas_na_primeira_pagina(client):
+    """Regressão: "Minhas ocorrências" buscava as 100 mais antigas e escondia as novas."""
+    ha = await auth(client, "agente")
+    protocolos = [(await registrar(client, ha))["numero_protocolo"] for _ in range(3)]
+    r = await client.get("/v1/ocorrencias", params={"limit": 2, "mais_recentes_primeiro": "true"}, headers=ha)
+    assert r.status_code == 200
+    assert [i["numero_protocolo"] for i in r.json()["itens"]] == [protocolos[2], protocolos[1]]
+    r = await client.get("/v1/ocorrencias", params={"limit": 2}, headers=ha)
+    assert [i["numero_protocolo"] for i in r.json()["itens"]] == protocolos[:2]  # padrão continua ascendente

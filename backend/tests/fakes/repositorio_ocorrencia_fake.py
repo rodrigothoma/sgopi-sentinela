@@ -42,7 +42,7 @@ class RepositorioOcorrenciaFake(RepositorioOcorrencia):
             itens = [o for o in itens if o.status in filtro.status]
         if filtro.agente_policial_id:
             itens = [o for o in itens if o.agente_policial_id == filtro.agente_policial_id]
-        return sorted(itens, key=lambda o: o.criada_em)
+        return sorted(itens, key=lambda o: o.criada_em, reverse=filtro.mais_recentes_primeiro)
 
     async def listar(self, filtro: FiltroOcorrencias) -> list[Ocorrencia]:
         itens = self._filtrar(filtro)[filtro.offset : filtro.offset + filtro.limit]
