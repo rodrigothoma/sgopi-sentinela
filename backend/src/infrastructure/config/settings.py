@@ -24,13 +24,27 @@ class Settings(BaseSettings):
     # NoDecode: o valor do .env chega como string "a,b,c" ao validador abaixo (sem tentar json.loads)
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"]
 
+    # RNF02*: proteção contra força bruta no login (falhas por login+IP) e limite de
+    # comunicações públicas por IP (Delegacia Online, sem autenticação)
+    # X-Forwarded-For só é aceito quando a conexão vem de um destes proxies (senão o
+    # cliente poderia forjar o IP e burlar limites e auditoria)
+    proxies_confiaveis: Annotated[list[str], NoDecode] = ["127.0.0.1", "::1"]
+    login_max_tentativas: int = Field(default=5, ge=1)
+    login_janela_segundos: float = Field(default=900.0, gt=0.0)
+    login_bloqueio_segundos: float = Field(default=900.0, gt=0.0)
+    registro_publico_max_por_ip: int = Field(default=20, ge=1)
+    registro_publico_janela_segundos: float = Field(default=600.0, gt=0.0)
+    registro_publico_bloqueio_segundos: float = Field(default=600.0, gt=0.0)
+
     # RNF04*: idade máxima da posição GPS para ser considerada válida
     telemetria_max_idade_segundos: int = 60
     # RF02: simulador de telemetria
     simulador_intervalo_segundos: float = 1.0
     simulador_raio_metros: float = 150.0
-    # RF02: simulador com destino — vazio em roteador = linha reta, sem rede
-    simulador_passo_destino_metros: float = 300.0
+    # RF02: simulador com destino — vazio em roteador = linha reta, sem rede.
+    # Metros percorridos por tick ao navegar até a ocorrência: 35 m a cada 1 s ≈ 126 km/h,
+    # o bastante para o deslocamento ser visível no painel (300 m/tick ≈ 1080 km/h).
+    simulador_passo_destino_metros: float = 35.0
     simulador_raio_chegada_metros: float = 50.0
     simulador_jitter_chegada_metros: float = 5.0
     simulador_roteador_url: str = ""
@@ -58,7 +72,7 @@ class Settings(BaseSettings):
     log_json: bool = True
     log_level: str = "INFO"
 
-    @field_validator("cors_origins", mode="before")
+    @field_validator("cors_origins", "proxies_confiaveis", mode="before")
     @classmethod
     def _split_origins(cls, v: object) -> object:
         """Aceita lista separada por vírgula (formato do .env) ou JSON (["a","b"])."""

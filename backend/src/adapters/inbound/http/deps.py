@@ -3,6 +3,7 @@ Dependências de autenticação/autorização dos routers (RNF02*).
 
 ``ator_atual``  → decodifica o Bearer token e devolve o ``Ator`` (nunca vem do body).
 ``exigir_papel`` → fábrica de dependência; negação é auditada (RNF03) e devolve 403.
+``limitar_registro_publico`` → limite de comunicações públicas por IP (RNF02*, HTTP 429).
 """
 from __future__ import annotations
 
@@ -10,24 +11,28 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from application.ports.inbound.ator import Ator
+from application.ports.outbound.limitador_tentativas import LimitadorTentativas
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.provedor_token import ProvedorToken
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
-from domain.shared.exceptions import AcessoNegadoError, CredenciaisInvalidasError
+from domain.shared.exceptions import AcessoNegadoError, CredenciaisInvalidasError, MuitasTentativasError
 from domain.usuario.entity import Papel
-from infrastructure.di import get_auditoria, get_provedor_token, get_relogio, get_uow
+from infrastructure.di import get_auditoria, get_limitador_registro_publico, get_provedor_token, get_relogio, get_uow
+from infrastructure.config.settings import settings
 from infrastructure.logging import usuario_id_var
 
 _bearer = HTTPBearer(auto_error=False)
 
 
 def ip_do_cliente(request: Request) -> str | None:
+    """IP de origem; ``X-Forwarded-For`` só vale se a conexão vier de um proxy confiável."""
+    direto = request.client.host if request.client else None
     encaminhado = request.headers.get("X-Forwarded-For")
-    if encaminhado:
+    if encaminhado and direto in settings.proxies_confiaveis:
         return encaminhado.split(",")[0].strip()
-    return request.client.host if request.client else None
+    return direto
 
 
 def extrair_ator(token: str | None, request: Request, provedor: ProvedorToken, relogio: Relogio) -> Ator:
@@ -75,3 +80,20 @@ def exigir_papel(*papeis: Papel):
         return ator
 
     return _verificar
+
+
+async def limitar_registro_publico(
+    request: Request,
+    limitador: LimitadorTentativas = Depends(get_limitador_registro_publico),
+    relogio: Relogio = Depends(get_relogio),
+) -> None:
+    """Canal público sem autenticação: cada IP tem uma cota de comunicações por janela."""
+    agora = relogio.agora()
+    chave = ip_do_cliente(request) or "-"
+    bloqueio = limitador.bloqueado_ate(chave, agora)
+    if bloqueio is not None:
+        segundos = max(1, int((bloqueio - agora).total_seconds()))
+        raise MuitasTentativasError(
+            "Limite de comunicações públicas excedido.", chave="generic.muitas_tentativas", retry_after_segundos=segundos
+        )
+    limitador.registrar(chave, agora)

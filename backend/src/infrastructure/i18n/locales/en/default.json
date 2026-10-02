@@ -15,7 +15,9 @@
     "justificativa_curta": "Justification must have at least 10 characters",
     "desfecho_vazio": "Outcome is required",
     "nao_e_autor": "Only the authoring agent can change this occurrence",
-    "status_invalido": "Invalid occurrence status"
+    "status_invalido": "Invalid occurrence status",
+    "protocolo_nao_encontrado": "No incident found for the given protocol number.",
+    "declaracao_maioridade_ausente": "You must confirm the age (18+) and truthfulness declaration."
   },
   "envolvido": {
     "documento_tamanho_invalido": "Invalid document length: ID with 10 digits or CPF with 11 digits",
@@ -24,7 +26,8 @@
     "tipo_invalido": "Invalid involved person type",
     "cpf_invalido": "Invalid CPF",
     "duplicado": "Involved person already added to this occurrence",
-    "nome_invalido": "Involved person name must contain letters only"
+    "nome_invalido": "Involved person name must contain letters only",
+    "cpf_comunicante_invalido": "The CPF provided is invalid. Please check the digits."
   },
   "tipificacao": {
     "artigo_vazio": "Article is required",
@@ -61,7 +64,8 @@
     "forbidden": "Access denied",
     "credenciais_invalidas": "Invalid login or password",
     "usuario_inativo": "Inactive user",
-    "token_invalido": "Invalid or expired token"
+    "token_invalido": "Invalid or expired token",
+    "muitas_tentativas": "Too many failed login attempts. Please wait a few minutes and try again."
   },
   "generic": {
     "internal_error": "Internal server error",
@@ -71,7 +75,8 @@
     "not_found": "Resource not found",
     "conflict": "Conflict with the current state of the resource",
     "versao_desatualizada": "The record was changed by another user; reload and try again",
-    "http_error": "Request error"
+    "http_error": "Request error",
+    "muitas_tentativas": "Request limit exceeded. Please wait a few minutes and try again."
   },
   "viatura": {
     "not_found": "Vehicle not found",

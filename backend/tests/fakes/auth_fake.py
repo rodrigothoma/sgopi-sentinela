@@ -1,8 +1,9 @@
-"""Fakes de autenticação: RepositorioUsuarioFake, HasherFake, ProvedorTokenFake."""
+"""Fakes de autenticação: RepositorioUsuarioFake, HasherFake, ProvedorTokenFake, LimitadorTentativasFake."""
 from datetime import datetime, timedelta
 from uuid import UUID
 
 from application.ports.outbound.hasher_senha import HasherSenha
+from application.ports.outbound.limitador_tentativas import LimitadorTentativas
 from application.ports.outbound.provedor_token import DadosToken, ProvedorToken
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from domain.shared.exceptions import CredenciaisInvalidasError
@@ -52,3 +53,25 @@ class ProvedorTokenFake(ProvedorToken):
         if dados is None or dados.expira_em <= agora:
             raise CredenciaisInvalidasError("Token inválido.", chave="auth.token_invalido")
         return dados
+
+
+class LimitadorTentativasFake(LimitadorTentativas):
+    """Bloqueia a chave por ``bloqueio`` após ``maximo`` tentativas registradas (sem janela)."""
+
+    def __init__(self, maximo: int = 3, bloqueio: timedelta = timedelta(minutes=15)) -> None:
+        self.maximo, self.bloqueio = maximo, bloqueio
+        self.contagem: dict[str, int] = {}
+        self.bloqueadas: dict[str, datetime] = {}
+
+    def bloqueado_ate(self, chave: str, agora: datetime) -> datetime | None:
+        fim = self.bloqueadas.get(chave)
+        return fim if fim and fim > agora else None
+
+    def registrar(self, chave: str, agora: datetime) -> None:
+        self.contagem[chave] = self.contagem.get(chave, 0) + 1
+        if self.contagem[chave] >= self.maximo:
+            self.bloqueadas[chave] = agora + self.bloqueio
+
+    def limpar(self, chave: str) -> None:
+        self.contagem.pop(chave, None)
+        self.bloqueadas.pop(chave, None)

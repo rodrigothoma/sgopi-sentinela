@@ -40,6 +40,7 @@ from adapters.outbound.persistence.laudo_repositorio_sqlalchemy import LaudoRepo
 from adapters.outbound.persistence.medida_protetiva_repositorio_sqlalchemy import MedidaProtetivaRepositorioSQLAlchemy
 from adapters.outbound.relogio.relogio_sistema import RelogioSistema
 from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
+from adapters.outbound.seguranca.limitador_em_memoria import LimitadorTentativasEmMemoria
 from adapters.outbound.seguranca.provedor_token_jose import ProvedorTokenJose
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
@@ -83,7 +84,10 @@ from application.ports.inbound.interface_revisar_ocorrencia import (
     InterfaceRejeitarOcorrencia,
     InterfaceValidarOcorrencia,
 )
+from application.ports.inbound.interface_consultar_ocorrencia_publica import InterfaceConsultarOcorrenciaPublica
 from application.ports.inbound.interface_registrar_ocorrencia_policial import InterfaceRegistrarOcorrenciaPolicial
+from application.ports.inbound.interface_registrar_ocorrencia_publica import InterfaceRegistrarOcorrenciaPublica
+from application.ports.outbound.limitador_tentativas import LimitadorTentativas
 from application.ports.inbound.interface_gerir_inqueritos import (
     InterfaceBuscarConexoesOcorrencia,
     InterfaceConcluirInquerito,
@@ -128,6 +132,7 @@ from application.use_cases.auditoria.consultar_auditoria import ConsultarAuditor
 from application.use_cases.auth.autenticar_usuario import AutenticarUsuario
 from application.use_cases.documento.autenticar_documento import AutenticarDocumento
 from application.use_cases.usuario.listar_usuarios import ListarUsuarios
+from application.use_cases.ocorrencia.consultar_ocorrencia_publica import ConsultarOcorrenciaPublica
 from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
 from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
 from application.use_cases.ocorrencia.acessar_evidencia import (
@@ -147,6 +152,7 @@ from application.use_cases.ocorrencia.revisar_ocorrencia import (
     ValidarOcorrencia,
 )
 from application.use_cases.ocorrencia.registrar_ocorrencia_policial import RegistrarOcorrenciaPolicial
+from application.use_cases.ocorrencia.registrar_ocorrencia_publica import RegistrarOcorrenciaPublica
 from application.use_cases.inquerito.buscar_conexoes import BuscarConexoesOcorrencia
 from application.use_cases.inquerito.consultar_inqueritos import ConcluirInquerito, ListarInqueritos, ObterInquerito
 from application.use_cases.inquerito.instaurar_inquerito import InstaurarInquerito
@@ -169,6 +175,12 @@ gerenciador_conexoes = GerenciadorConexoes()
 publicador_eventos.assinar(gerenciador_conexoes.transmitir)  # RF02 / RNF01: fan-out para os painéis
 provedor_token_jose = ProvedorTokenJose(settings.jwt_secret_key, settings.jwt_algorithm, settings.jwt_expires_in_hours)
 armazenamento_evidencias = ArmazenamentoDisco(settings.evidencias_diretorio)
+limitador_login = LimitadorTentativasEmMemoria(
+    settings.login_max_tentativas, settings.login_janela_segundos, settings.login_bloqueio_segundos
+)
+limitador_registro_publico = LimitadorTentativasEmMemoria(
+    settings.registro_publico_max_por_ip, settings.registro_publico_janela_segundos, settings.registro_publico_bloqueio_segundos
+)
 
 
 # ------------------------------------------------------------ portas de saída
@@ -190,6 +202,14 @@ def get_provedor_token() -> ProvedorToken:
 
 def get_armazenamento_arquivos() -> ArmazenamentoArquivos:
     return armazenamento_evidencias
+
+
+def get_limitador_login() -> LimitadorTentativas:
+    return limitador_login
+
+
+def get_limitador_registro_publico() -> LimitadorTentativas:
+    return limitador_registro_publico
 
 
 def get_repositorio_usuario(session: AsyncSession = Depends(get_session)) -> RepositorioUsuario:
@@ -239,6 +259,18 @@ def get_registrar_ocorrencia(
     return RegistrarOcorrenciaPolicial(repositorio, uow, relogio, gerador, auditoria)
 
 
+def get_registrar_ocorrencia_publica(
+    registrar: InterfaceRegistrarOcorrenciaPolicial = Depends(get_registrar_ocorrencia),
+) -> InterfaceRegistrarOcorrenciaPublica:
+    return RegistrarOcorrenciaPublica(registrar)
+
+
+def get_consultar_ocorrencia_publica(
+    repositorio: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+) -> InterfaceConsultarOcorrenciaPublica:
+    return ConsultarOcorrenciaPublica(repositorio)
+
+
 def get_anexar_evidencia(
     repositorio: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
     armazenamento: ArmazenamentoArquivos = Depends(get_armazenamento_arquivos),
@@ -285,8 +317,9 @@ def get_autenticar_usuario(
     relogio: Relogio = Depends(get_relogio),
     auditoria: PortaAuditoria = Depends(get_auditoria),
     uow: UnidadeDeTrabalho = Depends(get_uow),
+    limitador: LimitadorTentativas = Depends(get_limitador_login),
 ) -> InterfaceAutenticarUsuario:
-    return AutenticarUsuario(repositorio, hasher, provedor, relogio, auditoria, uow)
+    return AutenticarUsuario(repositorio, hasher, provedor, relogio, auditoria, uow, limitador)
 
 
 def get_listar_usuarios(repositorio: RepositorioUsuario = Depends(get_repositorio_usuario)) -> InterfaceListarUsuarios:

@@ -59,3 +59,9 @@ class ConflitoError(DomainError):
     """Conflito de estado/unicidade, p.ex. versão desatualizada ou prefixo duplicado (→ HTTP 409)."""
 
     chave = "generic.conflict"
+
+
+class MuitasTentativasError(DomainError):
+    """Limite de tentativas/requisições excedido; nova tentativa só após o bloqueio (→ HTTP 429)."""
+
+    chave = "generic.muitas_tentativas"

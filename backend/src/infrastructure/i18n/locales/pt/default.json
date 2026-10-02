@@ -15,7 +15,9 @@
     "justificativa_curta": "A justificativa deve ter ao menos 10 caracteres",
     "desfecho_vazio": "O desfecho do atendimento é obrigatório",
     "nao_e_autor": "Somente o agente autor pode alterar esta ocorrência",
-    "status_invalido": "Status de ocorrência inválido"
+    "status_invalido": "Status de ocorrência inválido",
+    "protocolo_nao_encontrado": "Ocorrência não encontrada com o protocolo informado.",
+    "declaracao_maioridade_ausente": "É obrigatório confirmar a declaração de maioridade (+18 anos) e veracidade dos fatos."
   },
   "envolvido": {
     "documento_tamanho_invalido": "Documento com tamanho inválido: RG com 10 dígitos ou CPF com 11 dígitos",
@@ -24,7 +26,8 @@
     "tipo_invalido": "Tipo de envolvido inválido",
     "cpf_invalido": "CPF inválido",
     "duplicado": "Envolvido já adicionado a esta ocorrência",
-    "nome_invalido": "O nome do envolvido deve conter apenas letras"
+    "nome_invalido": "O nome do envolvido deve conter apenas letras",
+    "cpf_comunicante_invalido": "O CPF informado é inválido. Por favor, confira os números digitados."
   },
   "tipificacao": {
     "artigo_vazio": "O artigo da tipificação é obrigatório",
@@ -61,7 +64,8 @@
     "forbidden": "Acesso negado",
     "credenciais_invalidas": "Login ou senha inválidos",
     "usuario_inativo": "Usuário inativo",
-    "token_invalido": "Token inválido ou expirado"
+    "token_invalido": "Token inválido ou expirado",
+    "muitas_tentativas": "Muitas tentativas de login malsucedidas. Aguarde alguns minutos e tente novamente."
   },
   "generic": {
     "internal_error": "Erro interno do servidor",
@@ -71,7 +75,8 @@
     "not_found": "Recurso não encontrado",
     "conflict": "Conflito com o estado atual do recurso",
     "versao_desatualizada": "O registro foi alterado por outro usuário; recarregue e tente novamente",
-    "http_error": "Erro na requisição"
+    "http_error": "Erro na requisição",
+    "muitas_tentativas": "Limite de requisições excedido. Aguarde alguns minutos e tente novamente."
   },
   "viatura": {
     "not_found": "Viatura não encontrada",

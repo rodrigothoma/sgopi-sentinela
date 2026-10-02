@@ -19,7 +19,7 @@ def test_cors_origins_default(monkeypatch):
 
 def test_simulador_destino_defaults():
     s = Settings(_env_file=None)
-    assert s.simulador_passo_destino_metros == 300.0
+    assert s.simulador_passo_destino_metros == 35.0
     assert s.simulador_raio_chegada_metros == 50.0
     assert s.simulador_jitter_chegada_metros == 5.0
     assert s.simulador_roteador_url == ""  # vazio = linha reta, sem rede

@@ -15,7 +15,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import StaticPool
 
 from infrastructure.database.connection import Base, get_session
-from infrastructure.di import get_orquestrador_despacho
+from adapters.outbound.seguranca.limitador_em_memoria import LimitadorTentativasEmMemoria
+from infrastructure.di import get_limitador_login, get_limitador_registro_publico, get_orquestrador_despacho
 import infrastructure.database.models as models  # noqa: F401
 
 IDS = {
@@ -108,6 +109,11 @@ async def app(session_factory, usuarios):
 
     application.dependency_overrides[get_session] = _get_session
     application.dependency_overrides[get_orquestrador_despacho] = lambda: _OrquestradorNoop()
+    # Limitadores novos por teste: os singletons do processo acumulariam tentativas entre testes.
+    limitador_login = LimitadorTentativasEmMemoria(5, 900, 900)
+    limitador_publico = LimitadorTentativasEmMemoria(5, 600, 600)
+    application.dependency_overrides[get_limitador_login] = lambda: limitador_login
+    application.dependency_overrides[get_limitador_registro_publico] = lambda: limitador_publico
     return application
 
 
