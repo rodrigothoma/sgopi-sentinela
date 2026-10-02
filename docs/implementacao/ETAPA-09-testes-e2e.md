@@ -19,7 +19,9 @@ Implementar a suíte de testes ponta a ponta (E2E) prevista para a Sprint 5, cob
 
 Dois níveis de testes E2E, complementares:
 
-| Camada | Ferramenta | Escopo | Qtd testes |
+> As quantidades abaixo retratam a suíte **na data desta etapa**. Os números atuais (que incluem as specs dos extras adicionadas depois) ficam na tabela *Qualidade* do [README](../../README.md#qualidade).
+
+| Camada | Ferramenta | Escopo | Qtd testes (nesta etapa) |
 | :--- | :--- | :--- | :---: |
 | **Frontend (UI)** | Cypress (TypeScript) | Navegador real, interação com formulários, mapa, painéis | 18 |
 | **Backend (API)** | pytest + httpx + websockets | HTTP/WS contra servidor real em :8000 (SQLite) | 12 |
@@ -44,7 +46,7 @@ Ambos rodam contra o **mesmo backend real** (uvicorn + SQLite + seed), sem mocks
 | Arquivo | Testes | Cobertura |
 | :--- | :---: | :--- |
 | `cypress/e2e/registro.cy.ts` | 9 | Login inválido, caminho feliz (protocolo `SGOPI-`), validações client-side (descrição curta, sem coordenada, sem envolvido), erro 422 da API, ocorrência em "Minhas ocorrências", bloqueio de operador |
-| `cypress/e2e/validacao-despacho.cy.ts` | 9 | Delegado valida/devolve/rejeita, agente corrige e reenvia (RF14), operador despacha viatura mais próxima, encerra atendimento, fallback sem viatura elegível, simulador GPS |
+| `cypress/e2e/validacao-despacho.cy.ts` | 9 | Delegado valida/devolve/rejeita, agente corrige e reenvia (RF04), operador despacha viatura mais próxima, encerra atendimento, fallback sem viatura elegível, simulador GPS |
 
 ### Execução
 
@@ -97,7 +99,7 @@ uv run pytest -q
 
 ---
 
-## Resultados
+## Resultados (na data desta etapa)
 
 | Suite | Testes | Status |
 | :--- | :---: | :--- |
@@ -106,7 +108,7 @@ uv run pytest -q
 | pytest E2E API | 12 | ✅ Verde |
 | **Total E2E** | **30** | **✅** |
 
-Suíte completa (unit + integration + E2E): **255 testes passando** (`uv run pytest`).
+Na data desta etapa, a suíte completa (unit + integration + E2E) somava 255 testes. Posteriormente foram adicionadas as specs Cypress `manchas`, `autenticar`, `apreensoes` e `auditoria` e novos testes de backend — consulte os totais atualizados no [README](../../README.md#qualidade).
 
 ---
 
@@ -116,10 +118,10 @@ Suíte completa (unit + integration + E2E): **255 testes passando** (`uv run pyt
 | :--- | :--- | :--- |
 | RF01 (Registro) | 6 | 1 (fluxo completo) |
 | RF04 (Validação/Devolução/Rejeição) | 4 | 1 (fluxo completo) |
-| RF14 (Correção/Reenvio) | 1 | — |
+| RF04 (Correção/Reenvio) | 1 | — |
 | RF02/UC02 (Despacho + Encerramento) | 3 | 1 (fluxo completo) |
-| RF16/17 (Telemetria + WS) | 1 (simulador) | 2 (handshake WS) |
-| RF20 (Auditoria) | — | 1 |
+| RF02 (Telemetria + WS) | 1 (simulador) | 2 (handshake WS) |
+| RNF03 (Auditoria) | — | 1 |
 | RNF01 (Tempo real) | 1 (sem refresh) | 2 (WS handshake) |
 | RNF04 (Resiliência/fallback) | 1 (sem elegíveis) | — |
 
@@ -129,5 +131,5 @@ Suíte completa (unit + integration + E2E): **255 testes passando** (`uv run pyt
 
 - Medir latência p95 do WebSocket (RNF01*) com múltiplos painéis simultâneos
 - Testes E2E com PostgreSQL real (via Docker Compose)
-- Cobertura de RF21 (notificações in-app) e RF22 (evidências) quando implementados
+- Cobertura E2E de notificações in-app (não implementadas) e do upload de evidências digitais (RF01)
 - Integração em CI (GitHub Actions) com `start-server-and-test`

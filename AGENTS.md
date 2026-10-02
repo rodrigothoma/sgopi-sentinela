@@ -9,6 +9,8 @@ Este arquivo estabelece as regras canônicas de engenharia para qualquer **agent
 1. **Documentação Oficial:** Toda implementação deve seguir estritamente o arquivo [`docs/DOCUMENTACAO_DE_ENGENHARIA.md`](docs/DOCUMENTACAO_DE_ENGENHARIA.md).
 2. **Diagramas UML:** Antes de implementar ou alterar casos de uso, consulte obrigatoriamente os diagramas em [`docs/diagramas/`](docs/diagramas/) (especialmente os diagramas de sequência em `docs/diagramas/sequencia/`).
 3. **Escopo Canônico do MVP:** Foco rigoroso nos requisitos **RF01** (Gestão de Ocorrência Policial), **RF04** (Validação pelo Delegado) e **RF02** (Monitoramento GPS e Despacho Tático). Não invente requisitos fora do escopo.
+   * **Extras já implementados (fora do escopo canônico do MVP):** RF03 (Inventário de Apreensões), RF05 (Manchas Criminais / *heatmap* e banner de criticidade), RF06 (Inquéritos), RF07 (Laudos Periciais), RF08 (Autenticação Pública de Documentos — `/autenticar`), RF09 (Medidas Protetivas), DEC-03 (Pin Vetorial SVG), arquivamento/exclusão lógica de ocorrência, gerador de ocorrências de demonstração e orquestrador de despacho automático (com viatura de apoio). Esses itens são **extras** e não redefinem o MVP.
+   * Novos trabalhos **não** devem ampliar o escopo além de RF01/RF04/RF02 (nem expandir os extras acima) sem aprovação explícita da equipe.
 
 ---
 
@@ -33,21 +35,24 @@ A estrutura do backend em `backend/src/` segue divisão estrita validada por **`
 
 ```text
 backend/src/
-├── domain/            # 1. CORE PURO: Regras de negócio invariantes
-├── application/       # 2. CASOS DE USO: Orquestração do fluxo
-├── ports/             # 3. CONTRATOS: Interfaces abstratas (Inbound e Outbound)
-├── adapters/          # 4. TECNOLOGIA: HTTP, WebSockets, Repositórios SQLAlchemy
-└── infrastructure/    # 5. CONFIGURAÇÃO: DI, engine de banco e logs
+├── domain/              # 1. CORE PURO: Regras de negócio invariantes
+├── application/
+│   ├── use_cases/       # 2. CASOS DE USO: Orquestração do fluxo
+│   └── ports/           # 3. CONTRATOS: Interfaces abstratas
+│       ├── inbound/     #    Portas de entrada (Interface* + DTOs)
+│       └── outbound/    #    Portas de saída (Repositorio*, PortaAuditoria, Relogio...)
+├── adapters/            # 4. TECNOLOGIA: HTTP, WebSockets, Repositórios SQLAlchemy
+└── infrastructure/      # 5. CONFIGURAÇÃO: DI, engine de banco e logs
 ```
 
 ### 🚫 Proibições Estritas (A quebra falhará o build):
 1. **`domain/` é Python Puro:**
    * **NUNCA** importe FastAPI, Starlette, SQLAlchemy, Pydantic, Alembic, Jose, Argon2 ou qualquer lib externa no `domain/`.
    * Entidades de domínio são **`dataclasses` padrão do Python** ou classes puras, nunca modelos de ORM nem schemas HTTP.
-2. **`application/` só enxerga `domain/` e `ports/`:**
+2. **`application/use_cases/` só enxerga `domain/` e `application/ports/`:**
    * **NUNCA** acesse banco de dados diretamente dentro de um caso de uso.
-   * **NUNCA** instancie adaptadores concretos (ex: `SQLAlchemyOcorrenciaRepository()`) no caso de uso. Toda dependência deve ser injetada via interface da porta (`ports/outbound/`).
-3. **`ports/` define abstrações puras:**
+   * **NUNCA** instancie adaptadores concretos (ex: `OcorrenciaRepositorioSQLAlchemy()`) no caso de uso. Toda dependência deve ser injetada via interface da porta (`application/ports/outbound/`).
+3. **`application/ports/` define abstrações puras:**
    * Portas de entrada e saída devem herdar de `abc.ABC` com métodos `@abstractmethod`.
    * Use DTOs (dataclasses puras) para transporte entre camadas.
 4. **`adapters/` implementa portas:**
@@ -68,7 +73,7 @@ backend/src/
 * **L — Liskov Substitution Principle (LSP):**
   * Adaptadores substitutos (ex: repositório em memória para testes e repositório PostgreSQL para produção) devem honrar 100% dos contratos das portas sem lançar exceções inesperadas.
 * **I — Interface Segregation Principle (ISP):**
-  * Portas devem ser coesas e específicas (`PortaAuditoria`, `PortaGPS`, `RepositorioOcorrencia`), evitando interfaces "gordas" com métodos desnecessários.
+  * Portas devem ser coesas e específicas (`PortaAuditoria`, `RepositorioViatura`, `RepositorioOcorrencia`), evitando interfaces "gordas" com métodos desnecessários.
 * **D — Dependency Inversion Principle (DIP):**
   * Módulos de alto nível (`application`) nunca dependem de módulos de baixo nível (`adapters`). Ambos dependem de abstrações (`ports`).
 * **Clean Code:**
@@ -80,7 +85,11 @@ backend/src/
 
 ## 5. 🛡️ Imutabilidade e Auditoria (RNF03)
 
-* **Sem Deleções Físicas:** Nunca execute `DELETE` em tabelas de negócio (`ocorrencias`, `viaturas`, `evidencias_digitais`). Utilize exclusão lógica (`ativo = false`).
+* **Sem Deleções Físicas:** Nunca execute `DELETE` em tabelas de negócio (`ocorrencias`, `viaturas`, `evidencias`, entre outras). A retirada de registros é sempre lógica:
+  * **Ocorrência:** transições de status `ARQUIVADA` ou `EXCLUIDA` (atos privativos do Delegado, com motivo obrigatório em `motivo_arquivamento`/`motivo_exclusao` e autoria em `arquivada_por_id`/`excluida_por_id`);
+  * **Viatura:** não é removida — sai de operação pela situação `INDISPONIVEL`;
+  * **Evidências:** são vínculos permanentes da ocorrência (sem exclusão);
+  * Tabelas que possuem a coluna `ativo` (ex.: `usuarios`, `envolvidos`, `inqueritos`, `laudos_periciais`, `medidas_protetivas`) usam `ativo = false`.
 * **Tabelas Append-Only:** As tabelas `registros_auditoria` e `historico_status_ocorrencia` são estritamente incrementais. Jamais execute `UPDATE` ou `DELETE` nelas.
 * **Integridade Criptográfica:** Toda ocorrência validada deve computar e registrar seu `hash_narrativa` (SHA-256) imutável.
 

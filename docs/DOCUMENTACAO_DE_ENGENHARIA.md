@@ -104,25 +104,29 @@ A priorização seguiu critérios técnicos de viabilidade, dependência funcion
 - **Should Have (Evolução prioritária):** requisitos importantes para as próximas iterações, mas fora do MVP atual.
 - **Could Have (Evolução futura):** requisitos desejáveis que podem ser implementados posteriormente sem comprometer o fluxo principal.
 - **Won't Have (Fora do escopo deste ciclo):** requisitos não planejados para o MVP atual.
+- **Extra (implementado além do MVP):** requisito que estava fora do escopo canônico do MVP (Should/Could Have ou decisão de projeto), mas que a equipe acabou implementando. Não redefine o MVP, que permanece restrito a RF01, RF04 e RF02.
 
 | Categoria | ID | Requisito | Justificativa de Engenharia |
 | :--- | :--- | :--- | :--- |
 | **Must Have** *(MVP Entregue)* | **RF01** | Gestão de Ocorrência Policial | Núcleo de entrada de dados; indispensável para alimentar todo o ecossistema e entidades de domínio. |
 | **Must Have** *(MVP Entregue)* | **RF04** | Fluxo de Aprovação e Revisão | Garante o ciclo de validação formal pelo Delegado antes do encaminhamento tático e formalização jurídica. |
 | **Must Have** *(MVP Entregue)* | **RF02** | Monitoramento e Despacho Tático | Valida a integração em tempo real entre backend, cálculo de distância, simulador de GPS e painel tático. |
-| **Consolidado no MVP** | **DEC-03** | Pin Interativo Vetorial SVG | Marcador dinâmico de coordenadas com ripple pulse e ancoragem geodésica precisa para agente e cidadão. |
-| **Consolidado no MVP** | **RF03** | Gestão de Inventário de Apreensões | Formalização jurídica de bens e cadeia de custódia append-only vinculada à ocorrência. |
-| **Consolidado no MVP** | **RF06** | Gestão de Inquéritos Policiais | Agrupamento de ocorrências validadas sob inquérito formal com motor de sugestões de conexões criminais. |
-| **Consolidado no MVP** | **RF07** | Gestão de Laudos Periciais | Integração da Polícia Científica com upload de laudos em PDF e verificação de integridade via hash SHA-256. |
-| **Consolidado no MVP** | **RF09** | Medidas Protetivas e Restrições | Monitoramento de prazos judiciais, tipos de restrição e gestão de vigência com alertas de vencimento. |
-| **Should Have** *(Alta Prioridade)* | **RF05** | Inteligência Criminal e Manchas Criminais | Introduz cálculo georreferenciado e aplicação de inteligência sobre grandes volumes de dados criminais. |
-| **Could Have** *(Média Prioridade)* | **RF08** | Autenticação Pública de Documentos | Portal público de consulta por chave de segurança, sem necessidade de autenticação prévia. |
+| **Extra** *(implementado além do MVP)* | **DEC-03** | Pin Interativo Vetorial SVG | Marcador dinâmico de coordenadas com ripple pulse e ancoragem geodésica precisa para agente e cidadão. |
+| **Extra** *(implementado além do MVP)* | **RF03** | Gestão de Inventário de Apreensões | Formalização jurídica de bens e cadeia de custódia append-only vinculada à ocorrência. |
+| **Extra** *(implementado além do MVP)* | **RF06** | Gestão de Inquéritos Policiais | Agrupamento de ocorrências validadas sob inquérito formal com motor de sugestões de conexões criminais. |
+| **Extra** *(implementado além do MVP)* | **RF07** | Gestão de Laudos Periciais | Integração da Polícia Científica com upload de laudos em PDF e verificação de integridade via hash SHA-256. |
+| **Extra** *(implementado além do MVP)* | **RF09** | Medidas Protetivas e Restrições | Monitoramento de prazos judiciais, tipos de restrição e gestão de vigência com alertas de vencimento. |
+| **Extra** *(implementado além do MVP)* | **RF05** | Inteligência Criminal e Manchas Criminais | Introduz cálculo georreferenciado e aplicação de inteligência sobre grandes volumes de dados criminais. |
+| **Extra** *(implementado além do MVP)* | **RF08** | Autenticação Pública de Documentos | Portal público de consulta por chave de segurança, sem necessidade de autenticação prévia. |
 | **Won't Have** *(Próximos Ciclos)* | **RF10** | Comunicação Interagências | Canal de mensageria sigilosa entre departamentos, estruturado como módulo de expansão futura. |
 
-> **Observação:** O escopo do MVP essencial (RF01, RF04 e RF02) foi integralmente implementado e expandido
-> com sucesso para abarcar a Gestão de Apreensões (RF03), Inquéritos Policiais com motor de conexões (RF06),
-> Laudos Periciais com integridade SHA-256 (RF07) e Medidas Protetivas de Urgência (RF09), além do Pin Vetorial SVG (DEC-03),
-> totalizando uma cobertura robusta de testes automatizados ponta a ponta.
+> **Observação:** O escopo canônico do MVP permanece **RF01, RF04 e RF02**, integralmente implementado.
+> Os itens marcados como **Extra** foram implementados **além do escopo do MVP** e não alteram sua definição:
+> Gestão de Apreensões (RF03), Manchas Criminais com *heatmap* e banner de criticidade no painel tático (RF05),
+> Inquéritos Policiais com motor de conexões (RF06), Laudos Periciais com integridade SHA-256 (RF07),
+> Autenticação Pública de Documentos em `/autenticar` (RF08), Medidas Protetivas de Urgência (RF09) e Pin Vetorial SVG (DEC-03).
+> Também são extras: o arquivamento/exclusão lógica de ocorrência pelo Delegado, o gerador de ocorrências de demonstração
+> e o orquestrador de despacho automático (incluindo viatura de apoio). Apenas o RF10 segue fora do escopo.
 
 ---
 
@@ -131,6 +135,8 @@ A priorização seguiu critérios técnicos de viabilidade, dependência funcion
 ### 3.1 Visão Geral e Objetivo Principal
 
 O objetivo do MVP do **SGOPI Sentinela** é validar o fluxo técnico e operacional ponta a ponta através de uma **Arquitetura Dual (Portal Público do Cidadão + Painel Operacional Policial)**: desde a captura estruturada dos dados de uma ocorrência (pela população via Delegacia Eletrônica ou pelo Agente em campo), sua validação técnica pelo Delegado, até a exibição de viaturas no mapa e execução do despacho tático com coordenadas simuladas em tempo real.
+
+> O cidadão utiliza o portal público **sem autenticação** e não corresponde a um papel do RBAC implementado. Os papéis existentes no domínio são `AGENTE`, `DELEGADO`, `OPERADOR_CENTRAL`, `SUPERVISOR`, `PERITO` e `ESCRIVAO`; o seed de demonstração cria usuários com login apenas para Agente, Delegado e Operador da Central.
 
 ```
 [ Cidadão (Portal Web Público) ] ──(Registro Online)──┐
@@ -149,13 +155,19 @@ As fatias de desenvolvimento e a rastreabilidade das tarefas estão organizadas 
   - Registro completo de ocorrência com múltiplos envolvidos e tipificação de crime (RF01);
   - Máquina de estados da ocorrência (`Aguardando Revisão` -> `Validada` / `Rejeitada` / `Em Correção` -> `Em Atendimento` -> `Encerrada`);
   - Módulo de revisão exclusiva para Delegado com congelamento de integridade SHA-256 (RF04);
-  - Painel tático em tempo real com mapa interativo (Leaflet / OpenStreetMap) e marcadores animados (RF02 / DEC-03);
+  - Painel tático em tempo real com mapa interativo (Leaflet / OpenStreetMap) e marcadores das viaturas (RF02);
   - Serviço de simulação de telemetria GPS emitindo coordenadas periódicas para as viaturas ativas;
-  - Cálculo de proximidade (algoritmo euclidiano / Haversine) e emissão de ordem de despacho formal (OD-AAAA-NNNNNN);
+  - Cálculo de proximidade (algoritmo euclidiano / Haversine) e emissão de ordem de despacho formal (OD-AAAA-NNNNNN).
+* **Extras implementados (fora do escopo canônico do MVP):**
+  - Marcadores e pin vetorial SVG animado nos formulários e no mapa tático (DEC-03);
+  - Gestão de Inventário de Apreensões e cadeia de custódia imutável (RF03 / UC03);
+  - Manchas criminais (*heatmap* filtrável por período e natureza) e banner de criticidade no painel tático (RF05);
   - Gestão de Inquéritos Policiais com vinculação de ocorrências, fato principal e motor de sugestão de conexões criminais (RF06 / UC06);
   - Gestão de Laudos Periciais com upload de relatórios técnicos e validação de hash criptográfico SHA-256 (RF07 / UC07);
+  - Autenticação pública de documentos por chave de segurança ou QR Code em `/autenticar` (RF08 / UC08);
   - Gestão de Medidas Protetivas de Urgência com controle temporal de prazos, distâncias mínimas e tipos de restrição (RF09 / UC09);
-  - Gestão de Inventário de Apreensões e cadeia de custódia imutável (RF03 / UC03).
+  - Arquivamento e exclusão lógica de ocorrência pelo Delegado (status `ARQUIVADA` / `EXCLUIDA`, com motivo obrigatório);
+  - Gerador opcional de ocorrências fictícias para demonstração e orquestrador de despacho/encerramento automáticos (com viatura de apoio).
 * **Limites do MVP (O que NÃO entra no primeiro ciclo):**
   - Upload de arquivos multimídia pesados (áudio/vídeo pericial em streaming);
   - Geração de PDF com carimbo de tempo ICP-Brasil emitido por autoridade certificadora externa;
@@ -168,7 +180,7 @@ As fatias de desenvolvimento e a rastreabilidade das tarefas estão organizadas 
 2. **Passo 2 (Revisão):** O Delegado acessa a fila de triagem, inspeciona a ocorrência e clica em `Validar`. O sistema atualiza o status para `Validada` e dispara evento de domínio.
 3. **Passo 3 (Telemetria & Mapa):** O simulador de viaturas envia coordenadas via WebSocket. O painel do Operador da Central renderiza os marcadores dinamicamente.
 4. **Passo 4 (Despacho):** O Operador seleciona a ocorrência validada; o sistema calcula e sugere as 3 viaturas mais próximas; o Operador confirma o despacho e a viatura tem seu status alterado para `Em Deslocamento`.
-5. **Passo 5 (Investigação & Perícia):** A autoridade instaura inquérito policial (RF06), solicita ou anexa laudos periciais da Polícia Científica com hash SHA-256 (RF07) ou concede medidas protetivas com prazos judiciais monitorados (RF09).
+5. **Passo 5 — Extra, fora do MVP (Investigação & Perícia):** A autoridade instaura inquérito policial (RF06), solicita ou anexa laudos periciais da Polícia Científica com hash SHA-256 (RF07) ou concede medidas protetivas com prazos judiciais monitorados (RF09).
 
 ### 3.4 Critérios de Aceite e Validação do MVP
 
@@ -177,6 +189,12 @@ As fatias de desenvolvimento e a rastreabilidade das tarefas estão organizadas 
 - [x] Viaturas atualizam suas posições no mapa com latência inferior a 1 segundo via WebSocket sem necessidade de *refresh* de página.
 - [x] Em caso de falha de conexão do sinal GPS, o sistema exibe alerta e disponibiliza a listagem tabular das viaturas com a última posição conhecida.
 - [x] A ordem de despacho registra com precisão: data/hora, operador responsável, viatura designada e identificador da ocorrência.
+
+**Critérios dos extras (implementados além do MVP):**
+
+- [x] Itens apreendidos recebem número de lacre único e cadeia de custódia *append-only* vinculada à ocorrência de origem (RF03).
+- [x] O painel tático exibe camada de manchas criminais (*heatmap*) filtrável por período e natureza, com banner de criticidade quando há concentração de ocorrências em 24h (RF05).
+- [x] Documentos emitidos na validação podem ser conferidos publicamente, sem login, por chave de segurança ou QR Code em `/autenticar` (RF08).
 - [x] Inquéritos policiais agrupam ocorrências validadas garantindo unicidade de fato principal e sugerem conexões criminais baseadas em suspeitos, tipificação e geolocalização (RF06).
 - [x] Laudos periciais calculam e auditam a integridade do arquivo através de hash SHA-256 no momento do upload com cadeia de custódia (RF07).
 - [x] Medidas protetivas calculam vigência e dias restantes, emitindo alertas visuais de proximidade de expiração (RF09).
@@ -190,7 +208,7 @@ As fatias de desenvolvimento e a rastreabilidade das tarefas estão organizadas 
 
 O padrão adotado é a **Arquitetura Hexagonal (*Ports & Adapters*)**. Essa escolha decorre diretamente da necessidade de atender aos requisitos não funcionais:
 
-* **Manutenibilidade e Desacoplamento (RNF05):** O núcleo de domínio (`domain/entities` e `application/usecases`) não possui nenhuma importação ou dependência de frameworks web, drivers de banco de dados ou bibliotecas externas de mapas.
+* **Manutenibilidade e Desacoplamento (RNF05):** O núcleo de domínio (`domain/` e `application/use_cases/`) não possui nenhuma importação ou dependência de frameworks web, drivers de banco de dados ou bibliotecas externas de mapas.
 * **Desempenho e Tempo Real (RNF01):** Adaptadores de entrada via WebSockets integram o mapa tático, enquanto adaptadores de saída comunicam-se de forma reativa com o repositório de telemetria.
 * **Proteção e Controle de Acesso (RNF02):** A checagem de permissões e papéis é aplicada nas portas de entrada e orquestrada nos casos de uso antes da invocação das entidades de domínio.
 * **Segurança e Auditoria (RNF03):** Toda operação de negócio passa por portas de serviço que acionam adaptadores de auditoria imutáveis.
@@ -247,7 +265,7 @@ Para garantir a viabilidade técnica do MVP e o alinhamento com a Arquitetura He
 
 * **Persistência de Dados:** **PostgreSQL 16** como banco de dados relacional, utilizando **SQLAlchemy 2.0 (async)** para mapeamento objeto-relacional e **Alembic** para versionamento de migrações de esquema.
   
-* **Interface Gráfica (Frontend):** Desenvolvida em **JavaScript/TypeScript**.
+* **Interface Gráfica (Frontend):** Desenvolvida em **React 18 + TypeScript**, com build via **Vite**.
   * *Painel Tático:* Renderização e interação com o mapa utilizando a biblioteca **Leaflet**, conectada aos *tiles* do **OpenStreetMap**.
   * *Comunicação:* Comunicação bidirecional e reativa utilizando **WebSockets nativos do FastAPI**, permitindo a atualização das viaturas no mapa em tempo real.
 
@@ -320,12 +338,14 @@ Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQL
    - *Estratégia:* Mapeamento de perfis via coluna discriminadora (`papel`), preservando integridade referencial nas chaves estrangeiras.
 
 2. **`ocorrencias`**: Entidade central de registro de fatos delituosos.
-   - *Colunas:* `id` (UUID PK), `numero_protocolo` (String 50 Unique), `natureza` (String 255), `descricao` (Text), `localizacao` (String 500), `latitude` (Float), `longitude` (Float), `data_hora_fato` (Timestamp com timezone), `status` (String 30), `versao` (Integer), `criada_em` (Timestamp com timezone), `atualizada_em` (Timestamp com timezone), `agente_policial_id` (UUID FK `usuarios.id`), `validada_por_id` (UUID FK `usuarios.id` nullable), `inquerito_id` (UUID FK `inqueritos.id` nullable), `justificativa_revisao` (Text nullable), `desfecho` (Text nullable), `hash_narrativa` (String 64 nullable).
+   - *Colunas:* `id` (UUID PK), `numero_protocolo` (String 50 Unique), `natureza` (String 255), `descricao` (Text), `localizacao` (String 500), `latitude` (Float), `longitude` (Float), `data_hora_fato` (Timestamp com timezone), `status` (String 30 — Enum `AGUARDANDO_REVISAO`, `EM_CORRECAO`, `REJEITADA`, `VALIDADA`, `EM_ATENDIMENTO`, `ENCERRADA`, `ARQUIVADA`, `EXCLUIDA`), `versao` (Integer), `criada_em` (Timestamp com timezone), `atualizada_em` (Timestamp com timezone), `agente_policial_id` (UUID FK `usuarios.id`), `validada_por_id` (UUID FK `usuarios.id` nullable), `inquerito_id` (UUID FK `inqueritos.id` nullable), `justificativa_revisao` (Text nullable), `desfecho` (Text nullable), `hash_narrativa` (String 64 nullable), `chave_autenticidade` (String 24 Unique nullable), `arquivada_por_id` (UUID FK `usuarios.id` nullable), `motivo_arquivamento` (Text nullable), `excluida_por_id` (UUID FK `usuarios.id` nullable), `motivo_exclusao` (Text nullable).
    - *Integridade:* `numero_protocolo` gerado no padrão oficial `SGOPI-AAAA-NNNNNN`. A coluna `versao` implementa bloqueio otimista (*optimistic locking*) para controle de concorrência.
+   - *Autenticidade (extra — RF08):* `chave_autenticidade` é a chave pública do documento emitido na validação, usada na conferência pública em `/autenticar`.
+   - *Arquivamento e exclusão lógica (extra):* atos privativos do Delegado que levam o status a `ARQUIVADA` ou `EXCLUIDA`, registrando autor (`arquivada_por_id` / `excluida_por_id`) e motivo obrigatório (`motivo_arquivamento` / `motivo_exclusao`). Nenhuma linha é apagada fisicamente.
    - *Semântica de Revisão (RF04):* `justificativa_revisao` mantém o texto da decisão refletida no agregado. Na transição para `VALIDADA`, armazena o despacho opcional da autoridade; em devolução ou rejeição, armazena a respectiva justificativa técnica.
 
-3. **`envolvidos`**: Qualificação das partes envolvidas em uma ocorrência (vítimas, testemunhas, suspeitos).
-   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `nome` (String 255), `tipo` (String 20 — Enum `VITIMA`, `TESTEMUNHA`, `SUSPEITO`), `documento` (String 50 nullable), `email` (String 255 nullable), `telefone` (String 30 nullable), `ativo` (Boolean).
+3. **`envolvidos`**: Qualificação das partes envolvidas em uma ocorrência (vítimas, testemunhas, suspeitos e comunicante).
+   - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `nome` (String 255), `tipo` (String 20 — Enum `VITIMA`, `TESTEMUNHA`, `SUSPEITO`, `COMUNICANTE`), `documento` (String 50 nullable), `email` (String 255 nullable), `telefone` (String 30 nullable), `ativo` (Boolean).
 
 4. **`tipificacoes_ocorrencia`**: Artigos da legislação penal associados à ocorrência.
    - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `artigo` (String 100), `descricao` (String 500), `ativo` (Boolean).
@@ -338,7 +358,7 @@ Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQL
 6. **`evidencias`**: Metadados e integridade criptográfica dos arquivos anexados.
    - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `nome_original` (String 255), `formato` (String 10), `tamanho` (Integer), `hash_sha256` (String 64), `chave_armazenamento` (String 255 Unique), `enviada_em` (Timestamp com timezone).
 
-7. **`itens_apreendidos`**: Inventário de bens, armas, veículos e entorpecentes apreendidos (RF03 / UC03).
+7. **`itens_apreendidos`**: Inventário de bens, armas, veículos e entorpecentes apreendidos (extra — RF03 / UC03).
    - *Colunas:* `id` (UUID PK), `ocorrencia_id` (UUID FK `ocorrencias.id`), `tipo` (String 20), `descricao` (Text), `quantidade` (Integer), `unidade` (String 20), `estado_conservacao` (String 20), `numero_lacre` (String 60 Unique), `numero_serie` (String 100 nullable), `marca` (String 100 nullable), `calibre` (String 50 nullable), `localizacao_deposito` (String 255), `registrado_em` (Timestamp com timezone), `registrado_por_id` (UUID FK `usuarios.id`).
 
 8. **`movimentacoes_custodia`**: Cadeia de custódia rastreável e imutável para itens apreendidos.
@@ -354,31 +374,33 @@ Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQL
 10. **`sequencias_protocolo`**: Tabela de controle de concorrência e atomicidade na geração sequencial de protocolos anuais (`SGOPI-AAAA-NNNNNN`).
     - *Colunas:* `ano` (Integer PK), `ultimo` (Integer).
 
-11. **`viaturas`**: Frota tática monitorada pela central de despacho (RF15 / RF16).
-    - *Colunas:* `id` (UUID PK), `prefixo` (String 20 Unique), `placa` (String 10 Unique), `situacao` (String 20), `latitude` (Float nullable), `longitude` (Float nullable), `posicao_registrada_em` (Timestamp com timezone nullable), `versao` (Integer), `atualizada_em` (Timestamp com timezone nullable).
+11. **`viaturas`**: Frota tática monitorada pela central de despacho (RF02).
+    - *Colunas:* `id` (UUID PK), `prefixo` (String 20 Unique), `placa` (String 10 Unique), `situacao` (String 20 — Enum `DISPONIVEL`, `EM_DESLOCAMENTO`, `OPERANDO`, `INDISPONIVEL`), `latitude` (Float nullable), `longitude` (Float nullable), `posicao_registrada_em` (Timestamp com timezone nullable), `versao` (Integer), `atualizada_em` (Timestamp com timezone nullable).
+    - *Retirada de operação:* não há coluna `ativo` nem exclusão física; a viatura é retirada de operação pela situação `INDISPONIVEL` (alternância manual `DISPONIVEL` ⇄ `INDISPONIVEL`).
 
-12. **`ordens_despacho`**: Formalização de despacho tático de viaturas para atendimento (RF18).
-    - *Colunas:* `id` (UUID PK), `numero` (String 30 Unique), `ocorrencia_id` (UUID FK `ocorrencias.id`), `viatura_id` (UUID FK `viaturas.id`), `operador_id` (UUID FK `usuarios.id`), `criada_em` (Timestamp com timezone), `observacoes` (Text nullable), `ativa` (Boolean), `encerrada_em` (Timestamp com timezone nullable).
+12. **`ordens_despacho`**: Formalização de despacho tático de viaturas para atendimento (RF02).
+    - *Colunas:* `id` (UUID PK), `numero` (String 30 Unique), `ocorrencia_id` (UUID FK `ocorrencias.id`), `viatura_id` (UUID FK `viaturas.id`), `operador_id` (UUID FK `usuarios.id`), `criada_em` (Timestamp com timezone), `observacoes` (Text nullable), `ativa` (Boolean), `apoio` (Boolean), `encerrada_em` (Timestamp com timezone nullable).
     - *Formato:* `numero` padronizado como `OD-AAAA-NNNNNN`.
+    - *Viatura de apoio (extra):* `apoio = true` identifica um despacho adicional feito com a ocorrência já `EM_ATENDIMENTO`.
 
 13. **`sequencias_ordem_despacho`**: Gerador sequencial controlado para emissão atômica de números de ordem de despacho por ano.
     - *Colunas:* `ano` (Integer PK), `ultimo` (Integer).
 
-14. **`inqueritos`**: Inquéritos Policiais instaurados pelo Delegado para consolidação probatória (RF06 / UC06).
+14. **`inqueritos`**: Inquéritos Policiais instaurados pelo Delegado para consolidação probatória (extra — RF06 / UC06).
     - *Colunas:* `id` (UUID PK), `numero` (String 50 Unique), `ementa` (Text), `delegado_id` (UUID FK `usuarios.id`), `status` (String 30 — Enum `EM_ANDAMENTO`, `CONCLUIDO`, `ARQUIVADO`), `relatorio_final` (Text nullable), `motivo_arquivamento` (Text nullable), `data_abertura` (Timestamp com timezone), `concluido_em` (Timestamp com timezone nullable), `atualizado_em` (Timestamp com timezone nullable), `ativo` (Boolean), `versao` (Integer).
     - *Formato:* `numero` padronizado como `IP-AAAA-NNNNNN`.
 
 15. **`sequencias_inquerito`**: Contador anual para numeração sequencial atômica de inquéritos policiais.
     - *Colunas:* `ano` (Integer PK), `ultimo` (Integer).
 
-16. **`laudos_periciais`**: Peças técnicas periciais emitidas pela Polícia Científica (RF07 / UC07).
+16. **`laudos_periciais`**: Peças técnicas periciais emitidas pela Polícia Científica (extra — RF07 / UC07).
     - *Colunas:* `id` (UUID PK), `numero_referencia` (String 50 Unique), `tipo_pericia` (String 50), `descricao_solicitacao` (Text), `solicitante_id` (UUID FK `usuarios.id`), `perito_id` (UUID FK `usuarios.id` nullable), `ocorrencia_id` (UUID FK `ocorrencias.id` nullable), `inquerito_id` (UUID FK `inqueritos.id` nullable), `item_apreendido_id` (UUID FK `itens_apreendidos.id` nullable), `conclusoes_tecnicas` (Text nullable), `arquivo_chave` (String 255 nullable), `arquivo_nome` (String 255 nullable), `hash_sha256` (String 64 nullable), `status` (String 30), `solicitado_em` (Timestamp com timezone), `concluido_em` (Timestamp com timezone nullable), `atualizado_em` (Timestamp com timezone nullable), `ativo` (Boolean), `versao` (Integer).
     - *Formato:* `numero_referencia` padronizado como `LP-AAAA-NNNNNN`.
 
 17. **`sequencias_laudo`**: Contador anual para emissão sequencial de laudos periciais.
     - *Colunas:* `ano` (Integer PK), `ultimo` (Integer).
 
-18. **`medidas_protetivas`**: Ordens de urgência e restrições judiciais vinculadas a ocorrências (RF09 / UC09).
+18. **`medidas_protetivas`**: Ordens de urgência e restrições judiciais vinculadas a ocorrências (extra — RF09 / UC09).
     - *Colunas:* `id` (UUID PK), `numero_referencia` (String 50 Unique), `ocorrencia_id` (UUID FK `ocorrencias.id`), `delegado_id` (UUID FK `usuarios.id`), `vitima_id` (UUID), `agressor_id` (UUID), `tipos_restricao` (JSON — lista de restrições), `distancia_minima_metros` (Integer nullable), `data_inicio` (Date), `prazo_dias` (Integer), `data_vencimento` (Date), `condicoes_especificas` (Text nullable), `motivo_revogacao` (Text nullable), `justificativa_renovacao` (Text nullable), `status` (String 30 — Enum `ATIVA`, `RENOVADA`, `REVOGADA`, `EXPIRADA`), `criada_em` (Timestamp com timezone), `atualizada_em` (Timestamp com timezone nullable), `ativo` (Boolean), `versao` (Integer).
     - *Formato:* `numero_referencia` padronizado como `MP-AAAA-NNNNNN`.
 
@@ -387,7 +409,7 @@ Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQL
 
 #### 5.6.2 Princípios de Engenharia do Modelo Físico
 - **Identificadores UUIDv4:** Chaves primárias universais e opacas geradas na camada de aplicação/domínio, prevenindo ataques de enumeração na API e garantindo que entidades nasçam identificadas em testes unitários sem dependência prévia de persistência.
-- **Governança e Imutabilidade (RNF03):** Eliminação de exclusões físicas (`DELETE`) na camada de dados operacionais, com adoção de desativação lógica (`ativo = false`) e tabelas estritamente *append-only* para auditoria, histórico de status e cadeia de custódia.
+- **Governança e Imutabilidade (RNF03):** Eliminação de exclusões físicas (`DELETE`) na camada de dados operacionais. A retirada de registros é sempre lógica e depende da entidade: ocorrências mudam para o status `ARQUIVADA` ou `EXCLUIDA` (com autor e motivo registrados); viaturas saem de operação pela situação `INDISPONIVEL`; evidências permanecem vinculadas à ocorrência; e as tabelas que possuem a coluna `ativo` (`usuarios`, `envolvidos`, `tipificacoes_ocorrencia`, `inqueritos`, `laudos_periciais`, `medidas_protetivas`) usam `ativo = false`. Auditoria, histórico de status e cadeia de custódia são tabelas estritamente *append-only*.
 - **Rastreabilidade de Ator:** Vínculos relacionais preservados entre operadores (`usuarios`), ocorrências (`agente_policial_id`, `validada_por_id`), inquéritos (`delegado_id`), laudos (`solicitante_id`, `perito_id`), medidas (`delegado_id`) e despachos (`operador_id`).
 
 ---
@@ -870,11 +892,11 @@ A garantia de qualidade e o fluxo de trabalho colaborativo são pilares para o s
 
 ### 7.1 Abordagem de Testes (QA)
 
-A validação do software ocorrerá em dois níveis distintos para isolar regras de negócio e testar a estabilidade da interface:
+A validação do software ocorre em níveis complementares para isolar regras de negócio e testar a estabilidade da interface (os números atualizados da suíte ficam na seção *Qualidade* do [README](../README.md)):
 
-- **Testes de Unidade e Integração (Backend):** O foco central da cobertura de testes (meta superior a 80%) será a camada de Casos de Uso e Entidades de Domínio. Utilizando ferramentas como **pytest** e **unittest.mock**, a máquina de estados das ocorrências e a geração do número de protocolo serão validadas de forma isolada, sem a necessidade de subir o servidor web ou realizar conexões reais com o banco de dados.
+- **Testes de Unidade e Integração (Backend):** O foco central da cobertura de testes (meta superior a 80%) é a camada de Casos de Uso e Entidades de Domínio. Com **pytest** e *fakes* de todas as portas de saída, a máquina de estados das ocorrências e a geração do número de protocolo são validadas de forma isolada, sem subir o servidor web nem conectar a um banco real; os testes de integração exercitam adaptadores, API HTTP e WebSocket contra SQLite em memória.
 
-- **Testes Automatizados (E2E / Frontend):** Para garantir que os fluxos críticos funcionem de ponta a ponta na visão do usuário, serão implementados scripts de automação *black-box* utilizando o **Selenium WebDriver**. Essa automação validará cenários vitais, como o preenchimento correto dos formulários de registro circunstanciado (UC01), simulando o comportamento real do Agente Policial no navegador.
+- **Testes Automatizados (E2E):** Os fluxos críticos são automatizados em dois níveis: **Cypress** no frontend (navegador real, *black-box*), cobrindo o registro circunstanciado (UC01), a validação pelo Delegado (UC04) e o despacho tático (UC02), além dos extras; e **pytest E2E de API** (HTTP e WebSocket) contra o servidor real em execução. *(O planejamento inicial previa Selenium WebDriver; a equipe adotou o Cypress na implementação.)*
 ### 7.2 Versionamento e Fluxo de Trabalho (Git Workflow)
 
 Para orquestrar o desenvolvimento em equipe e proteger a estabilidade do código principal, o repositório adotará uma estratégia estruturada de ramificação:
