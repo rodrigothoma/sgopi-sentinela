@@ -1575,7 +1575,8 @@ dl.grid2 dd { margin: 0 0 8px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; width: 100%; box-sizing: border-box; }
 .chip { background: var(--bg-surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font-size: .85rem; }
 .chip.voce { border-color: var(--primary); color: var(--primary); }
-@media (max-width: 1200px) { .inicio-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* 1500px = 4 colunas legíveis (~1250px) + sidebar expandida (250px) */
+@media (max-width: 1500px) { .inicio-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .inicio-grid { grid-template-columns: 1fr; } .inicio-turno { align-items: flex-start; text-align: left; } }
 
 /* --- Apreensões (RF03): subformulário, aba e Auto de Apreensão --- */

@@ -368,7 +368,13 @@
     bottom: 0;
     z-index: 1200;
     transform: translateX(-100%);
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+
+  /* No drawer o menu é sempre completo; recolher só faz sentido no desktop */
+  .sidebar-toggle-btn {
+    display: none;
   }
 
   .sidebar.mobile-aberta {

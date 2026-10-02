@@ -277,5 +277,12 @@
     "titulo": "Acesso não autorizado",
     "descricao": "O seu perfil não tem permissão para acessar esta área do sistema.",
     "voltar": "Voltar ao início"
+  },
+  "sidebar": {
+    "voltar_portal": "Voltar ao Portal Público",
+    "expandir": "Expandir barra lateral",
+    "recolher": "Recolher barra lateral",
+    "abrir_menu": "Abrir menu de navegação",
+    "alternar_idioma": "Idioma: {{idioma}} (clique para alternar)"
   }
 }

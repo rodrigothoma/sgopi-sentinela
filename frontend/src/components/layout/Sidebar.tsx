@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
@@ -124,6 +124,20 @@ const OPCOES_IDIOMA: GlideSelectOption[] = [
 ];
 
 const CHAVE_STORAGE = 'sgopi.sidebar_colapsada';
+// Mesmo limite do @media em Sidebar.css: abaixo dele a sidebar vira menu deslizante (drawer).
+const CONSULTA_MOBILE = '(max-width: 900px)';
+
+/** No celular o menu é sempre completo: o estado "recolhida" salvo no desktop não se aplica. */
+function useTelaMobile(): boolean {
+  const [mobile, setMobile] = useState(() => window.matchMedia(CONSULTA_MOBILE).matches);
+  useEffect(() => {
+    const consulta = window.matchMedia(CONSULTA_MOBILE);
+    const atualizar = () => setMobile(consulta.matches);
+    consulta.addEventListener('change', atualizar);
+    return () => consulta.removeEventListener('change', atualizar);
+  }, []);
+  return mobile;
+}
 
 interface SidebarProps {
   mobileAberta?: boolean;
@@ -135,7 +149,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
   const { usuario, sair, tem } = useAuth();
   const navigate = useNavigate();
 
-  const [colapsada, setColapsada] = useState<boolean>(() => {
+  const telaMobile = useTelaMobile();
+  const [preferenciaColapsada, setPreferenciaColapsada] = useState<boolean>(() => {
     try {
       return localStorage.getItem(CHAVE_STORAGE) === 'true';
     } catch {
@@ -143,8 +158,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
     }
   });
 
+  const colapsada = preferenciaColapsada && !telaMobile;
+
   const toggleColapso = () => {
-    setColapsada((atual) => {
+    setPreferenciaColapsada((atual) => {
       const proximo = !atual;
       try {
         localStorage.setItem(CHAVE_STORAGE, String(proximo));
@@ -183,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
       <aside className={`sidebar ${colapsada ? 'colapsada' : ''} ${mobileAberta ? 'mobile-aberta' : ''}`}>
         {/* Topo: Logo & Botão de Recolher/Expandir */}
         <div className="sidebar-header">
-          <Link to="/" className="sidebar-brand-link" title="Voltar ao Portal Público" onClick={handleLinkClick}>
+          <Link to="/" className="sidebar-brand-link" title={t('sidebar.voltar_portal')} onClick={handleLinkClick}>
             <LogoSgopi size={colapsada ? 26 : 28} color="var(--primary)" />
             {!colapsada && <span className="sidebar-brand-text">{t('app.title')}</span>}
           </Link>
@@ -191,8 +208,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
             type="button"
             className="sidebar-toggle-btn"
             onClick={toggleColapso}
-            title={colapsada ? 'Expandir barra lateral' : 'Recolher barra lateral'}
-            aria-label={colapsada ? 'Expandir barra lateral' : 'Recolher barra lateral'}
+            title={colapsada ? t('sidebar.expandir') : t('sidebar.recolher')}
+            aria-label={colapsada ? t('sidebar.expandir') : t('sidebar.recolher')}
           >
             {colapsada ? <IconChevronRight /> : <IconChevronLeft />}
           </button>
@@ -249,7 +266,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
                   type="button"
                   className="sidebar-lang-toggle"
                   onClick={() => trocarIdiomaGlobal(proximoIdioma)}
-                  title={`Idioma: ${idiomaAtual.toUpperCase()} (Clique para alternar)`}
+                  title={t('sidebar.alternar_idioma', { idioma: idiomaAtual.toUpperCase() })}
                 >
                   {idiomaAtual.toUpperCase()}
                 </button>

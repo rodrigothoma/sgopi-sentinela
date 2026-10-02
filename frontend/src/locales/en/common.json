@@ -277,5 +277,12 @@
     "titulo": "Access not authorized",
     "descricao": "Your role is not allowed to access this area of the system.",
     "voltar": "Back to home"
+  },
+  "sidebar": {
+    "voltar_portal": "Back to the public portal",
+    "expandir": "Expand sidebar",
+    "recolher": "Collapse sidebar",
+    "abrir_menu": "Open navigation menu",
+    "alternar_idioma": "Language: {{idioma}} (click to switch)"
   }
 }
