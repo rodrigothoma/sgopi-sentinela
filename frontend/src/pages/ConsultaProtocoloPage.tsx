@@ -5,6 +5,10 @@ import { NavbarPublica } from '../components/layout/NavbarPublica';
 import { StatusBadge } from '../components/StatusBadge';
 import { formatarNatureza } from '../utils/formatarNatureza';
 import { ConsultaPublicaResponse, consultarOcorrenciaPublica, mensagemDeErro } from '../services/api';
+import { formatarDataHora } from '../utils/datas';
+
+// Desfechos fora da sequência normal: a consulta mostra um aviso no lugar das etapas.
+const STATUS_FORA_DO_FLUXO = ['REJEITADA', 'ARQUIVADA'];
 
 const STATUS_ETAPAS = [
   { id: 'AGUARDANDO_REVISAO', rotuloChave: 'triagem' },
@@ -14,7 +18,7 @@ const STATUS_ETAPAS = [
 ];
 
 export const ConsultaProtocoloPage: React.FC = () => {
-  const { t, i18n } = useTranslation(['publico', 'common']);
+  const { t } = useTranslation(['publico', 'common']);
   const [searchParams] = useSearchParams();
   const [protocoloInput, setProtocoloInput] = useState(searchParams.get('protocolo') ?? '');
   const [resultado, setResultado] = useState<ConsultaPublicaResponse | null>(null);
@@ -51,13 +55,11 @@ export const ConsultaProtocoloPage: React.FC = () => {
 
   const getEtapaIndex = (status: string) => {
     if (status === 'AGUARDANDO_REVISAO' || status === 'EM_CORRECAO') return 0;
-    if (status === 'VALIDADA' || status === 'EM_DESPACHO') return 1;
+    if (status === 'VALIDADA') return 1;
     if (status === 'EM_ATENDIMENTO') return 2;
-    if (status === 'ENCERRADA' || status === 'REJEITADA') return 3;
+    if (status === 'ENCERRADA') return 3;
     return 0;
   };
-
-  const localeData = i18n.language && i18n.language.startsWith('en') ? 'en-US' : 'pt-BR';
 
   return (
     <div className="portal-wrap">
@@ -109,6 +111,11 @@ export const ConsultaProtocoloPage: React.FC = () => {
                 <StatusBadge status={resultado.status} />
               </div>
 
+              {STATUS_FORA_DO_FLUXO.includes(resultado.status) ? (
+                <div className="alerta" style={{ marginTop: 24 }}>
+                  {t(`publico:consulta.aviso_${resultado.status.toLowerCase()}`)}
+                </div>
+              ) : (
               <div className="status-timeline">
                 {STATUS_ETAPAS.map((etapa, idx) => {
                   const atualIdx = getEtapaIndex(resultado.status);
@@ -128,6 +135,7 @@ export const ConsultaProtocoloPage: React.FC = () => {
                   );
                 })}
               </div>
+              )}
 
               <dl className="grid2" style={{ marginTop: 24 }}>
                 <dt>{t('publico:consulta.detalhes.natureza')}</dt>
@@ -139,14 +147,7 @@ export const ConsultaProtocoloPage: React.FC = () => {
                 <dd>{resultado.localizacao}</dd>
 
                 <dt>{t('publico:consulta.detalhes.data_abertura')}</dt>
-                <dd>{new Date(resultado.criada_em).toLocaleString(localeData)}</dd>
-
-                {resultado.desfecho && (
-                  <>
-                    <dt>{t('publico:consulta.detalhes.desfecho')}</dt>
-                    <dd>{resultado.desfecho}</dd>
-                  </>
-                )}
+                <dd>{formatarDataHora(resultado.criada_em)}</dd>
               </dl>
 
               <div style={{ marginTop: 20, textAlign: 'right' }}>

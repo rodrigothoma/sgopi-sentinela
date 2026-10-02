@@ -9,6 +9,7 @@ import { documentosService } from '../services/documentosService';
 import type { DocumentoAutenticado, SituacaoDocumento } from '../types/api';
 import { codigoValido, formatarChave, normalizarCodigo, TAMANHO_CHAVE } from '../utils/autenticidade';
 import { formatarNatureza } from '../utils/formatarNatureza';
+import { formatarDataHora } from '../utils/datas';
 
 /** Resultado exibido ao consulente: as três situações do backend + "não reconhecido" (404) e "código inválido" (422). */
 type Veredito = SituacaoDocumento | 'NAO_RECONHECIDO' | 'CODIGO_INVALIDO';
@@ -27,7 +28,7 @@ const CLASSE_VEREDITO: Record<Veredito, string> = {
  * hash SHA-256 e exibe o veredito DOCUMENTO AUTÊNTICO / NÃO RECONHECIDO.
  */
 export const AutenticarDocumentoPage: React.FC = () => {
-  const { t, i18n } = useTranslation(['publico', 'common']);
+  const { t } = useTranslation(['publico', 'common']);
   const navigate = useNavigate();
   const { codigo: codigoRota } = useParams<{ codigo: string }>();
   const [searchParams] = useSearchParams();
@@ -78,8 +79,7 @@ export const AutenticarDocumentoPage: React.FC = () => {
     void autenticar(codigo);
   };
 
-  const localeData = i18n.language && i18n.language.startsWith('en') ? 'en-US' : 'pt-BR';
-  const fmt = (iso: string) => (iso ? new Date(iso).toLocaleString(localeData) : '—');
+  const fmt = (iso: string) => (iso ? formatarDataHora(iso) : '—');
   const mostrarEspelho = documento && veredito && veredito !== 'INDISPONIVEL';
 
   return (

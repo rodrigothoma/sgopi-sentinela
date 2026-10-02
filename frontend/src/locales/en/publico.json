@@ -4,7 +4,7 @@
     "subtitulo": "Official channel for reporting criminal occurrences. Your statement will be reviewed by police authorities for triage, validation, and tactical dispatch.",
     "instrucoes": {
       "titulo": "Online Police Station Guidelines & Requirements",
-      "publico_alvo": "Service available to any citizen with a valid Brazilian Tax ID (CPF) or foreign citizen with official identification, aged 18 or older.",
+      "publico_alvo": "Service available to any citizen with a valid Brazilian Tax ID (CPF), aged 18 or older.",
       "etapas_titulo": "How the Service Works:",
       "etapa_1": "1. Complete identification of the reporting citizen with valid ID, email address, and contact phone number.",
       "etapa_2": "2. Detailed description of the incident circumstances and geographic coordinates on the map.",
@@ -95,10 +95,11 @@
       "natureza": "Category / Nature:",
       "local": "Incident Location:",
       "data_abertura": "Reported On:",
-      "desfecho": "Final Disposition:",
       "voltar_inicio": "Back to Home"
     },
-    "erro_nao_encontrada": "No incident report found with the given protocol. Please verify the code and try again."
+    "erro_nao_encontrada": "No incident report found with the given protocol. Please verify the code and try again.",
+    "aviso_rejeitada": "Your report was reviewed by the police authority and could not be registered through this channel. For more information, visit the nearest police station with your protocol number.",
+    "aviso_arquivada": "This incident was archived by the police authority. For more information, visit the nearest police station with your protocol number."
   },
   "autenticar": {
     "titulo": "Public Document Authentication",

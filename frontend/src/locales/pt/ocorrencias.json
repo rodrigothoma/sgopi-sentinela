@@ -75,7 +75,9 @@
     "integridade_erro": "Não foi possível verificar a integridade",
     "download": "Baixar",
     "baixando": "Baixando…",
-    "download_erro": "Não foi possível baixar a evidência"
+    "download_erro": "Não foi possível baixar a evidência",
+    "recusados_formato": "Arquivo(s) recusado(s) por formato — envie apenas PDF, JPG, JPEG ou PNG: {{arquivos}}.",
+    "recusados_tamanho": "Arquivo(s) recusado(s) por exceder 10 MB: {{arquivos}}."
   },
   "erros": {
     "campos_obrigatorios": "Preencha a natureza e o endereço/local da ocorrência",

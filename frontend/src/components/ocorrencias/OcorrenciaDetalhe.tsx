@@ -16,8 +16,9 @@ import { SpringCheck } from '../common/SpringCheck';
 import { GlideSelect, type GlideSelectOption } from '../common/GlideSelect';
 import { ComprovanteOcorrencia } from './ComprovanteOcorrencia';
 import { formatarChave } from '../../utils/autenticidade';
+import { formatarDataHora } from '../../utils/datas';
 
-const fmt = (iso: string) => new Date(iso).toLocaleString();
+const fmt = (iso: string) => formatarDataHora(iso);
 
 type EstadoVisual = 'CARREGANDO' | 'INTEGRA' | 'DIVERGENTE' | 'INDISPONIVEL' | 'ERRO';
 
@@ -140,7 +141,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
       { value: '', label: t('medidas:modal_conceder.placeholder_vitima') },
       ...o.envolvidos.map((e) => ({
         value: e.id,
-        label: `${e.nome} (${e.tipo})`,
+        label: `${e.nome} (${t(`ocorrencias:envolvido.${e.tipo}`)})`,
       })),
     ],
     [o.envolvidos, t],
@@ -151,7 +152,7 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
       { value: '', label: t('medidas:modal_conceder.placeholder_agressor') },
       ...o.envolvidos.map((e) => ({
         value: e.id,
-        label: `${e.nome} (${e.tipo})`,
+        label: `${e.nome} (${t(`ocorrencias:envolvido.${e.tipo}`)})`,
       })),
     ],
     [o.envolvidos, t],
@@ -567,6 +568,11 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModalMedidaAberta(false)}>✕</button>
             </div>
             <form onSubmit={submeterMedida} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
+              {o.envolvidos.length < 2 && (
+                <div className="alerta" role="status">
+                  {t('medidas:modal_conceder.envolvidos_insuficientes', { quantidade: o.envolvidos.length })}
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>

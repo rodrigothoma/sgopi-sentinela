@@ -7,6 +7,7 @@ import { laudosService, type Laudo } from '../services/laudosService';
 import { ocorrenciasService } from '../services/ocorrenciasService';
 import type { OcorrenciaResumo } from '../types/api';
 import { GlideSelect, type GlideSelectOption } from '../components/common/GlideSelect';
+import { formatarData } from '../utils/datas';
 
 const TIPOS_PERICIA = [
   'BALISTICA',
@@ -306,7 +307,7 @@ export const LaudosPage: React.FC = () => {
                       </div>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', color: 'var(--muted)' }}>
-                      {new Date(l.solicitado_em).toLocaleDateString()}
+                      {formatarData(l.solicitado_em)}
                     </td>
                     <td style={{ padding: '0.75rem 1rem' }}>
                       {renderBadgeStatus(l.status)}

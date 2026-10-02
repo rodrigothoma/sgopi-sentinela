@@ -52,7 +52,9 @@
     "cadastrar": "Register",
     "cadastrada": "Vehicle registered.",
     "disponibilizar": "Mark available",
-    "indisponibilizar": "Mark unavailable"
+    "indisponibilizar": "Mark unavailable",
+    "marcada_disponivel": "{{prefixo}} marked as available.",
+    "marcada_indisponivel": "{{prefixo}} marked as unavailable."
   },
   "manchas": {
     "mostrar": "Crime hotspots",
@@ -75,5 +77,21 @@
     "titulo": "Field reports",
     "a_caminho": "{{n}} vehicle(s) en route: {{prefixos}}",
     "mensagem": "Vehicle {{prefixo}} arrived at occurrence {{protocolo}} (order {{ordem}}) and started the response procedures."
+  },
+  "eventos": {
+    "PosicaoAtualizada": "Vehicle position updated",
+    "ViaturaSituacaoAlterada": "Vehicle status changed",
+    "ViaturaChegouAoLocal": "Vehicle arrived on scene",
+    "OrdemDeDespachoCriada": "Dispatch order issued",
+    "OcorrenciaValidada": "Incident validated",
+    "OcorrenciaDevolvida": "Incident returned for correction",
+    "OcorrenciaRejeitada": "Incident rejected",
+    "OcorrenciaReenviada": "Incident resubmitted for review",
+    "OcorrenciaDespachada": "Incident dispatched",
+    "OcorrenciaEncerrada": "Incident closed",
+    "OcorrenciaArquivada": "Incident archived",
+    "OcorrenciaExcluida": "Incident deleted",
+    "desconhecido": "Update received",
+    "ultimo": "Last event: {{evento}} at {{hora}}"
   }
 }

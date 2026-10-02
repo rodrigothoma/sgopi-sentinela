@@ -13,6 +13,7 @@ import { type OcorrenciaResumo } from '../types/api';
 import { SpringCheck } from '../components/common/SpringCheck';
 import { GlideSelect, type GlideSelectOption } from '../components/common/GlideSelect';
 import { ActionBtn } from '../components/common/ActionBtn';
+import { formatarData, formatarDataHora } from '../utils/datas';
 
 const ITENS_POR_PAGINA = 10;
 
@@ -466,7 +467,7 @@ export const InqueritosPage: React.FC = () => {
                     {inq.ementa.length > 120 ? `${inq.ementa.substring(0, 120)}...` : inq.ementa}
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--muted)' }}>
-                    <span>{t('inqueritos:tabela.data_abertura')}: {new Date(inq.data_abertura).toLocaleDateString()}</span>
+                    <span>{t('inqueritos:tabela.data_abertura')}: {formatarData(inq.data_abertura)}</span>
                     <span>{inq.ocorrencias.length} {t('inqueritos:ocorrencias_vinculadas_qtd')}</span>
                   </div>
                 </div>
@@ -482,7 +483,7 @@ export const InqueritosPage: React.FC = () => {
               <div>
                 <h2 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--primary)' }}>{selecionado.numero}</h2>
                 <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
-                  {t('inqueritos:detalhes.data_abertura')}: {new Date(selecionado.data_abertura).toLocaleString()}
+                  {t('inqueritos:detalhes.data_abertura')}: {formatarDataHora(selecionado.data_abertura)}
                 </span>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -589,7 +590,7 @@ export const InqueritosPage: React.FC = () => {
                           <span style={{ fontSize: '0.85rem', color: 'var(--ink)' }}>{oc.natureza}</span>
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.2rem' }}>
-                          {oc.localizacao} &bull; {new Date(oc.data_hora_fato).toLocaleString()}
+                          {oc.localizacao} &bull; {formatarDataHora(oc.data_hora_fato)}
                         </div>
                       </div>
                       <ActionBtn
@@ -822,7 +823,7 @@ export const InqueritosPage: React.FC = () => {
                                   <span style={{ fontSize: '0.85rem', color: 'var(--ink)' }}>{oc.natureza}</span>
                                 </div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--muted)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                  {oc.localizacao} • {new Date(oc.data_hora_fato).toLocaleDateString()}
+                                  {oc.localizacao} • {formatarData(oc.data_hora_fato)}
                                 </div>
                               </div>
                             </div>
@@ -1159,7 +1160,7 @@ export const InqueritosPage: React.FC = () => {
                           <span style={{ fontSize: '0.85rem', color: 'var(--ink)' }}>{oc.natureza}</span>
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.2rem' }}>
-                          {oc.localizacao} • {new Date(oc.data_hora_fato).toLocaleDateString()}
+                          {oc.localizacao} • {formatarData(oc.data_hora_fato)}
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>

@@ -21,6 +21,7 @@ import {
   resumirPorNatureza,
 } from '../utils/manchas';
 import type { EventoTempoReal, OcorrenciaResumo, OrdemDespacho, StatusSimuladorCompleto, Sugestoes, Viatura } from '../types/api';
+import { formatarHora } from '../utils/datas';
 
 /**
  * Painel tático (RF02 / RNF01): carga inicial por REST, atualizações por WebSocket,
@@ -82,7 +83,8 @@ export const PainelTaticoPage: React.FC = () => {
   }, []);
 
   const onEvento = useCallback((e: EventoTempoReal) => {
-    setUltimoEvento(`${e.tipo} ${new Date(e.ocorrido_em).toLocaleTimeString()}`);
+    const evento = t(`painel:eventos.${e.tipo}`, { defaultValue: t('painel:eventos.desconhecido') });
+    setUltimoEvento(t('painel:eventos.ultimo', { evento, hora: formatarHora(e.ocorrido_em) }));
     const d = e.dados as Record<string, string | number | null>;
     const atualizarViatura = () => setViaturas((vs) => vs.map((v) => v.id === d.viatura_id
       ? { ...v, situacao: (d.situacao as Viatura['situacao']) ?? v.situacao, latitude: (d.latitude as number) ?? v.latitude, longitude: (d.longitude as number) ?? v.longitude, posicao_registrada_em: (d.registrada_em as string) ?? v.posicao_registrada_em, sinal: d.latitude != null ? 'OK' : v.sinal }
@@ -316,7 +318,7 @@ export const PainelTaticoPage: React.FC = () => {
                     <tr key={v.id}>
                       <td>{v.prefixo}</td>
                       <td><StatusBadge status={v.situacao} grupo="situacao" /></td>
-                      <td>{v.latitude !== null ? `${v.latitude.toFixed(4)}, ${v.longitude?.toFixed(4)} · ${new Date(v.posicao_registrada_em!).toLocaleTimeString()}` : t('painel:sem_sinal.nunca')}</td>
+                      <td>{v.latitude !== null ? `${v.latitude.toFixed(4)}, ${v.longitude?.toFixed(4)} · ${formatarHora(v.posicao_registrada_em!)}` : t('painel:sem_sinal.nunca')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -336,7 +338,7 @@ export const PainelTaticoPage: React.FC = () => {
               )}
               <ul className="lista">
                 {comunicados.map((c) => (
-                  <li key={c.id}><span>🚓 {c.texto}<br /><small className="muted">{new Date(c.em).toLocaleTimeString()}</small></span></li>
+                  <li key={c.id}><span>🚓 {c.texto}<br /><small className="muted">{formatarHora(c.em)}</small></span></li>
                 ))}
               </ul>
             </section>
@@ -413,7 +415,7 @@ export const PainelTaticoPage: React.FC = () => {
                 {ordens.filter((o) => o.ocorrencia_id === ocorrenciaSel.ocorrencia_id).map((o) => (
                   <li key={o.id}>
                     <span>
-                      <strong>{o.numero}</strong> · {viaturas.find((v) => v.id === o.viatura_id)?.prefixo} · {new Date(o.criada_em).toLocaleTimeString()}{' '}
+                      <strong>{o.numero}</strong> · {viaturas.find((v) => v.id === o.viatura_id)?.prefixo} · {formatarHora(o.criada_em)}{' '}
                       <span className={`badge ${o.apoio ? 'badge-EM_ATENDIMENTO' : 'badge-OK'}`}>
                         {t(o.apoio ? 'painel:despacho.ordem_apoio' : 'painel:despacho.ordem_principal')}
                       </span>

@@ -1,14 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
 import { StatusBadge } from '../components/StatusBadge';
-import { GlideSelect, type GlideSelectOption } from '../components/common/GlideSelect';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
 import { formatarNatureza } from '../utils/formatarNatureza';
 import { STATUS_ARQUIVAVEIS, STATUS_EXCLUIVEIS, type OcorrenciaDetalhe, type OcorrenciaResumo, type StatusOcorrencia } from '../types/api';
+import { formatarDataHora } from '../utils/datas';
 
 const FILTROS: StatusOcorrencia[][] = [
   ['AGUARDANDO_REVISAO'], ['EM_CORRECAO'], ['VALIDADA', 'EM_ATENDIMENTO'], ['REJEITADA', 'ENCERRADA'], ['ARQUIVADA', 'EXCLUIDA'],
@@ -23,14 +23,6 @@ export const FilaDelegadoPage: React.FC = () => {
   const [pagina, setPagina] = useState<{ itens: OcorrenciaResumo[]; total: number }>({ itens: [], total: 0 });
   const [detalhe, setDetalhe] = useState<OcorrenciaDetalhe | null>(null);
 
-  const opcoesFiltro: GlideSelectOption[] = useMemo(
-    () =>
-      FILTROS.map((_, i) => ({
-        value: String(i),
-        label: t(`ocorrencias:fila.filtro_${i}`),
-      })),
-    [t],
-  );
   const [justificativa, setJustificativa] = useState('');
   const [motivo, setMotivo] = useState('');
   const [ocupado, setOcupado] = useState(false);
@@ -131,15 +123,6 @@ export const FilaDelegadoPage: React.FC = () => {
     <div className="pagina duas-colunas">
       <section className="card">
         <h2>{t('ocorrencias:fila.titulo')} <span className="muted">({pagina.total})</span></h2>
-        <div style={{ marginBottom: '1.25rem' }}>
-          <GlideSelect
-            options={opcoesFiltro}
-            value={String(filtro)}
-            onChange={(val) => setFiltro(Number(val))}
-            fullWidth
-            ariaLabel={t('ocorrencias:fila.titulo')}
-          />
-        </div>
         <div className="tabs">
           {FILTROS.map((_, i) => (
             <button key={i} className={`tab ${i === filtro ? 'ativo' : ''}`} onClick={() => setFiltro(i)}>{t(`ocorrencias:fila.filtro_${i}`)}</button>
@@ -149,7 +132,7 @@ export const FilaDelegadoPage: React.FC = () => {
         <ul className="lista clicavel">
           {pagina.itens.map((o) => (
             <li key={o.ocorrencia_id} className={detalhe?.ocorrencia_id === o.ocorrencia_id ? 'ativo' : ''} onClick={() => abrir(o.ocorrencia_id)}>
-              <span><strong>{o.numero_protocolo}</strong> · {formatarNatureza(o.natureza, t)}<br /><small className="muted">{new Date(o.criada_em).toLocaleString()}</small></span>
+              <span><strong>{o.numero_protocolo}</strong> · {formatarNatureza(o.natureza, t)}<br /><small className="muted">{formatarDataHora(o.criada_em)}</small></span>
               <StatusBadge status={o.status} />
             </li>
           ))}

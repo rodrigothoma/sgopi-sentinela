@@ -7,8 +7,9 @@ import { apreensoesService } from '../../services/apreensoesService';
 import { STATUS_ACEITAM_APREENSAO, type AutoApreensao, type ItemApreendido, type OcorrenciaDetalhe } from '../../types/api';
 import { AutoApreensaoView } from './AutoApreensaoView';
 import { ItemApreendidoForm } from './ItemApreendidoForm';
+import { formatarDataHora } from '../../utils/datas';
 
-const fmt = (iso: string) => new Date(iso).toLocaleString();
+const fmt = (iso: string) => formatarDataHora(iso);
 const MINIMO_DESTINO = 3;
 
 interface ItemProps {

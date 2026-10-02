@@ -5,8 +5,9 @@ import { useTranslation } from 'react-i18next';
 import type { OcorrenciaDetalhe } from '../../types/api';
 import { formatarChave, urlAutenticacao } from '../../utils/autenticidade';
 import { formatarNatureza } from '../../utils/formatarNatureza';
+import { formatarDataHora } from '../../utils/datas';
 
-const fmt = (iso: string) => new Date(iso).toLocaleString();
+const fmt = (iso: string) => formatarDataHora(iso);
 
 interface Props {
   o: OcorrenciaDetalhe;

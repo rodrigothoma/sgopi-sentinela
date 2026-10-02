@@ -192,7 +192,8 @@
       "evidencia.verificar_integridade": "Verificação de integridade",
       "documento.autenticar": "Consulta pública de autenticidade",
       "documento.suspeita_fraude": "Suspeita de fraude documental",
-      "documento.nao_localizado": "Documento não localizado (consulta pública)"
+      "documento.nao_localizado": "Documento não localizado (consulta pública)",
+      "auth.login_bloqueado": "Login bloqueado (excesso de tentativas)"
     },
     "autor_sistema": "Sistema / Cidadão",
     "pesquisar_placeholder": "Filtrar por protocolo, viatura, autor, IP ou operação...",
@@ -262,7 +263,8 @@
       "nome": "Nome",
       "tipo": "Tipo",
       "detalhe": "Detalhes Adicionais"
-    }
+    },
+    "autor_nao_identificado": "Não identificado"
   },
   "paginacao": {
     "pagina": "Página",
@@ -270,5 +272,10 @@
     "registros": "ocorrências",
     "anterior": "Página anterior",
     "proxima": "Próxima página"
+  },
+  "acesso_negado": {
+    "titulo": "Acesso não autorizado",
+    "descricao": "O seu perfil não tem permissão para acessar esta área do sistema.",
+    "voltar": "Voltar ao início"
   }
 }

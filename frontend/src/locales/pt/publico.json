@@ -4,7 +4,7 @@
     "subtitulo": "Canal oficial para comunicação de fatos delituosos. O relato será analisado pela autoridade policial competente para deferimento e providências operacionais.",
     "instrucoes": {
       "titulo": "Orientações e Requisitos da Delegacia Eletrônica",
-      "publico_alvo": "Serviço disponível para qualquer cidadão brasileiro portador de CPF válido ou cidadão estrangeiro com documento de identificação, maior de 18 anos.",
+      "publico_alvo": "Serviço disponível para qualquer cidadão brasileiro portador de CPF válido, maior de 18 anos.",
       "etapas_titulo": "Etapas do Atendimento Policial:",
       "etapa_1": "1. Identificação completa do comunicante com CPF/documento, e-mail e telefone válidos.",
       "etapa_2": "2. Preenchimento minucioso das circunstâncias do fato e marcação geográfica no mapa.",
@@ -95,10 +95,11 @@
       "natureza": "Natureza / Categoria:",
       "local": "Localização do Fato:",
       "data_abertura": "Comunicação Efetuada em:",
-      "desfecho": "Desfecho Conclusivo:",
       "voltar_inicio": "Voltar ao Início"
     },
-    "erro_nao_encontrada": "Nenhuma ocorrência encontrada com o protocolo informado. Verifique os dígitos e tente novamente."
+    "erro_nao_encontrada": "Nenhuma ocorrência encontrada com o protocolo informado. Verifique os dígitos e tente novamente.",
+    "aviso_rejeitada": "A comunicação foi analisada pela autoridade policial e não pôde ser registrada por este canal. Para mais informações, compareça à delegacia mais próxima com o número do protocolo.",
+    "aviso_arquivada": "A ocorrência foi arquivada pela autoridade policial. Para mais informações, compareça à delegacia mais próxima com o número do protocolo."
   },
   "autenticar": {
     "titulo": "Autenticação Pública de Documentos",

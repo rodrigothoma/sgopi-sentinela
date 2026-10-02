@@ -7,6 +7,7 @@ import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { auditoriaService } from '../services/auditoriaService';
 import type { RegistroAuditoria } from '../types/api';
+import { formatarData, formatarDataHora, formatarHora } from '../utils/datas';
 
 const OPERACOES: string[] = [
   'ocorrencia.registrar',
@@ -21,6 +22,7 @@ const OPERACOES: string[] = [
   'viatura.alterar_situacao',
   'auth.login',
   'auth.login_negado',
+  'auth.login_bloqueado',
   'auth.acesso_negado',
   'evidencia.anexar',
   'evidencia.download',
@@ -34,6 +36,9 @@ const ENTIDADES: string[] = [
   'Evidencia',
   'Usuario',
 ];
+
+/** Tentativa de login falha não tem autor conhecido (quem tentou pode não ser o titular do login). */
+const OPERACOES_SEM_AUTOR_IDENTIFICADO = ['auth.login_negado', 'auth.login_bloqueado'];
 
 function getBadgeClasse(operacao: string): string {
   if (operacao.includes('rejeitar') || operacao.includes('negado')) {
@@ -54,6 +59,8 @@ function getBadgeClasse(operacao: string): string {
  */
 export const TrilhaAuditoriaPage: React.FC = () => {
   const { t } = useTranslation('common');
+  const rotuloSemAutor = (operacao: string) =>
+    t(OPERACOES_SEM_AUTOR_IDENTIFICADO.includes(operacao) ? 'auditoria.autor_nao_identificado' : 'auditoria.autor_sistema');
   const { avisar } = useToast();
 
   const [registros, setRegistros] = useState<RegistroAuditoria[]>([]);
@@ -324,9 +331,9 @@ export const TrilhaAuditoriaPage: React.FC = () => {
               registrosFiltrados.map((reg) => (
                 <tr key={reg.id} style={{ borderBottom: '1px solid var(--line)' }}>
                   <td style={{ padding: '12px 16px', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
-                    <strong>{new Date(reg.quando).toLocaleDateString()}</strong>
+                    <strong>{formatarData(reg.quando)}</strong>
                     <br />
-                    <span className="muted">{new Date(reg.quando).toLocaleTimeString()}</span>
+                    <span className="muted">{formatarHora(reg.quando)}</span>
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <span
@@ -379,7 +386,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                         </span>
                       ) : (
                         <span className="muted" style={{ fontStyle: 'italic', fontSize: '0.82rem' }}>
-                          {t('auditoria.autor_sistema')}
+                          {rotuloSemAutor(reg.operacao)}
                         </span>
                       )}
                     </td>
@@ -546,7 +553,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
               >
                 <div>
                   <span className="muted">{t('auditoria.coluna_quando')}:</span>
-                  <div>{new Date(detalheSelecionado.quando).toLocaleString()}</div>
+                  <div>{formatarDataHora(detalheSelecionado.quando)}</div>
                 </div>
                 <div>
                   <span className="muted">{t('auditoria.coluna_entidade')}:</span>
@@ -572,7 +579,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                       </strong>
                     ) : (
                       <span className="muted" style={{ fontStyle: 'italic' }}>
-                        {t('auditoria.autor_sistema')}
+                        {rotuloSemAutor(detalheSelecionado.operacao)}
                       </span>
                     )}
                   </div>

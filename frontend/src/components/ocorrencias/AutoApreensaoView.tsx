@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import type { AutoApreensao } from '../../types/api';
 import { formatarNatureza } from '../../utils/formatarNatureza';
+import { formatarDataHora } from '../../utils/datas';
 
-const fmt = (iso: string) => new Date(iso).toLocaleString();
+const fmt = (iso: string) => formatarDataHora(iso);
 
 interface Props {
   auto: AutoApreensao;

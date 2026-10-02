@@ -69,7 +69,6 @@ export interface ConsultaPublicaResponse {
   natureza: string;
   localizacao: string;
   criada_em: string;
-  desfecho?: string | null;
 }
 
 export async function registrarOcorrenciaPublica(payload: RegistrarOcorrenciaPublicaPayload): Promise<OcorrenciaPublicaResponse> {

@@ -46,12 +46,14 @@ interface Props {
 
 const FORMATOS_EVIDENCIA = ['application/pdf', 'image/jpeg', 'image/png'];
 const TAMANHO_MAXIMO_EVIDENCIA = 10 * 1024 * 1024;
+const MAXIMO_EVIDENCIAS = 10;
 const MINIMO_DESCRICAO = 20;
 
 export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnviar, ocupado, permitirEvidencias = false, permitirApreensoes = false }) => {
   const { t } = useTranslation(['ocorrencias', 'common']);
   const [v, setV] = useState<ValoresOcorrencia>(inicial);
   const [erro, setErro] = useState<string | null>(null);
+  const [erroEvidencias, setErroEvidencias] = useState<string | null>(null);
   const [comApreensao, setComApreensao] = useState(inicial.itensApreendidos.length > 0);
   const set = <K extends keyof ValoresOcorrencia>(k: K, val: ValoresOcorrencia[K]) => setV((x) => ({ ...x, [k]: val }));
 
@@ -61,10 +63,27 @@ export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnvia
     if (v.latitude === null || v.longitude === null) return t('ocorrencias:erros.sem_coordenada');
     if (new Date(v.dataHoraFatoLocal).getTime() > Date.now()) return t('ocorrencias:erros.data_futura');
     if (v.envolvidos.length === 0) return t('ocorrencias:erros.sem_envolvidos');
-    if (v.evidencias.length > 10) return t('ocorrencias:evidencias.limite');
+    if (v.evidencias.length > MAXIMO_EVIDENCIAS) return t('ocorrencias:evidencias.limite');
     if (v.evidencias.some((arquivo) => !FORMATOS_EVIDENCIA.includes(arquivo.type))) return t('ocorrencias:evidencias.formato_invalido');
     if (v.evidencias.some((arquivo) => arquivo.size > TAMANHO_MAXIMO_EVIDENCIA)) return t('ocorrencias:evidencias.tamanho_excedido');
     return null;
+  };
+
+  /** Recusa já na seleção o que o backend recusaria (formato, tamanho, limite) — o arquivo nem entra na lista. */
+  const adicionarEvidencias = (entrada: HTMLInputElement) => {
+    const selecionados = Array.from(entrada.files ?? []);
+    entrada.value = ''; // permite selecionar de novo o mesmo arquivo após removê-lo
+    const formatoInvalido = selecionados.filter((arquivo) => !FORMATOS_EVIDENCIA.includes(arquivo.type));
+    const grandes = selecionados.filter((arquivo) => FORMATOS_EVIDENCIA.includes(arquivo.type) && arquivo.size > TAMANHO_MAXIMO_EVIDENCIA);
+    const validos = selecionados.filter((arquivo) => !formatoInvalido.includes(arquivo) && !grandes.includes(arquivo));
+    const vagas = Math.max(0, MAXIMO_EVIDENCIAS - v.evidencias.length);
+    const problemas = [
+      formatoInvalido.length > 0 && t('ocorrencias:evidencias.recusados_formato', { arquivos: formatoInvalido.map((a) => a.name).join(', ') }),
+      grandes.length > 0 && t('ocorrencias:evidencias.recusados_tamanho', { arquivos: grandes.map((a) => a.name).join(', ') }),
+      validos.length > vagas && t('ocorrencias:evidencias.limite'),
+    ].filter(Boolean) as string[];
+    setErroEvidencias(problemas.length > 0 ? problemas.join(' ') : null);
+    if (validos.length > 0 && vagas > 0) set('evidencias', [...v.evidencias, ...validos.slice(0, vagas)]);
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -169,10 +188,11 @@ export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnvia
               type="file"
               accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
               multiple
-              onChange={(e) => set('evidencias', [...v.evidencias, ...Array.from(e.target.files ?? [])])}
+              onChange={(e) => adicionarEvidencias(e.target)}
             />
           </label>
           <small className="muted">{t('ocorrencias:evidencias.ajuda')}</small>
+          {erroEvidencias && <div className="alerta erro" role="alert" data-cy="erro-evidencias">{erroEvidencias}</div>}
           <ul className="lista">
             {v.evidencias.map((arquivo, idx) => (
               <li key={`${arquivo.name}-${idx}`}>

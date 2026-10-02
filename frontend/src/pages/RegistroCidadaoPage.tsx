@@ -15,6 +15,10 @@ import {
   validarEmail,
 } from '../utils/cpf';
 
+// Oculto por enquanto: o domínio só aceita documento numérico (CPF/RG), então um passaporte
+// alfanumérico seria recusado no envio. Reativar quando o backend aceitar documento estrangeiro.
+const PERMITE_DOCUMENTO_ESTRANGEIRO = false;
+
 const NATUREZA_CHAVES = [
   { chave: 'furto', valorPadrao: 'Furto' },
   { chave: 'perda_extravio', valorPadrao: 'Perda ou Extravio de Documento/Objeto' },
@@ -307,6 +311,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                     <label htmlFor="campo-documento" style={{ margin: 0 }}>
                       {!isEstrangeiro ? t('publico:registro.cpf_label') : t('publico:registro.passaporte_label')}
                     </label>
+                    {PERMITE_DOCUMENTO_ESTRANGEIRO && (
                     <SpringCheck
                       label={t('publico:registro.estrangeiro_check')}
                       checked={isEstrangeiro}
@@ -325,6 +330,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                       checkColor="#ffffff"
                       style={{ minHeight: 'unset' }}
                     />
+                    )}
                   </div>
                   {!isEstrangeiro ? (
                     <input

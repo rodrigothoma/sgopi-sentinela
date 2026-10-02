@@ -192,7 +192,8 @@
       "evidencia.verificar_integridade": "Evidence Integrity Checked",
       "documento.autenticar": "Public authenticity lookup",
       "documento.suspeita_fraude": "Suspected document fraud",
-      "documento.nao_localizado": "Document not found (public lookup)"
+      "documento.nao_localizado": "Document not found (public lookup)",
+      "auth.login_bloqueado": "Login blocked (too many attempts)"
     },
     "autor_sistema": "System / Citizen",
     "pesquisar_placeholder": "Filter by protocol, vehicle, author, IP or operation...",
@@ -262,7 +263,8 @@
       "nome": "Name",
       "tipo": "Type",
       "detalhe": "Additional Details"
-    }
+    },
+    "autor_nao_identificado": "Unidentified"
   },
   "paginacao": {
     "pagina": "Page",
@@ -270,5 +272,10 @@
     "registros": "incidents",
     "anterior": "Previous page",
     "proxima": "Next page"
+  },
+  "acesso_negado": {
+    "titulo": "Access not authorized",
+    "descricao": "Your role is not allowed to access this area of the system.",
+    "voltar": "Back to home"
   }
 }
