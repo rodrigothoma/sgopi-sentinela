@@ -32,8 +32,8 @@ class _WsFake:
     def __init__(self, falha=False):
         self.msgs, self.falha, self.aceito = [], falha, False
 
-    async def accept(self):
-        self.aceito = True
+    async def accept(self, subprotocol=None):
+        self.aceito, self.subprotocolo = True, subprotocol
 
     async def send_text(self, m):
         if self.falha:

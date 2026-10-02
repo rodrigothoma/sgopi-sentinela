@@ -47,16 +47,37 @@ def _token(c: TestClient, login: str) -> str:
     return c.post("/v1/auth/login", json={"login": login, "senha": SENHA_PADRAO}).json()["access_token"]
 
 
+def _subprotocolos(token: str) -> list[str]:
+    return ["sgopi.bearer", token]
+
+
 def test_token_invalido_e_recusado(client_ws):
     from starlette.websockets import WebSocketDisconnect
 
     with pytest.raises(WebSocketDisconnect) as exc:
-        with client_ws.websocket_connect("/v1/tempo-real?token=lixo"):
+        with client_ws.websocket_connect("/v1/tempo-real", subprotocols=_subprotocolos("lixo")):
             pass
     assert exc.value.code == 1008
     with pytest.raises(WebSocketDisconnect):
         with client_ws.websocket_connect("/v1/tempo-real"):
             pass
+
+
+def test_token_na_query_string_nao_e_mais_aceito(client_ws):
+    """RNF02: o JWT não pode trafegar na URL (vaza em logs de acesso e proxies)."""
+    from starlette.websockets import WebSocketDisconnect
+
+    token = _token(client_ws, "operador")
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client_ws.websocket_connect(f"/v1/tempo-real?token={token}"):
+            pass
+    assert exc.value.code == 1008
+
+
+def test_handshake_devolve_somente_o_subprotocolo_sem_o_token(client_ws):
+    token = _token(client_ws, "operador")
+    with client_ws.websocket_connect("/v1/tempo-real", subprotocols=_subprotocolos(token)) as ws:
+        assert ws.accepted_subprotocol == "sgopi.bearer"
 
 
 def test_painel_recebe_eventos_de_validacao_e_posicao(client_ws):
@@ -75,7 +96,7 @@ def test_painel_recebe_eventos_de_validacao_e_posicao(client_ws):
     ).json()
     v = c.post("/v1/viaturas", json={"prefixo": "VTR-01", "placa": "IAB1A23"}, headers=ho).json()
 
-    with c.websocket_connect(f"/v1/tempo-real?token={to}") as ws:
+    with c.websocket_connect("/v1/tempo-real", subprotocols=_subprotocolos(to)) as ws:
         r = c.post(f"/v1/ocorrencias/{o['ocorrencia_id']}/validar", headers=hd)
         assert r.status_code == 200
         msg = ws.receive_json()

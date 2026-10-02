@@ -28,8 +28,8 @@ class GerenciadorConexoes:
     def total(self) -> int:
         return len(self._conexoes)
 
-    async def conectar(self, ws: WebSocket) -> None:
-        await ws.accept()
+    async def conectar(self, ws: WebSocket, subprotocolo: str | None = None) -> None:
+        await ws.accept(subprotocol=subprotocolo)
         self._conexoes.add(ws)
         log.info("painel conectado (%d ativos)", self.total)
 
