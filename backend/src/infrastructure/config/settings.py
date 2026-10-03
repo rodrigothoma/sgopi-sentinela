@@ -69,6 +69,14 @@ class Settings(BaseSettings):
     evidencias_diretorio: str = "storage/evidencias"
     evidencias_tamanho_maximo_bytes: int = 10 * 1024 * 1024
 
+    # RF09 / UC12: Notificações por e-mail (alerta de vencimento de medida protetiva)
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_usuario: str = ""
+    smtp_senha: str = ""
+    smtp_remetente: str = "sentinela@seguranca.gov.br"
+    smtp_usar_tls: bool = True
+
     log_json: bool = True
     log_level: str = "INFO"
 

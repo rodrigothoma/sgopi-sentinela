@@ -321,6 +321,7 @@ class MedidaProtetivaModel(Base):
     atualizada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     versao: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    alerta_vencimento_enviado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class SequenciaInqueritoModel(Base):
@@ -348,4 +349,56 @@ class SequenciaMedidaModel(Base):
 
     ano: Mapped[int] = mapped_column(Integer, primary_key=True)
     ultimo: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class NotificacaoModel(Base):
+    """Tabela de notificações e alertas em tempo real do sistema (RF05, RF09, RF10)."""
+
+    __tablename__ = "notificacoes"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    usuario_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True, index=True)
+    papel_destinatario: Mapped[str | None] = mapped_column(String(30), nullable=True, index=True)
+    departamento_destinatario: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    tipo: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    titulo: Mapped[str] = mapped_column(String(255), nullable=False)
+    mensagem: Mapped[str] = mapped_column(Text, nullable=False)
+    prioridade: Mapped[str] = mapped_column(String(20), nullable=False, default="MEDIA")
+    link: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    lida: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    lida_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    metadados: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class ComunicacaoInteragenciasModel(Base):
+    """Tabela de comunicações e ofícios interagências (RF10 / UC10)."""
+
+    __tablename__ = "comunicacoes_interagencias"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    numero_oficio: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    protocolo_ocorrencia: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    departamento_origem: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    departamentos_destinatarios: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    remetente_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=False)
+    assunto: Mapped[str] = mapped_column(String(255), nullable=False)
+    corpo: Mapped[str] = mapped_column(Text, nullable=False)
+    nivel_sigilo: Mapped[str] = mapped_column(String(30), nullable=False, default="PADRAO")
+    prioridade: Mapped[str] = mapped_column(String(20), nullable=False, default="MEDIA")
+    status_entrega: Mapped[str] = mapped_column(String(30), nullable=False, default="ENTREGUE")
+    mensagem_pai_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("comunicacoes_interagencias.id"), nullable=True)
+    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class SequenciaOficioModel(Base):
+    """Contador por ano para OFI-AAAA-NNNNNN."""
+
+    __tablename__ = "sequencias_oficio"
+
+    ano: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ultimo: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
 
