@@ -22,6 +22,8 @@ import {
 } from '../utils/manchas';
 import type { EventoTempoReal, OcorrenciaResumo, OrdemDespacho, StatusSimuladorCompleto, Sugestoes, Viatura } from '../types/api';
 import { formatarHora } from '../utils/datas';
+import { inteligenciaService, type AreaRisco } from '../services/inteligenciaService';
+import { GlideSelect, type GlideSelectOption } from '../components/common/GlideSelect';
 
 /**
  * Painel tático (RF02 / RNF01): carga inicial por REST, atualizações por WebSocket,
@@ -32,6 +34,7 @@ export const PainelTaticoPage: React.FC = () => {
   const { avisar } = useToast();
   const { tem } = useAuth();
   const podeDespachar = tem('OPERADOR_CENTRAL', 'SUPERVISOR');
+  const podeEmitirAlerta = tem('OPERADOR_CENTRAL', 'SUPERVISOR', 'DELEGADO');
   const [viaturas, setViaturas] = useState<Viatura[]>([]);
   const [ocorrencias, setOcorrencias] = useState<OcorrenciaResumo[]>([]);
   const [ordens, setOrdens] = useState<OrdemDespacho[]>([]);
@@ -48,22 +51,56 @@ export const PainelTaticoPage: React.FC = () => {
   // comunicados operacionais (chegada ao local etc.) — ficam listados, não só no toast
   const [comunicados, setComunicados] = useState<{ id: string; em: string; texto: string }[]>([]);
 
+  // RF05 / UC11: Áreas de risco dinâmicas e emissão de alertas de criticidade
+  const [areasRisco, setAreasRisco] = useState<AreaRisco[]>([]);
+  const [areasRiscoAtivo, setAreasRiscoAtivo] = useState(true);
+  const [modalAlertaAberto, setModalAlertaAberto] = useState(false);
+  const [areaSelecionadaParaAlerta, setAreaSelecionadaParaAlerta] = useState('');
+  const [alertaTitulo, setAlertaTitulo] = useState('Alerta Tático de Criticidade');
+  const [alertaMensagem, setAlertaMensagem] = useState('');
+  const [alertaCriticidade, setAlertaCriticidade] = useState<'ALTA' | 'CRITICA'>('CRITICA');
+  const [alertaPapelDestinatario, setAlertaPapelDestinatario] = useState('');
+  const [enviandoAlerta, setEnviandoAlerta] = useState(false);
+
+  const opcoesAreaRisco: GlideSelectOption[] = useMemo(() => [
+    { value: '', label: t('painel:alerta.nenhuma_area', 'Geral / Sem área específica') },
+    ...areasRisco.map((a) => ({
+      value: a.id,
+      label: `${a.nome} [${a.nivel_risco}] — ${a.total_ocorrencias} ocorrências`,
+      tag: a.nivel_risco,
+    })),
+  ], [areasRisco, t]);
+
+  const opcoesCriticidade: GlideSelectOption[] = useMemo(() => [
+    { value: 'CRITICA', label: '🔴 CRÍTICA (Alerta Vermelho)' },
+    { value: 'ALTA', label: '🟠 ALTA (Atenção Reforçada)' },
+  ], []);
+
+  const opcoesDestinatarios: GlideSelectOption[] = useMemo(() => [
+    { value: '', label: '📢 Todos os Perfis (Difusão Geral para Todo o Efetivo)' },
+    { value: 'AGENTE', label: '👮 Apenas Agentes de Ronda / Campo' },
+    { value: 'SUPERVISOR', label: '⭐ Apenas Supervisores e Delegados' },
+    { value: 'OPERADOR', label: '🎧 Apenas Operadores do COPOM' },
+  ], []);
+
   const carregar = useCallback(async () => {
     try {
-      const [vs, os, ods, sim] = await Promise.all([
+      const [vs, os, ods, sim, areas] = await Promise.all([
         viaturasService.listar(),
         ocorrenciasService.listar(['VALIDADA', 'EM_ATENDIMENTO'], 200),
         despachoService.listar(true),
         viaturasService.simulador().catch(() => null),
+        inteligenciaService.obterAreasRisco(periodoDias).catch(() => []),
       ]);
       setViaturas(vs);
       setOcorrencias(os.itens);
       setOrdens(ods);
       setSimulador(sim);
+      setAreasRisco(areas);
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
     }
-  }, [avisar]);
+  }, [avisar, periodoDias]);
 
   useEffect(() => {
     carregar();
@@ -208,6 +245,35 @@ export const PainelTaticoPage: React.FC = () => {
     }
   };
 
+  const handleEmitirAlerta = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!alertaTitulo.trim() || !alertaMensagem.trim()) return;
+    setEnviandoAlerta(true);
+    try {
+      const area = areasRisco.find((a) => a.id === areaSelecionadaParaAlerta);
+      await inteligenciaService.emitirAlertaCriticidade({
+        titulo: alertaTitulo,
+        mensagem: alertaMensagem,
+        nivel_criticidade: alertaCriticidade,
+        area_risco_id: area?.id,
+        latitude: area?.latitude,
+        longitude: area?.longitude,
+        raio_metros: area?.raio_metros,
+        papel_destinatario: alertaPapelDestinatario || undefined,
+      });
+      avisar(t('painel:alerta.sucesso', 'Alerta tático de criticidade emitido com sucesso!'), 'sucesso');
+      setModalAlertaAberto(false);
+      setAlertaMensagem('');
+      setAlertaPapelDestinatario('');
+      setAreaSelecionadaParaAlerta('');
+      await carregar();
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    } finally {
+      setEnviandoAlerta(false);
+    }
+  };
+
   return (
     <div className="painel">
       <div className="painel-barra">
@@ -223,6 +289,29 @@ export const PainelTaticoPage: React.FC = () => {
           <span className="badge badge-OK">
             {t('painel:simulador.despacho_auto')} · {t('painel:simulador.despacho_contador', { despachados: simulador.orquestrador.despachados, encerrados: simulador.orquestrador.encerrados })}
           </span>
+        )}
+        <button
+          type="button"
+          className={`btn ${areasRiscoAtivo ? 'btn-warn' : 'btn-ghost'}`}
+          onClick={() => setAreasRiscoAtivo((v) => !v)}
+          title="Exibir manchas criminais e áreas de risco calculadas"
+        >
+          🚨 {areasRiscoAtivo ? t('painel:areas_risco.ocultar', 'Ocultar Áreas de Risco') : t('painel:areas_risco.mostrar', 'Áreas de Risco')} ({areasRisco.length})
+        </button>
+        {podeEmitirAlerta && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              setAreaSelecionadaParaAlerta('');
+              setAlertaTitulo('Alerta Tático de Criticidade');
+              setAlertaMensagem('');
+              setModalAlertaAberto(true);
+            }}
+            title="Emitir alerta de criticidade operacional em tempo real"
+          >
+            📢 {t('painel:alerta.emitir', 'Emitir Alerta')}
+          </button>
         )}
         <button className={`btn ${heatAtivo ? 'btn-warn' : 'btn-ghost'}`} onClick={() => setHeatAtivo((v) => !v)}>
           {heatAtivo ? t('painel:manchas.ocultar') : t('painel:manchas.mostrar')}
@@ -307,6 +396,7 @@ export const PainelTaticoPage: React.FC = () => {
             onSelecionarOcorrencia={selecionar}
             heatAtivo={heatAtivo}
             pontosCalor={pontosCalor}
+            areasRisco={areasRiscoAtivo ? areasRisco : []}
           />
           {semSinal.length > 0 && (
             <div className="alerta aviso">
@@ -447,6 +537,149 @@ export const PainelTaticoPage: React.FC = () => {
           </section>
         </aside>
       </div>
+
+      {modalAlertaAberto && (
+        <div
+          className="modal-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 2000,
+            padding: '1.25rem',
+          }}
+          onClick={() => setModalAlertaAberto(false)}
+        >
+          <div
+            className="modal-box"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: 560,
+              width: '100%',
+              background: 'var(--card)',
+              border: '1px solid var(--line)',
+              borderRadius: '14px',
+              padding: '1.5rem',
+              boxShadow: 'var(--shadow-pop)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>📢</span> {t('painel:alerta.titulo_modal', 'Emitir Alerta de Criticidade Tática')}
+                </h3>
+                <p className="muted small" style={{ margin: '4px 0 0' }}>
+                  {t(
+                    'painel:alerta.descricao_modal',
+                    'Difunde notificação de alta prioridade para o efetivo operacional e registra auditoria formal.',
+                  )}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setModalAlertaAberto(false)}
+                style={{ padding: '4px 8px', fontSize: '1.1rem', lineHeight: 1 }}
+                aria-label={t('common:actions.fechar', 'Fechar')}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleEmitirAlerta} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.88rem' }}>
+                  {t('painel:alerta.area_vinculada', 'Área de Risco Associada (Opcional)')}
+                </label>
+                <GlideSelect
+                  options={opcoesAreaRisco}
+                  value={areaSelecionadaParaAlerta}
+                  onChange={(id) => {
+                    setAreaSelecionadaParaAlerta(id);
+                    const sel = areasRisco.find((a) => a.id === id);
+                    if (sel) {
+                      setAlertaTitulo(`Alerta Tático: ${sel.nome}`);
+                      setAlertaMensagem(
+                        `Atenção ao aumento de ocorrências (${sel.naturezas_predominantes.slice(0, 2).join(', ')}) na área de ${sel.nome}. Reforço de patrulhamento recomendado.`,
+                      );
+                    }
+                  }}
+                  fullWidth
+                  placeholder={t('painel:alerta.nenhuma_area', 'Geral / Sem área específica')}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.88rem' }}>
+                  {t('painel:alerta.campo_titulo', 'Título do Alerta')}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={alertaTitulo}
+                  onChange={(e) => setAlertaTitulo(e.target.value)}
+                  className="input-text"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                  placeholder="Ex: Alerta de Patrulhamento Reforçado"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.88rem' }}>
+                  {t('painel:alerta.campo_criticidade', 'Nível de Criticidade')}
+                </label>
+                <GlideSelect
+                  options={opcoesCriticidade}
+                  value={alertaCriticidade}
+                  onChange={(val) => setAlertaCriticidade(val as 'ALTA' | 'CRITICA')}
+                  fullWidth
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.88rem' }}>
+                  {t('painel:alerta.campo_destinatario', 'Destinatários Notificados (Sino e Alerta)')}
+                </label>
+                <GlideSelect
+                  options={opcoesDestinatarios}
+                  value={alertaPapelDestinatario}
+                  onChange={(val) => setAlertaPapelDestinatario(val)}
+                  fullWidth
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.88rem' }}>
+                  {t('painel:alerta.campo_mensagem', 'Mensagem / Recomendações Táticas')}
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={alertaMensagem}
+                  onChange={(e) => setAlertaMensagem(e.target.value)}
+                  className="input-text"
+                  style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
+                  placeholder="Descreva a situação operacional, cuidados especiais e diretrizes para as equipes de ronda..."
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                <button type="button" className="btn btn-ghost" onClick={() => setModalAlertaAberto(false)}>
+                  {t('actions.cancelar', 'Cancelar')}
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={enviandoAlerta}>
+                  {enviandoAlerta ? t('actions.salvando', 'Difundindo...') : t('painel:alerta.difundir', 'Difundir Alerta')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

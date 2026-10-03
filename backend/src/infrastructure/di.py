@@ -35,9 +35,15 @@ from adapters.outbound.persistence.viatura_repositorio_sqlalchemy import Viatura
 from adapters.outbound.persistence.gerador_numero_inquerito_sqlalchemy import GeradorNumeroInqueritoSQLAlchemy
 from adapters.outbound.persistence.gerador_numero_laudo_sqlalchemy import GeradorNumeroLaudoSQLAlchemy
 from adapters.outbound.persistence.gerador_numero_medida_sqlalchemy import GeradorNumeroMedidaSQLAlchemy
+from adapters.outbound.email.enviador_email_smtp import EnviadorEmailSMTP
 from adapters.outbound.persistence.inquerito_repositorio_sqlalchemy import InqueritoRepositorioSQLAlchemy
 from adapters.outbound.persistence.laudo_repositorio_sqlalchemy import LaudoRepositorioSQLAlchemy
 from adapters.outbound.persistence.medida_protetiva_repositorio_sqlalchemy import MedidaProtetivaRepositorioSQLAlchemy
+from adapters.outbound.persistence.notificacao_repositorio_sqlalchemy import NotificacaoRepositorioSQLAlchemy
+from adapters.outbound.persistence.comunicacao_interagencias_repositorio_sqlalchemy import (
+    ComunicacaoInteragenciasRepositorioSQLAlchemy,
+    GeradorNumeroOficioSQLAlchemy,
+)
 from adapters.outbound.relogio.relogio_sistema import RelogioSistema
 from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
 from adapters.outbound.seguranca.limitador_em_memoria import LimitadorTentativasEmMemoria
@@ -108,6 +114,25 @@ from application.ports.inbound.interface_gerir_medidas_protetivas import (
     InterfaceRenovarMedida,
     InterfaceRevogarMedida,
 )
+from application.ports.inbound.interface_notificacoes import (
+    InterfaceCriarNotificacao,
+    InterfaceListarNotificacoes,
+    InterfaceMarcarNotificacaoLida,
+    InterfaceMarcarTodasNotificacoesLidas,
+)
+from application.ports.inbound.interface_alertas_vencimento_medida import (
+    InterfaceEmitirAlertaVencimentoMedida,
+)
+from application.ports.inbound.interface_inteligencia_areas_risco import (
+    InterfaceCalcularAreasRisco,
+    InterfaceConfirmarCienciaAlerta,
+    InterfaceEmitirAlertaCriticidade,
+)
+from application.ports.inbound.interface_comunicacoes_interagencias import (
+    InterfaceConsultarComunicacoesInteragencias,
+    InterfaceEnviarComunicacaoInteragencias,
+    InterfaceResponderComunicacaoInteragencias,
+)
 from application.ports.outbound.gerador_numero_ordem import GeradorNumeroOrdem
 from application.ports.outbound.gerador_numero_inquerito import GeradorNumeroInquerito
 from application.ports.outbound.gerador_numero_laudo import GeradorNumeroLaudo
@@ -115,6 +140,12 @@ from application.ports.outbound.gerador_numero_medida import GeradorNumeroMedida
 from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
+from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
+from application.ports.outbound.repositorio_comunicacao_interagencias import (
+    GeradorNumeroOficio,
+    RepositorioComunicacaoInteragencias,
+)
+from application.ports.outbound.porta_notificacao_email import PortaNotificacaoEmail
 from application.ports.outbound.armazenamento_arquivos import ArmazenamentoArquivos
 from application.ports.outbound.gerador_protocolo import GeradorProtocolo
 from application.ports.outbound.hasher_senha import HasherSenha
@@ -164,6 +195,25 @@ from application.use_cases.medida_protetiva.conceder_medida import ConcederMedid
 from application.use_cases.medida_protetiva.consultar_medidas import ConsultarMedidas
 from application.use_cases.medida_protetiva.renovar_medida import RenovarMedida
 from application.use_cases.medida_protetiva.revogar_medida import RevogarMedida
+from application.use_cases.medida_protetiva.emitir_alerta_vencimento import (
+    EmitirAlertaVencimentoMedidaUseCase,
+)
+from application.use_cases.notificacao.gerir_notificacoes import (
+    CriarNotificacaoUseCase,
+    ListarNotificacoesUseCase,
+    MarcarNotificacaoLidaUseCase,
+    MarcarTodasNotificacoesLidasUseCase,
+)
+from application.use_cases.inteligencia.calcular_areas_risco import (
+    CalcularAreasRiscoUseCase,
+    ConfirmarCienciaAlertaUseCase,
+    EmitirAlertaCriticidadeUseCase,
+)
+from application.use_cases.interagencias.gerir_comunicacoes import (
+    ConsultarComunicacoesInteragenciasUseCase,
+    EnviarComunicacaoInteragenciasUseCase,
+    ResponderComunicacaoInteragenciasUseCase,
+)
 from infrastructure.config.settings import settings
 from infrastructure.database.connection import AsyncSessionLocal, get_session
 
@@ -181,11 +231,23 @@ limitador_login = LimitadorTentativasEmMemoria(
 limitador_registro_publico = LimitadorTentativasEmMemoria(
     settings.registro_publico_max_por_ip, settings.registro_publico_janela_segundos, settings.registro_publico_bloqueio_segundos
 )
+enviador_email = EnviadorEmailSMTP(
+    smtp_host=settings.smtp_host,
+    smtp_port=settings.smtp_port,
+    smtp_usuario=settings.smtp_usuario,
+    smtp_senha=settings.smtp_senha,
+    smtp_from=settings.smtp_remetente,
+    smtp_tls=settings.smtp_usar_tls,
+)
 
 
 # ------------------------------------------------------------ portas de saída
 def get_relogio() -> Relogio:
     return relogio_sistema
+
+
+def get_porta_notificacao_email() -> PortaNotificacaoEmail:
+    return enviador_email
 
 
 def get_publicador() -> PublicadorEventos:
@@ -813,4 +875,149 @@ def get_listar_medidas(
     relogio: Relogio = Depends(get_relogio),
 ) -> InterfaceListarMedidas:
     return ConsultarMedidas(medidas, relogio)
+
+
+# ------------------------------------------------------------------ repositorios novos
+def get_repositorio_notificacao(session: AsyncSession = Depends(get_session)) -> RepositorioNotificacao:
+    return NotificacaoRepositorioSQLAlchemy(session)
+
+
+def get_repositorio_comunicacao_interagencias(session: AsyncSession = Depends(get_session)) -> RepositorioComunicacaoInteragencias:
+    return ComunicacaoInteragenciasRepositorioSQLAlchemy(session)
+
+
+# ------------------------------------------------------------------ notificacoes
+def get_listar_notificacoes(
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+) -> InterfaceListarNotificacoes:
+    return ListarNotificacoesUseCase(notificacoes)
+
+
+def get_marcar_notificacao_lida(
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceMarcarNotificacaoLida:
+    return MarcarNotificacaoLidaUseCase(notificacoes, relogio, uow)
+
+
+def get_marcar_todas_notificacoes_lidas(
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceMarcarTodasNotificacoesLidas:
+    return MarcarTodasNotificacoesLidasUseCase(notificacoes, relogio, uow)
+
+
+def get_criar_notificacao(
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    publicador: PublicadorEventos = Depends(get_publicador),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceCriarNotificacao:
+    return CriarNotificacaoUseCase(notificacoes, publicador, relogio, uow)
+
+
+# ------------------------------------------------------------------ alerta vencimento medida
+def get_emitir_alerta_vencimento(
+    medidas: RepositorioMedidaProtetiva = Depends(get_repositorio_medida_protetiva),
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    email: PortaNotificacaoEmail = Depends(get_porta_notificacao_email),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceEmitirAlertaVencimentoMedida:
+    return EmitirAlertaVencimentoMedidaUseCase(
+        repositorio_medida=medidas,
+        repositorio_ocorrencia=ocorrencias,
+        repositorio_notificacao=notificacoes,
+        porta_email=email,
+        porta_auditoria=auditoria,
+        publicador_eventos=publicador,
+        relogio=relogio,
+        uow=uow,
+    )
+
+
+# ------------------------------------------------------------------ inteligencia / areas de risco
+def get_calcular_areas_risco(
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    relogio: Relogio = Depends(get_relogio),
+) -> InterfaceCalcularAreasRisco:
+    return CalcularAreasRiscoUseCase(ocorrencias, relogio)
+
+
+def get_emitir_alerta_criticidade(
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceEmitirAlertaCriticidade:
+    return EmitirAlertaCriticidadeUseCase(notificacoes, auditoria, publicador, relogio, uow)
+
+
+def get_confirmar_ciencia_alerta(
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceConfirmarCienciaAlerta:
+    return ConfirmarCienciaAlertaUseCase(notificacoes, auditoria, relogio, uow)
+
+
+# ------------------------------------------------------------------ comunicacao interagencias
+def get_gerador_numero_oficio(session: AsyncSession = Depends(get_session)) -> GeradorNumeroOficio:
+    return GeradorNumeroOficioSQLAlchemy(session)
+
+
+def get_enviar_comunicacao_interagencias(
+    comunicacoes: RepositorioComunicacaoInteragencias = Depends(get_repositorio_comunicacao_interagencias),
+    gerador_oficio: GeradorNumeroOficio = Depends(get_gerador_numero_oficio),
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceEnviarComunicacaoInteragencias:
+    return EnviarComunicacaoInteragenciasUseCase(
+        repositorio_comunicacao=comunicacoes,
+        gerador_oficio=gerador_oficio,
+        repositorio_ocorrencia=ocorrencias,
+        repositorio_notificacao=notificacoes,
+        porta_auditoria=auditoria,
+        publicador_eventos=publicador,
+        relogio=relogio,
+        uow=uow,
+    )
+
+
+def get_consultar_comunicacoes_interagencias(
+    comunicacoes: RepositorioComunicacaoInteragencias = Depends(get_repositorio_comunicacao_interagencias),
+) -> InterfaceConsultarComunicacoesInteragencias:
+    return ConsultarComunicacoesInteragenciasUseCase(comunicacoes)
+
+
+def get_responder_comunicacao_interagencias(
+    comunicacoes: RepositorioComunicacaoInteragencias = Depends(get_repositorio_comunicacao_interagencias),
+    gerador_oficio: GeradorNumeroOficio = Depends(get_gerador_numero_oficio),
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceResponderComunicacaoInteragencias:
+    return ResponderComunicacaoInteragenciasUseCase(
+        repositorio_comunicacao=comunicacoes,
+        gerador_oficio=gerador_oficio,
+        repositorio_notificacao=notificacoes,
+        porta_auditoria=auditoria,
+        publicador_eventos=publicador,
+        relogio=relogio,
+        uow=uow,
+    )
+
 
