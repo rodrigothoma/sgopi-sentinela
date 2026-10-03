@@ -57,6 +57,7 @@ class MedidaProtetiva:
     atualizada_em: datetime | None = None
     ativo: bool = True
     versao: int = 1
+    alerta_vencimento_enviado_em: datetime | None = None
 
     def __post_init__(self) -> None:
         if self.atualizada_em is None:
@@ -155,3 +156,14 @@ class MedidaProtetiva:
 
     def dias_restantes(self, hoje: date) -> int:
         return (self.data_vencimento - hoje).days
+
+    def esta_proxima_do_vencimento(self, hoje: date, dias_antecedencia: int = 3) -> bool:
+        """Indica se a medida está ativa e vence em até N dias (72h por padrão - UC12) ou já venceu."""
+        if self.status not in (StatusMedida.ATIVA, StatusMedida.RENOVADA):
+            return False
+        return self.dias_restantes(hoje) <= dias_antecedencia
+
+    def marcar_alerta_vencimento_enviado(self, instante: datetime) -> None:
+        self.alerta_vencimento_enviado_em = instante
+        self.atualizada_em = instante
+

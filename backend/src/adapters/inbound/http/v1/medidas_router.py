@@ -11,6 +11,9 @@ from pydantic import BaseModel, Field
 
 from adapters.inbound.http.deps import exigir_papel
 from application.ports.inbound.ator import Ator
+from application.ports.inbound.interface_alertas_vencimento_medida import (
+    InterfaceEmitirAlertaVencimentoMedida,
+)
 from application.ports.inbound.interface_gerir_medidas_protetivas import (
     ConcederMedidaInput,
     InterfaceConcederMedida,
@@ -24,6 +27,7 @@ from application.ports.inbound.interface_gerir_medidas_protetivas import (
 from domain.usuario.entity import Papel
 from infrastructure.di import (
     get_conceder_medida,
+    get_emitir_alerta_vencimento,
     get_listar_medidas,
     get_renovar_medida,
     get_revogar_medida,
@@ -72,7 +76,20 @@ class MedidaProtetivaSchema(BaseModel):
     condicoes_especificas: str | None
     motivo_revogacao: str | None
     justificativa_renovacao: str | None
+    alerta_vencimento_enviado_em: str | None = None
     criada_em: str
+
+
+class EnviarAlertaVencimentoRequest(BaseModel):
+    email_destinatario: str | None = None
+
+
+class ResultadoAlertaVencimentoSchema(BaseModel):
+    sucesso: bool
+    modo: str
+    total_processadas: int
+    alertas_enviados: int
+    detalhes: list[dict]
 
 
 class PaginaMedidasSchema(BaseModel):
@@ -100,6 +117,7 @@ def _medida_schema(out: MedidaProtetivaOutput) -> MedidaProtetivaSchema:
         condicoes_especificas=out.condicoes_especificas,
         motivo_revogacao=out.motivo_revogacao,
         justificativa_renovacao=out.justificativa_renovacao,
+        alerta_vencimento_enviado_em=out.alerta_vencimento_enviado_em,
         criada_em=out.criada_em,
     )
 
@@ -188,3 +206,26 @@ async def revogar_medida(
         ),
     )
     return _medida_schema(resultado)
+
+
+@router.post("/verificar-vencimentos", response_model=ResultadoAlertaVencimentoSchema)
+async def verificar_vencimentos(
+    ator: Ator = Depends(exigir_papel(Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL)),
+    uc: InterfaceEmitirAlertaVencimentoMedida = Depends(get_emitir_alerta_vencimento),
+) -> ResultadoAlertaVencimentoSchema:
+    """Verifica em lote medidas protetivas a expirar (< 72h) e dispara notificações e e-mails de alerta."""
+    res = await uc.executar(ator=ator, medida_id=None)
+    return ResultadoAlertaVencimentoSchema(**res)
+
+
+@router.post("/{medida_id}/enviar-alerta-vencimento", response_model=ResultadoAlertaVencimentoSchema)
+async def enviar_alerta_vencimento_individual(
+    medida_id: UUID,
+    req: EnviarAlertaVencimentoRequest | None = None,
+    ator: Ator = Depends(exigir_papel(Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL, Papel.AGENTE)),
+    uc: InterfaceEmitirAlertaVencimentoMedida = Depends(get_emitir_alerta_vencimento),
+) -> ResultadoAlertaVencimentoSchema:
+    """Envia manual e formalmente alerta de vencimento de uma medida protetiva com notificação e e-mail."""
+    email_dest = req.email_destinatario if req else None
+    res = await uc.executar(ator=ator, medida_id=medida_id, email_destinatario_customizado=email_dest)
+    return ResultadoAlertaVencimentoSchema(**res)

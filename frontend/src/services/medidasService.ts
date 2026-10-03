@@ -17,7 +17,28 @@ export interface MedidaProtetiva {
   condicoes_especificas?: string | null;
   motivo_revogacao?: string | null;
   justificativa_renovacao?: string | null;
+  alerta_vencimento_enviado?: boolean;
   criada_em: string;
+}
+
+export interface ResultadoVerificacaoVencimentos {
+  processadas: number;
+  alertas_enviados: number;
+  itens: Array<{
+    id: string;
+    numero_referencia: string;
+    dias_restantes: number;
+    email_destinatario: string;
+    enviado: boolean;
+  }>;
+}
+
+export interface ResultadoAlertaManual {
+  medida_id: string;
+  email_destinatario: string;
+  enviado: boolean;
+  dias_restantes: number;
+  mensagem: string;
 }
 
 export interface PaginaMedidas {
@@ -59,6 +80,18 @@ export const medidasService = {
 
   async revogar(id: string, dados: { motivo: string }): Promise<MedidaProtetiva> {
     const res = await api.post<MedidaProtetiva>(`/v1/medidas-protetivas/${id}/revogar`, dados);
+    return res.data;
+  },
+
+  async verificarVencimentos(): Promise<ResultadoVerificacaoVencimentos> {
+    const res = await api.post<ResultadoVerificacaoVencimentos>('/v1/medidas-protetivas/verificar-vencimentos');
+    return res.data;
+  },
+
+  async enviarAlertaVencimento(id: string, email_destinatario?: string): Promise<ResultadoAlertaManual> {
+    const res = await api.post<ResultadoAlertaManual>(`/v1/medidas-protetivas/${id}/enviar-alerta-vencimento`, {
+      email_destinatario: email_destinatario || null,
+    });
     return res.data;
   },
 };

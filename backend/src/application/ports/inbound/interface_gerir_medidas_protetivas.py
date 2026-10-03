@@ -53,6 +53,7 @@ class MedidaProtetivaOutput:
     motivo_revogacao: str | None
     justificativa_renovacao: str | None
     criada_em: str
+    alerta_vencimento_enviado_em: str | None = None
 
 
 class InterfaceConcederMedida(ABC):

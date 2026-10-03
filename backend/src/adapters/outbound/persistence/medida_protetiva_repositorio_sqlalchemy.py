@@ -61,6 +61,7 @@ class MedidaProtetivaRepositorioSQLAlchemy(RepositorioMedidaProtetiva):
                 atualizada_em=medida.atualizada_em,
                 ativo=medida.ativo,
                 versao=medida.versao,
+                alerta_vencimento_enviado_em=medida.alerta_vencimento_enviado_em,
             )
             self._session.add(model)
         else:
@@ -76,6 +77,7 @@ class MedidaProtetivaRepositorioSQLAlchemy(RepositorioMedidaProtetiva):
             existente.atualizada_em = medida.atualizada_em
             existente.ativo = medida.ativo
             existente.versao = medida.versao
+            existente.alerta_vencimento_enviado_em = medida.alerta_vencimento_enviado_em
         await self._session.flush()
         self._versoes_carregadas[medida.id] = medida.versao
 
@@ -137,4 +139,5 @@ class MedidaProtetivaRepositorioSQLAlchemy(RepositorioMedidaProtetiva):
             atualizada_em=aware(model.atualizada_em) if model.atualizada_em else None,
             ativo=model.ativo,
             versao=model.versao,
+            alerta_vencimento_enviado_em=aware(model.alerta_vencimento_enviado_em) if model.alerta_vencimento_enviado_em else None,
         )

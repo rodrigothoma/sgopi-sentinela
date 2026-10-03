@@ -69,7 +69,30 @@ async def test_fluxo_medidas_protetivas(client):
     assert r_ren.json()["status"] == "RENOVADA"
     assert r_ren.json()["prazo_dias"] == 120
 
-    # 6. Delegado revoga medida protetiva
+    # 6. Testar envio individual de alerta de vencimento por e-mail
+    r_alerta_ind = await client.post(
+        f"/v1/medidas-protetivas/{medida_id}/enviar-alerta-vencimento",
+        json={"email_destinatario": "vitima@email.com"},
+        headers=h_delegado,
+    )
+    assert r_alerta_ind.status_code == 200, r_alerta_ind.text
+    res_ind = r_alerta_ind.json()
+    assert res_ind["sucesso"] is True
+    assert res_ind["modo"] == "manual"
+    assert res_ind["alertas_enviados"] == 1
+
+    # 7. Testar verificação em lote de vencimentos
+    r_verificar = await client.post(
+        "/v1/medidas-protetivas/verificar-vencimentos",
+        headers=h_delegado,
+    )
+    assert r_verificar.status_code == 200
+    res_batch = r_verificar.json()
+    assert res_batch["sucesso"] is True
+    assert res_batch["modo"] == "automatico_lote"
+    assert "total_processadas" in res_batch
+
+    # 8. Delegado revoga medida protetiva
     r_rev = await client.post(
         f"/v1/medidas-protetivas/{medida_id}/revogar",
         json={"motivo": "Decisão judicial extinguindo as cautelares concedidas."},
@@ -77,3 +100,4 @@ async def test_fluxo_medidas_protetivas(client):
     )
     assert r_rev.status_code == 200, r_rev.text
     assert r_rev.json()["status"] == "REVOGADA"
+

@@ -80,4 +80,5 @@ class ConsultarMedidas(InterfaceListarMedidas):
             motivo_revogacao=m.motivo_revogacao,
             justificativa_renovacao=m.justificativa_renovacao,
             criada_em=m.criada_em.isoformat(),
+            alerta_vencimento_enviado_em=m.alerta_vencimento_enviado_em.isoformat() if m.alerta_vencimento_enviado_em else None,
         )

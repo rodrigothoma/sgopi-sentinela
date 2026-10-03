@@ -29,10 +29,13 @@ export const MedidasProtetivasPage: React.FC = () => {
   // Filtros
   const [filtroStatus, setFiltroStatus] = useState<string>('TODOS');
 
-  // Modais
   const [modalConcederAberto, setModalConcederAberto] = useState(false);
   const [modalRenovarAberto, setModalRenovarAberto] = useState(false);
   const [modalRevogarAberto, setModalRevogarAberto] = useState(false);
+  const [modalAlertaAberto, setModalAlertaAberto] = useState(false);
+  const [emailAlertaManual, setEmailAlertaManual] = useState('');
+  const [enviandoAlerta, setEnviandoAlerta] = useState(false);
+  const [verificandoLote, setVerificandoLote] = useState(false);
   const [medidaAlvo, setMedidaAlvo] = useState<MedidaProtetiva | null>(null);
 
   // Form Conceder
@@ -279,6 +282,49 @@ export const MedidasProtetivasPage: React.FC = () => {
     }
   };
 
+  const executarVerificacaoLote = async () => {
+    setVerificandoLote(true);
+    try {
+      const res = await medidasService.verificarVencimentos();
+      avisar(
+        t('medidas:notificacoes.verificacao_concluida', {
+          processadas: res.processadas,
+          alertas: res.alertas_enviados,
+          defaultValue: `Verificação concluída: ${res.processadas} medidas analisadas, ${res.alertas_enviados} alertas emitidos.`,
+        }),
+        'sucesso',
+      );
+      await carregarMedidas();
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    } finally {
+      setVerificandoLote(false);
+    }
+  };
+
+  const executarEnvioAlertaManual = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!medidaAlvo) return;
+    setEnviandoAlerta(true);
+    try {
+      const res = await medidasService.enviarAlertaVencimento(medidaAlvo.id, emailAlertaManual.trim() || undefined);
+      avisar(
+        t('medidas:notificacoes.alerta_enviado', {
+          email: res.email_destinatario,
+          defaultValue: `Alerta de vencimento enviado com sucesso para ${res.email_destinatario}!`,
+        }),
+        'sucesso',
+      );
+      setModalAlertaAberto(false);
+      setEmailAlertaManual('');
+      await carregarMedidas();
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    } finally {
+      setEnviandoAlerta(false);
+    }
+  };
+
   const badgeDiasRestantes = (dias: number, status: string) => {
     if (status === 'REVOGADA') {
       return (
@@ -317,15 +363,28 @@ export const MedidasProtetivasPage: React.FC = () => {
             {t('medidas:subtitulo')}
           </p>
         </div>
-        {tem('DELEGADO') && (
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
-            className="btn btn-primary"
-            onClick={abrirModalConceder}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.2rem', fontWeight: 600, height: '42px' }}
+            type="button"
+            className="btn btn-outline"
+            disabled={verificandoLote}
+            onClick={executarVerificacaoLote}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1rem', height: '42px' }}
+            title="Verifica medidas próximas do vencimento (<72h) e despacha alertas automáticos"
           >
-            <span>+</span> {t('medidas:btn_conceder')}
+            <span>⏰</span>
+            {verificandoLote ? t('actions.verificando', 'Verificando...') : t('medidas:btn_verificar_vencimentos', 'Verificar Vencimentos')}
           </button>
-        )}
+          {tem('DELEGADO') && (
+            <button
+              className="btn btn-primary"
+              onClick={abrirModalConceder}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.2rem', fontWeight: 600, height: '42px' }}
+            >
+              <span>+</span> {t('medidas:btn_conceder')}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Barra de Filtros com GlideSelect */}
@@ -364,9 +423,16 @@ export const MedidasProtetivasPage: React.FC = () => {
                 boxShadow: 'var(--shadow-card)',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '4px' }}>
                 <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--primary)' }}>{m.numero_referencia}</span>
-                {badgeDiasRestantes(m.dias_restantes, m.status)}
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  {m.alerta_vencimento_enviado && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--ok)', background: 'rgba(16, 185, 129, 0.12)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                      ✉️ {t('medidas:alerta_enviado', 'Alerta Enviado')}
+                    </span>
+                  )}
+                  {badgeDiasRestantes(m.dias_restantes, m.status)}
+                </div>
               </div>
 
               <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginBottom: '0.75rem', lineHeight: 1.6 }}>
@@ -402,8 +468,23 @@ export const MedidasProtetivasPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Rodapé e Ações do Delegado */}
-              <div style={{ marginTop: 'auto', borderTop: '1px solid var(--line)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              {/* Rodapé e Ações */}
+              <div style={{ marginTop: 'auto', borderTop: '1px solid var(--line)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {m.status !== 'REVOGADA' && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => {
+                      setMedidaAlvo(m);
+                      setEmailAlertaManual('');
+                      setModalAlertaAberto(true);
+                    }}
+                    style={{ height: '36px' }}
+                    title="Enviar alerta formal de vencimento para a vítima via e-mail e notificação"
+                  >
+                    📧 {t('medidas:acoes.alertar', 'Alertar Vítima')}
+                  </button>
+                )}
                 {tem('DELEGADO') && m.status !== 'REVOGADA' && (
                   <>
                     <button
@@ -784,6 +865,127 @@ export const MedidasProtetivasPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setModalRevogarAberto(false)} style={{ height: '42px' }}>{t('medidas:acoes.cancelar')}</button>
                 <button type="submit" className="btn btn-danger" style={{ height: '42px' }}>{t('medidas:modal_revogar.btn_submit')}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Alerta Vencimento Manual */}
+      {modalAlertaAberto && medidaAlvo && (
+        <div
+          className="modal-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1200,
+          }}
+          onClick={() => setModalAlertaAberto(false)}
+        >
+          <div
+            style={{
+              background: 'var(--card)',
+              color: 'var(--ink)',
+              padding: '1.5rem',
+              borderRadius: '12px',
+              border: '1px solid var(--line)',
+              maxWidth: '520px',
+              width: '90%',
+              boxShadow: 'var(--shadow-pop)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ marginTop: 0, color: 'var(--ink)' }}>
+              📧 {t('medidas:modal_alerta.titulo', 'Alerta de Vencimento de Medida')}
+            </h2>
+            <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginTop: '-0.5rem', marginBottom: '1.25rem' }}>
+              {t(
+                'medidas:modal_alerta.subtitulo',
+                'Dispara notificação formal para a vítima via e-mail e registra notificação interna no sistema.',
+              )}
+            </p>
+
+            <div
+              style={{
+                background: 'var(--bg-surface, rgba(0,0,0,0.03))',
+                padding: '0.85rem 1rem',
+                borderRadius: '8px',
+                border: '1px solid var(--line)',
+                marginBottom: '1.25rem',
+                fontSize: '0.88rem',
+                lineHeight: 1.5,
+              }}
+            >
+              <div>
+                <strong>{t('medidas:card.referencia', 'Referência')}:</strong> {medidaAlvo.numero_referencia}
+              </div>
+              <div>
+                <strong>{t('medidas:card.vencimento', 'Data de Vencimento')}:</strong> {medidaAlvo.data_vencimento}
+              </div>
+              <div>
+                <strong>{t('medidas:vigencia.titulo', 'Vigência')}:</strong>{' '}
+                {medidaAlvo.dias_restantes > 0 ? (
+                  <span style={{ color: medidaAlvo.dias_restantes <= 3 ? 'var(--danger)' : 'var(--warn)', fontWeight: 700 }}>
+                    {medidaAlvo.dias_restantes} {t('medidas:card.dias_restantes', 'dias restantes')}
+                  </span>
+                ) : (
+                  <span style={{ color: 'var(--danger)', fontWeight: 700 }}>{t('medidas:status.EXPIRADA', 'Expirada')}</span>
+                )}
+              </div>
+            </div>
+
+            <form onSubmit={executarEnvioAlertaManual}>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--ink)' }}>
+                  {t('medidas:modal_alerta.campo_email', 'E-mail de Destino (Opcional)')}
+                </label>
+                <input
+                  type="email"
+                  className="input-text"
+                  placeholder="vitima@email.com (deixe vazio para usar o cadastrado)"
+                  value={emailAlertaManual}
+                  onChange={(e) => setEmailAlertaManual(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    background: 'var(--bg)',
+                    color: 'var(--ink)',
+                    border: '1px solid var(--line)',
+                    borderRadius: '8px',
+                  }}
+                />
+                <span className="muted small" style={{ display: 'block', marginTop: '4px' }}>
+                  {t(
+                    'medidas:modal_alerta.ajuda_email',
+                    'Se omitido, o sistema buscará o e-mail do boletim de ocorrência ou enviará ao canal padrão.',
+                  )}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setModalAlertaAberto(false)}
+                  style={{ height: '42px' }}
+                >
+                  {t('medidas:acoes.cancelar', 'Cancelar')}
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={enviandoAlerta}
+                  style={{ height: '42px' }}
+                >
+                  {enviandoAlerta
+                    ? t('actions.salvando', 'Enviando...')
+                    : t('medidas:modal_alerta.btn_enviar', 'Disparar Alerta Agora')}
+                </button>
               </div>
             </form>
           </div>
