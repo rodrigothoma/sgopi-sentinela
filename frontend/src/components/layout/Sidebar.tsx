@@ -6,9 +6,17 @@ import { LogoSgopi } from '../common/LogoSgopi';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { GlideSelect, GlideSelectOption } from '../common/GlideSelect';
 import { trocarIdiomaGlobal } from '../../i18n';
+import { NotificationBell } from './NotificationBell';
 import './Sidebar.css';
 
 /* ─── Ícones Táticos SVG (Vetor inline, nítido e responsivo) ──────────── */
+
+const IconInteragencias = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+    <polyline points="22 6 12 13 2 6" />
+  </svg>
+);
 
 const IconDashboard = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -184,6 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
     { to: '/laudos', label: t('nav.laudos'), icon: <IconLaudos />, visivel: tem('DELEGADO', 'PERITO', 'SUPERVISOR') },
     { to: '/medidas', label: t('nav.medidas'), icon: <IconMedidas />, visivel: tem('DELEGADO', 'SUPERVISOR', 'AGENTE') },
     { to: '/painel', label: t('nav.painel'), icon: <IconPainel />, visivel: tem('OPERADOR_CENTRAL', 'SUPERVISOR', 'DELEGADO') },
+    { to: '/interagencias', label: t('nav.interagencias', 'Interagências'), icon: <IconInteragencias />, visivel: tem('DELEGADO', 'SUPERVISOR', 'AGENTE', 'OPERADOR_CENTRAL', 'PERITO') },
     { to: '/frota', label: t('nav.frota'), icon: <IconFrota />, visivel: tem('OPERADOR_CENTRAL', 'SUPERVISOR') },
     { to: '/auditoria', label: t('nav.auditoria'), icon: <IconAuditoria />, visivel: tem('DELEGADO', 'SUPERVISOR') },
   ];
@@ -242,6 +251,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
                   <span className="sidebar-user-role">{t(`papel.${usuario.papel}`)}</span>
                 </div>
               )}
+              <NotificationBell colapsada={colapsada} />
             </div>
           )}
 

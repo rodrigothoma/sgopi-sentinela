@@ -176,7 +176,15 @@
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
+}
+
+.sidebar.colapsada .sidebar-user-card {
+  padding: 6px;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .sidebar-user-avatar {
@@ -200,6 +208,8 @@
   flex-direction: column;
   overflow: hidden;
   line-height: 1.25;
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebar-user-name {
