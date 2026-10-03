@@ -22,6 +22,7 @@ import { MinhasOcorrenciasPage } from './pages/MinhasOcorrenciasPage';
 import { PainelTaticoPage } from './pages/PainelTaticoPage';
 import { RegistrarOcorrenciaPage } from './pages/RegistrarOcorrenciaPage';
 import { RegistroCidadaoPage } from './pages/RegistroCidadaoPage';
+import { ComunicacaoInteragenciasPage } from './pages/ComunicacaoInteragenciasPage';
 import { TrilhaAuditoriaPage } from './pages/TrilhaAuditoriaPage';
 
 const Carregando = () => {
@@ -56,6 +57,7 @@ export default function App() {
                   <Route path="/laudos" element={<RequireRole papeis={['DELEGADO', 'PERITO', 'SUPERVISOR']}><LaudosPage /></RequireRole>} />
                   <Route path="/medidas" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR', 'AGENTE']}><MedidasProtetivasPage /></RequireRole>} />
                   <Route path="/painel" element={<RequireRole papeis={['OPERADOR_CENTRAL', 'SUPERVISOR', 'DELEGADO']}><PainelTaticoPage /></RequireRole>} />
+                  <Route path="/interagencias" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR', 'AGENTE', 'OPERADOR_CENTRAL', 'PERITO']}><ComunicacaoInteragenciasPage /></RequireRole>} />
                   <Route path="/frota" element={<RequireRole papeis={['OPERADOR_CENTRAL', 'SUPERVISOR']}><FrotaPage /></RequireRole>} />
                   <Route path="/auditoria" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><TrilhaAuditoriaPage /></RequireRole>} />
                 </Route>
