@@ -60,6 +60,7 @@ def para_resumo(o: Ocorrencia) -> OcorrenciaResumoOutput:
         agente_policial_id=o.agente_policial_id,
         versao=o.versao,
         inquerito_id=o.inquerito_id,
+        origem=o.origem.value,
     )
 
 

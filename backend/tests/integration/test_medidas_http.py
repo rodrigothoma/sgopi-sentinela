@@ -9,7 +9,7 @@ async def test_fluxo_medidas_protetivas(client):
     h_delegado = await auth(client, "delegado")
 
     # 1. Registra ocorrência com envolvidos
-    oc = await registrar(client, h_agente)
+    oc = await registrar(client, h_agente, envolvidos=[{"nome": "Maria", "tipo": "VITIMA", "email": "vitima@email.com"}])
     oc_id = oc["ocorrencia_id"]
     detalhe = (await client.get(f"/v1/ocorrencias/{oc_id}", headers=h_agente)).json()
     vitima_id = detalhe["envolvidos"][0]["id"]

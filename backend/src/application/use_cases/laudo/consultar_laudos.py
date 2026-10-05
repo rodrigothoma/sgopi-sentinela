@@ -62,7 +62,7 @@ class ListarLaudos(InterfaceListarLaudos):
             limit=limit,
             offset=offset,
         )
-        return [_laudo_output(l) for l in laudos], total
+        return [_laudo_output(laudo) for laudo in laudos], total
 
 
 class ObterLaudo(InterfaceObterLaudo):

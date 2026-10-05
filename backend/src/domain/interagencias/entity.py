@@ -8,11 +8,11 @@ e documentos operacionais entre diferentes forças e departamentos de segurança
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from domain.shared.exceptions import CampoObrigatorioError, ValorInvalidoError
+from domain.shared.exceptions import CampoObrigatorioError
 
 
 class DepartamentoSeguranca(str, Enum):
@@ -66,7 +66,7 @@ class ComunicacaoInteragencias:
     prioridade: PrioridadeComunicacao = PrioridadeComunicacao.MEDIA
     status_entrega: StatusEntrega = StatusEntrega.ENTREGUE
     mensagem_pai_id: UUID | None = None
-    criada_em: datetime = field(default_factory=lambda: datetime.now())
+    criada_em: datetime = field(default_factory=lambda: datetime.now(UTC))
     ativo: bool = True
 
     @classmethod
@@ -83,7 +83,7 @@ class ComunicacaoInteragencias:
         nivel_sigilo: NivelSigilo | str = NivelSigilo.PADRAO,
         prioridade: PrioridadeComunicacao | str = PrioridadeComunicacao.MEDIA,
         mensagem_pai_id: UUID | None = None,
-        instante: datetime | None = None,
+        instante: datetime,
     ) -> ComunicacaoInteragencias:
         if not numero_oficio or not numero_oficio.strip():
             raise CampoObrigatorioError("O número de ofício é obrigatório.")
@@ -111,7 +111,7 @@ class ComunicacaoInteragencias:
             except ValueError:
                 prioridade = PrioridadeComunicacao.MEDIA
 
-        agora = instante or datetime.now()
+        agora = instante  # vem do Relogio do caso de uso (aware); o domínio não lê o relógio
 
         # Normaliza destinatários
         destinatarios_limpos = [d.strip().upper() for d in departamentos_destinatarios if d.strip()]

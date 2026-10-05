@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from uuid import uuid4
+
 import pytest
 
 from application.ports.inbound.ator import Ator
@@ -17,7 +18,7 @@ from application.use_cases.interagencias.gerir_comunicacoes import (
     EnviarComunicacaoInteragenciasUseCase,
     ResponderComunicacaoInteragenciasUseCase,
 )
-from domain.interagencias.entity import ComunicacaoInteragencias, NivelSigilo, PrioridadeComunicacao
+from domain.interagencias.entity import ComunicacaoInteragencias
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
@@ -87,6 +88,9 @@ class RepoOcFake(RepositorioOcorrencia):
 class RepoNotifFake(RepositorioNotificacao):
     def __init__(self) -> None:
         self.itens = []
+
+    async def registrar_leitura(self, notificacao_id, usuario_id, instante):
+        return None
 
     async def salvar(self, notificacao):
         self.itens.append(notificacao)

@@ -35,7 +35,8 @@
     "OPERADOR_CENTRAL": "Dispatch Operator",
     "SUPERVISOR": "Supervisor",
     "PERITO": "Forensic Specialist",
-    "ESCRIVAO": "Clerk"
+    "ESCRIVAO": "Clerk",
+    "CIDADAO": "Citizen (public channel)"
   },
   "status": {
     "AGUARDANDO_REVISAO": "Pending Review",

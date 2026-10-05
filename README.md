@@ -129,17 +129,21 @@ Os limites são configuráveis no `.env` (ver `backend/.env.example`). O limitad
 <!-- Números da suíte: atualize SOMENTE esta tabela (demais documentos apontam para cá). -->
 | Suíte | Situação atual |
 | :--- | :--- |
-| pytest (backend) | **613 testes** coletados — 600 unitários/integração + 13 E2E de API |
-| Cobertura (`domain/` + `application/`) | **≈ 90 %** (meta ≥ 80 %) |
-| Cypress (frontend) | **35 testes** em 6 specs |
+| pytest (backend) | **744 testes** coletados — 731 unitários/integração + 13 E2E de API |
+| Cobertura (`domain/` + `application/`) | **≈ 95 %** (meta ≥ 80 % no agregado; piso por arquivo: 85 % em `domain/`, 75 % em `application/`) |
+| Vitest (frontend) | **7 testes** em 3 arquivos (`src/utils/__tests__`) |
+| Cypress (frontend) | **36 testes** em 7 specs |
 
 ```bash
 cd backend
 uv run pytest -q                                   # unitários + integração + E2E de API (E2E é pulado se :8000 não responder)
-uv run pytest --cov                                # cobertura ≥ 80 % em domain/ + application/
+uv run pytest --cov --cov-report=json              # cobertura ≥ 80 % em domain/ + application/
+uv run python -m scripts.verificar_cobertura_por_arquivo   # piso de cobertura por arquivo
+uv tool run ruff check src tests                   # lint estático
+uv run alembic upgrade head && uv run alembic check          # modelos × migrações sem divergência
 
 PYTHONPATH=src uv run lint-imports --config pyproject.toml   # contratos da Arquitetura Hexagonal
-cd ../frontend && npx tsc --noEmit && npm run build
+cd ../frontend && npx tsc --noEmit && npm test && npm run build && npm audit --omit=dev
 ```
 
 ### Testes E2E (Issues #21 e #22)

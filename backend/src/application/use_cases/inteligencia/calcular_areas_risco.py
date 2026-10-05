@@ -4,7 +4,7 @@ Casos de uso para Inteligência Criminal, Manchas Criminais e Alertas de Critici
 from __future__ import annotations
 
 import math
-from datetime import datetime, timedelta
+from datetime import timedelta
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
@@ -20,7 +20,7 @@ from application.ports.outbound.repositorio_notificacao import RepositorioNotifi
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
-from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
+from domain.notificacao.entity import NivelCriticidadeAlerta, Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.shared.eventos import EventoDominio
 from domain.shared.exceptions import EntidadeNaoEncontradaError
 
@@ -105,7 +105,7 @@ class CalcularAreasRiscoUseCase(InterfaceCalcularAreasRisco):
                 centro_lon = sum(lons) / len(lons)
 
                 # Raio dinâmico
-                max_dist = max(calcular_distancia_metros(centro_lat, centro_lon, la, lo) for la, lo in zip(lats, lons))
+                max_dist = max(calcular_distancia_metros(centro_lat, centro_lon, la, lo) for la, lo in zip(lats, lons, strict=True))
                 raio = max(350.0, min(1500.0, max_dist + 150.0))
 
                 # Naturezas predominantes
@@ -153,8 +153,8 @@ class EmitirAlertaCriticidadeUseCase(InterfaceEmitirAlertaCriticidade):
         titulo = dados_alerta.get("titulo") or "Alerta de Criticidade em Área de Risco"
         mensagem = dados_alerta.get("mensagem") or "Concentração crítica de ocorrências detectada na mancha criminal."
         papel_destinatario = dados_alerta.get("papel_destinatario") or None
-        nivel = dados_alerta.get("nivel_criticidade", "CRITICA")
-        prioridade = PrioridadeNotificacao.CRITICA if nivel == "CRITICA" else PrioridadeNotificacao.ALTA
+        nivel = dados_alerta.get("nivel_criticidade", NivelCriticidadeAlerta.CRITICA.value)
+        prioridade = PrioridadeNotificacao.CRITICA if nivel == NivelCriticidadeAlerta.CRITICA.value else PrioridadeNotificacao.ALTA
 
         notif = Notificacao.criar(
             titulo=titulo,
@@ -232,8 +232,8 @@ class ConfirmarCienciaAlertaUseCase(InterfaceConfirmarCienciaAlerta):
     async def executar(self, ator: Ator, alerta_id: str) -> None:
         try:
             uid = UUID(alerta_id)
-        except ValueError:
-            raise EntidadeNaoEncontradaError(f"ID de alerta inválido: {alerta_id}")
+        except ValueError as exc:
+            raise EntidadeNaoEncontradaError(f"ID de alerta inválido: {alerta_id}") from exc
 
         notif = await self._repo_notif.obter_por_id(uid)
         if notif is None:

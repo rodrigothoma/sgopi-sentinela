@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 from datetime import datetime
 from uuid import UUID
@@ -124,7 +124,7 @@ class OrquestradorDespacho:
                 if ator_operador is None or ator_delegado is None:
                     log.warning("orquestrador: usuários 'simulador-operador'/'simulador-delegado' não encontrados — rode o seed; não iniciado")
                     return False
-        except Exception:  # noqa: BLE001 — orquestrador nunca derruba o servidor
+        except Exception:
             log.exception("orquestrador: falha ao verificar atores; não iniciado")
             return False
         self._parar_event.clear()
@@ -139,7 +139,7 @@ class OrquestradorDespacho:
         if not self._tarefa.done():
             try:
                 await asyncio.wait_for(asyncio.shield(self._tarefa), timeout=2.0)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self._tarefa.cancel()
                 try:
                     await self._tarefa
@@ -152,12 +152,12 @@ class OrquestradorDespacho:
         while not self._parar_event.is_set():
             try:
                 await self.tick()
-            except Exception:  # noqa: BLE001 — orquestrador nunca derruba a API
+            except Exception:
                 log.exception("tick do orquestrador falhou")
             try:
                 await asyncio.wait_for(self._parar_event.wait(), timeout=self.intervalo)
                 break
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass
 
     # ------------------------------------------------------------------ decisão
@@ -183,7 +183,7 @@ class OrquestradorDespacho:
                     agiu = True
                 if await self._processar_despachos(viaturas, ocorrencias, despachar, ator_operador, ativas, agora):
                     agiu = True
-        except Exception as exc:  # noqa: BLE001 — falha de leitura não derruba o tick
+        except Exception as exc:
             log.warning("orquestrador: ciclo falhou, tentando no próximo: %s", exc)
         finally:
             self.ticks += 1
@@ -226,7 +226,7 @@ class OrquestradorDespacho:
                 self.encerrados += 1
                 agiu = True
                 log.info("orquestrador encerrou ordem %s (ocorrência %s, viatura %s)", ordem.numero, ordem.ocorrencia_id, viatura.prefixo)
-            except Exception as exc:  # noqa: BLE001 — corrida com encerramento manual vira log
+            except Exception as exc:
                 log.warning("orquestrador: falha ao encerrar %s: %s", ordem.numero, exc)
             finally:
                 self._chegadas.pop(ordem.viatura_id, None)
@@ -275,6 +275,6 @@ class OrquestradorDespacho:
                 usadas.add(viatura.id)
                 agiu = True
                 log.info("orquestrador despachou %s para a ocorrência %s", viatura.prefixo, o.numero_protocolo)
-            except Exception as exc:  # noqa: BLE001 — corrida com despacho manual vira log
+            except Exception as exc:
                 log.warning("orquestrador: falha ao despachar para %s: %s", o.numero_protocolo, exc)
         return agiu

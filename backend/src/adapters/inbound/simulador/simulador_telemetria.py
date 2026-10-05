@@ -131,7 +131,7 @@ class SimuladorTelemetria:
         if not self._tarefa.done():
             try:
                 await asyncio.wait_for(asyncio.shield(self._tarefa), timeout=2.0)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self._tarefa.cancel()
                 try:
                     await self._tarefa
@@ -145,12 +145,12 @@ class SimuladorTelemetria:
         while not self._parar_event.is_set():
             try:
                 await self.tick()
-            except Exception:  # noqa: BLE001 — o simulador nunca derruba a API
+            except Exception:
                 log.exception("tick do simulador falhou")
             try:
                 await asyncio.wait_for(self._parar_event.wait(), timeout=self.intervalo)
                 break
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass
 
 
@@ -199,7 +199,7 @@ class SimuladorTelemetria:
             return [origem, destino]
         try:
             rota = await asyncio.to_thread(self._roteador.rota, origem, destino)
-        except Exception as exc:  # noqa: BLE001 — serviço de rotas é externo e opcional
+        except Exception as exc:
             log.warning("roteador indisponível, usando linha reta: %s", exc)
             self._roteador_falhou_em = agora
             return [origem, destino]

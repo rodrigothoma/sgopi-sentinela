@@ -86,7 +86,9 @@
     "download_integridade_confirmada": "Integridade conferida antes do download.",
     "download_erro": "Não foi possível baixar a evidência",
     "recusados_formato": "Arquivo(s) recusado(s) por formato — envie apenas PDF, JPG, JPEG ou PNG: {{arquivos}}.",
-    "recusados_tamanho": "Arquivo(s) recusado(s) por exceder 10 MB: {{arquivos}}."
+    "recusados_tamanho": "Arquivo(s) recusado(s) por exceder 10 MB: {{arquivos}}.",
+    "integridade_nao_verificada": "Integridade não verificada nesta sessão",
+    "verificar": "Verificar integridade"
   },
   "erros": {
     "campos_obrigatorios": "Preencha a natureza e o endereço/local da ocorrência",
@@ -153,7 +155,8 @@
     "rejeitar": "Rejeitar",
     "ok_validar": "Ocorrência validada — disponível no painel tático.",
     "ok_devolver": "Ocorrência devolvida ao agente.",
-    "ok_rejeitar": "Ocorrência rejeitada."
+    "ok_rejeitar": "Ocorrência rejeitada.",
+    "publica_sem_devolucao": "Comunicações do cidadão não podem ser devolvidas para correção (não há agente autor): valide, rejeite ou arquive."
   },
   "admin": {
     "titulo": "Atos administrativos do Delegado",

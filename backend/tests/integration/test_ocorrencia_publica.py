@@ -1,6 +1,6 @@
 """Testes de integração: Registro e Consulta Pública de Ocorrência (/v1/ocorrencias/publico)."""
-from datetime import UTC, datetime, timedelta
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -83,12 +83,39 @@ async def test_registro_publico_rejeita_sem_maioridade_422(client, corpo_publico
     assert "declaração de maioridade" in r.text
 
 
+async def _consultar(client, protocolo: str, codigo: str):
+    return await client.post("/v1/ocorrencias/publico/consulta", json={"protocolo": protocolo, "codigo_acompanhamento": codigo})
+
+
+async def test_registro_publico_nao_e_autorado_por_agente(client, session, corpo_publico, usuarios):
+    from infrastructure.database.models import UsuarioModel
+
+    dados = (await client.post("/v1/ocorrencias/publico", json=corpo_publico)).json()
+    model = await session.get(OcorrenciaModel, uuid.UUID(dados["ocorrencia_id"]))
+    autor = await session.get(UsuarioModel, model.agente_policial_id)
+    assert model.origem == "PUBLICA"
+    assert autor.login == "sistema.cidadao" and autor.papel == "CIDADAO" and autor.ativo is False
+    assert model.agente_policial_id != usuarios["agente"]
+
+
+async def test_agente_nao_corrige_comunicacao_publica(client, corpo_publico):
+    from tests.integration.helpers import auth
+
+    reg = (await client.post("/v1/ocorrencias/publico", json=corpo_publico)).json()
+    r = await client.post(
+        f"/v1/ocorrencias/{reg['ocorrencia_id']}/devolver",
+        json={"justificativa": "Complementar a narrativa do fato."},
+        headers=await auth(client, "delegado"),
+    )
+    assert r.status_code == 422 and r.json()["code"] == "ocorrencia.publica_nao_devolvivel"
+
+
 async def test_consulta_publica_por_protocolo(client, corpo_publico):
     r_reg = await client.post("/v1/ocorrencias/publico", json=corpo_publico)
     assert r_reg.status_code == 201
     protocolo = r_reg.json()["numero_protocolo"]
 
-    r_cons = await client.get(f"/v1/ocorrencias/publico/{protocolo}")
+    r_cons = await _consultar(client, protocolo, r_reg.json()["codigo_acompanhamento"])
     assert r_cons.status_code == 200
     dados = r_cons.json()
     assert dados["numero_protocolo"] == protocolo
@@ -97,22 +124,35 @@ async def test_consulta_publica_por_protocolo(client, corpo_publico):
 
 
 async def test_consulta_publica_nao_expoe_desfecho_nem_dados_pessoais(client, corpo_publico):
-    protocolo = (await client.post("/v1/ocorrencias/publico", json=corpo_publico)).json()["numero_protocolo"]
-    dados = (await client.get(f"/v1/ocorrencias/publico/{protocolo}")).json()
+    reg = (await client.post("/v1/ocorrencias/publico", json=corpo_publico)).json()
+    dados = (await _consultar(client, reg["numero_protocolo"], reg["codigo_acompanhamento"])).json()
     assert set(dados) == {"numero_protocolo", "status", "natureza", "localizacao", "criada_em"}
 
 
 async def test_consulta_publica_aceita_protocolo_em_minusculas(client, corpo_publico):
-    protocolo = (await client.post("/v1/ocorrencias/publico", json=corpo_publico)).json()["numero_protocolo"]
-    r = await client.get(f"/v1/ocorrencias/publico/{protocolo.lower()}")
-    assert r.status_code == 200 and r.json()["numero_protocolo"] == protocolo
+    reg = (await client.post("/v1/ocorrencias/publico", json=corpo_publico)).json()
+    r = await _consultar(client, reg["numero_protocolo"].lower(), reg["codigo_acompanhamento"].lower())
+    assert r.status_code == 200 and r.json()["numero_protocolo"] == reg["numero_protocolo"]
+
+
+async def test_consulta_publica_sem_codigo_correto_404(client, corpo_publico):
+    """Protocolo sequencial não basta: sem o código o resultado é igual ao de protocolo inexistente."""
+    reg = (await client.post("/v1/ocorrencias/publico", json=corpo_publico)).json()
+    r = await _consultar(client, reg["numero_protocolo"], "ABCDEFGHJK")
+    assert r.status_code == 404 and r.json()["code"] == "ocorrencia.protocolo_nao_encontrado"
+
+
+async def test_consulta_publica_limitada_por_ip_429(client):
+    """A fixture limita a 10 consultas por IP."""
+    status = [(await _consultar(client, f"SGOPI-2026-{i:06d}", "ABCDEFGHJK")).status_code for i in range(11)]
+    assert status[:10] == [404] * 10 and status[10] == 429
 
 
 async def test_consulta_publica_protocolo_inexistente_404_com_mensagem_propria(client):
-    r = await client.get("/v1/ocorrencias/publico/SGOPI-2026-999999")
+    r = await _consultar(client, "SGOPI-2026-999999", "ABCDEFGHJK")
     assert r.status_code == 404
     assert r.json()["code"] == "ocorrencia.protocolo_nao_encontrado"
-    assert "protocolo informado" in r.json()["detail"]
+    assert "código de acompanhamento" in r.json()["detail"]
 
 
 async def test_consulta_publica_trata_excluida_como_inexistente(client, corpo_publico):
@@ -125,7 +165,7 @@ async def test_consulta_publica_trata_excluida_como_inexistente(client, corpo_pu
         headers=await auth(client, "delegado"),
     )
     assert r.status_code == 200, r.text
-    r = await client.get(f"/v1/ocorrencias/publico/{reg['numero_protocolo']}")
+    r = await _consultar(client, reg["numero_protocolo"], reg["codigo_acompanhamento"])
     assert r.status_code == 404
 
 

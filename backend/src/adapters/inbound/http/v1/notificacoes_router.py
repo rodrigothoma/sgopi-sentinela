@@ -5,10 +5,9 @@ Central de Notificações in-app com suporte a contagem de não lidas e atualiza
 """
 from __future__ import annotations
 
-from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
 from adapters.inbound.http.deps import ator_atual
@@ -89,10 +88,11 @@ async def listar_notificacoes(
         ator=ator,
         apenas_nao_lidas=apenas_nao_lidas,
         limite=limit,
+        offset=offset,
     )
     return ListaNotificacoesResponse(
         itens=[_para_schema(i) for i in itens],
-        total=len(itens),
+        total=len(itens),  # itens desta página; o total pendente vem em ``nao_lidas``
         nao_lidas=nao_lidas,
         limit=limit,
         offset=offset,

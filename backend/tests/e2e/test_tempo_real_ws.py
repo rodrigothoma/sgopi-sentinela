@@ -1,11 +1,11 @@
 """E2E: WebSocket de tempo real abre conexão (RF02 / RNF01)."""
 import asyncio
+
+import httpx
 import pytest
 import websockets
 
-import httpx
 from tests.e2e.conftest import BASE_URL, token_de
-
 
 URL_WS = f"{BASE_URL.replace('http', 'ws')}/v1/tempo-real"
 
@@ -29,7 +29,7 @@ async def test_websocket_conecta_com_token_valido(client: httpx.Client):
 
 def test_websocket_recusa_token_invalido():
     """Verifica que token inválido recusa a conexão (code 1008)."""
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017 — a lib de WS do e2e não expõe um tipo estável para 1008
         asyncio.run(_conectar_ws("token-invalido"))
 
 
@@ -40,5 +40,5 @@ def test_websocket_recusa_token_na_query_string(client: httpx.Client):
         async with websockets.connect(f"{URL_WS}?token={token}"):
             pass
 
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017 — idem
         asyncio.run(_via_query())

@@ -7,6 +7,7 @@ export type EstadoConexao = 'conectando' | 'conectado' | 'reconectando' | 'desco
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 16000, 30000]; // RNF04*: 1/2/4/8 s, máx. 30 s
 // RNF02: o JWT vai no Sec-WebSocket-Protocol (nunca na URL, que acaba em logs e proxies).
 const SUBPROTOCOLO_TOKEN = 'sgopi.bearer';
+const CODIGO_POLITICA_VIOLADA = 1008;
 
 /**
  * Cliente WebSocket de /v1/tempo-real (RF02 / RNF01) com reconexão exponencial.
@@ -73,8 +74,10 @@ export class ClienteTempoReal {
     };
     ws.onclose = (ev) => {
       if (this.keepAlive) window.clearInterval(this.keepAlive);
-      if (!this.ativo || ev.code === 1008) {
+      if (!this.ativo || ev.code === CODIGO_POLITICA_VIOLADA) {
         this.onEstado('desconectado');
+        // 1008 = token recusado ou sessão expirada no servidor: encerra a sessão como o 401 do REST.
+        if (this.ativo && ev.code === CODIGO_POLITICA_VIOLADA) window.dispatchEvent(new Event('sgopi:sessao-expirada'));
         return;
       }
       const espera = BACKOFF_MS[Math.min(this.tentativa, BACKOFF_MS.length - 1)];

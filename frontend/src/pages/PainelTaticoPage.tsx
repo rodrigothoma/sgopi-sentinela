@@ -20,7 +20,8 @@ import {
   listarNaturezas,
   resumirPorNatureza,
 } from '../utils/manchas';
-import type { EventoTempoReal, OcorrenciaResumo, OrdemDespacho, StatusSimuladorCompleto, Sugestoes, Viatura } from '../types/api';
+import type { EventoTempoReal, NivelCriticidade, OcorrenciaResumo, OrdemDespacho, Papel, StatusSimuladorCompleto, Sugestoes, Viatura } from '../types/api';
+import { NIVEIS_CRITICIDADE, PAPEIS_DESTINATARIOS_ALERTA } from '../types/api';
 import { formatarHora } from '../utils/datas';
 import { inteligenciaService, type AreaRisco } from '../services/inteligenciaService';
 import { GlideSelect, type GlideSelectOption } from '../components/common/GlideSelect';
@@ -58,30 +59,29 @@ export const PainelTaticoPage: React.FC = () => {
   const [areaSelecionadaParaAlerta, setAreaSelecionadaParaAlerta] = useState('');
   const [alertaTitulo, setAlertaTitulo] = useState('Alerta Tático de Criticidade');
   const [alertaMensagem, setAlertaMensagem] = useState('');
-  const [alertaCriticidade, setAlertaCriticidade] = useState<'ALTA' | 'CRITICA'>('CRITICA');
-  const [alertaPapelDestinatario, setAlertaPapelDestinatario] = useState('');
+  const [alertaCriticidade, setAlertaCriticidade] = useState<NivelCriticidade>('CRITICA');
+  const [alertaPapelDestinatario, setAlertaPapelDestinatario] = useState<Papel | ''>('');
   const [enviandoAlerta, setEnviandoAlerta] = useState(false);
 
   const opcoesAreaRisco: GlideSelectOption[] = useMemo(() => [
-    { value: '', label: t('painel:alerta.nenhuma_area', 'Geral / Sem área específica') },
+    { value: '', label: t('painel:alerta.nenhuma_area') },
     ...areasRisco.map((a) => ({
       value: a.id,
-      label: `${a.nome} [${a.nivel_risco}] — ${a.total_ocorrencias} ocorrências`,
+      label: t('painel:alerta.opcao_area', { nome: a.nome, nivel: a.nivel_risco, total: a.total_ocorrencias }),
       tag: a.nivel_risco,
     })),
   ], [areasRisco, t]);
 
-  const opcoesCriticidade: GlideSelectOption[] = useMemo(() => [
-    { value: 'CRITICA', label: '🔴 CRÍTICA (Alerta Vermelho)' },
-    { value: 'ALTA', label: '🟠 ALTA (Atenção Reforçada)' },
-  ], []);
+  const opcoesCriticidade: GlideSelectOption[] = useMemo(
+    () => NIVEIS_CRITICIDADE.map((n) => ({ value: n, label: t(`painel:alerta.criticidade.${n}`) })),
+    [t],
+  );
 
+  // Derivadas do tipo Papel: um valor que não existe no backend não chega a ser oferecido (N3).
   const opcoesDestinatarios: GlideSelectOption[] = useMemo(() => [
-    { value: '', label: '📢 Todos os Perfis (Difusão Geral para Todo o Efetivo)' },
-    { value: 'AGENTE', label: '👮 Apenas Agentes de Ronda / Campo' },
-    { value: 'SUPERVISOR', label: '⭐ Apenas Supervisores e Delegados' },
-    { value: 'OPERADOR', label: '🎧 Apenas Operadores do COPOM' },
-  ], []);
+    { value: '', label: t('painel:alerta.destinatario_todos') },
+    ...PAPEIS_DESTINATARIOS_ALERTA.map((p) => ({ value: p, label: t('painel:alerta.destinatario_papel', { papel: t(`common:papel.${p}`) }) })),
+  ], [t]);
 
   const carregar = useCallback(async () => {
     try {
@@ -261,7 +261,7 @@ export const PainelTaticoPage: React.FC = () => {
         raio_metros: area?.raio_metros,
         papel_destinatario: alertaPapelDestinatario || undefined,
       });
-      avisar(t('painel:alerta.sucesso', 'Alerta tático de criticidade emitido com sucesso!'), 'sucesso');
+      avisar(t('painel:alerta.sucesso'), 'sucesso');
       setModalAlertaAberto(false);
       setAlertaMensagem('');
       setAlertaPapelDestinatario('');
@@ -296,7 +296,7 @@ export const PainelTaticoPage: React.FC = () => {
           onClick={() => setAreasRiscoAtivo((v) => !v)}
           title="Exibir manchas criminais e áreas de risco calculadas"
         >
-          🚨 {areasRiscoAtivo ? t('painel:areas_risco.ocultar', 'Ocultar Áreas de Risco') : t('painel:areas_risco.mostrar', 'Áreas de Risco')} ({areasRisco.length})
+          🚨 {areasRiscoAtivo ? t('painel:areas_risco.ocultar') : t('painel:areas_risco.mostrar')} ({areasRisco.length})
         </button>
         {podeEmitirAlerta && (
           <button
@@ -310,7 +310,7 @@ export const PainelTaticoPage: React.FC = () => {
             }}
             title="Emitir alerta de criticidade operacional em tempo real"
           >
-            📢 {t('painel:alerta.emitir', 'Emitir Alerta')}
+            📢 {t('painel:alerta.emitir')}
           </button>
         )}
         <button className={`btn ${heatAtivo ? 'btn-warn' : 'btn-ghost'}`} onClick={() => setHeatAtivo((v) => !v)}>
@@ -571,13 +571,10 @@ export const PainelTaticoPage: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span>📢</span> {t('painel:alerta.titulo_modal', 'Emitir Alerta de Criticidade Tática')}
+                  <span>📢</span> {t('painel:alerta.titulo_modal')}
                 </h3>
                 <p className="muted small" style={{ margin: '4px 0 0' }}>
-                  {t(
-                    'painel:alerta.descricao_modal',
-                    'Difunde notificação de alta prioridade para o efetivo operacional e registra auditoria formal.',
-                  )}
+                  {t('painel:alerta.descricao_modal')}
                 </p>
               </div>
               <button
@@ -594,7 +591,7 @@ export const PainelTaticoPage: React.FC = () => {
             <form onSubmit={handleEmitirAlerta} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.88rem' }}>
-                  {t('painel:alerta.area_vinculada', 'Área de Risco Associada (Opcional)')}
+                  {t('painel:alerta.area_vinculada')}
                 </label>
                 <GlideSelect
                   options={opcoesAreaRisco}
@@ -610,13 +607,13 @@ export const PainelTaticoPage: React.FC = () => {
                     }
                   }}
                   fullWidth
-                  placeholder={t('painel:alerta.nenhuma_area', 'Geral / Sem área específica')}
+                  placeholder={t('painel:alerta.nenhuma_area')}
                 />
               </div>
 
               <div>
                 <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.88rem' }}>
-                  {t('painel:alerta.campo_titulo', 'Título do Alerta')}
+                  {t('painel:alerta.campo_titulo')}
                 </label>
                 <input
                   type="text"
@@ -631,31 +628,31 @@ export const PainelTaticoPage: React.FC = () => {
 
               <div>
                 <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.88rem' }}>
-                  {t('painel:alerta.campo_criticidade', 'Nível de Criticidade')}
+                  {t('painel:alerta.campo_criticidade')}
                 </label>
                 <GlideSelect
                   options={opcoesCriticidade}
                   value={alertaCriticidade}
-                  onChange={(val) => setAlertaCriticidade(val as 'ALTA' | 'CRITICA')}
+                  onChange={(val) => setAlertaCriticidade(val as NivelCriticidade)}
                   fullWidth
                 />
               </div>
 
               <div>
                 <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.88rem' }}>
-                  {t('painel:alerta.campo_destinatario', 'Destinatários Notificados (Sino e Alerta)')}
+                  {t('painel:alerta.campo_destinatario')}
                 </label>
                 <GlideSelect
                   options={opcoesDestinatarios}
                   value={alertaPapelDestinatario}
-                  onChange={(val) => setAlertaPapelDestinatario(val)}
+                  onChange={(val) => setAlertaPapelDestinatario(val as Papel | '')}
                   fullWidth
                 />
               </div>
 
               <div>
                 <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.88rem' }}>
-                  {t('painel:alerta.campo_mensagem', 'Mensagem / Recomendações Táticas')}
+                  {t('painel:alerta.campo_mensagem')}
                 </label>
                 <textarea
                   required
@@ -673,7 +670,7 @@ export const PainelTaticoPage: React.FC = () => {
                   {t('actions.cancelar', 'Cancelar')}
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={enviandoAlerta}>
-                  {enviandoAlerta ? t('actions.salvando', 'Difundindo...') : t('painel:alerta.difundir', 'Difundir Alerta')}
+                  {enviandoAlerta ? t('painel:alerta.difundindo') : t('painel:alerta.difundir')}
                 </button>
               </div>
             </form>

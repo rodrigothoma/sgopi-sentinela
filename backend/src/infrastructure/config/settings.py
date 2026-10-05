@@ -5,9 +5,17 @@ Carrega variáveis de ambiente do arquivo .env na raiz de backend/.
 from __future__ import annotations
 
 from typing import Annotated
+from urllib.parse import urlsplit
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+SEGREDO_JWT_DEV = "dev-secret-insecure-change-me-local-only"  # ≥ 32 bytes: HS256 (RFC 7518 §3.2)
+TAMANHO_MINIMO_SEGREDO_JWT = 32
+# Placeholders de exemplo (.env.example) que nunca podem chegar a produção
+_MARCADORES_SEGREDO_EXEMPLO = ("troque", "change-me", "changeme", "exemplo", "example")
+_SENHAS_BANCO_PADRAO = {"admin", "postgres", "senha", "password"}
+_HOSTS_LOCAIS = {"localhost", "127.0.0.1", "0.0.0.0", "::1"}
 
 
 class Settings(BaseSettings):
@@ -18,7 +26,7 @@ class Settings(BaseSettings):
     database_echo: bool = False
 
     # RNF02*: JWT de turno (8 h), CORS por lista de origens
-    jwt_secret_key: str = "dev-secret-insecure-change-me"
+    jwt_secret_key: str = SEGREDO_JWT_DEV
     jwt_algorithm: str = "HS256"
     jwt_expires_in_hours: int = 8
     # NoDecode: o valor do .env chega como string "a,b,c" ao validador abaixo (sem tentar json.loads)
@@ -35,6 +43,13 @@ class Settings(BaseSettings):
     registro_publico_max_por_ip: int = Field(default=20, ge=1)
     registro_publico_janela_segundos: float = Field(default=600.0, gt=0.0)
     registro_publico_bloqueio_segundos: float = Field(default=600.0, gt=0.0)
+    # Consultas públicas (protocolo + código, autenticação de documento): cota por IP contra enumeração
+    consulta_publica_max_por_ip: int = Field(default=30, ge=1)
+    consulta_publica_janela_segundos: float = Field(default=600.0, gt=0.0)
+    consulta_publica_bloqueio_segundos: float = Field(default=600.0, gt=0.0)
+
+    # N12: segredo das credenciais HMAC dos rastreadores (vazio = ingestão por dispositivo desligada)
+    telemetria_segredo_dispositivos: str = ""
 
     # RNF04*: idade máxima da posição GPS para ser considerada válida
     telemetria_max_idade_segundos: int = 60
@@ -95,15 +110,43 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _validar_seguranca(self) -> Settings:
+        """Fail-fast: em produção a aplicação não sobe com configuração de desenvolvimento (RNF02)."""
         if not self.jwt_secret_key or not self.jwt_secret_key.strip():
-            self.jwt_secret_key = "dev-secret-insecure-change-me"
+            self.jwt_secret_key = SEGREDO_JWT_DEV
         if self.is_production:
-            if self.jwt_secret_key == "dev-secret-insecure-change-me" or len(self.jwt_secret_key) < 32:
-                raise ValueError(
-                    "Em ambiente de produção (app_env=production), a chave jwt_secret_key deve ser uma secret forte "
-                    "com pelo menos 32 caracteres (RNF02)."
-                )
+            problemas = self._problemas_de_producao()
+            if problemas:
+                raise ValueError("Configuração insegura para app_env=production: " + "; ".join(problemas))
         return self
+
+    def _problemas_de_producao(self) -> list[str]:
+        problemas: list[str] = []
+        segredo = self.jwt_secret_key.lower()
+        if (
+            self.jwt_secret_key == SEGREDO_JWT_DEV
+            or len(self.jwt_secret_key) < TAMANHO_MINIMO_SEGREDO_JWT
+            or any(m in segredo for m in _MARCADORES_SEGREDO_EXEMPLO)
+        ):
+            problemas.append(f"jwt_secret_key precisa ser um segredo aleatório com ≥ {TAMANHO_MINIMO_SEGREDO_JWT} caracteres")
+        if (urlsplit(self.database_url).password or "").lower() in _SENHAS_BANCO_PADRAO:
+            problemas.append("database_url usa uma senha padrão")
+        if any(o == "*" or urlsplit(o).hostname in _HOSTS_LOCAIS for o in self.cors_origins):
+            problemas.append("cors_origins não pode conter '*' nem origens locais")
+        if self.smtp_host and not self.smtp_usar_tls:
+            problemas.append("smtp_usar_tls deve ser true quando há servidor SMTP")
+        if self.despacho_automatico_ligado or self.gerador_ocorrencias_ligado:
+            problemas.append("despacho automático e gerador de ocorrências são recursos de demonstração")
+        return problemas
+
+    @property
+    def telemetria_humana_permitida(self) -> bool:
+        """Fora de produção, Operador/Supervisor podem injetar posições (testes, demonstração)."""
+        return not self.is_production
+
+    @property
+    def simulador_habilitado(self) -> bool:
+        """O simulador de telemetria move viaturas reais: só fora de produção."""
+        return not self.is_production
 
     @property
     def is_production(self) -> bool:

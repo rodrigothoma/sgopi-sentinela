@@ -93,5 +93,30 @@
     "OcorrenciaExcluida": "Incident deleted",
     "desconhecido": "Update received",
     "ultimo": "Last event: {{evento}} at {{hora}}"
+  },
+  "alerta": {
+    "emitir": "Issue Alert",
+    "titulo_modal": "Issue Tactical Criticality Alert",
+    "descricao_modal": "Broadcasts a high-priority notification to operational staff and records a formal audit entry.",
+    "area_vinculada": "Linked Risk Area (Optional)",
+    "nenhuma_area": "General / No specific area",
+    "opcao_area": "{{nome}} [{{nivel}}] — {{total}} incidents",
+    "campo_titulo": "Alert Title",
+    "campo_criticidade": "Criticality Level",
+    "campo_destinatario": "Notified Recipients (Bell and Alert)",
+    "campo_mensagem": "Message / Tactical Recommendations",
+    "criticidade": {
+      "CRITICA": "🔴 CRITICAL (Red Alert)",
+      "ALTA": "🟠 HIGH (Heightened Attention)"
+    },
+    "destinatario_todos": "📢 All roles (broadcast to all staff)",
+    "destinatario_papel": "Only: {{papel}}",
+    "difundir": "Broadcast Alert",
+    "difundindo": "Broadcasting...",
+    "sucesso": "Tactical criticality alert issued successfully!"
+  },
+  "areas_risco": {
+    "mostrar": "Risk Areas",
+    "ocultar": "Hide Risk Areas"
   }
 }

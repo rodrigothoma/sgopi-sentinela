@@ -107,3 +107,20 @@ def test_painel_recebe_eventos_de_validacao_e_posicao(client_ws):
         assert r.status_code == 200
         msg = ws.receive_json()
         assert msg["tipo"] == "PosicaoAtualizada" and msg["dados"]["prefixo"] == "VTR-01" and msg["dados"]["longitude"] == -55.70
+
+
+def test_origin_fora_do_cors_e_recusado(client_ws):
+    """Cross-Site WebSocket Hijacking: um site de terceiro não abre o canal com o token da vítima."""
+    from starlette.websockets import WebSocketDisconnect
+
+    token = _token(client_ws, "operador")
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client_ws.websocket_connect(
+            "/v1/tempo-real", subprotocols=_subprotocolos(token), headers={"Origin": "https://evil.example"}
+        ):
+            pass
+    assert exc.value.code == 1008
+    with client_ws.websocket_connect(
+        "/v1/tempo-real", subprotocols=_subprotocolos(token), headers={"Origin": "http://localhost:3000"}
+    ) as ws:
+        assert ws.accepted_subprotocol == "sgopi.bearer"

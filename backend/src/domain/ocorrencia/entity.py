@@ -15,6 +15,7 @@ pública de autenticidade emitida na validação — ver ``domain/ocorrencia/aut
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -43,6 +44,24 @@ TAMANHO_MINIMO_DESCRICAO = 20
 TAMANHO_MINIMO_JUSTIFICATIVA = 10
 TAMANHO_MINIMO_MOTIVO = 10
 MAXIMO_EVIDENCIAS_POR_OCORRENCIA = 10
+# Algoritmo do hash_narrativa: v1 (legado, junção por "\n"/"|", ambígua) e v2 (JSON canônico + evidências)
+VERSAO_HASH_LEGADA = 1
+VERSAO_HASH_ATUAL = 2
+
+
+class OrigemOcorrencia(str, Enum):
+    """Canal de entrada: registro pelo Agente (POLICIAL) ou comunicação do cidadão (PUBLICA)."""
+
+    POLICIAL = "POLICIAL"
+    PUBLICA = "PUBLICA"
+
+
+class EstadoIntegridadeEvidencia(str, Enum):
+    """Resultado da conferência do arquivo da evidência contra o SHA-256 gravado no upload."""
+
+    INTEGRA = "INTEGRA"
+    DIVERGENTE = "DIVERGENTE"
+    ARQUIVO_AUSENTE = "ARQUIVO_AUSENTE"
 
 
 class TipoEnvolvido(str, Enum):
@@ -158,12 +177,17 @@ class Ocorrencia:
     justificativa_revisao: str | None = None
     desfecho: str | None = None
     hash_narrativa: str | None = None
+    # None em registros anteriores à v2 = algoritmo legado (documentos já emitidos seguem verificáveis)
+    hash_versao: int | None = None
     chave_autenticidade: str | None = None
     arquivada_por_id: UUID | None = None
     motivo_arquivamento: str | None = None
     excluida_por_id: UUID | None = None
     motivo_exclusao: str | None = None
     inquerito_id: UUID | None = None
+    origem: OrigemOcorrencia = OrigemOcorrencia.POLICIAL
+    # Canal público: hash SHA-256 do código secreto entregue ao cidadão para acompanhar o registro
+    codigo_acompanhamento_hash: str | None = None
     tipificacoes: list[TipificacaoPenal] = field(default_factory=list)
     envolvidos: list[Envolvido] = field(default_factory=list)
     evidencias: list[Evidencia] = field(default_factory=list)
@@ -209,6 +233,8 @@ class Ocorrencia:
         envolvidos: list[Envolvido],
         tipificacoes: list[TipificacaoPenal] | None = None,
         itens_apreendidos: list[ItemApreendido] | None = None,
+        origem: OrigemOcorrencia = OrigemOcorrencia.POLICIAL,
+        codigo_acompanhamento_hash: str | None = None,
     ) -> Ocorrencia:
         """Cria uma ocorrência válida em AGUARDANDO_REVISAO (RF01*, UC01 regras 1 e 3).
 
@@ -232,6 +258,8 @@ class Ocorrencia:
             data_hora_fato=data_hora_fato,
             numero_protocolo=numero_protocolo,
             criada_em=agora,
+            origem=origem,
+            codigo_acompanhamento_hash=codigo_acompanhamento_hash,
         )
         for envolvido in envolvidos:
             ocorrencia.adicionar_envolvido(envolvido)
@@ -374,11 +402,23 @@ class Ocorrencia:
         self._transicionar("validar", delegado_id, em, despacho_normalizado)
         self.validada_por_id = delegado_id
         self.justificativa_revisao = despacho_normalizado
+        self.hash_versao = VERSAO_HASH_ATUAL
         self.hash_narrativa = self.calcular_hash_narrativa()
         self.chave_autenticidade = gerar_chave_autenticidade()
 
     def devolver_para_correcao(self, delegado_id: UUID, justificativa: str, em: datetime) -> None:
-        """AGUARDANDO_REVISAO → EM_CORRECAO (justificativa ≥ 10 caracteres)."""
+        """AGUARDANDO_REVISAO → EM_CORRECAO (justificativa ≥ 10 caracteres).
+
+        Comunicação pública não tem Agente autor que possa corrigi-la: o Delegado valida,
+        rejeita ou arquiva, mas não devolve (ficaria presa em EM_CORRECAO).
+        """
+        if self.origem == OrigemOcorrencia.PUBLICA:
+            raise TransicaoInvalidaError(
+                "Comunicação pública não pode ser devolvida para correção; valide, rejeite ou arquive.",
+                chave="ocorrencia.publica_nao_devolvivel",
+                operacao="devolver_para_correcao",
+                status_atual=self.status.value,
+            )
         self._exigir_justificativa(justificativa)
         self._transicionar("devolver_para_correcao", delegado_id, em, justificativa.strip())
         self.validada_por_id = delegado_id
@@ -444,6 +484,17 @@ class Ocorrencia:
         """VALIDADA → EM_ATENDIMENTO (RF02)."""
         self._transicionar("despachar", operador_id, em)
 
+    def registrar_apoio(self, operador_id: UUID, em: datetime) -> None:
+        """Viatura de apoio em ocorrência EM_ATENDIMENTO: não muda o status, mas incrementa a
+        versão — assim um encerramento concorrente é detectado pelo optimistic locking (RNF03)."""
+        if self.status != StatusOcorrencia.EM_ATENDIMENTO:
+            raise TransicaoInvalidaError(
+                f"Viatura de apoio só em ocorrência EM_ATENDIMENTO (status atual: {self.status.value}).",
+                operacao="despachar_apoio",
+                status_atual=self.status.value,
+            )
+        self._tocar(em)
+
     def encerrar(self, ator_id: UUID, desfecho: str, em: datetime) -> None:
         """EM_ATENDIMENTO → ENCERRADA com desfecho textual obrigatório (RF02)."""
         if not desfecho or not desfecho.strip():
@@ -491,15 +542,43 @@ class Ocorrencia:
                 minimo=TAMANHO_MINIMO_MOTIVO,
             )
 
-    def calcular_hash_narrativa(self) -> str:
-        """SHA-256 determinístico da narrativa + envolvidos (DEC-09; base para RF08 futuro)."""
+    def calcular_hash_narrativa(self, versao: int | None = None) -> str:
+        """SHA-256 determinístico do conteúdo do documento oficial (DEC-09 / RF08).
+
+        Usa a versão informada ou a gravada; hash já emitido sem versão é v1 (legado) e
+        uma ocorrência ainda não validada usa a versão atual.
+        """
+        versao = versao or self.hash_versao or (VERSAO_HASH_LEGADA if self.hash_narrativa else VERSAO_HASH_ATUAL)
+        conteudo = self._conteudo_hash_v1() if versao == VERSAO_HASH_LEGADA else self._conteudo_hash_v2()
+        return hashlib.sha256(conteudo.encode("utf-8")).hexdigest()
+
+    def _conteudo_hash_v1(self) -> str:
+        """Legado: separadores sem escape permitiam colisão deslocando texto entre campos (N5)."""
         partes = [self.natureza, self.descricao, self.localizacao, self.data_hora_fato.isoformat()]
         partes += sorted(f"{e.tipo.value}|{e.nome}|{e.documento or ''}" for e in self.envolvidos)
         partes += sorted(f"{t.artigo}|{t.descricao}" for t in self.tipificacoes)
-        return hashlib.sha256("\n".join(partes).encode("utf-8")).hexdigest()
+        return "\n".join(partes)
+
+    def _conteudo_hash_v2(self) -> str:
+        """JSON canônico (campos nomeados, chaves ordenadas): sem ambiguidade entre campos.
+
+        Inclui o SHA-256 das evidências, que não mudam após a validação. Itens apreendidos ficam
+        de fora: a custódia continua sendo movimentada depois da emissão do documento.
+        """
+        documento = {
+            "versao": VERSAO_HASH_ATUAL,
+            "natureza": self.natureza,
+            "descricao": self.descricao,
+            "localizacao": self.localizacao,
+            "data_hora_fato": self.data_hora_fato.isoformat(),
+            "envolvidos": sorted([e.tipo.value, e.nome, e.documento or ""] for e in self.envolvidos),
+            "tipificacoes": sorted([t.artigo, t.descricao] for t in self.tipificacoes),
+            "evidencias": sorted(e.hash_sha256 for e in self.evidencias),
+        }
+        return json.dumps(documento, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
 
     def narrativa_integra(self) -> bool | None:
-        """None se ainda não foi validada; True/False se o hash confere."""
+        """None se ainda não foi validada; True/False se o hash confere (na versão com que foi emitido)."""
         if self.hash_narrativa is None:
             return None
         return self.calcular_hash_narrativa() == self.hash_narrativa

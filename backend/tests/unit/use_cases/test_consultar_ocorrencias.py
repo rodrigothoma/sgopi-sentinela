@@ -1,6 +1,7 @@
 """ListarOcorrencias / ObterDetalheOcorrencia (RF01, LGPD)."""
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from application.ports.inbound.interface_consultar_ocorrencias import ListarOcorrenciasInput
 from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia

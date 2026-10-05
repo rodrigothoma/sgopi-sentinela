@@ -4,8 +4,8 @@ Função pura: sem banco, sem rede, sem Roteador real.
 """
 import math
 
-from domain.shared.geo import RAIO_TERRA_KM, Coordenada
 from adapters.inbound.simulador.navegacao import avancar_na_rota
+from domain.shared.geo import RAIO_TERRA_KM, Coordenada
 
 # Alegrete/RS — sede do curso (dados fictícios, RNF10)
 ALEGRETE = Coordenada(-29.7833, -55.7919)

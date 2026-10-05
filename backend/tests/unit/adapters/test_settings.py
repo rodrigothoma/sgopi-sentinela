@@ -37,8 +37,53 @@ def test_gerador_ocorrencias_desligado_por_padrao():
 def test_gerador_ocorrencias_intervalo_minimo():
     """Issue #55 ajuste 3: intervalo < 1s é inválido."""
     import pytest
-
     from pydantic import ValidationError
 
     with pytest.raises(ValidationError):
         Settings(_env_file=None, gerador_ocorrencias_intervalo_segundos=0.5)
+
+
+_PRODUCAO_OK = dict(
+    app_env="production",
+    jwt_secret_key="k3Q9xVb7Lr2mPz8Tn4Wq6Yc1Hd5Fg0Js",
+    database_url="postgresql+asyncpg://sgopi:Xr7!pQ2z@db.interno:5432/sgopi",
+    cors_origins=["https://sentinela.seguranca.gov.br"],
+)
+
+
+def test_producao_bem_configurada_sobe():
+    s = Settings(_env_file=None, **_PRODUCAO_OK)
+    assert s.is_production and s.simulador_habilitado is False
+
+
+def _erro_producao(**override) -> str:
+    import pytest
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError) as exc:
+        Settings(_env_file=None, **{**_PRODUCAO_OK, **override})
+    return str(exc.value)
+
+
+def test_producao_recusa_segredo_de_exemplo_ou_curto():
+    assert "jwt_secret_key" in _erro_producao(jwt_secret_key="troque-esta-chave-em-qualquer-ambiente-que-nao-seja-dev")
+    assert "jwt_secret_key" in _erro_producao(jwt_secret_key="curta")
+
+
+def test_producao_recusa_senha_padrao_do_banco():
+    assert "database_url" in _erro_producao(database_url="postgresql+asyncpg://postgres:admin@db:5432/sgopi")
+
+
+def test_producao_recusa_cors_local_ou_curinga():
+    assert "cors_origins" in _erro_producao(cors_origins=["http://localhost:3000"])
+    assert "cors_origins" in _erro_producao(cors_origins=["*"])
+
+
+def test_producao_recusa_smtp_sem_tls_e_recursos_de_demo():
+    assert "smtp_usar_tls" in _erro_producao(smtp_host="smtp.gov.br", smtp_usar_tls=False)
+    assert "demonstração" in _erro_producao(despacho_automatico_ligado=True)
+    assert "demonstração" in _erro_producao(gerador_ocorrencias_ligado=True)
+
+
+def test_desenvolvimento_mantem_simulador():
+    assert Settings(_env_file=None).simulador_habilitado is True

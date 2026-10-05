@@ -1,5 +1,5 @@
 """Testes unitários de AutenticarUsuario (RNF02) — sem banco."""
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
 

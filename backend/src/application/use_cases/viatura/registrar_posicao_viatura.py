@@ -12,6 +12,8 @@ posição fica a até ``raio_chegada_metros`` da ocorrência da ordem ativa).
 """
 from __future__ import annotations
 
+from datetime import datetime
+
 from application.ports.inbound.interface_gerir_viaturas import InterfaceRegistrarPosicaoViatura, RegistrarPosicaoInput, ViaturaOutput
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.publicador_eventos import PublicadorEventos
@@ -56,7 +58,7 @@ class RegistrarPosicaoViatura(InterfaceRegistrarPosicaoViatura):
             viatura = await carregar_viatura(self._repositorio, input_dto.viatura_id)
             viatura.registrar_posicao(coordenada, input_dto.registrada_em, agora, self._tolerancia)
             eventos.append(posicao_atualizada(viatura, agora))
-            chegada = await self._detectar_chegada(viatura, agora, input_dto.origem)
+            chegada = await self._detectar_chegada(viatura, agora, input_dto)
             if chegada is not None:
                 eventos.append(chegada)
             await self._repositorio.salvar(viatura)
@@ -65,7 +67,7 @@ class RegistrarPosicaoViatura(InterfaceRegistrarPosicaoViatura):
             await self._publicador.publicar(evento)
         return para_output(viatura, agora, self._tolerancia)
 
-    async def _detectar_chegada(self, viatura: Viatura, agora, origem: str | None) -> EventoDominio | None:
+    async def _detectar_chegada(self, viatura: Viatura, agora: datetime, input_dto: RegistrarPosicaoInput) -> EventoDominio | None:
         """Viatura EM_DESLOCAMENTO a até ``raio_chegada`` m da ocorrência da ordem ativa → OPERANDO."""
         if viatura.situacao != SituacaoViatura.EM_DESLOCAMENTO or self._ordens is None or self._ocorrencias is None:
             return None
@@ -82,11 +84,11 @@ class RegistrarPosicaoViatura(InterfaceRegistrarPosicaoViatura):
         if self._auditoria is not None:
             await self._auditoria.registrar(
                 RegistroAuditoria(
-                    quem=None, quando=agora, operacao="viatura.chegada_ao_local", entidade="Viatura", entidade_id=str(viatura.id),
+                    quem=input_dto.por_id, quando=agora, operacao="viatura.chegada_ao_local", entidade="Viatura", entidade_id=str(viatura.id),
                     dados_antes={"situacao": SituacaoViatura.EM_DESLOCAMENTO.value},
                     dados_depois={
                         "situacao": viatura.situacao.value, "ocorrencia_id": str(ocorrencia.id), "numero_ordem": ordem.numero,
-                        "distancia_metros": round(distancia_m, 1), "origem": origem,
+                        "distancia_metros": round(distancia_m, 1), "origem": input_dto.origem,
                     },
                 )
             )

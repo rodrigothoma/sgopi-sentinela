@@ -8,11 +8,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 
-from adapters.inbound.http.deps import ator_atual, exigir_papel
+from adapters.inbound.http.deps import exigir_papel
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_gerir_inqueritos import (
     ConcluirInqueritoInput,
-    ConexaoSugeridaOutput,
     InqueritoOutput,
     InstaurarInqueritoInput,
     InterfaceBuscarConexoesOcorrencia,
@@ -21,7 +20,6 @@ from application.ports.inbound.interface_gerir_inqueritos import (
     InterfaceListarInqueritos,
     InterfaceObterInquerito,
     InterfaceVincularOcorrenciasInquerito,
-    OcorrenciaResumoInqueritoOutput,
     VincularOcorrenciasInput,
 )
 from domain.usuario.entity import Papel

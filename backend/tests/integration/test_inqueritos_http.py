@@ -1,5 +1,4 @@
 """Integração HTTP + persistência: Inquéritos Policiais (RF06 / UC06 / sq06)."""
-from uuid import uuid4
 
 from tests.integration.helpers import auth, registrar
 

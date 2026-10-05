@@ -68,3 +68,38 @@ async def test_simulador_liga_desliga_via_api(app, client, session_factory):
 
     r = await client.post("/v1/simulador/ligar", headers=await auth(client, "agente"))
     assert r.status_code == 403
+
+
+def _posicao(viatura_id: str) -> dict:
+    return {"viatura_id": viatura_id, "latitude": -29.78, "longitude": -55.79, "registrada_em": datetime.now(UTC).isoformat()}
+
+
+async def test_rastreador_envia_so_a_propria_viatura(app, client):
+    """N12: a credencial do dispositivo é presa à viatura e dispensa token humano."""
+    from adapters.outbound.seguranca.credencial_dispositivo_hmac import CredencialDispositivoHMAC
+    from infrastructure.di import get_credencial_dispositivo
+
+    app.dependency_overrides[get_credencial_dispositivo] = lambda: CredencialDispositivoHMAC("segredo-de-teste")
+    ho = await auth(client, "operador")
+    v1, v2 = await _cadastrar(client, ho), await _cadastrar(client, ho, "VTR-02", "IAB1A24")
+    emitida = await client.post(f"/v1/viaturas/{v1['id']}/credencial-telemetria", headers=ho)
+    assert emitida.status_code == 200
+    cabecalho = {emitida.json()["cabecalho"]: emitida.json()["credencial"]}
+
+    assert (await client.post("/v1/telemetria/posicoes", json=_posicao(v1["id"]), headers=cabecalho)).status_code == 200
+    assert (await client.post("/v1/telemetria/posicoes", json=_posicao(v2["id"]), headers=cabecalho)).status_code == 401
+    assert (await client.post("/v1/telemetria/posicoes", json=_posicao(v1["id"]))).status_code == 401
+    agente = await auth(client, "agente")
+    assert (await client.post(f"/v1/viaturas/{v1['id']}/credencial-telemetria", headers=agente)).status_code == 403
+
+
+async def test_em_producao_token_humano_nao_envia_posicao(client, monkeypatch):
+    from infrastructure.config.settings import settings
+
+    ho = await auth(client, "operador")
+    v = await _cadastrar(client, ho)
+    monkeypatch.setattr(settings, "app_env", "production")
+    r = await client.post("/v1/telemetria/posicoes", json=_posicao(v["id"]), headers=ho)
+    assert r.status_code == 403 and r.json()["code"] == "telemetria.exige_dispositivo"
+    r = await client.post("/v1/simulador/ligar", headers=ho)
+    assert r.status_code == 403 and r.json()["code"] == "simulador.desabilitado_em_producao"

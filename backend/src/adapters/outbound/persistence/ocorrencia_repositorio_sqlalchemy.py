@@ -29,6 +29,7 @@ from domain.ocorrencia.entity import (
     Envolvido,
     Evidencia,
     Ocorrencia,
+    OrigemOcorrencia,
     RegistroHistoricoStatus,
     TipificacaoPenal,
     TipoEnvolvido,
@@ -159,12 +160,15 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             justificativa_revisao=ocorrencia.justificativa_revisao,
             desfecho=ocorrencia.desfecho,
             hash_narrativa=ocorrencia.hash_narrativa,
+            hash_versao=ocorrencia.hash_versao,
             chave_autenticidade=ocorrencia.chave_autenticidade,
             arquivada_por_id=ocorrencia.arquivada_por_id,
             motivo_arquivamento=ocorrencia.motivo_arquivamento,
             excluida_por_id=ocorrencia.excluida_por_id,
             motivo_exclusao=ocorrencia.motivo_exclusao,
             inquerito_id=ocorrencia.inquerito_id,
+            origem=ocorrencia.origem.value,
+            codigo_acompanhamento_hash=ocorrencia.codigo_acompanhamento_hash,
         )
 
     def _to_model(self, ocorrencia: Ocorrencia) -> OcorrenciaModel:
@@ -331,12 +335,15 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             justificativa_revisao=model.justificativa_revisao,
             desfecho=model.desfecho,
             hash_narrativa=model.hash_narrativa,
+            hash_versao=model.hash_versao,
             chave_autenticidade=model.chave_autenticidade,
             arquivada_por_id=model.arquivada_por_id,
             motivo_arquivamento=model.motivo_arquivamento,
             excluida_por_id=model.excluida_por_id,
             motivo_exclusao=model.motivo_exclusao,
             inquerito_id=model.inquerito_id,
+            origem=OrigemOcorrencia(model.origem),
+            codigo_acompanhamento_hash=model.codigo_acompanhamento_hash,
         )
         ocorrencia.envolvidos = [
             Envolvido(

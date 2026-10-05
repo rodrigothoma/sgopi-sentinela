@@ -10,6 +10,7 @@ from datetime import datetime
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
+from domain.ocorrencia.entity import OrigemOcorrencia
 
 
 @dataclass(frozen=True)
@@ -54,6 +55,9 @@ class RegistrarOcorrenciaInput:
     tipificacoes: tuple[TipificacaoInputDTO, ...] = field(default_factory=tuple)
     envolvidos: tuple[EnvolvidoInputDTO, ...] = field(default_factory=tuple)
     itens_apreendidos: tuple[ItemApreendidoInputDTO, ...] = field(default_factory=tuple)
+    # Preenchidos só pelo canal público (RegistrarOcorrenciaPublica); o router policial nunca os expõe
+    origem: OrigemOcorrencia = OrigemOcorrencia.POLICIAL
+    codigo_acompanhamento_hash: str | None = None
 
 
 @dataclass(frozen=True)

@@ -23,7 +23,7 @@ engine: AsyncEngine = criar_engine()
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_session() -> AsyncGenerator[AsyncSession]:
     """Dependência FastAPI: uma sessão async por request (a UoW decide o commit)."""
     async with AsyncSessionLocal() as session:
         yield session

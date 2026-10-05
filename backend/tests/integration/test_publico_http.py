@@ -45,7 +45,10 @@ async def test_autenticar_por_chave_sem_login_documento_autentico(client, sessio
     assert corpo["envolvidos_por_tipo"] == {"VITIMA": 1}
     assert corpo["tipificacoes"] == [{"artigo": "Art. 155 CP", "descricao": "Furto simples"}]
     # LGPD / RNF02: nada que identifique pessoas nem a narrativa
-    assert "Maria" not in r.text and "789" not in r.text and "localizacao" not in corpo and "descricao" not in corpo
+    # O corpo tem valores aleatórios (hash, microssegundos): procura o documento inteiro, nunca um trecho
+    # curto como "789", que aparecia por acaso no hash em ~2-3% das execuções (N1).
+    assert "Maria" not in r.text and "123.456.789-09" not in r.text and "12345678909" not in r.text
+    assert "localizacao" not in corpo and "descricao" not in corpo
 
     stmt = select(RegistroAuditoriaModel).where(RegistroAuditoriaModel.operacao == "documento.autenticar")
     registro = (await session.execute(stmt)).scalar_one()

@@ -9,9 +9,45 @@ from application.ports.inbound.interface_gerir_inqueritos import (
     InterfaceBuscarConexoesOcorrencia,
 )
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
-from domain.ocorrencia.entity import TipoEnvolvido
+from domain.ocorrencia.entity import Ocorrencia, TipoEnvolvido
 from domain.ocorrencia.status import StatusOcorrencia
 from domain.shared.exceptions import EntidadeNaoEncontradaError
+
+# Pesos da pontuação de relevância (maior = conexão mais forte)
+PESO_MESMO_DOCUMENTO_SUSPEITO = 100
+PESO_MESMO_NOME_SUSPEITO = 70
+PESO_PROXIMIDADE = 40
+PESO_MESMA_NATUREZA = 30
+RAIO_PROXIMIDADE_KM = 2.0
+LIMITE_CANDIDATAS = 100
+
+
+def _suspeitos(oc: Ocorrencia) -> tuple[set[str], set[str]]:
+    """(documentos, nomes normalizados) dos suspeitos qualificados na ocorrência."""
+    suspeitos = [e for e in oc.envolvidos if e.tipo == TipoEnvolvido.SUSPEITO]
+    docs = {e.documento.strip() for e in suspeitos if e.documento and e.documento.strip()}
+    nomes = {e.nome.strip().lower() for e in suspeitos if e.nome and e.nome.strip()}
+    return docs, nomes
+
+
+def _pontuar(pivo: Ocorrencia, suspeitos_pivo: tuple[set[str], set[str]], cand: Ocorrencia) -> tuple[int, list[str]]:
+    pontuacao, motivos = 0, []
+    docs_cand, nomes_cand = _suspeitos(cand)
+    docs_comuns, nomes_comuns = suspeitos_pivo[0] & docs_cand, suspeitos_pivo[1] & nomes_cand
+    if docs_comuns:
+        pontuacao += PESO_MESMO_DOCUMENTO_SUSPEITO
+        motivos.append(f"Mesmo suspeito identificado por documento: {', '.join(sorted(docs_comuns))}")
+    elif nomes_comuns:
+        pontuacao += PESO_MESMO_NOME_SUSPEITO
+        motivos.append(f"Mesmo nome de suspeito: {', '.join(n.title() for n in sorted(nomes_comuns))}")
+    if cand.natureza.strip().lower() == pivo.natureza.strip().lower():
+        pontuacao += PESO_MESMA_NATUREZA
+        motivos.append(f"Mesma natureza criminal: {cand.natureza}")
+    distancia_km = pivo.coordenada.distancia_km(cand.coordenada)
+    if distancia_km <= RAIO_PROXIMIDADE_KM:
+        pontuacao += PESO_PROXIMIDADE
+        motivos.append(f"Proximidade geográfica: {int(distancia_km * 1000)}m")
+    return pontuacao, motivos
 
 
 class BuscarConexoesOcorrencia(InterfaceBuscarConexoesOcorrencia):
@@ -19,6 +55,7 @@ class BuscarConexoesOcorrencia(InterfaceBuscarConexoesOcorrencia):
         self._repo = repositorio_ocorrencia
 
     async def executar(self, ator: Ator, ocorrencia_pivo_id: UUID) -> list[ConexaoSugeridaOutput]:
+        """Candidatas: ocorrências VALIDADA ainda sem inquérito, ordenadas pela relevância da conexão."""
         pivo = await self._repo.buscar_por_id(ocorrencia_pivo_id)
         if not pivo:
             raise EntidadeNaoEncontradaError(
@@ -26,81 +63,24 @@ class BuscarConexoesOcorrencia(InterfaceBuscarConexoesOcorrencia):
                 chave="ocorrencia.nao_encontrada",
                 ocorrencia_id=str(ocorrencia_pivo_id),
             )
-
-        # Buscar ocorrências candidatas validadas e sem inquérito
         candidatas = await self._repo.listar(
-            FiltroOcorrencias(
-                status=(StatusOcorrencia.VALIDADA,),
-                limit=100,
-                offset=0,
-            )
+            FiltroOcorrencias(status=(StatusOcorrencia.VALIDADA,), limit=LIMITE_CANDIDATAS, offset=0)
         )
-
-        suspeitos_pivo_docs = {
-            e.documento.strip()
-            for e in pivo.envolvidos
-            if e.tipo == TipoEnvolvido.SUSPEITO and e.documento and e.documento.strip()
-        }
-        suspeitos_pivo_nomes = {
-            e.nome.strip().lower()
-            for e in pivo.envolvidos
-            if e.tipo == TipoEnvolvido.SUSPEITO and e.nome and e.nome.strip()
-        }
-
-        sugestoes: list[tuple[int, ConexaoSugeridaOutput]] = []
-
+        suspeitos_pivo = _suspeitos(pivo)
+        sugestoes: list[ConexaoSugeridaOutput] = []
         for cand in candidatas:
             if cand.id == pivo.id or cand.inquerito_id is not None:
                 continue
-
-            pontuacao = 0
-            motivos = []
-
-            # 1. Cruzamento de suspeitos
-            suspeitos_cand_docs = {
-                e.documento.strip()
-                for e in cand.envolvidos
-                if e.tipo == TipoEnvolvido.SUSPEITO and e.documento and e.documento.strip()
-            }
-            suspeitos_cand_nomes = {
-                e.nome.strip().lower()
-                for e in cand.envolvidos
-                if e.tipo == TipoEnvolvido.SUSPEITO and e.nome and e.nome.strip()
-            }
-
-            docs_comuns = suspeitos_pivo_docs & suspeitos_cand_docs
-            nomes_comuns = suspeitos_pivo_nomes & suspeitos_cand_nomes
-
-            if docs_comuns:
-                pontuacao += 100
-                motivos.append(f"Mesmo suspeito identificado por documento: {', '.join(docs_comuns)}")
-            elif nomes_comuns:
-                pontuacao += 70
-                motivos.append(f"Mesmo nome de suspeito: {', '.join(n.title() for n in nomes_comuns)}")
-
-            # 2. Mesma natureza penal
-            if cand.natureza.strip().lower() == pivo.natureza.strip().lower():
-                pontuacao += 30
-                motivos.append(f"Mesma natureza criminal: {cand.natureza}")
-
-            # 3. Proximidade geográfica (mesma via/bairro ou proximidade < 2km)
-            distancia_km = pivo.coordenada.distancia_km(cand.coordenada)
-            if distancia_km <= 2.0:
-                pontuacao += 40
-                dist_m = int(distancia_km * 1000)
-                motivos.append(f"Proximidade geográfica: {dist_m}m")
-
+            pontuacao, motivos = _pontuar(pivo, suspeitos_pivo, cand)
             if pontuacao > 0:
-                sugestao = ConexaoSugeridaOutput(
-                    ocorrencia_id=cand.id,
-                    numero_protocolo=cand.numero_protocolo,
-                    natureza=cand.natureza,
-                    localizacao=cand.localizacao,
-                    motivo_conexao=" · ".join(motivos),
-                    pontuacao_relevancia=pontuacao,
+                sugestoes.append(
+                    ConexaoSugeridaOutput(
+                        ocorrencia_id=cand.id,
+                        numero_protocolo=cand.numero_protocolo,
+                        natureza=cand.natureza,
+                        localizacao=cand.localizacao,
+                        motivo_conexao=" · ".join(motivos),
+                        pontuacao_relevancia=pontuacao,
+                    )
                 )
-                sugestoes.append((pontuacao, sugestao))
-
-        # Ordenar por maior relevância
-        sugestoes.sort(key=lambda x: x[0], reverse=True)
-        return [s[1] for s in sugestoes]
+        return sorted(sugestoes, key=lambda s: s.pontuacao_relevancia, reverse=True)

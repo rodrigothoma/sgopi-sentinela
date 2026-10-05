@@ -36,10 +36,14 @@ jobs:
       - name: 🏛️ Validar Contratos da Arquitetura Hexagonal (RNF05)
         run: PYTHONPATH=src uv run lint-imports --config pyproject.toml
 
+      - name: 🧹 Lint estático (ruff)
+        run: uv tool run ruff check src tests
+
       - name: 🗄️ Preparar Banco do CI (SQLite) + Seed
         run: |
           rm -f sgopi_ci.db
           uv run alembic upgrade head
+          uv run alembic check   # modelos e migrações não podem divergir (N2)
           uv run python -m scripts.seed
 
       - name: Iniciar backend para os testes E2E
@@ -63,7 +67,10 @@ jobs:
           done
 
       - name: 🧪 Executar Testes Automatizados e Cobertura (RNF06 >= 80%)
-        run: uv run pytest --cov
+        run: uv run pytest --cov --cov-report=term --cov-report=json
+
+      - name: 📊 Piso de cobertura por arquivo (N10)
+        run: uv run python -m scripts.verificar_cobertura_por_arquivo coverage.json
 
       - name: Encerrar backend E2E
         if: always()
@@ -81,6 +88,48 @@ jobs:
         run: |
           echo "Verificando se há artefatos de chat de LLM..."
           ! grep -rn "contentReference" docs/ backend/src/ frontend/src/ || (echo "ERRO: Marcador de chat de IA encontrado!" && exit 1)
+
+  migracoes-postgres:
+    name: Backend — Migrações no PostgreSQL 16
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: sgopi
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:ci@localhost:5432/sgopi
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Configurar Python 3.13
+        run: uv python install 3.13
+
+      - name: Instalar Dependências do Backend
+        run: uv sync
+
+      - name: 🗄️ upgrade → check → downgrade → upgrade (triggers append-only, índices parciais, ON CONFLICT)
+        run: |
+          uv run alembic upgrade head
+          uv run alembic check
+          uv run alembic downgrade 0011
+          uv run alembic upgrade head
+          uv run python -m scripts.seed
 
   frontend-build:
     name: Frontend — Typecheck & Build
@@ -106,5 +155,11 @@ jobs:
       - name: 🔍 Checagem de Tipos TypeScript (tsc)
         run: npx tsc --noEmit
 
+      - name: 🧪 Testes unitários do frontend (Vitest)
+        run: npm test
+
       - name: 📦 Build de Produção (Vite)
         run: npm run build
+
+      - name: 🔐 Auditoria de dependências de produção (N7)
+        run: npm audit --omit=dev --audit-level=high

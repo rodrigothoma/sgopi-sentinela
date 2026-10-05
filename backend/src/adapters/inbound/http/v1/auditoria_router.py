@@ -8,10 +8,10 @@ from pydantic import BaseModel
 from adapters.inbound.http.deps import exigir_papel
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_consultar_auditoria import (
-    ConsultarAuditoriaInput,
-    InterfaceConsultarAuditoria,
     LIMITE_MAXIMO_CONSULTA,
     LIMITE_PADRAO_CONSULTA,
+    ConsultarAuditoriaInput,
+    InterfaceConsultarAuditoria,
 )
 from domain.usuario.entity import Papel
 from infrastructure.di import get_consultar_auditoria

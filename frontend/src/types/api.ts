@@ -1,5 +1,9 @@
 // Contratos espelhados do OpenAPI do backend. Manter sincronizado por revisão.
-export type Papel = 'AGENTE' | 'DELEGADO' | 'OPERADOR_CENTRAL' | 'SUPERVISOR' | 'PERITO' | 'ESCRIVAO';
+export type Papel = 'AGENTE' | 'DELEGADO' | 'OPERADOR_CENTRAL' | 'SUPERVISOR' | 'PERITO' | 'ESCRIVAO' | 'CIDADAO';
+/** Papéis humanos que podem ser destinatários de alerta tático (CIDADAO é o ator técnico do canal público). */
+export const PAPEIS_DESTINATARIOS_ALERTA: readonly Papel[] = ['AGENTE', 'OPERADOR_CENTRAL', 'SUPERVISOR', 'DELEGADO', 'PERITO', 'ESCRIVAO'];
+export type NivelCriticidade = 'ALTA' | 'CRITICA';
+export const NIVEIS_CRITICIDADE: readonly NivelCriticidade[] = ['CRITICA', 'ALTA'];
 export type TipoEnvolvido = 'VITIMA' | 'TESTEMUNHA' | 'SUSPEITO' | 'COMUNICANTE';
 export type StatusOcorrencia = 'AGUARDANDO_REVISAO' | 'EM_CORRECAO' | 'REJEITADA' | 'VALIDADA' | 'EM_ATENDIMENTO' | 'ENCERRADA' | 'ARQUIVADA' | 'EXCLUIDA';
 /** Atos administrativos do Delegado (RF20): não permitidos em EM_ATENDIMENTO; EXCLUIDA é terminal. */
@@ -18,7 +22,7 @@ export interface TipificacaoDTO { artigo: string; descricao: string }
 export interface Evidencia {
   id: string; nome_original: string; formato: string; tamanho: number; hash_sha256: string; enviada_em: string;
 }
-export type EstadoIntegridadeEvidencia = 'INTEGRA' | 'DIVERGENTE';
+export type EstadoIntegridadeEvidencia = 'INTEGRA' | 'DIVERGENTE' | 'ARQUIVO_AUSENTE';
 export interface IntegridadeEvidencia {
   evidencia_id: string;
   estado: EstadoIntegridadeEvidencia;
@@ -70,7 +74,9 @@ export interface OcorrenciaResumo {
   latitude: number; longitude: number; status: StatusOcorrencia; data_hora_fato: string;
   criada_em: string; atualizada_em: string; agente_policial_id: string; versao: number;
   inquerito_id?: string | null;
+  origem?: OrigemOcorrencia;
 }
+export type OrigemOcorrencia = 'POLICIAL' | 'PUBLICA';
 export interface EnvolvidoDetalhe {
   id: string;
   nome: string;

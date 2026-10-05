@@ -16,8 +16,9 @@
     "desfecho_vazio": "O desfecho do atendimento é obrigatório",
     "nao_e_autor": "Somente o agente autor pode alterar esta ocorrência",
     "status_invalido": "Status de ocorrência inválido",
-    "protocolo_nao_encontrado": "Ocorrência não encontrada com o protocolo informado.",
-    "declaracao_maioridade_ausente": "É obrigatório confirmar a declaração de maioridade (+18 anos) e veracidade dos fatos."
+    "protocolo_nao_encontrado": "Ocorrência não encontrada com o protocolo e o código de acompanhamento informados.",
+    "declaracao_maioridade_ausente": "É obrigatório confirmar a declaração de maioridade (+18 anos) e veracidade dos fatos.",
+    "publica_nao_devolvivel": "Comunicação feita pelo cidadão não pode ser devolvida para correção: valide, rejeite ou arquive."
   },
   "envolvido": {
     "documento_tamanho_invalido": "Documento com tamanho inválido: RG com 10 dígitos ou CPF com 11 dígitos",
@@ -90,7 +91,8 @@
   "telemetria": {
     "timestamp_sem_fuso": "Timestamp sem fuso horário",
     "timestamp_fora_da_janela": "Timestamp da posição fora da janela aceita",
-    "posicao_retroativa": "Posição mais antiga que a última registrada"
+    "posicao_retroativa": "Posição mais antiga que a última registrada",
+    "exige_dispositivo": "Em produção a telemetria só é aceita do rastreador da viatura."
   },
   "despacho": {
     "numero_vazio": "Número da ordem é obrigatório",
@@ -119,5 +121,17 @@
   "documento": {
     "not_found": "Documento não localizado. Confira a chave impressa ou procure a delegacia emissora.",
     "codigo_invalido": "Código de verificação inválido: informe a chave de 24 caracteres ou o hash SHA-256 impresso no documento."
+  },
+  "medida": {
+    "destinatario_nao_cadastrado": "O destinatário precisa ser um e-mail cadastrado para um envolvido da ocorrência."
+  },
+  "laudo": {
+    "integridade_violada": "O arquivo do laudo não confere com o hash registrado na anexação.",
+    "arquivo_ausente": "Arquivo do laudo indisponível no armazenamento.",
+    "arquivo_grande": "O arquivo do laudo excede o tamanho máximo permitido.",
+    "sem_arquivo": "Este laudo ainda não possui arquivo homologado anexado."
+  },
+  "simulador": {
+    "desabilitado_em_producao": "O simulador de telemetria é recurso de demonstração e fica desabilitado em produção."
   }
 }

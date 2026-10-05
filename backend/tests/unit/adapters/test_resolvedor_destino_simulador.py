@@ -7,8 +7,6 @@ from contextlib import asynccontextmanager
 from datetime import timedelta
 from uuid import uuid4
 
-import pytest
-
 from adapters.inbound.simulador.resolvedor_destino import ResolvedorDestinoRepositorios, ResolvedorDestinoSessao
 from domain.despacho.entity import OrdemDeDespacho
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido

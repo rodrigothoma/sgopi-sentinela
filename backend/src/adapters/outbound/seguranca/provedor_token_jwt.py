@@ -1,15 +1,19 @@
-"""Adapter de saída: ProvedorTokenJose — JWT HS256 via python-jose (RNF02*)."""
+"""Adapter de saída: ProvedorTokenJWT — JWT HS256 via PyJWT (RNF02*).
+
+Substitui o python-jose (pouca manutenção; dependência ``ecdsa`` com CVE sem correção — N13).
+Os tokens são compatíveis: mesmas claims, mesmo algoritmo e mesmo segredo.
+"""
 from datetime import datetime, timedelta
 from uuid import UUID
 
-from jose import JWTError, jwt
+import jwt
 
 from application.ports.outbound.provedor_token import DadosToken, ProvedorToken
 from domain.shared.exceptions import CredenciaisInvalidasError
 from domain.usuario.entity import Papel
 
 
-class ProvedorTokenJose(ProvedorToken):
+class ProvedorTokenJWT(ProvedorToken):
     def __init__(self, segredo: str, algoritmo: str = "HS256", validade_horas: int = 8) -> None:
         self._segredo = segredo
         self._algoritmo = algoritmo
@@ -32,7 +36,7 @@ class ProvedorTokenJose(ProvedorToken):
                 token,
                 self._segredo,
                 algorithms=[self._algoritmo],
-                options={"verify_exp": False},  # verificado abaixo com o Relogio (testável)
+                options={"verify_exp": False, "verify_iat": False, "require": ["sub", "exp"]},  # exp checado abaixo com o Relogio (testável)
             )
             expira_em = datetime.fromtimestamp(int(claims["exp"]), tz=agora.tzinfo)
             if expira_em <= agora:
@@ -43,5 +47,5 @@ class ProvedorTokenJose(ProvedorToken):
                 papel=Papel(claims["papel"]),
                 expira_em=expira_em,
             )
-        except (JWTError, KeyError, ValueError) as exc:
+        except (jwt.PyJWTError, KeyError, ValueError) as exc:
             raise CredenciaisInvalidasError("Token inválido.", chave="auth.token_invalido") from exc

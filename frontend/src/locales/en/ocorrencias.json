@@ -86,7 +86,9 @@
     "download_integridade_confirmada": "Integrity checked before download.",
     "download_erro": "Could not download evidence",
     "recusados_formato": "File(s) rejected due to format — only PDF, JPG, JPEG or PNG are accepted: {{arquivos}}.",
-    "recusados_tamanho": "File(s) rejected for exceeding 10 MB: {{arquivos}}."
+    "recusados_tamanho": "File(s) rejected for exceeding 10 MB: {{arquivos}}.",
+    "integridade_nao_verificada": "Integrity not checked in this session",
+    "verificar": "Check integrity"
   },
   "erros": {
     "campos_obrigatorios": "Fill in the nature and the address/location",
@@ -153,7 +155,8 @@
     "rejeitar": "Reject",
     "ok_validar": "Occurrence validated — available on the tactical panel.",
     "ok_devolver": "Occurrence returned to the agent.",
-    "ok_rejeitar": "Occurrence rejected."
+    "ok_rejeitar": "Occurrence rejected.",
+    "publica_sem_devolucao": "Citizen-filed reports cannot be returned for correction (there is no authoring officer): validate, reject or archive."
   },
   "admin": {
     "titulo": "Chief's administrative acts",

@@ -10,7 +10,7 @@ htmlcov/
 .pytest_cache/
 .import_linter_cache/
 backend/storage/
-
+*.lock
 # Env
 .env
 *.env.local
@@ -38,3 +38,4 @@ pgdata/
 .coverage
 htmlcov/
 *.db
+coverage.json

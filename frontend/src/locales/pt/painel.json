@@ -93,5 +93,30 @@
     "OcorrenciaExcluida": "Ocorrência excluída",
     "desconhecido": "Atualização recebida",
     "ultimo": "Último evento: {{evento}} às {{hora}}"
+  },
+  "alerta": {
+    "emitir": "Emitir Alerta",
+    "titulo_modal": "Emitir Alerta de Criticidade Tática",
+    "descricao_modal": "Difunde notificação de alta prioridade para o efetivo operacional e registra auditoria formal.",
+    "area_vinculada": "Área de Risco Associada (Opcional)",
+    "nenhuma_area": "Geral / Sem área específica",
+    "opcao_area": "{{nome}} [{{nivel}}] — {{total}} ocorrências",
+    "campo_titulo": "Título do Alerta",
+    "campo_criticidade": "Nível de Criticidade",
+    "campo_destinatario": "Destinatários Notificados (Sino e Alerta)",
+    "campo_mensagem": "Mensagem / Recomendações Táticas",
+    "criticidade": {
+      "CRITICA": "🔴 CRÍTICA (Alerta Vermelho)",
+      "ALTA": "🟠 ALTA (Atenção Reforçada)"
+    },
+    "destinatario_todos": "📢 Todos os perfis (difusão geral para todo o efetivo)",
+    "destinatario_papel": "Apenas: {{papel}}",
+    "difundir": "Difundir Alerta",
+    "difundindo": "Difundindo...",
+    "sucesso": "Alerta tático de criticidade emitido com sucesso!"
+  },
+  "areas_risco": {
+    "mostrar": "Áreas de Risco",
+    "ocultar": "Ocultar Áreas de Risco"
   }
 }

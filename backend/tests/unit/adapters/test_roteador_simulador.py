@@ -4,8 +4,8 @@ Sem rede nos testes: o ``RoteadorOSRM`` recebe a função de busca injetável.
 """
 import pytest
 
-from domain.shared.geo import Coordenada
 from adapters.inbound.simulador.roteador import ErroRoteamento, RoteadorLinhaReta, RoteadorOSRM
+from domain.shared.geo import Coordenada
 
 # Alegrete/RS — sede do curso (dados fictícios, RNF10)
 ORIGEM = Coordenada(-29.7833, -55.7919)
@@ -56,7 +56,7 @@ def test_linha_reta_devolve_sempre_origem_e_destino():
 def test_osrm_sem_rota_ou_codigo_erro_vira_erro_roteamento():
     for resposta in ({"code": "Ok", "routes": []}, {"code": "NoRoute", "routes": []}, {}):
         with pytest.raises(ErroRoteamento):
-            RoteadorOSRM("http://roteador:5000", buscar=lambda url: resposta).rota(ORIGEM, DESTINO)
+            RoteadorOSRM("http://roteador:5000", buscar=lambda url, resposta=resposta: resposta).rota(ORIGEM, DESTINO)
 
 
 def test_osrm_falha_de_rede_vira_erro_roteamento():

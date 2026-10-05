@@ -83,3 +83,18 @@ async def test_forca_bruta_no_login_bloqueia_com_429(client, session):
     ).scalars().all()
     assert len(negados) == 5 and all(n.quem is None for n in negados)
     assert negados[0].dados_depois["usuario_alvo_id"] == str(IDS["delegado"])
+
+
+async def test_token_de_usuario_desativado_deixa_de_valer(client, session_factory, usuarios):
+    """O JWT vale horas: desativar o usuário precisa cortar o acesso na próxima requisição."""
+    from sqlalchemy import update
+
+    from infrastructure.database.models import UsuarioModel
+    from tests.integration.helpers import auth
+
+    headers = await auth(client, "agente")
+    assert (await client.get("/v1/notificacoes/resumo", headers=headers)).status_code == 200
+    async with session_factory() as s:
+        await s.execute(update(UsuarioModel).where(UsuarioModel.id == usuarios["agente"]).values(ativo=False))
+        await s.commit()
+    assert (await client.get("/v1/notificacoes/resumo", headers=headers)).status_code == 401

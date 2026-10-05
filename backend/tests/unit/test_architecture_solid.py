@@ -9,8 +9,6 @@ import abc
 import inspect
 from pathlib import Path
 
-import pytest
-
 import application.ports.inbound as inbound_ports
 import application.ports.outbound as outbound_ports
 import application.use_cases as use_cases_pkg

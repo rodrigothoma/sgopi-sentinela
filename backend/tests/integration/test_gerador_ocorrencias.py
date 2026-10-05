@@ -12,9 +12,10 @@ async def test_tick_persiste_ocorrencia_simulada(session_factory, monkeypatch):
     monkeypatch.setattr("scripts.seed.AsyncSessionLocal", session_factory)
     await semear_usuarios()
 
+    from datetime import UTC, datetime
+
     from infrastructure.di import montar_gerador
     from tests.fakes.portas_fake import RelogioFake
-    from datetime import UTC, datetime
 
     gen = montar_gerador(session_factory, relogio=RelogioFake(datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)), semente=42)
     assert await gen.tick() == 1
@@ -34,8 +35,8 @@ async def test_app_boot_padrao_nao_inicia_gerador(monkeypatch):
     assert s.gerador_ocorrencias_ligado is False
 
     monkeypatch.setattr("infrastructure.di.settings.gerador_ocorrencias_ligado", False, raising=False)
-    from main import criar_app
     import infrastructure.di as di
+    from main import criar_app
 
     app = criar_app()
     assert app is not None

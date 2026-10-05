@@ -1,4 +1,6 @@
 """Testes do value object Coordenada e do Haversine (DEC-03, DEC-05)."""
+from dataclasses import FrozenInstanceError
+
 import pytest
 
 from domain.shared.exceptions import ValorInvalidoError
@@ -21,7 +23,7 @@ def test_coordenada_fora_da_faixa(lat, lon):
 
 def test_coordenada_e_imutavel():
     c = Coordenada(0, 0)
-    with pytest.raises(Exception):
+    with pytest.raises(FrozenInstanceError):
         c.latitude = 10  # type: ignore[misc]
 
 

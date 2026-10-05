@@ -6,7 +6,8 @@ from pydantic import BaseModel, Field
 
 from adapters.inbound.http.deps import exigir_papel
 from adapters.inbound.http.v1.ocorrencias_router import OcorrenciaDetalheSchema, _detalhe
-from adapters.inbound.http.v1.viaturas_router import ViaturaSchema, _schema as _viatura_schema
+from adapters.inbound.http.v1.viaturas_router import ViaturaSchema
+from adapters.inbound.http.v1.viaturas_router import _schema as _viatura_schema
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_despachar_viatura import (
     DespacharInput,

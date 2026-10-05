@@ -20,39 +20,34 @@ import { formatarDataHora } from '../../utils/datas';
 
 const fmt = (iso: string) => formatarDataHora(iso);
 
-type EstadoVisual = 'CARREGANDO' | 'INTEGRA' | 'DIVERGENTE' | 'INDISPONIVEL' | 'ERRO';
+/**
+ * NAO_VERIFICADA é o estado inicial: conferir a integridade relê o arquivo inteiro e grava auditoria
+ * (append-only), então só acontece quando o usuário pede ou no download — nunca ao abrir o detalhe (N4).
+ */
+type EstadoVisual = 'NAO_VERIFICADA' | 'CARREGANDO' | 'INTEGRA' | 'DIVERGENTE' | 'INDISPONIVEL' | 'ERRO';
 
 const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = ({ ocorrenciaId, evidencia }) => {
   const { t } = useTranslation(['ocorrencias']);
   const { avisar } = useToast();
-  const [estado, setEstado] = useState<EstadoVisual>('CARREGANDO');
+  const [estado, setEstado] = useState<EstadoVisual>('NAO_VERIFICADA');
   const [resultado, setResultado] = useState<IntegridadeEvidencia | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [baixando, setBaixando] = useState(false);
 
-  const verificarIntegridade = useCallback(async (estaAtivo: () => boolean = () => true) => {
+  const verificarIntegridade = useCallback(async () => {
     setEstado('CARREGANDO');
     setResultado(null);
     setErro(null);
     try {
       const resultado = await ocorrenciasService.verificarIntegridade(ocorrenciaId, evidencia.id);
-      if (estaAtivo()) {
-        setEstado(resultado.estado);
-        setResultado(resultado);
-      }
+      setEstado(resultado.estado === 'ARQUIVO_AUSENTE' ? 'INDISPONIVEL' : resultado.estado);
+      setResultado(resultado);
     } catch (falha) {
-      if (!estaAtivo()) return;
       const indisponivel = axios.isAxiosError(falha) && falha.response?.status === 404;
       setEstado(indisponivel ? 'INDISPONIVEL' : 'ERRO');
       setErro(mensagemDeErro(falha, t('ocorrencias:evidencias.integridade_erro')));
     }
   }, [evidencia.id, ocorrenciaId, t]);
-
-  useEffect(() => {
-    let ativo = true;
-    void verificarIntegridade(() => ativo);
-    return () => { ativo = false; };
-  }, [verificarIntegridade]);
 
   const baixar = async () => {
     setBaixando(true);
@@ -71,7 +66,7 @@ const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = 
     }
   };
 
-  const classe = estado === 'INTEGRA' ? 'ok' : estado === 'CARREGANDO' ? 'muted' : 'erro';
+  const classe = estado === 'INTEGRA' ? 'ok' : estado === 'CARREGANDO' || estado === 'NAO_VERIFICADA' ? 'muted' : 'erro';
   return (
     <li className="evidencia-item">
       <div className="evidencia-metadados">
@@ -117,9 +112,16 @@ const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = 
         >
           {estado === 'CARREGANDO'
             ? t('ocorrencias:evidencias.verificando')
-            : t('ocorrencias:evidencias.verificar_novamente')}
+            : estado === 'NAO_VERIFICADA'
+              ? t('ocorrencias:evidencias.verificar')
+              : t('ocorrencias:evidencias.verificar_novamente')}
         </button>
-        <button className="btn btn-sm" disabled={estado !== 'INTEGRA' || baixando} onClick={baixar}>
+        {/* O download confere o SHA-256 no servidor: não depende de verificação prévia */}
+        <button
+          className="btn btn-sm"
+          disabled={estado === 'CARREGANDO' || estado === 'DIVERGENTE' || estado === 'INDISPONIVEL' || baixando}
+          onClick={baixar}
+        >
           {baixando ? t('ocorrencias:evidencias.baixando') : t('ocorrencias:evidencias.download')}
         </button>
       </div>
@@ -211,8 +213,14 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
     [o.envolvidos, t],
   );
 
+  // Aba e comprovante voltam ao padrão só ao trocar de ocorrência: recarregar o detalhe da mesma
+  // (ex.: após registrar uma apreensão) gera um novo array de envolvidos e não pode tirar o usuário da aba.
   useEffect(() => {
     setAba('detalhe');
+    setComprovante(false);
+  }, [o.ocorrencia_id]);
+
+  useEffect(() => {
     const vitimas = o.envolvidos.filter((e) => e.tipo === 'VITIMA');
     const suspeitos = o.envolvidos.filter((e) => e.tipo === 'SUSPEITO');
     if (vitimas.length > 0) {

@@ -72,7 +72,7 @@ class GeradorOcorrencias:
                 if ator is None:
                     log.warning("gerador: usuário 'simulador-demo' não encontrado — rode o seed; gerador não iniciado")
                     return False
-        except Exception:  # noqa: BLE001 — gerador nunca derruba o servidor
+        except Exception:
             log.exception("gerador: falha ao verificar ator; gerador não iniciado")
             return False
         self._parar_event.clear()
@@ -87,7 +87,7 @@ class GeradorOcorrencias:
         if not self._tarefa.done():
             try:
                 await asyncio.wait_for(asyncio.shield(self._tarefa), timeout=2.0)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self._tarefa.cancel()
                 try:
                     await self._tarefa
@@ -102,11 +102,11 @@ class GeradorOcorrencias:
             try:
                 await asyncio.wait_for(self._parar_event.wait(), timeout=self.intervalo)
                 break
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass
             try:
                 await self.tick()
-            except Exception:  # noqa: BLE001 — gerador nunca derruba a API
+            except Exception:
                 log.exception("tick do gerador falhou")
 
     def _sortear_input(self) -> RegistrarOcorrenciaInput:
@@ -136,7 +136,7 @@ class GeradorOcorrencias:
                 await registrar.executar(ator, self._sortear_input())
                 self.geradas += 1
                 return 1
-        except Exception:  # noqa: BLE001 — erro de registro logado sem derrubar o loop
+        except Exception:
             log.exception("gerador: falha ao registrar ocorrência fictícia")
             return 0
         finally:

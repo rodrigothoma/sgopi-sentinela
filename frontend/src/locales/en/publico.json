@@ -47,7 +47,7 @@
     "sucesso_titulo": "Report Submitted Successfully!",
     "sucesso_mensagem": "Your report was submitted to SGOPI Sentinela and is now in the official triage queue for police screening.",
     "protocolo_label": "YOUR PROTOCOL NUMBER:",
-    "copiar_protocolo": "Copy Protocol",
+    "copiar_protocolo": "Copy Protocol and Code",
     "protocolo_copiado": "Protocol Copied!",
     "guardar_aviso": "Keep this number to track the validation and status of your police report.",
     "acompanhar_status": "Track Status",
@@ -77,11 +77,12 @@
       "perturbacao_sossego": "Disturbance of the Peace",
       "dano_patrimonio": "Property Damage / Vandalism",
       "outro": "Other Circumstanced Incident"
-    }
+    },
+    "codigo_label": "TRACKING CODE (confidential — shown only now):"
   },
   "consulta": {
     "titulo": "Public Incident Status Inquiry",
-    "subtitulo": "Enter the official protocol number (e.g.: SGOPI-2026-000001) to check the status and progress of your police report.",
+    "subtitulo": "Enter the protocol number (e.g. SGOPI-2026-000001) and the tracking code you received when filing to check the status of your report.",
     "placeholder": "SGOPI-YYYY-NNNNNN",
     "botao_consultar": "Inquire",
     "protocolo_rotulo": "PROTOCOL:",
@@ -97,9 +98,11 @@
       "data_abertura": "Reported On:",
       "voltar_inicio": "Back to Home"
     },
-    "erro_nao_encontrada": "No incident report found with the given protocol. Please verify the code and try again.",
+    "erro_nao_encontrada": "No report found for the given protocol number and code. Check the characters and try again.",
     "aviso_rejeitada": "Your report was reviewed by the police authority and could not be registered through this channel. For more information, visit the nearest police station with your protocol number.",
-    "aviso_arquivada": "This incident was archived by the police authority. For more information, visit the nearest police station with your protocol number."
+    "aviso_arquivada": "This incident was archived by the police authority. For more information, visit the nearest police station with your protocol number.",
+    "codigo_label": "Tracking code",
+    "codigo_placeholder": "CODE"
   },
   "autenticar": {
     "titulo": "Public Document Authentication",

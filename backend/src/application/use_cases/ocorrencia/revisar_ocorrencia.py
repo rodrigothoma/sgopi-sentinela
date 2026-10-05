@@ -5,7 +5,6 @@ confirma transação. Decisão dupla é bloqueada pelo optimistic locking (RNF03
 """
 from __future__ import annotations
 
-from collections.abc import Callable
 from datetime import datetime
 from uuid import UUID
 

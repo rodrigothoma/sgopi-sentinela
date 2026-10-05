@@ -6,6 +6,7 @@ import type { OcorrenciaResumo, OrdemDespacho, Viatura } from '../../types/api';
 import type { PontoCalor } from '../../utils/manchas';
 import type { AreaRisco } from '../../services/inteligenciaService';
 import { CENTRO_PADRAO, corrigirIconesLeaflet, iconeOcorrencia, iconeViatura } from './leaflet';
+import { escaparHtml } from '../../utils/html';
 
 /** Campo interno do leaflet.heat: redesenho agendado via requestAnimationFrame. */
 type HeatLayerInterno = L.HeatLayer & { _frame?: number | null };
@@ -87,7 +88,7 @@ export const MapaTatico: React.FC<Props> = ({
         existente.setLatLng([v.latitude, v.longitude]).setIcon(icone);
       } else {
         const m = L.marker([v.latitude, v.longitude], { icon: icone }).addTo(map);
-        m.bindTooltip(`${v.prefixo} · ${v.placa}`);
+        m.bindTooltip(escaparHtml(`${v.prefixo} · ${v.placa}`));
         viaturasRef.current.set(v.id, m);
       }
     }
@@ -112,7 +113,7 @@ export const MapaTatico: React.FC<Props> = ({
         existente.setZIndexOffset(o.ocorrencia_id === selecionada ? 1000 : 0);
       } else {
         const m = L.marker([o.latitude, o.longitude], { icon: icone }).addTo(map);
-        m.bindTooltip(`${o.numero_protocolo} · ${o.natureza}`);
+        m.bindTooltip(escaparHtml(`${o.numero_protocolo} · ${o.natureza}`));
         m.on('click', () => selecionarRef.current(o.ocorrencia_id));
         ocorrenciasRef.current.set(o.ocorrencia_id, m);
       }
@@ -184,10 +185,10 @@ export const MapaTatico: React.FC<Props> = ({
 
       const popupHtml = `
         <div style="font-family: inherit; font-size: 13px; line-height: 1.45; min-width: 190px;">
-          <div style="font-weight: 700; margin-bottom: 4px; color: ${cor};">🚨 ${a.nome}</div>
-          <div><strong>Criticidade:</strong> <span style="color: ${cor}; font-weight: 700;">${a.nivel_risco}</span></div>
-          <div><strong>Ocorrências:</strong> ${a.total_ocorrencias} (${a.total_24h} em 24h)</div>
-          <div><strong>Predominantes:</strong> ${a.naturezas_predominantes.slice(0, 3).join(', ')}</div>
+          <div style="font-weight: 700; margin-bottom: 4px; color: ${cor};">🚨 ${escaparHtml(a.nome)}</div>
+          <div><strong>Criticidade:</strong> <span style="color: ${cor}; font-weight: 700;">${escaparHtml(a.nivel_risco)}</span></div>
+          <div><strong>Ocorrências:</strong> ${Number(a.total_ocorrencias)} (${Number(a.total_24h)} em 24h)</div>
+          <div><strong>Predominantes:</strong> ${escaparHtml(a.naturezas_predominantes.slice(0, 3).join(', '))}</div>
           <div><strong>Raio de Cobertura:</strong> ${Math.round(a.raio_metros)}m</div>
         </div>
       `;
@@ -207,7 +208,7 @@ export const MapaTatico: React.FC<Props> = ({
           weight: 2,
           dashArray: a.nivel_risco === 'CRITICA' ? '4 4' : undefined,
         }).addTo(map);
-        circulo.bindTooltip(`${a.nome} [${a.nivel_risco}]`);
+        circulo.bindTooltip(escaparHtml(`${a.nome} [${a.nivel_risco}]`));
         circulo.bindPopup(popupHtml);
         areasRef.current.set(a.id, circulo);
       }

@@ -11,7 +11,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, Uuid
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from infrastructure.database.connection import Base
@@ -72,6 +72,8 @@ class OcorrenciaModel(Base):
     justificativa_revisao: Mapped[str | None] = mapped_column(Text, nullable=True)
     desfecho: Mapped[str | None] = mapped_column(Text, nullable=True)
     hash_narrativa: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Algoritmo do hash (NULL = v1 legado); permite evoluir a canonicalização sem invalidar documentos emitidos
+    hash_versao: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # RF08: chave pública do documento emitido na validação; única entre as ocorrências validadas
     chave_autenticidade: Mapped[str | None] = mapped_column(String(24), nullable=True, unique=True, index=True)
     # RF20: arquivamento / exclusão lógica autorizados pelo Delegado, sempre com motivo
@@ -79,6 +81,9 @@ class OcorrenciaModel(Base):
     motivo_arquivamento: Mapped[str | None] = mapped_column(Text, nullable=True)
     excluida_por_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True)
     motivo_exclusao: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Canal de entrada (POLICIAL | PUBLICA) e hash do código de acompanhamento do cidadão
+    origem: Mapped[str] = mapped_column(String(20), nullable=False, default="POLICIAL", server_default="POLICIAL")
+    codigo_acompanhamento_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # optimistic locking (RNF03): ``versao`` é controlada pelo domínio e verificada
     # explicitamente pelo repositório (SELECT … FOR UPDATE + comparação).
@@ -248,6 +253,16 @@ class OrdemDespachoModel(Base):
     """Ordem de despacho (RF02): data/hora, operador, viatura e ocorrência (critério 5 do MVP)."""
 
     __tablename__ = "ordens_despacho"
+    # No máximo uma ordem ativa por viatura: barra no banco dois despachos simultâneos da mesma viatura
+    __table_args__ = (
+        Index(
+            "uq_ordens_despacho_viatura_ativa",
+            "viatura_id",
+            unique=True,
+            postgresql_where=text("ativa"),
+            sqlite_where=text("ativa"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     numero: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
@@ -370,6 +385,16 @@ class NotificacaoModel(Base):
     metadados: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class NotificacaoLeituraModel(Base):
+    """Leitura de uma notificação por um usuário: o estado ``lida`` é individual, não do papel."""
+
+    __tablename__ = "notificacoes_leituras"
+
+    notificacao_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("notificacoes.id"), primary_key=True)
+    usuario_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"), primary_key=True)
+    lida_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class ComunicacaoInteragenciasModel(Base):

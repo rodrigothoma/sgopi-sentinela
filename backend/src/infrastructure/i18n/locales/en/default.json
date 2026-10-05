@@ -16,8 +16,9 @@
     "desfecho_vazio": "Outcome is required",
     "nao_e_autor": "Only the authoring agent can change this occurrence",
     "status_invalido": "Invalid occurrence status",
-    "protocolo_nao_encontrado": "No incident found for the given protocol number.",
-    "declaracao_maioridade_ausente": "You must confirm the age (18+) and truthfulness declaration."
+    "protocolo_nao_encontrado": "No incident found for the given protocol number and tracking code.",
+    "declaracao_maioridade_ausente": "You must confirm the age (18+) and truthfulness declaration.",
+    "publica_nao_devolvivel": "Citizen-filed reports cannot be returned for correction: validate, reject or archive them."
   },
   "envolvido": {
     "documento_tamanho_invalido": "Invalid document length: ID with 10 digits or CPF with 11 digits",
@@ -90,7 +91,8 @@
   "telemetria": {
     "timestamp_sem_fuso": "Timestamp without timezone",
     "timestamp_fora_da_janela": "Position timestamp outside accepted window",
-    "posicao_retroativa": "Position older than the last registered one"
+    "posicao_retroativa": "Position older than the last registered one",
+    "exige_dispositivo": "In production, telemetry is only accepted from the vehicle's tracker."
   },
   "despacho": {
     "numero_vazio": "Order number is required",
@@ -119,5 +121,17 @@
   "documento": {
     "not_found": "Document not found. Check the printed key or contact the issuing police station.",
     "codigo_invalido": "Invalid verification code: enter the 24-character key or the SHA-256 hash printed on the document."
+  },
+  "medida": {
+    "destinatario_nao_cadastrado": "The recipient must be an e-mail registered for someone involved in the incident."
+  },
+  "laudo": {
+    "integridade_violada": "The report file does not match the hash recorded when it was attached.",
+    "arquivo_ausente": "Report file unavailable in storage.",
+    "arquivo_grande": "The report file exceeds the maximum allowed size.",
+    "sem_arquivo": "This report has no approved file attached yet."
+  },
+  "simulador": {
+    "desabilitado_em_producao": "The telemetry simulator is a demo feature and is disabled in production."
   }
 }

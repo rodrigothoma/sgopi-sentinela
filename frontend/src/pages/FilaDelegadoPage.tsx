@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
 import { StatusBadge } from '../components/StatusBadge';
+import { useConfirmacao } from '../components/common/ConfirmDialog';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
@@ -26,6 +27,7 @@ export const FilaDelegadoPage: React.FC = () => {
   const [justificativa, setJustificativa] = useState('');
   const [motivo, setMotivo] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  const [confirmar, dialogoConfirmacao] = useConfirmacao();
 
   const [searchParams] = useSearchParams();
   const paramOcorrenciaId = searchParams.get('ocorrencia');
@@ -80,7 +82,7 @@ export const FilaDelegadoPage: React.FC = () => {
       avisar(t('ocorrencias:revisao.justificativa_curta'), 'erro');
       return;
     }
-    if (acao === 'rejeitar' && !window.confirm(t('ocorrencias:revisao.confirmar_rejeicao'))) return;
+    if (acao === 'rejeitar' && !(await confirmar(t('ocorrencias:revisao.confirmar_rejeicao')))) return;
     setOcupado(true);
     try {
       const id = detalhe.ocorrencia_id;
@@ -105,7 +107,7 @@ export const FilaDelegadoPage: React.FC = () => {
       avisar(t('ocorrencias:admin.motivo_curto'), 'erro');
       return;
     }
-    if (!window.confirm(t(`ocorrencias:admin.confirmar_${acao}`, { protocolo: detalhe.numero_protocolo }))) return;
+    if (!(await confirmar(t(`ocorrencias:admin.confirmar_${acao}`, { protocolo: detalhe.numero_protocolo })))) return;
     setOcupado(true);
     try {
       const r = acao === 'arquivar'
@@ -127,6 +129,7 @@ export const FilaDelegadoPage: React.FC = () => {
 
   return (
     <div className="pagina duas-colunas">
+      {dialogoConfirmacao}
       <section className="card">
         <h2>{t('ocorrencias:fila.titulo')} <span className="muted">({pagina.total})</span></h2>
         <div className="tabs">
@@ -156,9 +159,12 @@ export const FilaDelegadoPage: React.FC = () => {
                   <small className="muted"> · {t('ocorrencias:revisao.justificativa_label')}</small>
                   <textarea id="justificativa-revisao" rows={3} maxLength={2000} value={justificativa} onChange={(e) => setJustificativa(e.target.value)} placeholder={t('ocorrencias:revisao.justificativa_placeholder')} />
                 </label>
+                {detalhe.origem === 'PUBLICA' && <p className="muted">{t('ocorrencias:revisao.publica_sem_devolucao')}</p>}
                 <div className="acoes">
                   <button className="btn btn-primary" disabled={ocupado} onClick={() => decidir('validar')}>{t('ocorrencias:revisao.validar')}</button>
-                  <button className="btn btn-warn" disabled={ocupado} onClick={() => decidir('devolver')}>{t('ocorrencias:revisao.devolver')}</button>
+                  {detalhe.origem !== 'PUBLICA' && (
+                    <button className="btn btn-warn" disabled={ocupado} onClick={() => decidir('devolver')}>{t('ocorrencias:revisao.devolver')}</button>
+                  )}
                   <button className="btn btn-danger" disabled={ocupado} onClick={() => decidir('rejeitar')}>{t('ocorrencias:revisao.rejeitar')}</button>
                 </div>
               </div>

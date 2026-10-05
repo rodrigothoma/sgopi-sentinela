@@ -2,12 +2,14 @@
 from uuid import UUID
 
 from sqlalchemy import select, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from adapters.outbound.persistence._datas import aware
 from application.ports.outbound.gerador_numero_ordem import GeradorNumeroOrdem, formatar_numero_ordem
 from application.ports.outbound.repositorio_ordem_despacho import RepositorioOrdemDespacho
 from domain.despacho.entity import OrdemDeDespacho
+from domain.shared.exceptions import ConflitoError
 from infrastructure.database.models import OrdemDespachoModel
 
 _UPSERT = text(
@@ -37,7 +39,12 @@ class OrdemDespachoRepositorioSQLAlchemy(RepositorioOrdemDespacho):
         model.numero, model.ocorrencia_id, model.viatura_id, model.operador_id = ordem.numero, ordem.ocorrencia_id, ordem.viatura_id, ordem.operador_id
         model.criada_em, model.observacoes, model.ativa, model.encerrada_em = ordem.criada_em, ordem.observacoes, ordem.ativa, ordem.encerrada_em
         model.apoio = ordem.apoio
-        await self._session.flush()
+        try:
+            await self._session.flush()
+        except IntegrityError as exc:  # uq_ordens_despacho_viatura_ativa: despacho concorrente da mesma viatura
+            raise ConflitoError(
+                "A viatura já está em outra ordem de despacho ativa.", chave="despacho.viatura_indisponivel"
+            ) from exc
 
     async def buscar_por_id(self, ordem_id: UUID) -> OrdemDeDespacho | None:
         m = await self._session.get(OrdemDespachoModel, ordem_id)

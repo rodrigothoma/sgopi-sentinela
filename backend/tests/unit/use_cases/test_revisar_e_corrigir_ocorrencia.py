@@ -1,6 +1,7 @@
 """Validar / Devolver / Rejeitar e Corrigir / Reenviar (RF04) com fakes."""
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from application.ports.inbound.interface_registrar_ocorrencia_policial import EnvolvidoInputDTO
 from application.ports.inbound.interface_revisar_ocorrencia import (
@@ -10,7 +11,13 @@ from application.ports.inbound.interface_revisar_ocorrencia import (
 )
 from application.use_cases.ocorrencia.corrigir_ocorrencia import CorrigirOcorrencia, ReenviarOcorrencia
 from application.use_cases.ocorrencia.revisar_ocorrencia import DevolverParaCorrecao, RejeitarOcorrencia, ValidarOcorrencia
-from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError, TransicaoInvalidaError, ValorInvalidoError
+from domain.shared.exceptions import (
+    AcessoNegadoError,
+    CampoObrigatorioError,
+    EntidadeNaoEncontradaError,
+    TransicaoInvalidaError,
+    ValorInvalidoError,
+)
 from tests.fakes.atores import AGENTE, DELEGADO, OPERADOR, OUTRO_AGENTE
 
 
@@ -106,5 +113,5 @@ async def test_corrigir_fora_de_em_correcao_falha(registrar, repositorio, uow, r
 async def test_corrigir_sem_envolvidos_falha(registrar, deps, repositorio, uow, relogio, auditoria):
     o = await registrar()
     await DevolverParaCorrecao(*deps).executar(DELEGADO, DecisaoRevisaoInput(o.ocorrencia_id, "Complementar narrativa."))
-    with pytest.raises(Exception):
+    with pytest.raises(CampoObrigatorioError):
         await CorrigirOcorrencia(repositorio, uow, relogio, auditoria).executar(AGENTE, CorrigirOcorrenciaInput(o.ocorrencia_id, envolvidos=()))

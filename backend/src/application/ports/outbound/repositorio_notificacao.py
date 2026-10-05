@@ -9,6 +9,9 @@ from domain.notificacao.entity import Notificacao
 
 
 class RepositorioNotificacao(ABC):
+    """O estado de leitura é **por usuário**: ``lida``/``lida_em`` das notificações devolvidas por
+    ``listar`` refletem a leitura de ``usuario_id`` — nunca a de outro membro do mesmo papel."""
+
     @abstractmethod
     async def salvar(self, notificacao: Notificacao) -> Notificacao:
         """Persiste ou atualiza uma notificação."""
@@ -24,12 +27,17 @@ class RepositorioNotificacao(ABC):
         papel: str | None = None,
         apenas_nao_lidas: bool = False,
         limite: int = 50,
+        offset: int = 0,
     ) -> list[Notificacao]:
         """Lista notificações destinadas ao usuário específico, ao seu papel ou de difusão geral."""
 
     @abstractmethod
     async def contar_nao_lidas(self, usuario_id: UUID | None = None, papel: str | None = None) -> int:
         """Retorna o número de notificações pendentes de leitura para o usuário."""
+
+    @abstractmethod
+    async def registrar_leitura(self, notificacao_id: UUID, usuario_id: UUID, instante: datetime) -> None:
+        """Registra que ``usuario_id`` leu a notificação (idempotente)."""
 
     @abstractmethod
     async def marcar_todas_lidas(self, usuario_id: UUID | None, papel: str | None, instante: datetime) -> int:

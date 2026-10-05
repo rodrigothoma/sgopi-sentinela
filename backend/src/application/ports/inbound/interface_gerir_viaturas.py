@@ -39,6 +39,8 @@ class RegistrarPosicaoInput:
     longitude: float
     registrada_em: datetime
     origem: str = "http"
+    # Quem enviou a posição quando não é o rastreador (operador humano em ambiente não produtivo)
+    por_id: UUID | None = None
 
 
 class InterfaceCadastrarViatura(ABC):
@@ -59,3 +61,9 @@ class InterfaceListarViaturas(ABC):
 class InterfaceRegistrarPosicaoViatura(ABC):
     @abstractmethod
     async def executar(self, input_dto: RegistrarPosicaoInput) -> ViaturaOutput: ...
+
+
+class InterfaceEmitirCredencialTelemetria(ABC):
+    @abstractmethod
+    async def executar(self, ator: Ator, viatura_id: UUID) -> str:
+        """Credencial do rastreador da viatura (ato auditado)."""

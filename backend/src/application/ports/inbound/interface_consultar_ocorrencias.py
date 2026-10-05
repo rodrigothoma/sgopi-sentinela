@@ -57,6 +57,7 @@ class OcorrenciaResumoOutput:
     agente_policial_id: UUID
     versao: int
     inquerito_id: UUID | None = None
+    origem: str = "POLICIAL"  # POLICIAL | PUBLICA
 
 
 @dataclass(frozen=True)

@@ -276,7 +276,7 @@ async def test_simulador_conduz_viatura_despachada_ate_a_ocorrencia(validada, fr
         if v.situacao == SituacaoViatura.OPERANDO:
             break
     # aproxima-se monotonicamente ~1 km por tick e para exatamente no local
-    assert all(b < a for a, b in zip(distancias, distancias[1:]))
+    assert all(b < a for a, b in zip(distancias, distancias[1:], strict=False))
     assert v.situacao == SituacaoViatura.OPERANDO and distancias[-1] == 0.0
     assert publicador.tipos().count("ViaturaChegouAoLocal") == 1
 
@@ -286,3 +286,32 @@ async def test_simulador_conduz_viatura_despachada_ate_a_ocorrencia(validada, fr
     parada = await viaturas.buscar_por_id(frota["VTR-03"])
     assert parada.ultima_posicao.coordenada == ocorrencia.coordenada and parada.ultima_posicao.registrada_em == relogio.agora()
     assert (await viaturas.buscar_por_id(frota["VTR-01"])).ultima_posicao.coordenada != Coordenada(-29.80, -55.80)
+
+
+async def test_apoio_incrementa_versao_da_ocorrencia(validada, frota, despachar, repositorio):
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-01"]))
+    versao = (await repositorio.buscar_por_id(validada)).versao
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
+    assert (await repositorio.buscar_por_id(validada)).versao == versao + 1
+
+
+async def test_apoio_concorrente_com_encerramento_e_recusado(validada, frota, despachar, encerrar, repositorio):
+    """Regressão: o encerramento grava entre a leitura e a gravação do apoio → conflito de versão, não ordem órfã."""
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-01"]))
+    original = repositorio.buscar_por_id
+
+    async def buscar_e_encerrar_em_paralelo(ocorrencia_id):
+        lida = await original(ocorrencia_id)
+        repositorio.buscar_por_id = original
+        await encerrar.executar(DELEGADO, EncerrarInput(validada, "Atendimento concluído no local."))
+        return lida
+
+    repositorio.buscar_por_id = buscar_e_encerrar_em_paralelo
+    with pytest.raises(ConflitoError):
+        await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
+    assert (await repositorio.buscar_por_id(validada)).status.value == "ENCERRADA"
+
+
+async def test_registrar_apoio_exige_em_atendimento(validada, repositorio):
+    with pytest.raises(TransicaoInvalidaError):
+        (await repositorio.buscar_por_id(validada)).registrar_apoio(OPERADOR.id, AGORA)

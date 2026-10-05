@@ -77,9 +77,9 @@ async def test_integridade_integra_e_auditada(verificar, evidencia, auditoria):
     assert out.estado == "INTEGRA"
     assert out.hash_armazenado == item.hash_sha256
     assert out.hash_recalculado == item.hash_sha256
-    assert out.verificado_em == AGORA.isoformat()
+    assert out.verificado_em == AGORA
     assert auditoria.registros[-1].dados_depois["integridade"] == "INTEGRA"
-    assert auditoria.registros[-1].quando.isoformat() == out.verificado_em
+    assert auditoria.registros[-1].quando == out.verificado_em
 
 
 async def test_integridade_divergente(verificar, evidencia, armazenamento, auditoria):

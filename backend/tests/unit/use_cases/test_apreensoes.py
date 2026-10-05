@@ -1,5 +1,4 @@
 """Casos de uso do inventário de apreensões: registrar, movimentar custódia e emitir Auto de Apreensão (RF03)."""
-from datetime import timedelta
 from uuid import uuid4
 
 import pytest
@@ -118,8 +117,8 @@ async def test_ocorrencia_inexistente_404(registrar_item):
 
 
 async def test_ocorrencia_rejeitada_nao_aceita_apreensao(registrar, registrar_item, deps):
-    from application.use_cases.ocorrencia.revisar_ocorrencia import RejeitarOcorrencia
     from application.ports.inbound.interface_revisar_ocorrencia import DecisaoRevisaoInput
+    from application.use_cases.ocorrencia.revisar_ocorrencia import RejeitarOcorrencia
 
     o = await registrar()
     await RejeitarOcorrencia(*deps).executar(DELEGADO, DecisaoRevisaoInput(ocorrencia_id=o.ocorrencia_id, justificativa="fato atípico, sem crime"))

@@ -15,57 +15,64 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from adapters.inbound.simulador.gerador_ocorrencias import GeradorOcorrencias
 from adapters.inbound.simulador.orquestrador_despacho import OrquestradorDespacho
-from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
 from adapters.inbound.simulador.resolvedor_destino import ResolvedorDestinoSessao
 from adapters.inbound.simulador.roteador import RoteadorLinhaReta, RoteadorOSRM
+from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
 from adapters.inbound.websocket.gerenciador_conexoes import GerenciadorConexoes
-
 from adapters.outbound.arquivos.armazenamento_disco import ArmazenamentoDisco
+from adapters.outbound.email.enviador_email_smtp import EnviadorEmailSMTP
 from adapters.outbound.eventos.publicador_em_memoria import PublicadorEventosEmMemoria
 from adapters.outbound.persistence.auditoria_sqlalchemy import AuditoriaSQLAlchemy
-from adapters.outbound.persistence.gerador_protocolo_sqlalchemy import GeradorProtocoloSQLAlchemy
-from adapters.outbound.persistence.ocorrencia_repositorio_sqlalchemy import OcorrenciaRepositorioSQLAlchemy
-from adapters.outbound.persistence.unidade_de_trabalho_sqlalchemy import UnidadeDeTrabalhoSQLAlchemy
-from adapters.outbound.persistence.ordem_despacho_repositorio_sqlalchemy import (
-    GeradorNumeroOrdemSQLAlchemy,
-    OrdemDespachoRepositorioSQLAlchemy,
-)
-from adapters.outbound.persistence.usuario_repositorio_sqlalchemy import UsuarioRepositorioSQLAlchemy
-from adapters.outbound.persistence.viatura_repositorio_sqlalchemy import ViaturaRepositorioSQLAlchemy
-from adapters.outbound.persistence.gerador_numero_inquerito_sqlalchemy import GeradorNumeroInqueritoSQLAlchemy
-from adapters.outbound.persistence.gerador_numero_laudo_sqlalchemy import GeradorNumeroLaudoSQLAlchemy
-from adapters.outbound.persistence.gerador_numero_medida_sqlalchemy import GeradorNumeroMedidaSQLAlchemy
-from adapters.outbound.email.enviador_email_smtp import EnviadorEmailSMTP
-from adapters.outbound.persistence.inquerito_repositorio_sqlalchemy import InqueritoRepositorioSQLAlchemy
-from adapters.outbound.persistence.laudo_repositorio_sqlalchemy import LaudoRepositorioSQLAlchemy
-from adapters.outbound.persistence.medida_protetiva_repositorio_sqlalchemy import MedidaProtetivaRepositorioSQLAlchemy
-from adapters.outbound.persistence.notificacao_repositorio_sqlalchemy import NotificacaoRepositorioSQLAlchemy
 from adapters.outbound.persistence.comunicacao_interagencias_repositorio_sqlalchemy import (
     ComunicacaoInteragenciasRepositorioSQLAlchemy,
     GeradorNumeroOficioSQLAlchemy,
 )
+from adapters.outbound.persistence.gerador_numero_inquerito_sqlalchemy import GeradorNumeroInqueritoSQLAlchemy
+from adapters.outbound.persistence.gerador_numero_laudo_sqlalchemy import GeradorNumeroLaudoSQLAlchemy
+from adapters.outbound.persistence.gerador_numero_medida_sqlalchemy import GeradorNumeroMedidaSQLAlchemy
+from adapters.outbound.persistence.gerador_protocolo_sqlalchemy import GeradorProtocoloSQLAlchemy
+from adapters.outbound.persistence.inquerito_repositorio_sqlalchemy import InqueritoRepositorioSQLAlchemy
+from adapters.outbound.persistence.laudo_repositorio_sqlalchemy import LaudoRepositorioSQLAlchemy
+from adapters.outbound.persistence.medida_protetiva_repositorio_sqlalchemy import MedidaProtetivaRepositorioSQLAlchemy
+from adapters.outbound.persistence.notificacao_repositorio_sqlalchemy import NotificacaoRepositorioSQLAlchemy
+from adapters.outbound.persistence.ocorrencia_repositorio_sqlalchemy import OcorrenciaRepositorioSQLAlchemy
+from adapters.outbound.persistence.ordem_despacho_repositorio_sqlalchemy import (
+    GeradorNumeroOrdemSQLAlchemy,
+    OrdemDespachoRepositorioSQLAlchemy,
+)
+from adapters.outbound.persistence.unidade_de_trabalho_sqlalchemy import UnidadeDeTrabalhoSQLAlchemy
+from adapters.outbound.persistence.usuario_repositorio_sqlalchemy import UsuarioRepositorioSQLAlchemy
+from adapters.outbound.persistence.viatura_repositorio_sqlalchemy import ViaturaRepositorioSQLAlchemy
 from adapters.outbound.relogio.relogio_sistema import RelogioSistema
+from adapters.outbound.seguranca.credencial_dispositivo_hmac import CredencialDispositivoHMAC
 from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
 from adapters.outbound.seguranca.limitador_em_memoria import LimitadorTentativasEmMemoria
-from adapters.outbound.seguranca.provedor_token_jose import ProvedorTokenJose
+from adapters.outbound.seguranca.provedor_token_jwt import ProvedorTokenJWT
 from application.ports.inbound.ator import Ator
-from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
-from application.ports.inbound.interface_listar_usuarios import InterfaceListarUsuarios
-from application.ports.inbound.interface_anexar_evidencia import InterfaceAnexarEvidencia
 from application.ports.inbound.interface_acessar_evidencia import (
     InterfaceObterEvidenciaParaDownload,
     InterfaceVerificarIntegridadeEvidencia,
 )
+from application.ports.inbound.interface_alertas_vencimento_medida import (
+    InterfaceEmitirAlertaVencimentoMedida,
+)
+from application.ports.inbound.interface_anexar_evidencia import InterfaceAnexarEvidencia
 from application.ports.inbound.interface_arquivar_ocorrencia import (
     InterfaceArquivarOcorrencia,
     InterfaceExcluirOcorrencia,
 )
 from application.ports.inbound.interface_autenticar_documento import InterfaceAutenticarDocumento
+from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
+from application.ports.inbound.interface_comunicacoes_interagencias import (
+    InterfaceConsultarComunicacoesInteragencias,
+    InterfaceEnviarComunicacaoInteragencias,
+    InterfaceResponderComunicacaoInteragencias,
+)
 from application.ports.inbound.interface_consultar_auditoria import InterfaceConsultarAuditoria
-from application.ports.inbound.interface_gerir_apreensoes import (
-    InterfaceEmitirAutoApreensao,
-    InterfaceMovimentarCustodia,
-    InterfaceRegistrarItemApreendido,
+from application.ports.inbound.interface_consultar_ocorrencia_publica import InterfaceConsultarOcorrenciaPublica
+from application.ports.inbound.interface_consultar_ocorrencias import (
+    InterfaceListarOcorrencias,
+    InterfaceObterDetalheOcorrencia,
 )
 from application.ports.inbound.interface_despachar_viatura import (
     InterfaceDespacharViatura,
@@ -73,27 +80,11 @@ from application.ports.inbound.interface_despachar_viatura import (
     InterfaceListarOrdensDespacho,
     InterfaceSugerirViaturasProximas,
 )
-from application.ports.inbound.interface_gerir_viaturas import (
-    InterfaceAlterarSituacaoViatura,
-    InterfaceCadastrarViatura,
-    InterfaceListarViaturas,
-    InterfaceRegistrarPosicaoViatura,
+from application.ports.inbound.interface_gerir_apreensoes import (
+    InterfaceEmitirAutoApreensao,
+    InterfaceMovimentarCustodia,
+    InterfaceRegistrarItemApreendido,
 )
-from application.ports.inbound.interface_consultar_ocorrencias import (
-    InterfaceListarOcorrencias,
-    InterfaceObterDetalheOcorrencia,
-)
-from application.ports.inbound.interface_revisar_ocorrencia import (
-    InterfaceCorrigirOcorrencia,
-    InterfaceDevolverParaCorrecao,
-    InterfaceReenviarOcorrencia,
-    InterfaceRejeitarOcorrencia,
-    InterfaceValidarOcorrencia,
-)
-from application.ports.inbound.interface_consultar_ocorrencia_publica import InterfaceConsultarOcorrenciaPublica
-from application.ports.inbound.interface_registrar_ocorrencia_policial import InterfaceRegistrarOcorrenciaPolicial
-from application.ports.inbound.interface_registrar_ocorrencia_publica import InterfaceRegistrarOcorrenciaPublica
-from application.ports.outbound.limitador_tentativas import LimitadorTentativas
 from application.ports.inbound.interface_gerir_inqueritos import (
     InterfaceBuscarConexoesOcorrencia,
     InterfaceConcluirInquerito,
@@ -104,6 +95,7 @@ from application.ports.inbound.interface_gerir_inqueritos import (
 )
 from application.ports.inbound.interface_gerir_laudos import (
     InterfaceAnexarLaudo,
+    InterfaceBaixarArquivoLaudo,
     InterfaceListarLaudos,
     InterfaceObterLaudo,
     InterfaceSolicitarLaudo,
@@ -114,96 +106,70 @@ from application.ports.inbound.interface_gerir_medidas_protetivas import (
     InterfaceRenovarMedida,
     InterfaceRevogarMedida,
 )
-from application.ports.inbound.interface_notificacoes import (
-    InterfaceCriarNotificacao,
-    InterfaceListarNotificacoes,
-    InterfaceMarcarNotificacaoLida,
-    InterfaceMarcarTodasNotificacoesLidas,
-)
-from application.ports.inbound.interface_alertas_vencimento_medida import (
-    InterfaceEmitirAlertaVencimentoMedida,
+from application.ports.inbound.interface_gerir_viaturas import (
+    InterfaceAlterarSituacaoViatura,
+    InterfaceCadastrarViatura,
+    InterfaceEmitirCredencialTelemetria,
+    InterfaceListarViaturas,
+    InterfaceRegistrarPosicaoViatura,
 )
 from application.ports.inbound.interface_inteligencia_areas_risco import (
     InterfaceCalcularAreasRisco,
     InterfaceConfirmarCienciaAlerta,
     InterfaceEmitirAlertaCriticidade,
 )
-from application.ports.inbound.interface_comunicacoes_interagencias import (
-    InterfaceConsultarComunicacoesInteragencias,
-    InterfaceEnviarComunicacaoInteragencias,
-    InterfaceResponderComunicacaoInteragencias,
+from application.ports.inbound.interface_listar_usuarios import InterfaceListarUsuarios
+from application.ports.inbound.interface_notificacoes import (
+    InterfaceCriarNotificacao,
+    InterfaceListarNotificacoes,
+    InterfaceMarcarNotificacaoLida,
+    InterfaceMarcarTodasNotificacoesLidas,
 )
-from application.ports.outbound.gerador_numero_ordem import GeradorNumeroOrdem
+from application.ports.inbound.interface_registrar_ocorrencia_policial import InterfaceRegistrarOcorrenciaPolicial
+from application.ports.inbound.interface_registrar_ocorrencia_publica import InterfaceRegistrarOcorrenciaPublica
+from application.ports.inbound.interface_revisar_ocorrencia import (
+    InterfaceCorrigirOcorrencia,
+    InterfaceDevolverParaCorrecao,
+    InterfaceReenviarOcorrencia,
+    InterfaceRejeitarOcorrencia,
+    InterfaceValidarOcorrencia,
+)
+from application.ports.outbound.armazenamento_arquivos import ArmazenamentoArquivos
+from application.ports.outbound.credencial_dispositivo import CredencialDispositivo
 from application.ports.outbound.gerador_numero_inquerito import GeradorNumeroInquerito
 from application.ports.outbound.gerador_numero_laudo import GeradorNumeroLaudo
 from application.ports.outbound.gerador_numero_medida import GeradorNumeroMedida
-from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
-from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
-from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
-from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
+from application.ports.outbound.gerador_numero_ordem import GeradorNumeroOrdem
+from application.ports.outbound.gerador_protocolo import GeradorProtocolo
+from application.ports.outbound.hasher_senha import HasherSenha
+from application.ports.outbound.limitador_tentativas import LimitadorTentativas
+from application.ports.outbound.porta_auditoria import PortaAuditoria
+from application.ports.outbound.porta_notificacao_email import PortaNotificacaoEmail
+from application.ports.outbound.provedor_token import ProvedorToken
+from application.ports.outbound.publicador_eventos import PublicadorEventos
+from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_comunicacao_interagencias import (
     GeradorNumeroOficio,
     RepositorioComunicacaoInteragencias,
 )
-from application.ports.outbound.porta_notificacao_email import PortaNotificacaoEmail
-from application.ports.outbound.armazenamento_arquivos import ArmazenamentoArquivos
-from application.ports.outbound.gerador_protocolo import GeradorProtocolo
-from application.ports.outbound.hasher_senha import HasherSenha
-from application.ports.outbound.porta_auditoria import PortaAuditoria
-from application.ports.outbound.publicador_eventos import PublicadorEventos
-from application.ports.outbound.provedor_token import ProvedorToken
-from application.ports.outbound.relogio import Relogio
+from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
+from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
+from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
+from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.repositorio_ordem_despacho import RepositorioOrdemDespacho
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.shared.geo import Coordenada
 from application.use_cases.auditoria.consultar_auditoria import ConsultarAuditoria
 from application.use_cases.auth.autenticar_usuario import AutenticarUsuario
-from application.use_cases.documento.autenticar_documento import AutenticarDocumento
-from application.use_cases.usuario.listar_usuarios import ListarUsuarios
-from application.use_cases.ocorrencia.consultar_ocorrencia_publica import ConsultarOcorrenciaPublica
-from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
-from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
-from application.use_cases.ocorrencia.acessar_evidencia import (
-    ObterEvidenciaParaDownload,
-    VerificarIntegridadeEvidencia,
-)
-from application.use_cases.ocorrencia.apreensoes import EmitirAutoApreensao, MovimentarCustodia, RegistrarItemApreendido
-from application.use_cases.ocorrencia.arquivar_ocorrencia import ArquivarOcorrencia, ExcluirOcorrencia
-from application.use_cases.ocorrencia.corrigir_ocorrencia import CorrigirOcorrencia, ReenviarOcorrencia
 from application.use_cases.despacho.despachar_viatura import DespacharViatura, ListarOrdensDespacho, SugerirViaturasProximas
 from application.use_cases.despacho.encerrar_ocorrencia import EncerrarOcorrencia
-from application.use_cases.viatura.gerir_viaturas import AlterarSituacaoViatura, CadastrarViatura, ListarViaturas
-from application.use_cases.viatura.registrar_posicao_viatura import RegistrarPosicaoViatura
-from application.use_cases.ocorrencia.revisar_ocorrencia import (
-    DevolverParaCorrecao,
-    RejeitarOcorrencia,
-    ValidarOcorrencia,
-)
-from application.use_cases.ocorrencia.registrar_ocorrencia_policial import RegistrarOcorrenciaPolicial
-from application.use_cases.ocorrencia.registrar_ocorrencia_publica import RegistrarOcorrenciaPublica
+from application.use_cases.documento.autenticar_documento import AutenticarDocumento
 from application.use_cases.inquerito.buscar_conexoes import BuscarConexoesOcorrencia
 from application.use_cases.inquerito.consultar_inqueritos import ConcluirInquerito, ListarInqueritos, ObterInquerito
 from application.use_cases.inquerito.instaurar_inquerito import InstaurarInquerito
 from application.use_cases.inquerito.vincular_ocorrencias import VincularOcorrenciasInquerito
-from application.use_cases.laudo.anexar_laudo import AnexarLaudo
-from application.use_cases.laudo.consultar_laudos import ListarLaudos, ObterLaudo
-from application.use_cases.laudo.solicitar_laudo import SolicitarLaudo
-from application.use_cases.medida_protetiva.conceder_medida import ConcederMedida
-from application.use_cases.medida_protetiva.consultar_medidas import ConsultarMedidas
-from application.use_cases.medida_protetiva.renovar_medida import RenovarMedida
-from application.use_cases.medida_protetiva.revogar_medida import RevogarMedida
-from application.use_cases.medida_protetiva.emitir_alerta_vencimento import (
-    EmitirAlertaVencimentoMedidaUseCase,
-)
-from application.use_cases.notificacao.gerir_notificacoes import (
-    CriarNotificacaoUseCase,
-    ListarNotificacoesUseCase,
-    MarcarNotificacaoLidaUseCase,
-    MarcarTodasNotificacoesLidasUseCase,
-)
 from application.use_cases.inteligencia.calcular_areas_risco import (
     CalcularAreasRiscoUseCase,
     ConfirmarCienciaAlertaUseCase,
@@ -214,6 +180,45 @@ from application.use_cases.interagencias.gerir_comunicacoes import (
     EnviarComunicacaoInteragenciasUseCase,
     ResponderComunicacaoInteragenciasUseCase,
 )
+from application.use_cases.laudo.anexar_laudo import AnexarLaudo
+from application.use_cases.laudo.baixar_laudo import BaixarArquivoLaudo
+from application.use_cases.laudo.consultar_laudos import ListarLaudos, ObterLaudo
+from application.use_cases.laudo.solicitar_laudo import SolicitarLaudo
+from application.use_cases.medida_protetiva.conceder_medida import ConcederMedida
+from application.use_cases.medida_protetiva.consultar_medidas import ConsultarMedidas
+from application.use_cases.medida_protetiva.emitir_alerta_vencimento import (
+    EmitirAlertaVencimentoMedidaUseCase,
+)
+from application.use_cases.medida_protetiva.renovar_medida import RenovarMedida
+from application.use_cases.medida_protetiva.revogar_medida import RevogarMedida
+from application.use_cases.notificacao.gerir_notificacoes import (
+    CriarNotificacaoUseCase,
+    ListarNotificacoesUseCase,
+    MarcarNotificacaoLidaUseCase,
+    MarcarTodasNotificacoesLidasUseCase,
+)
+from application.use_cases.ocorrencia.acessar_evidencia import (
+    ObterEvidenciaParaDownload,
+    VerificarIntegridadeEvidencia,
+)
+from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
+from application.use_cases.ocorrencia.apreensoes import EmitirAutoApreensao, MovimentarCustodia, RegistrarItemApreendido
+from application.use_cases.ocorrencia.arquivar_ocorrencia import ArquivarOcorrencia, ExcluirOcorrencia
+from application.use_cases.ocorrencia.consultar_ocorrencia_publica import ConsultarOcorrenciaPublica
+from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
+from application.use_cases.ocorrencia.corrigir_ocorrencia import CorrigirOcorrencia, ReenviarOcorrencia
+from application.use_cases.ocorrencia.registrar_ocorrencia_policial import RegistrarOcorrenciaPolicial
+from application.use_cases.ocorrencia.registrar_ocorrencia_publica import RegistrarOcorrenciaPublica
+from application.use_cases.ocorrencia.revisar_ocorrencia import (
+    DevolverParaCorrecao,
+    RejeitarOcorrencia,
+    ValidarOcorrencia,
+)
+from application.use_cases.usuario.listar_usuarios import ListarUsuarios
+from application.use_cases.viatura.emitir_credencial_telemetria import EmitirCredencialTelemetria
+from application.use_cases.viatura.gerir_viaturas import AlterarSituacaoViatura, CadastrarViatura, ListarViaturas
+from application.use_cases.viatura.registrar_posicao_viatura import RegistrarPosicaoViatura
+from domain.shared.geo import Coordenada
 from infrastructure.config.settings import settings
 from infrastructure.database.connection import AsyncSessionLocal, get_session
 
@@ -221,15 +226,19 @@ from infrastructure.database.connection import AsyncSessionLocal, get_session
 publicador_eventos = PublicadorEventosEmMemoria()
 relogio_sistema = RelogioSistema()
 hasher_argon2 = HasherArgon2()
-gerenciador_conexoes = GerenciadorConexoes()
+gerenciador_conexoes = GerenciadorConexoes(relogio_sistema)
 publicador_eventos.assinar(gerenciador_conexoes.transmitir)  # RF02 / RNF01: fan-out para os painéis
-provedor_token_jose = ProvedorTokenJose(settings.jwt_secret_key, settings.jwt_algorithm, settings.jwt_expires_in_hours)
+provedor_token_jwt = ProvedorTokenJWT(settings.jwt_secret_key, settings.jwt_algorithm, settings.jwt_expires_in_hours)
 armazenamento_evidencias = ArmazenamentoDisco(settings.evidencias_diretorio)
+credencial_dispositivo = CredencialDispositivoHMAC(settings.telemetria_segredo_dispositivos)
 limitador_login = LimitadorTentativasEmMemoria(
     settings.login_max_tentativas, settings.login_janela_segundos, settings.login_bloqueio_segundos
 )
 limitador_registro_publico = LimitadorTentativasEmMemoria(
     settings.registro_publico_max_por_ip, settings.registro_publico_janela_segundos, settings.registro_publico_bloqueio_segundos
+)
+limitador_consulta_publica = LimitadorTentativasEmMemoria(
+    settings.consulta_publica_max_por_ip, settings.consulta_publica_janela_segundos, settings.consulta_publica_bloqueio_segundos
 )
 enviador_email = EnviadorEmailSMTP(
     smtp_host=settings.smtp_host,
@@ -259,7 +268,7 @@ def get_hasher() -> HasherSenha:
 
 
 def get_provedor_token() -> ProvedorToken:
-    return provedor_token_jose
+    return provedor_token_jwt
 
 
 def get_armazenamento_arquivos() -> ArmazenamentoArquivos:
@@ -272,6 +281,10 @@ def get_limitador_login() -> LimitadorTentativas:
 
 def get_limitador_registro_publico() -> LimitadorTentativas:
     return limitador_registro_publico
+
+
+def get_limitador_consulta_publica() -> LimitadorTentativas:
+    return limitador_consulta_publica
 
 
 def get_repositorio_usuario(session: AsyncSession = Depends(get_session)) -> RepositorioUsuario:
@@ -323,8 +336,10 @@ def get_registrar_ocorrencia(
 
 def get_registrar_ocorrencia_publica(
     registrar: InterfaceRegistrarOcorrenciaPolicial = Depends(get_registrar_ocorrencia),
+    usuarios: RepositorioUsuario = Depends(get_repositorio_usuario),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
 ) -> InterfaceRegistrarOcorrenciaPublica:
-    return RegistrarOcorrenciaPublica(registrar)
+    return RegistrarOcorrenciaPublica(registrar, usuarios, uow)
 
 
 def get_consultar_ocorrencia_publica(
@@ -510,6 +525,20 @@ def _registrar_posicao(session: AsyncSession, relogio: Relogio) -> RegistrarPosi
         auditoria=AuditoriaSQLAlchemy(session),
         raio_chegada_metros=settings.despacho_raio_chegada_metros,
     )
+
+
+def get_credencial_dispositivo() -> CredencialDispositivo:
+    return credencial_dispositivo
+
+
+def get_emitir_credencial_telemetria(
+    viaturas: RepositorioViatura = Depends(get_repositorio_viatura),
+    credenciais: CredencialDispositivo = Depends(get_credencial_dispositivo),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    relogio: Relogio = Depends(get_relogio),
+) -> InterfaceEmitirCredencialTelemetria:
+    return EmitirCredencialTelemetria(viaturas, credenciais, auditoria, uow, relogio)
 
 
 def get_registrar_posicao_viatura(
@@ -830,6 +859,16 @@ def get_obter_laudo(
     laudos: RepositorioLaudoPericial = Depends(get_repositorio_laudo),
 ) -> InterfaceObterLaudo:
     return ObterLaudo(laudos)
+
+
+def get_baixar_arquivo_laudo(
+    laudos: RepositorioLaudoPericial = Depends(get_repositorio_laudo),
+    armazenamento: ArmazenamentoArquivos = Depends(get_armazenamento_arquivos),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    relogio: Relogio = Depends(get_relogio),
+) -> InterfaceBaixarArquivoLaudo:
+    return BaixarArquivoLaudo(laudos, armazenamento, auditoria, uow, relogio)
 
 
 # ------------------------------------------------------------------ medidas protetivas

@@ -61,6 +61,8 @@ export interface OcorrenciaPublicaResponse {
   numero_protocolo: string;
   status: string;
   criada_em: string;
+  /** Exibido uma única vez: exigido, junto com o protocolo, para consultar o andamento. */
+  codigo_acompanhamento: string;
 }
 
 export interface ConsultaPublicaResponse {
@@ -76,7 +78,10 @@ export async function registrarOcorrenciaPublica(payload: RegistrarOcorrenciaPub
   return data;
 }
 
-export async function consultarOcorrenciaPublica(protocolo: string): Promise<ConsultaPublicaResponse> {
-  const { data } = await api.get<ConsultaPublicaResponse>(`/v1/ocorrencias/publico/${encodeURIComponent(protocolo.trim())}`);
+export async function consultarOcorrenciaPublica(protocolo: string, codigoAcompanhamento: string): Promise<ConsultaPublicaResponse> {
+  const { data } = await api.post<ConsultaPublicaResponse>('/v1/ocorrencias/publico/consulta', {
+    protocolo: protocolo.trim(),
+    codigo_acompanhamento: codigoAcompanhamento.trim(),
+  });
   return data;
 }

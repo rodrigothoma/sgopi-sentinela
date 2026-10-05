@@ -67,3 +67,54 @@ async def test_fluxo_laudo_pericial(client):
     assert r_det.status_code == 200
     assert r_det.json()["id"] == laudo_id
     assert r_det.json()["status"] == "CONCLUIDO"
+
+
+async def _laudo_com_arquivo(client, conteudo: bytes) -> str:
+    h_delegado = await auth(client, "delegado")
+    oc = await registrar(client, await auth(client, "agente"))
+    laudo_id = (
+        await client.post(
+            "/v1/laudos",
+            json={"tipo_pericia": "BALISTICA", "descricao_solicitacao": "Exame de confronto balístico", "ocorrencia_id": oc["ocorrencia_id"]},
+            headers=h_delegado,
+        )
+    ).json()["id"]
+    r = await client.post(
+        f"/v1/laudos/{laudo_id}/anexar",
+        data={"conclusoes_tecnicas": "Confronto balístico positivo com estriamento idêntico."},
+        files={"arquivo": ("laudo.pdf", conteudo, "application/pdf")},
+        headers=await auth(client, "perito"),
+    )
+    assert r.status_code == 200, r.text
+    return laudo_id
+
+
+async def test_download_devolve_o_pdf_anexado_e_audita(app, client, tmp_path):
+    import hashlib
+
+    from adapters.outbound.arquivos.armazenamento_disco import ArmazenamentoDisco
+    from infrastructure.di import get_armazenamento_arquivos
+
+    app.dependency_overrides[get_armazenamento_arquivos] = lambda: ArmazenamentoDisco(tmp_path)
+    conteudo = b"%PDF-1.4 laudo real com conteudo verificavel"
+    laudo_id = await _laudo_com_arquivo(client, conteudo)
+    h = await auth(client, "delegado")
+    r = await client.get(f"/v1/laudos/{laudo_id}/download", headers=h)
+    assert r.status_code == 200
+    assert r.content == conteudo
+    assert r.headers["X-Sha256"] == hashlib.sha256(conteudo).hexdigest()
+    trilha = (await client.get("/v1/auditoria", params={"operacao": "laudo.download"}, headers=h)).json()
+    assert any(i["operacao"] == "laudo.download" for i in trilha)
+
+
+async def test_download_recusa_arquivo_adulterado(app, client, tmp_path):
+    from adapters.outbound.arquivos.armazenamento_disco import ArmazenamentoDisco
+    from infrastructure.di import get_armazenamento_arquivos
+
+    app.dependency_overrides[get_armazenamento_arquivos] = lambda: ArmazenamentoDisco(tmp_path)
+    laudo_id = await _laudo_com_arquivo(client, b"%PDF-1.4 original")
+    for arquivo in tmp_path.rglob("*"):
+        if arquivo.is_file():
+            arquivo.write_bytes(b"%PDF-1.4 adulterado")
+    r = await client.get(f"/v1/laudos/{laudo_id}/download", headers=await auth(client, "delegado"))
+    assert r.status_code == 409 and r.json()["code"] == "laudo.integridade_violada"
