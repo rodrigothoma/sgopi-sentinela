@@ -99,6 +99,9 @@ class EvidenciaSchema(BaseModel):
 class IntegridadeEvidenciaSchema(BaseModel):
     evidencia_id: UUID
     estado: EstadoIntegridadeEvidencia
+    hash_armazenado: str
+    hash_recalculado: str
+    verificado_em: str
 
 
 class RegistrarOcorrenciaPublicaRequest(BaseModel):

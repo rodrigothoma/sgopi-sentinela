@@ -75,7 +75,11 @@ async def test_integridade_integra_e_auditada(verificar, evidencia, auditoria):
     ocorrencia_id, item = evidencia
     out = await verificar.executar(AGENTE, ocorrencia_id, item.id)
     assert out.estado == "INTEGRA"
+    assert out.hash_armazenado == item.hash_sha256
+    assert out.hash_recalculado == item.hash_sha256
+    assert out.verificado_em == AGORA.isoformat()
     assert auditoria.registros[-1].dados_depois["integridade"] == "INTEGRA"
+    assert auditoria.registros[-1].quando.isoformat() == out.verificado_em
 
 
 async def test_integridade_divergente(verificar, evidencia, armazenamento, auditoria):
@@ -83,6 +87,8 @@ async def test_integridade_divergente(verificar, evidencia, armazenamento, audit
     armazenamento.arquivos[item.chave_armazenamento] = b"arquivo adulterado"
     out = await verificar.executar(AGENTE, ocorrencia_id, item.id)
     assert out.estado == "DIVERGENTE"
+    assert out.hash_armazenado == item.hash_sha256
+    assert out.hash_recalculado == hashlib.sha256(b"arquivo adulterado").hexdigest()
     assert auditoria.registros[-1].dados_depois["integridade"] == "DIVERGENTE"
 
 

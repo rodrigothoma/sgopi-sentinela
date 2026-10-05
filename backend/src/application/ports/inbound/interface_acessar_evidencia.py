@@ -13,6 +13,9 @@ EstadoIntegridadeEvidencia = Literal["INTEGRA", "DIVERGENTE"]
 class IntegridadeEvidenciaOutput:
     evidencia_id: UUID
     estado: EstadoIntegridadeEvidencia
+    hash_armazenado: str
+    hash_recalculado: str
+    verificado_em: str
 
 
 @dataclass(frozen=True)

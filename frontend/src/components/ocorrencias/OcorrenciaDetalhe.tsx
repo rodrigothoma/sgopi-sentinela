@@ -8,7 +8,7 @@ import { mensagemDeErro } from '../../services/api';
 import { ocorrenciasService } from '../../services/ocorrenciasService';
 import { laudosService } from '../../services/laudosService';
 import { medidasService } from '../../services/medidasService';
-import type { Evidencia, OcorrenciaDetalhe as Detalhe } from '../../types/api';
+import type { Evidencia, IntegridadeEvidencia, OcorrenciaDetalhe as Detalhe } from '../../types/api';
 import { StatusBadge } from '../StatusBadge';
 import { formatarNatureza } from '../../utils/formatarNatureza';
 import { ApreensoesAba } from './ApreensoesAba';
@@ -24,16 +24,22 @@ type EstadoVisual = 'CARREGANDO' | 'INTEGRA' | 'DIVERGENTE' | 'INDISPONIVEL' | '
 
 const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = ({ ocorrenciaId, evidencia }) => {
   const { t } = useTranslation(['ocorrencias']);
+  const { avisar } = useToast();
   const [estado, setEstado] = useState<EstadoVisual>('CARREGANDO');
+  const [resultado, setResultado] = useState<IntegridadeEvidencia | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [baixando, setBaixando] = useState(false);
 
   const verificarIntegridade = useCallback(async (estaAtivo: () => boolean = () => true) => {
     setEstado('CARREGANDO');
+    setResultado(null);
     setErro(null);
     try {
       const resultado = await ocorrenciasService.verificarIntegridade(ocorrenciaId, evidencia.id);
-      if (estaAtivo()) setEstado(resultado.estado);
+      if (estaAtivo()) {
+        setEstado(resultado.estado);
+        setResultado(resultado);
+      }
     } catch (falha) {
       if (!estaAtivo()) return;
       const indisponivel = axios.isAxiosError(falha) && falha.response?.status === 404;
@@ -53,9 +59,12 @@ const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = 
     setErro(null);
     try {
       await ocorrenciasService.baixarEvidencia(ocorrenciaId, evidencia);
+      avisar(t('ocorrencias:evidencias.download_integridade_confirmada'), 'sucesso');
     } catch (falha) {
-      if (axios.isAxiosError(falha) && falha.response?.status === 409) setEstado('DIVERGENTE');
-      if (axios.isAxiosError(falha) && falha.response?.status === 404) setEstado('INDISPONIVEL');
+      if (axios.isAxiosError(falha) && [404, 409].includes(falha.response?.status ?? 0)) {
+        setResultado(null);
+        setEstado(falha.response?.status === 409 ? 'DIVERGENTE' : 'INDISPONIVEL');
+      }
       setErro(mensagemDeErro(falha, t('ocorrencias:evidencias.download_erro')));
     } finally {
       setBaixando(false);
@@ -65,12 +74,41 @@ const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = 
   const classe = estado === 'INTEGRA' ? 'ok' : estado === 'CARREGANDO' ? 'muted' : 'erro';
   return (
     <li className="evidencia-item">
-      <div>
-        <strong>{evidencia.nome_original}</strong> · {evidencia.formato.toUpperCase()} · {(evidencia.tamanho / 1024).toFixed(1)} KB · {fmt(evidencia.enviada_em)}
+      <div className="evidencia-metadados">
+        <strong>{evidencia.nome_original}</strong>
+        <span>{evidencia.formato.toUpperCase()} · {(evidencia.tamanho / 1024).toFixed(1)} KB</span>
+        <span>{fmt(evidencia.enviada_em)}</span>
       </div>
-      <div className="evidencia-hash"><strong>SHA-256:</strong> <code>{evidencia.hash_sha256}</code></div>
+      <div className="evidencia-integridade">
+        <div className="evidencia-hash">
+          <strong>{t('ocorrencias:evidencias.hash_armazenado')}:</strong>
+          <code>{resultado?.hash_armazenado ?? evidencia.hash_sha256}</code>
+        </div>
+        {resultado && (
+          <>
+            <div className="evidencia-hash">
+              <strong>{t('ocorrencias:evidencias.hash_recalculado')}:</strong>
+              <code>{resultado.hash_recalculado}</code>
+            </div>
+            <div className="evidencia-integridade-resumo">
+              <span className={resultado.estado === 'INTEGRA' ? 'ok' : 'erro'}>
+                {t(`ocorrencias:evidencias.hashes_${resultado.estado === 'INTEGRA' ? 'correspondem' : 'divergem'}`)}
+              </span>
+              <span><strong>{t('ocorrencias:evidencias.verificado_em')}:</strong> {fmt(resultado.verificado_em)}</span>
+            </div>
+          </>
+        )}
+        {estado === 'INDISPONIVEL' && (
+          <div className="evidencia-hash">
+            <strong>{t('ocorrencias:evidencias.hash_recalculado')}:</strong>
+            <span>{t('ocorrencias:evidencias.hash_indisponivel')}</span>
+          </div>
+        )}
+      </div>
       <div className="evidencia-acoes">
-        <span className={classe}>{t(`ocorrencias:evidencias.integridade_${estado.toLowerCase()}`)}</span>
+        <span className={`${classe} evidencia-estado`}>
+          {t(`ocorrencias:evidencias.integridade_${estado.toLowerCase()}`)}
+        </span>
         <button
           type="button"
           className="btn btn-sm btn-outline"
