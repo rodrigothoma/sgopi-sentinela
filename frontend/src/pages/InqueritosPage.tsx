@@ -170,6 +170,56 @@ export const InqueritosPage: React.FC = () => {
     };
   }, [modalInstaurarAberto, ocorrenciaPrincipalId]);
 
+  const renderMotivoBadge = (motivo: string, idx: number) => {
+    let bg = 'rgba(148, 163, 184, 0.12)';
+    let color = 'var(--ink)';
+    let border = 'rgba(148, 163, 184, 0.25)';
+
+    const mLower = motivo.toLowerCase();
+    if (mLower.includes('suspeito')) {
+      bg = 'rgba(239, 68, 68, 0.12)';
+      color = 'var(--danger)';
+      border = 'rgba(239, 68, 68, 0.3)';
+    } else if (mLower.includes('cruzado')) {
+      bg = 'rgba(245, 158, 11, 0.15)';
+      color = 'var(--warn)';
+      border = 'rgba(245, 158, 11, 0.35)';
+    } else if (mLower.includes('vítima') || mLower.includes('vitima')) {
+      bg = 'rgba(168, 85, 247, 0.12)';
+      color = '#a855f7';
+      border = 'rgba(168, 85, 247, 0.3)';
+    } else if (mLower.includes('área de risco') || mLower.includes('area de risco')) {
+      bg = 'rgba(59, 130, 246, 0.12)';
+      color = 'var(--primary)';
+      border = 'rgba(59, 130, 246, 0.3)';
+    } else if (mLower.includes('24h') || mLower.includes('72h')) {
+      bg = 'rgba(16, 185, 129, 0.12)';
+      color = 'var(--ok)';
+      border = 'rgba(16, 185, 129, 0.3)';
+    }
+
+    return (
+      <span
+        key={idx}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          fontSize: '0.72rem',
+          padding: '0.15rem 0.45rem',
+          borderRadius: '6px',
+          background: bg,
+          color: color,
+          border: `1px solid ${border}`,
+          fontWeight: 500,
+          lineHeight: 1.25,
+        }}
+      >
+        {motivo}
+      </span>
+    );
+  };
+
   const executarInstauracao = async (e: React.FormEvent) => {
     e.preventDefault();
     if (ementa.trim().length < 10) {
@@ -990,8 +1040,9 @@ export const InqueritosPage: React.FC = () => {
                                     {t('inqueritos:modal_conexoes.score')}: {sug.score_similaridade}
                                   </span>
                                 </div>
-                                <div style={{ fontSize: '0.78rem', color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {sug.natureza} &bull; <span style={{ color: 'var(--muted)', fontSize: '0.72rem' }}>{sug.motivos.join('; ')}</span>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--ink)' }}>{sug.natureza}</div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                                  {sug.motivos.map((m, idx) => renderMotivoBadge(m, idx))}
                                 </div>
                               </div>
                               <ActionBtn
@@ -1277,8 +1328,8 @@ export const InqueritosPage: React.FC = () => {
                           </span>
                         </div>
                         <div style={{ fontSize: '0.78rem', color: 'var(--ink)' }}>{sug.natureza}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
-                          {sug.motivos.join('; ')}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                          {sug.motivos.map((m, idx) => renderMotivoBadge(m, idx))}
                         </div>
                       </div>
                       <ActionBtn

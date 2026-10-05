@@ -759,10 +759,19 @@ def get_vincular_ocorrencias_inquerito(
     return VincularOcorrenciasInquerito(inqueritos, ocorrencias, relogio, uow, auditoria)
 
 
+# ------------------------------------------------------------------ inteligencia / areas de risco
+def get_calcular_areas_risco(
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    relogio: Relogio = Depends(get_relogio),
+) -> InterfaceCalcularAreasRisco:
+    return CalcularAreasRiscoUseCase(ocorrencias, relogio)
+
+
 def get_buscar_conexoes_ocorrencia(
     ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    areas_risco_uc: InterfaceCalcularAreasRisco = Depends(get_calcular_areas_risco),
 ) -> InterfaceBuscarConexoesOcorrencia:
-    return BuscarConexoesOcorrencia(ocorrencias)
+    return BuscarConexoesOcorrencia(ocorrencias, areas_risco_uc)
 
 
 def get_listar_inqueritos(
@@ -942,13 +951,6 @@ def get_emitir_alerta_vencimento(
 
 
 # ------------------------------------------------------------------ inteligencia / areas de risco
-def get_calcular_areas_risco(
-    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
-    relogio: Relogio = Depends(get_relogio),
-) -> InterfaceCalcularAreasRisco:
-    return CalcularAreasRiscoUseCase(ocorrencias, relogio)
-
-
 def get_emitir_alerta_criticidade(
     notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
     auditoria: PortaAuditoria = Depends(get_auditoria),
