@@ -1,18 +1,22 @@
-"""Portas de entrada para conferir e baixar evidências digitais (RF01/RF22)."""
+"""Portas de entrada para conferir e baixar evidências digitais (RF01)."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Literal
+from datetime import datetime
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
+from domain.ocorrencia.entity import EstadoIntegridadeEvidencia
 
-EstadoIntegridadeEvidencia = Literal["INTEGRA", "DIVERGENTE"]
+__all__ = ["EstadoIntegridadeEvidencia"]
 
 
 @dataclass(frozen=True)
 class IntegridadeEvidenciaOutput:
     evidencia_id: UUID
     estado: EstadoIntegridadeEvidencia
+    hash_armazenado: str
+    hash_recalculado: str
+    verificado_em: datetime  # serializado na borda HTTP
 
 
 @dataclass(frozen=True)

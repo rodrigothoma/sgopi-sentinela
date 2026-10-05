@@ -1,4 +1,4 @@
-"""Adapter de entrada: /v1/auth (RF11)."""
+"""Adapter de entrada: /v1/auth (RNF02)."""
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
@@ -43,7 +43,7 @@ async def login(
     request: Request,
     use_case: InterfaceAutenticarUsuario = Depends(get_autenticar_usuario),
 ) -> LoginResponse:
-    """Autentica por login/senha e emite JWT de 8 h (RF11)."""
+    """Autentica por login/senha e emite JWT de 8 h (RNF02)."""
     out = await use_case.executar(AutenticarInput(login=body.login, senha=body.senha, ip=ip_do_cliente(request)))
     return LoginResponse(
         access_token=out.access_token,

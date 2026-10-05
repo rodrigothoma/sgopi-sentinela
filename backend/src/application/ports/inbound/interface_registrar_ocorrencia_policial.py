@@ -10,6 +10,7 @@ from datetime import datetime
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
+from domain.ocorrencia.entity import OrigemOcorrencia
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,22 @@ class TipificacaoInputDTO:
 
 
 @dataclass(frozen=True)
+class ItemApreendidoInputDTO:
+    """Item apreendido informado já no registro (RF03 — opcional; UC01 cenário alternativo I)."""
+
+    tipo: str  # ARMA_DE_FOGO | ARMA_BRANCA | ENTORPECENTE | VEICULO | VALOR | OBJETO
+    descricao: str
+    quantidade: int
+    estado_conservacao: str  # NOVO | BOM | REGULAR | DANIFICADO | INSERVIVEL
+    numero_lacre: str
+    localizacao_deposito: str
+    unidade: str = "UNIDADE"
+    numero_serie: str | None = None
+    marca: str | None = None
+    calibre: str | None = None
+
+
+@dataclass(frozen=True)
 class RegistrarOcorrenciaInput:
     natureza: str
     descricao: str
@@ -37,6 +54,12 @@ class RegistrarOcorrenciaInput:
     data_hora_fato: datetime
     tipificacoes: tuple[TipificacaoInputDTO, ...] = field(default_factory=tuple)
     envolvidos: tuple[EnvolvidoInputDTO, ...] = field(default_factory=tuple)
+    itens_apreendidos: tuple[ItemApreendidoInputDTO, ...] = field(default_factory=tuple)
+    # Sugestão #7: ajuste do Agente (BAIXA | MEDIA | ALTA | URGENTE); ausente → sugerida pelo domínio
+    prioridade: str | None = None
+    # Preenchidos só pelo canal público (RegistrarOcorrenciaPublica); o router policial nunca os expõe
+    origem: OrigemOcorrencia = OrigemOcorrencia.POLICIAL
+    codigo_acompanhamento_hash: str | None = None
 
 
 @dataclass(frozen=True)
@@ -45,6 +68,7 @@ class RegistrarOcorrenciaOutput:
     numero_protocolo: str
     status: str
     criada_em: str  # ISO 8601
+    prioridade: str = "MEDIA"
 
 
 class InterfaceRegistrarOcorrenciaPolicial(ABC):

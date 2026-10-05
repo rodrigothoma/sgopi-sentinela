@@ -1,4 +1,4 @@
-"""Integração HTTP: fluxo ponta a ponta do MVP (registrar → validar → sugerir → despachar → encerrar) e atomicidade (RF18, RF19, RNF11)."""
+"""Integração HTTP: fluxo ponta a ponta do MVP (registrar → validar → sugerir → despachar → encerrar) e atomicidade (RF02, RNF03)."""
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -61,7 +61,7 @@ async def test_fluxo_mvp_ponta_a_ponta(client, session):
     assert {v["prefixo"]: v["situacao"] for v in r.json()}["VTR-02"] == "DISPONIVEL"
     r = await client.get("/v1/despachos", params={"ocorrencia_id": oid}, headers=ho)
     assert r.json()[0]["ativa"] is False and r.json()[0]["encerrada_em"]
-    # RF19 aceite 2: viatura volta a aparecer nas sugestões
+    # RF02 aceite 2: viatura volta a aparecer nas sugestões
     r = await client.get(f"/v1/ocorrencias/{oid2}/sugestoes-viaturas", headers=ho)
     assert [s["viatura"]["prefixo"] for s in r.json()["sugestoes"]] == ["VTR-02", "VTR-01", "VTR-03"]
 
@@ -107,3 +107,65 @@ async def test_encerrar_exige_desfecho_e_papel(client):
     assert r.status_code == 422 and r.json()["code"] == "ocorrencia.desfecho_vazio"
     r = await client.post(f"/v1/ocorrencias/{oid}/encerrar", json={"desfecho": "ok"}, headers=await auth(client, "agente"))
     assert r.status_code == 403
+
+
+async def test_telemetria_no_local_marca_viatura_operando_e_audita(client, session):
+    """Despachada, a viatura vira OPERANDO quando a telemetria a coloca a ≤ 50 m da ocorrência (RF18/RF19)."""
+    from infrastructure.database.models import RegistroAuditoriaModel
+
+    ho = await auth(client, "operador")
+    frota = await _frota(client, ho)
+    oid = await _validada(client)
+    r = await client.post("/v1/despachos", json={"ocorrencia_id": oid, "viatura_id": frota["VTR-01"]}, headers=ho)
+    assert r.status_code == 201, r.text
+    numero_ordem = r.json()["numero"]
+
+    # ainda a ~1 km: continua em deslocamento
+    r = await client.post("/v1/telemetria/posicoes", json={"viatura_id": frota["VTR-01"], "latitude": -29.79, "longitude": -55.79, "registrada_em": datetime.now(UTC).isoformat()}, headers=ho)
+    assert r.status_code == 200 and r.json()["situacao"] == "EM_DESLOCAMENTO"
+
+    # no endereço da ocorrência (helpers.corpo_ocorrencia: -29.7833, -55.7919)
+    r = await client.post("/v1/telemetria/posicoes", json={"viatura_id": frota["VTR-01"], "latitude": -29.7834, "longitude": -55.7919, "registrada_em": datetime.now(UTC).isoformat()}, headers=ho)
+    assert r.status_code == 200 and r.json()["situacao"] == "OPERANDO"
+    r = await client.get("/v1/viaturas", headers=ho)
+    assert next(v for v in r.json() if v["id"] == frota["VTR-01"])["situacao"] == "OPERANDO"
+
+    aud = (await session.execute(select(RegistroAuditoriaModel).where(RegistroAuditoriaModel.operacao == "viatura.chegada_ao_local"))).scalars().all()
+    assert len(aud) == 1 and aud[0].dados_depois["numero_ordem"] == numero_ordem and aud[0].dados_depois["ocorrencia_id"] == oid
+
+    # encerrar o atendimento libera a viatura normalmente (OPERANDO → DISPONIVEL)
+    r = await client.post(f"/v1/ocorrencias/{oid}/encerrar", json={"desfecho": "Atendimento concluído sem intercorrências."}, headers=ho)
+    assert r.status_code == 200, r.text
+    r = await client.get("/v1/viaturas", headers=ho)
+    assert next(v for v in r.json() if v["id"] == frota["VTR-01"])["situacao"] == "DISPONIVEL"
+
+
+async def test_despacho_de_apoio_enriquece_atendimento(client):
+    """Issue #64: segunda viatura em EM_ATENDIMENTO vira apoio e o encerramento único libera todas."""
+    ho = await auth(client, "operador")
+    frota = await _frota(client, ho)
+    oid = await _validada(client)
+
+    r = await client.post("/v1/despachos", json={"ocorrencia_id": oid, "viatura_id": frota["VTR-01"]}, headers=ho)
+    assert r.status_code == 201 and r.json()["apoio"] is False
+
+    r = await client.post("/v1/despachos", json={"ocorrencia_id": oid, "viatura_id": frota["VTR-02"]}, headers=ho)
+    assert r.status_code == 201 and r.json()["apoio"] is True
+
+    r = await client.get(f"/v1/ocorrencias/{oid}", headers=ho)
+    assert r.json()["status"] == "EM_ATENDIMENTO"
+    r = await client.get("/v1/despachos", params={"ocorrencia_id": oid, "somente_ativas": "true"}, headers=ho)
+    assert len(r.json()) == 2
+
+    # sugestões de apoio excluem as viaturas empenhadas
+    r = await client.get(f"/v1/ocorrencias/{oid}/sugestoes-viaturas", headers=ho)
+    assert r.status_code == 200 and [s["viatura"]["prefixo"] for s in r.json()["sugestoes"]] == ["VTR-03"]
+
+    # encerramento único: ocorrência fecha e ambas as viaturas voltam a DISPONIVEL
+    r = await client.post(f"/v1/ocorrencias/{oid}/encerrar", json={"desfecho": "Atendimento e apoio concluídos."}, headers=ho)
+    assert r.status_code == 200 and r.json()["status"] == "ENCERRADA"
+    r = await client.get("/v1/viaturas", headers=ho)
+    situ = {v["prefixo"]: v["situacao"] for v in r.json()}
+    assert situ["VTR-01"] == "DISPONIVEL" and situ["VTR-02"] == "DISPONIVEL"
+    r = await client.get("/v1/despachos", params={"ocorrencia_id": oid}, headers=ho)
+    assert all(not o["ativa"] for o in r.json())

@@ -1,5 +1,6 @@
 {
   "ocorrencia": {
+    "motivo_curto": "Reason must have at least 10 characters",
     "created": "Occurrence registered successfully",
     "not_found": "Occurrence not found",
     "invalid_transition": "Invalid state transition",
@@ -14,13 +15,25 @@
     "justificativa_curta": "Justification must have at least 10 characters",
     "desfecho_vazio": "Outcome is required",
     "nao_e_autor": "Only the authoring agent can change this occurrence",
-    "status_invalido": "Invalid occurrence status"
+    "status_invalido": "Invalid occurrence status",
+    "origem_invalida": "Invalid occurrence origin (use POLICIAL or PUBLICA)",
+    "periodo_invalido": "The start date of the incident cannot be after the end date",
+    "protocolo_nao_encontrado": "No incident found for the given protocol number and tracking code.",
+    "declaracao_maioridade_ausente": "You must confirm the age (18+) and truthfulness declaration.",
+    "publica_nao_devolvivel": "Citizen-filed reports cannot be returned for correction: validate, reject or archive them.",
+    "prioridade_invalida": "Invalid priority (use BAIXA, MEDIA, ALTA or URGENTE)",
+    "prioridade_status_invalido": "The priority cannot be changed in this status",
+    "prioridade_inalterada": "The occurrence already has this priority"
   },
   "envolvido": {
+    "documento_tamanho_invalido": "Invalid document length: ID with 10 digits or CPF with 11 digits",
+    "documento_nao_numerico": "Document must contain digits only",
     "nome_vazio": "Involved person name is required",
     "tipo_invalido": "Invalid involved person type",
     "cpf_invalido": "Invalid CPF",
-    "duplicado": "Involved person already added to this occurrence"
+    "duplicado": "Involved person already added to this occurrence",
+    "nome_invalido": "Involved person name must contain letters only",
+    "cpf_comunicante_invalido": "The CPF provided is invalid. Please check the digits."
   },
   "tipificacao": {
     "artigo_vazio": "Article is required",
@@ -50,14 +63,25 @@
   "usuario": {
     "nome_vazio": "User name is required",
     "login_vazio": "Login is required",
-    "senha_vazia": "Password is required"
+    "senha_vazia": "Password is required",
+    "login_invalido": "Login must have 3 to 50 characters: lowercase letters, digits, dot, hyphen or underscore",
+    "papel_inalterado": "The user already has this role",
+    "ja_inativo": "The user is already inactive",
+    "ja_ativo": "The user is already active",
+    "sistema": "The public channel system user cannot be managed",
+    "papel_invalido": "Invalid role",
+    "proprio": "Nobody can change their own role or status",
+    "nao_encontrado": "User not found",
+    "senha_curta": "The initial password must have at least 8 characters",
+    "login_em_uso": "Login is already in use"
   },
   "auth": {
     "unauthorized": "Unauthorized",
     "forbidden": "Access denied",
     "credenciais_invalidas": "Invalid login or password",
     "usuario_inativo": "Inactive user",
-    "token_invalido": "Invalid or expired token"
+    "token_invalido": "Invalid or expired token",
+    "muitas_tentativas": "Too many failed login attempts. Please wait a few minutes and try again."
   },
   "generic": {
     "internal_error": "Internal server error",
@@ -67,7 +91,8 @@
     "not_found": "Resource not found",
     "conflict": "Conflict with the current state of the resource",
     "versao_desatualizada": "The record was changed by another user; reload and try again",
-    "http_error": "Request error"
+    "http_error": "Request error",
+    "muitas_tentativas": "Request limit exceeded. Please wait a few minutes and try again."
   },
   "viatura": {
     "not_found": "Vehicle not found",
@@ -81,15 +106,52 @@
   "telemetria": {
     "timestamp_sem_fuso": "Timestamp without timezone",
     "timestamp_fora_da_janela": "Position timestamp outside accepted window",
-    "posicao_retroativa": "Position older than the last registered one"
+    "posicao_retroativa": "Position older than the last registered one",
+    "exige_dispositivo": "In production, telemetry is only accepted from the vehicle's tracker."
   },
   "despacho": {
     "numero_vazio": "Order number is required",
     "ordem_ja_encerrada": "Dispatch order already closed",
     "viatura_indisponivel": "Vehicle is not available for dispatch"
   },
+  "apreensao": {
+    "descricao_vazia": "Seized item description is required",
+    "quantidade_invalida": "Quantity must be greater than zero",
+    "lacre_vazio": "Seal number is required",
+    "lacre_duplicado": "Seal number already registered",
+    "localizacao_vazia": "Storage/vault location is required",
+    "arma_sem_calibre_ou_marca": "Firearms require caliber and brand",
+    "tipo_invalido": "Invalid seized item type",
+    "unidade_invalida": "Invalid unit of measure",
+    "estado_invalido": "Invalid condition",
+    "status_invalido": "The occurrence does not accept seizures in its current status",
+    "duplicada": "Item already linked to the occurrence",
+    "not_found": "Seized item not found",
+    "destino_vazio": "Custody destination is required",
+    "destino_igual_origem": "The item is already held at that location",
+    "movimentacao_retroativa": "The movement cannot precede the last one recorded",
+    "data_sem_fuso": "Date must include a time zone",
+    "sem_itens": "The occurrence has no seized items to issue the report"
+  },
   "documento": {
-    "not_found": "Document not found; check the key or contact the issuing precinct",
-    "chave_invalida": "Invalid authenticity key; enter the 24 characters printed on the document"
+    "not_found": "Document not found. Check the printed key or contact the issuing police station.",
+    "codigo_invalido": "Invalid verification code: enter the 24-character key or the SHA-256 hash printed on the document."
+  },
+  "medida": {
+    "destinatario_nao_cadastrado": "The recipient must be an e-mail registered for someone involved in the incident."
+  },
+  "laudo": {
+    "integridade_violada": "The report file does not match the hash recorded when it was attached.",
+    "arquivo_ausente": "Report file unavailable in storage.",
+    "arquivo_grande": "The report file exceeds the maximum allowed size.",
+    "sem_arquivo": "This report has no approved file attached yet."
+  },
+  "simulador": {
+    "desabilitado_em_producao": "The telemetry simulator is a demo feature and is disabled in production."
+  },
+  "indicadores": {
+    "fuso_invalido": "Invalid time zone",
+    "periodo_sem_fuso": "Period dates must include a time zone",
+    "periodo_invalido": "Invalid period: the start must precede the end and the range cannot exceed 366 days"
   }
 }

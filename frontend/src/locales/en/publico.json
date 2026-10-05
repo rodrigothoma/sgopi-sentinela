@@ -4,7 +4,7 @@
     "subtitulo": "Official channel for reporting criminal occurrences. Your statement will be reviewed by police authorities for triage, validation, and tactical dispatch.",
     "instrucoes": {
       "titulo": "Online Police Station Guidelines & Requirements",
-      "publico_alvo": "Service available to any citizen with a valid Brazilian Tax ID (CPF) or foreign citizen with official identification, aged 18 or older.",
+      "publico_alvo": "Service available to any citizen with a valid Brazilian Tax ID (CPF), aged 18 or older.",
       "etapas_titulo": "How the Service Works:",
       "etapa_1": "1. Complete identification of the reporting citizen with valid ID, email address, and contact phone number.",
       "etapa_2": "2. Detailed description of the incident circumstances and geographic coordinates on the map.",
@@ -47,7 +47,7 @@
     "sucesso_titulo": "Report Submitted Successfully!",
     "sucesso_mensagem": "Your report was submitted to SGOPI Sentinela and is now in the official triage queue for police screening.",
     "protocolo_label": "YOUR PROTOCOL NUMBER:",
-    "copiar_protocolo": "Copy Protocol",
+    "copiar_protocolo": "Copy Protocol and Code",
     "protocolo_copiado": "Protocol Copied!",
     "guardar_aviso": "Keep this number to track the validation and status of your police report.",
     "acompanhar_status": "Track Status",
@@ -64,6 +64,7 @@
       "telefone_invalido": "Please enter a valid phone number with area code (at least 10 digits).",
       "declaracao_obrigatoria": "You must agree to the legal responsibility and age statement to proceed.",
       "localizacao_obrigatoria": "Please enter the approximate address or landmark.",
+      "coordenada_obrigatoria": "Mark the incident location on the interactive map.",
       "descricao_curta": "Incident description must have at least 20 characters.",
       "data_futura": "Incident date and time cannot be in the future.",
       "falha_registro": "Could not register incident. Please check your data and try again."
@@ -76,34 +77,14 @@
       "perturbacao_sossego": "Disturbance of the Peace",
       "dano_patrimonio": "Property Damage / Vandalism",
       "outro": "Other Circumstanced Incident"
-    }
-  },
-  "publica": {
-    "titulo": "Public Inquiry",
-    "subtitulo": "Track the progress of an incident or verify the authenticity of an issued Police Report. No login required.",
-    "modo_rotulo": "Inquiry type",
-    "protocolo": {
-      "aba": "Track incident",
-      "rotulo": "Protocol number",
-      "ajuda": "Enter the protocol received when the incident was filed (format SGOPI-YYYY-NNNNNN) to see its current stage.",
-      "detectado": "Protocol format recognized — tracking mode selected automatically.",
-      "botao": "Inquire",
-      "vazio": "Enter the protocol number",
-      "nao_encontrado": "No incident report found with the given protocol. Please verify the code and try again.",
-      "demo_rotulo": "Demo environment, try this protocol:"
     },
-    "chave": {
-      "aba": "Verify document",
-      "rotulo": "Document security key",
-      "ajuda": "Enter the 24-character key printed on the Police Report, or scan the document's QR Code with your phone camera.",
-      "detectado": "Security key format recognized — verification mode selected automatically.",
-      "botao": "Verify authenticity",
-      "vazio": "Enter the key printed on the document",
-      "nao_encontrado": "Document not found. Check the printed key and, if the problem persists, contact the issuing police station.",
-      "demo_rotulo": "Demo environment, try this key:"
-    }
+    "codigo_label": "TRACKING CODE (confidential — shown only now):"
   },
   "consulta": {
+    "titulo": "Public Incident Status Inquiry",
+    "subtitulo": "Enter the protocol number (e.g. SGOPI-2026-000001) and the tracking code you received when filing to check the status of your report.",
+    "placeholder": "SGOPI-YYYY-NNNNNN",
+    "botao_consultar": "Inquire",
     "protocolo_rotulo": "PROTOCOL:",
     "etapas": {
       "triagem": "Police Screening",
@@ -115,30 +96,62 @@
       "natureza": "Category / Nature:",
       "local": "Incident Location:",
       "data_abertura": "Reported On:",
-      "desfecho": "Final Disposition:",
       "voltar_inicio": "Back to Home"
+    },
+    "erro_nao_encontrada": "No report found for the given protocol number and code. Check the characters and try again.",
+    "aviso_rejeitada": "Your report was reviewed by the police authority and could not be registered through this channel. For more information, visit the nearest police station with your protocol number.",
+    "aviso_arquivada": "This incident was archived by the police authority. For more information, visit the nearest police station with your protocol number.",
+    "codigo_label": "Tracking code",
+    "codigo_placeholder": "CODE"
+  },
+  "autenticar": {
+    "titulo": "Public Document Authentication",
+    "subtitulo": "Check whether an Incident Report or certificate issued by SGOPI Sentinela is authentic and intact. Scan the document's QR Code or type the 24-character security key (or the SHA-256 hash) printed on the receipt.",
+    "campo_label": "Security key or verification hash",
+    "placeholder": "XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",
+    "botao": "Verify authenticity",
+    "ajuda": "The key is printed at the bottom of the receipt, right below the QR Code. Hyphens, spaces and letter case are ignored.",
+    "erro_generico": "The verification could not be performed right now. Please try again shortly.",
+    "veredito": {
+      "AUTENTICO": {
+        "titulo": "AUTHENTIC DOCUMENT",
+        "descricao": "The key matches a document issued by the system and the stored SHA-256 hash matches the registered content."
+      },
+      "ADULTERADO": {
+        "titulo": "TAMPERED DOCUMENT",
+        "descricao": "The key exists, but the registered content does not match the integrity hash generated at issuance. Do not rely on this document and report it to the issuing police station."
+      },
+      "INDISPONIVEL": {
+        "titulo": "DOCUMENT UNAVAILABLE FOR PUBLIC LOOKUP",
+        "descricao": "The document was annulled or is under judicial restriction and cannot be looked up publicly. Contact the issuing police station."
+      },
+      "NAO_RECONHECIDO": {
+        "titulo": "DOCUMENT NOT RECOGNIZED",
+        "descricao": "No document issued by the system matches the code provided. Check the characters typed or contact the issuing police station."
+      },
+      "CODIGO_INVALIDO": {
+        "titulo": "INVALID CODE",
+        "descricao": "Enter the full 24-character key (no 0, O, 1 or I) or the 64-character SHA-256 hash printed on the document."
+      }
+    },
+    "espelho": {
+      "protocolo": "Incident Report No.",
+      "chave": "Security key",
+      "natureza": "Nature",
+      "data_fato": "Date/time of the incident",
+      "emitido_em": "Issued (validated) on",
+      "consultado_em": "Verification performed on",
+      "tipificacoes": "Criminal classification",
+      "envolvidos": "People involved (by role)",
+      "evidencias": "Attached evidence",
+      "hash": "SHA-256 integrity hash",
+      "lgpd": "In compliance with LGPD, this lookup does not show names, documents, contacts or addresses of the people involved, nor the incident narrative."
+    },
+    "envolvido": {
+      "VITIMA": "victim(s)",
+      "TESTEMUNHA": "witness(es)",
+      "SUSPEITO": "suspect(s)",
+      "COMUNICANTE": "reporter(s)"
     }
-  },
-  "lgpd": "In compliance with data protection law, the public portal shows only the document's verification data — never names, IDs, addresses or the narrative of the facts.",
-  "resultado": {
-    "VALIDO": "Authentic and intact document",
-    "ADULTERADO": "WARNING: tampered document",
-    "explicacao_VALIDO": "The key matches a document issued by the system and its content has not changed since the Chief's validation.",
-    "explicacao_ADULTERADO": "The key exists, but the current content does not match the hash recorded at validation. The occurrence has been flagged for fraud investigation.",
-    "protocolo": "Report number",
-    "emitido_em": "Issued at",
-    "consultado_em": "Verified at",
-    "natureza": "Nature",
-    "data_fato": "Date/time of the facts",
-    "status": "Occurrence status",
-    "tipificacoes": "Criminal classification",
-    "envolvidos": "Qualified parties",
-    "evidencias": "Attached evidence",
-    "hash": "Integrity hash (SHA-256)"
-  },
-  "demo": {
-    "copiar": "Copy",
-    "copiado": "Copied!",
-    "preencher": "Click to fill the field"
   }
 }

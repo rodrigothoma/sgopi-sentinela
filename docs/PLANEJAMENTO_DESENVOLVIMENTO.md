@@ -99,7 +99,7 @@ Plano de trabalho semanal até a apresentação final do **SGOPI Sentinela**. Co
 
 | Cód. | Frente | Toca | Entrega | Marca |
 | :---: | :--- | :--- | :--- | :---: |
-| **F1** | **E2E do registro** — fluxo do UC01 automatizado com Selenium | `qa` `frontend` | Script que preenche o formulário e confere o protocolo | `Essencial` |
+| **F1** | **E2E do registro** — fluxo do UC01 automatizado *(planejado com Selenium; implementado com Cypress + pytest E2E de API)* | `qa` `frontend` | Script que preenche o formulário e confere o protocolo | `Essencial` |
 | **F2** | **E2E de validação e despacho** — fluxo do UC04 e UC02 automatizados | `qa` `frontend` | Script que valida uma ocorrência e despacha uma viatura | `Essencial` |
 | **F3** | **Cobertura acima de 80% no core** — medida sobre domínio e casos de uso | `qa` `domínio` | Relatório de cobertura anexado ao repositório | `Essencial` |
 | **F4** | **Seed de dados e roteiro de demo** — script que carrega ocorrências, viaturas e usuários | `banco` `backend` | Um comando deixa o sistema pronto para demonstrar | `Essencial` |

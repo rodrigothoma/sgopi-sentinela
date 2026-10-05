@@ -27,6 +27,11 @@ class RepositorioOrdemDespachoFake(RepositorioOrdemDespacho):
         return [copy.deepcopy(o) for o in sorted(itens, key=lambda o: o.criada_em, reverse=True)[:limit]]
 
 
+    async def buscar_ativa_por_viatura(self, viatura_id: UUID) -> OrdemDeDespacho | None:
+        ativas = [o for o in self._store.values() if o.viatura_id == viatura_id and o.ativa]
+        return copy.deepcopy(max(ativas, key=lambda o: o.criada_em)) if ativas else None
+
+
 class GeradorNumeroOrdemFake(GeradorNumeroOrdem):
     def __init__(self, falhar: bool = False) -> None:
         self._n = 0

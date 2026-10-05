@@ -10,9 +10,9 @@ dependencies = [
     "asyncpg>=0.30",
     "alembic>=1.14",
     "pydantic-settings>=2.6",
-    "python-jose[cryptography]>=3.3",
     "argon2-cffi>=23.1",
     "python-multipart>=0.0.9",
+    "pyjwt>=2.10",
 ]
 
 [dependency-groups]
@@ -24,19 +24,23 @@ dev = [
     "aiosqlite>=0.20",
     "pytest-cov>=5.0",
     "import-linter>=2.0",
+    "httpx2>=2.13.1",
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["src", "tests"]
-filterwarnings = ["ignore::DeprecationWarning:starlette.testclient"]
+# Só o aviso de terceiros (starlette 1.6 usa um alias antigo do anyio); o aviso do httpx foi resolvido com httpx2
+filterwarnings = ["ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning"]
 markers = ["e2e: testes ponta a ponta contra o backend real em :8000 (pulados se o servidor não estiver no ar)"]
 
-# RNF06: cobertura >= 80 % em domain/ + application/ (uv run pytest --cov)
+# Cobertura >= 80 % em domain/ + application/ (uv run pytest --cov)
 [tool.coverage.run]
 source = ["src/domain", "src/application"]
 branch = true
+# SQLAlchemy async roda sobre greenlet: sem isso o tracer do 3.13 (ctrace) perde as linhas após cada await
+concurrency = ["greenlet", "thread"]
 
 [tool.coverage.report]
 fail_under = 80
@@ -53,13 +57,13 @@ include_external_packages = true
 name = "domain não importa nada externo nem outras camadas"
 type = "forbidden"
 source_modules = ["domain"]
-forbidden_modules = ["application", "adapters", "infrastructure", "fastapi", "starlette", "sqlalchemy", "pydantic", "jose", "argon2", "alembic"]
+forbidden_modules = ["application", "adapters", "infrastructure", "fastapi", "starlette", "sqlalchemy", "pydantic", "jwt", "argon2", "alembic"]
 
 [[tool.importlinter.contracts]]
 name = "application só importa domain"
 type = "forbidden"
 source_modules = ["application"]
-forbidden_modules = ["adapters", "infrastructure", "fastapi", "starlette", "sqlalchemy", "pydantic", "jose", "argon2", "alembic"]
+forbidden_modules = ["adapters", "infrastructure", "fastapi", "starlette", "sqlalchemy", "pydantic", "jwt", "argon2", "alembic"]
 
 [[tool.importlinter.contracts]]
 name = "camadas: adapters > infrastructure > application > domain (di.py é o composition root, única exceção)"
@@ -69,3 +73,31 @@ ignore_imports = ["infrastructure.di -> adapters.**"]
 
 [tool.uv]
 package = false
+
+# N9: higiene estática (uv tool run ruff check src tests) — rodada também no CI
+[tool.ruff]
+line-length = 140
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "RUF100", "DTZ005", "DTZ011"]
+ignore = [
+    "E501",  # linhas longas: o projeto usa 140 colunas de forma consistente; não vale reflow em massa
+    "UP017", # datetime.UTC vs timezone.utc: ambos aceitos
+    "UP042", # (str, Enum) → StrEnum muda str() dos membros; migração deliberada, fora desta rodada
+]
+
+[tool.ruff.lint.flake8-bugbear]
+# Depends()/Query()/File() em default de parâmetro é o idioma do FastAPI, não um bug (B008)
+extend-immutable-calls = ["adapters.inbound.http.deps.exigir_papel", "fastapi.Depends", "fastapi.Query", "fastapi.File", "fastapi.Form", "fastapi.Header", "fastapi.Path", "fastapi.Body"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["domain", "application", "adapters", "infrastructure", "main", "tests", "scripts"]
+
+[[tool.importlinter.contracts]]
+name = "adapters de entrada não acessam banco/ORM (só composition root, config, i18n e logging)"
+type = "forbidden"
+source_modules = ["adapters.inbound"]
+forbidden_modules = ["infrastructure.database", "sqlalchemy", "adapters.outbound.persistence"]
+allow_indirect_imports = true

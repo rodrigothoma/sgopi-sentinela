@@ -1,4 +1,4 @@
-"""Serviço de domínio sugerir_viaturas_proximas com coordenadas conhecidas (RF18 aceite 1, DEC-05)."""
+"""Serviço de domínio sugerir_viaturas_proximas com coordenadas conhecidas (RF02 aceite 1, DEC-05)."""
 from datetime import UTC, datetime, timedelta
 
 from domain.despacho.servico_proximidade import sugerir_viaturas_proximas

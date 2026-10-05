@@ -1,4 +1,4 @@
-"""Conversão entidade → DTO de saída (com máscara de CPF por papel — RNF10)."""
+"""Conversão entidade → DTO de saída (com máscara de CPF por papel — LGPD)."""
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_anexar_evidencia import EvidenciaOutput
 from application.ports.inbound.interface_consultar_ocorrencias import (
@@ -8,15 +8,41 @@ from application.ports.inbound.interface_consultar_ocorrencias import (
     OcorrenciaResumoOutput,
     TipificacaoOutput,
 )
-from domain.ocorrencia.autenticidade import formatar_chave
+from application.ports.inbound.interface_gerir_apreensoes import ItemApreendidoOutput, MovimentacaoCustodiaOutput
+from domain.ocorrencia.apreensao import ItemApreendido
 from domain.ocorrencia.entity import Ocorrencia
 from domain.shared.documentos import mascarar_cpf
 from domain.usuario.entity import Papel
 
 
 def pode_ver_documento(ator: Ator, ocorrencia: Ocorrencia) -> bool:
-    """RNF10: CPF em claro só para Delegado e para o Agente autor."""
+    """LGPD: CPF em claro só para Delegado e para o Agente autor."""
     return ator.papel == Papel.DELEGADO or ator.id == ocorrencia.agente_policial_id
+
+
+def para_item_apreendido(i: ItemApreendido) -> ItemApreendidoOutput:
+    return ItemApreendidoOutput(
+        id=i.id,
+        tipo=i.tipo.value,
+        descricao=i.descricao,
+        quantidade=i.quantidade,
+        unidade=i.unidade.value,
+        estado_conservacao=i.estado_conservacao.value,
+        numero_lacre=i.numero_lacre,
+        numero_serie=i.numero_serie,
+        marca=i.marca,
+        calibre=i.calibre,
+        localizacao_deposito=i.localizacao_deposito,
+        localizacao_atual=i.localizacao_atual,
+        registrado_em=i.registrado_em.isoformat(),
+        registrado_por_id=i.registrado_por_id,
+        movimentacoes=tuple(
+            MovimentacaoCustodiaOutput(
+                em=m.em.isoformat(), por_id=m.por_id, origem=m.origem, destino=m.destino, observacao=m.observacao
+            )
+            for m in i.movimentacoes
+        ),
+    )
 
 
 def para_resumo(o: Ocorrencia) -> OcorrenciaResumoOutput:
@@ -33,6 +59,9 @@ def para_resumo(o: Ocorrencia) -> OcorrenciaResumoOutput:
         atualizada_em=(o.atualizada_em or o.criada_em).isoformat(),
         agente_policial_id=o.agente_policial_id,
         versao=o.versao,
+        inquerito_id=o.inquerito_id,
+        origem=o.origem.value,
+        prioridade=o.prioridade.value,
     )
 
 
@@ -47,7 +76,11 @@ def para_detalhe(o: Ocorrencia, ator: Ator) -> OcorrenciaDetalheOutput:
         desfecho=o.desfecho,
         hash_narrativa=o.hash_narrativa,
         narrativa_integra=o.narrativa_integra(),
-        chave_autenticidade=formatar_chave(o.chave_autenticidade) if o.chave_autenticidade else None,
+        chave_autenticidade=o.chave_autenticidade,
+        arquivada_por_id=o.arquivada_por_id,
+        motivo_arquivamento=o.motivo_arquivamento,
+        excluida_por_id=o.excluida_por_id,
+        motivo_exclusao=o.motivo_exclusao,
         envolvidos=tuple(
             EnvolvidoOutput(
                 id=e.id,
@@ -71,6 +104,7 @@ def para_detalhe(o: Ocorrencia, ator: Ator) -> OcorrenciaDetalheOutput:
             )
             for e in o.evidencias
         ),
+        itens_apreendidos=tuple(para_item_apreendido(i) for i in o.itens_apreendidos),
         historico_status=tuple(
             HistoricoStatusOutput(de=h.de.value if h.de else None, para=h.para.value, em=h.em.isoformat(), por_id=h.por_id, justificativa=h.justificativa)
             for h in o.historico_status

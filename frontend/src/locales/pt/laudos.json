@@ -1,0 +1,90 @@
+{
+  "titulo": "Central de Laudos Periciais",
+  "subtitulo": "Requisição, tramitação e juntada de perícias técnicas da Polícia Científica com cadeia de custódia.",
+  "btn_solicitar": "Nova Requisição Pericial",
+  "carregando": "Carregando laudos periciais...",
+  "nenhum_encontrado": "Nenhum laudo ou requisição pericial encontrada.",
+  "tabela": {
+    "numero": "Nº Laudo / Requisição",
+    "tipo": "Especialidade Pericial",
+    "solicitado_em": "Data da Solicitação",
+    "status": "Situação",
+    "hash": "Cadeia de Custódia (SHA-256)",
+    "acoes": "Ações"
+  },
+  "status": {
+    "SOLICITADO": "Solicitado (Pendente)",
+    "EM_ANALISE": "Em Análise Técnica",
+    "CONCLUIDO": "Laudo Concluído",
+    "CANCELADO": "Cancelado"
+  },
+  "tipos": {
+    "BALISTICA": "Balística Forense",
+    "TOXICOLOGICA": "Toxicologia Forense",
+    "LOCAL_CRIME": "Perícia de Local de Crime",
+    "VEICULAR": "Perícia Veicular / Acidentologia",
+    "NECROPSIA": "Necropsia Médico-Legal",
+    "DOCUMENTOSCOPIA": "Documentoscopia",
+    "INFORMATICA_FORENSE": "Informática Forense / Digital",
+    "OUTRA": "Outras Especialidades"
+  },
+  "acoes": {
+    "detalhes": "Ver Detalhes",
+    "anexar": "Anexar Laudo Concluído",
+    "download": "Baixar PDF Oficial",
+    "cancelar": "Cancelar",
+    "fechar": "Fechar"
+  },
+  "detalhes": {
+    "titulo": "Ficha Técnica da Requisição Pericial",
+    "requisicao_info": "Informações da Requisição",
+    "demanda_quesitos": "Quesitos e Demanda Solicitada",
+    "solicitante": "Autoridade Requisitante",
+    "conclusoes_tecnicas": "Conclusões Técnicas do Perito",
+    "integridade_custodia": "Integridade Criptográfica & Cadeia de Custódia",
+    "hash_titulo": "Assinatura Criptográfica SHA-256",
+    "documento_anexo": "Documento Pericial Anexo",
+    "sem_conclusao": "Aguardando exame pericial e emissão de laudo técnico pela Polícia Científica."
+  },
+  "modal_solicitar": {
+    "titulo": "Requisitar Exame Pericial",
+    "subtitulo": "Formalização de demanda pericial oficial para o Instituto de Criminalística / IML.",
+    "campo_tipo": "Especialidade / Tipo de Perícia *",
+    "campo_ocorrencia": "Ocorrência Policial Vinculada",
+    "placeholder_ocorrencia": "Selecione a ocorrência vinculada",
+    "selecionar_da_lista": "Selecionar da lista",
+    "digitar_id_manual": "Digitar ID manual",
+    "campo_demanda": "Descrição da Demanda e Quesitos Periciais *",
+    "placeholder_demanda": "Especifique os exames a serem realizados, vestígios a analisar e quesitos periciais...",
+    "btn_submit": "Protocolar Requisição",
+    "submetendo": "Protocolando..."
+  },
+  "modal_anexar": {
+    "titulo": "Anexar Laudo Pericial Oficial Concluído",
+    "subtitulo": "Upload do documento final assinado com geração obrigatória de hash SHA-256 e gravação na cadeia de custódia.",
+    "campo_conclusoes": "Conclusões Técnicas / Parecer Final *",
+    "placeholder_conclusoes": "Apresente a conclusão pericial objetiva, constatações e metodologia empregada...",
+    "campo_arquivo": "Arquivo PDF do Laudo Pericial *",
+    "ajuda_arquivo": "Apenas arquivo no formato PDF de até 20 MB assinado digitalmente.",
+    "btn_submit": "Homologar e Anexar Laudo",
+    "submetendo": "Processando upload e hash..."
+  },
+  "notificacoes": {
+    "solicitado_sucesso": "Requisição pericial protocolada com sucesso!",
+    "anexado_sucesso": "Laudo pericial homologado e anexado com integridade SHA-256!"
+  },
+  "filtros": {
+    "status_label": "Status:",
+    "todos_status": "Todos os Status",
+    "especialidade_label": "Especialidade Pericial:",
+    "todas_especialidades": "Todas as Especialidades"
+  },
+  "total_registrado": "Total registrado",
+  "pendente_anexacao": "Pendente anexação",
+  "validacoes": {
+    "quesitos_min": "A descrição dos quesitos deve conter no mínimo 10 caracteres.",
+    "ocorrencia_obrigatoria": "Informe o identificador da ocorrência de vínculo.",
+    "pdf_obrigatorio": "Selecione o arquivo PDF do laudo pericial.",
+    "conclusoes_min": "As conclusões técnicas devem conter no mínimo 10 caracteres."
+  }
+}

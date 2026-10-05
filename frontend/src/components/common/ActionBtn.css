@@ -1,0 +1,82 @@
+.sgopi-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.sgopi-action-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.sgopi-action-btn--sm {
+  height: 30px;
+  font-size: 0.76rem;
+  padding: 0 8px;
+}
+
+.sgopi-action-btn--md {
+  height: 36px;
+  font-size: 0.84rem;
+  padding: 0 12px;
+}
+
+.sgopi-action-btn--primary {
+  background: var(--primary, #2563eb);
+  color: #ffffff;
+  border: 1px solid var(--primary, #2563eb);
+}
+.sgopi-action-btn--primary:hover:not(:disabled) {
+  background: var(--primary-hover, #1d4ed8);
+  border-color: var(--primary-hover, #1d4ed8);
+}
+
+.sgopi-action-btn--ghost {
+  background: transparent;
+  color: var(--primary, #3b82f6);
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+}
+.sgopi-action-btn--ghost:hover:not(:disabled) {
+  background: var(--card-hover, rgba(255, 255, 255, 0.05));
+  border-color: var(--primary, #3b82f6);
+}
+
+.sgopi-action-btn--outline {
+  background: transparent;
+  color: var(--ink, #ffffff);
+  border: 1px solid var(--line, #333);
+}
+.sgopi-action-btn--outline:hover:not(:disabled) {
+  background: var(--card-hover);
+  border-color: var(--muted);
+}
+
+.sgopi-action-btn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.sgopi-action-btn__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,4 +1,4 @@
-"""Porta de entrada: InterfaceAutenticarUsuario (RF11)."""
+"""Porta de entrada: InterfaceAutenticarUsuario (RNF02)."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from uuid import UUID

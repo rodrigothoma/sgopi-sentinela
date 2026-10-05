@@ -1,4 +1,5 @@
-"""Casos de uso: ListarOcorrencias e ObterDetalheOcorrencia (RF13; corrige HEX-01)."""
+"""Casos de uso: ListarOcorrencias e ObterDetalheOcorrencia (RF01; corrige HEX-01)."""
+from datetime import UTC, datetime
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
@@ -11,8 +12,8 @@ from application.ports.inbound.interface_consultar_ocorrencias import (
 )
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
 from application.use_cases.ocorrencia._mapeadores import para_detalhe, para_resumo
-from domain.ocorrencia.entity import Ocorrencia
-from domain.ocorrencia.status import StatusOcorrencia
+from domain.ocorrencia.entity import Ocorrencia, OrigemOcorrencia
+from domain.ocorrencia.status import ESTADOS_VISIVEIS_POR_PADRAO, StatusOcorrencia
 from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.entity import Papel
 
@@ -21,10 +22,59 @@ LIMITE_MAXIMO = 200
 
 
 def _status(valores: tuple[str, ...]) -> tuple[StatusOcorrencia, ...]:
+    """Sem filtro explícito, excluídas (exclusão lógica) não aparecem — RNF03*."""
+    if not valores:
+        return ESTADOS_VISIVEIS_POR_PADRAO
     try:
         return tuple(StatusOcorrencia(v) for v in valores)
     except ValueError as exc:
         raise ValorInvalidoError(f"Status inválido: {exc}", chave="ocorrencia.status_invalido") from exc
+
+
+def _origem(valor: str | None) -> OrigemOcorrencia | None:
+    if not valor:
+        return None
+    try:
+        return OrigemOcorrencia(valor.strip().upper())
+    except ValueError as exc:
+        raise ValorInvalidoError(f"Origem inválida: {valor}", chave="ocorrencia.origem_invalida") from exc
+
+
+def _termo(valor: str | None) -> str | None:
+    """Termo de busca vazio ou só com espaços equivale a "sem filtro"."""
+    texto = (valor or "").strip()
+    return texto or None
+
+
+def _instante(valor: datetime | None) -> datetime | None:
+    """Data sem fuso vinda da borda é interpretada como UTC (o domínio só compara datas aware)."""
+    if valor is None or valor.tzinfo is not None:
+        return valor
+    return valor.replace(tzinfo=UTC)
+
+
+def montar_filtro(ator: Ator, input_dto: ListarOcorrenciasInput, limit: int, offset: int) -> FiltroOcorrencias:
+    """Traduz a entrada em filtro de repositório; o Agente fica sempre restrito às próprias (RBAC)."""
+    de, ate = _instante(input_dto.data_fato_de), _instante(input_dto.data_fato_ate)
+    if de and ate and de > ate:
+        raise ValorInvalidoError(
+            "A data inicial do fato não pode ser posterior à final.", chave="ocorrencia.periodo_invalido"
+        )
+    agente = ator.id if (ator.papel == Papel.AGENTE or input_dto.somente_minhas) else None
+    return FiltroOcorrencias(
+        status=_status(input_dto.status),
+        agente_policial_id=agente,
+        limit=limit,
+        offset=offset,
+        mais_recentes_primeiro=input_dto.mais_recentes_primeiro,
+        ordenar_por_prioridade=input_dto.ordenar_por_prioridade,
+        natureza=_termo(input_dto.natureza),
+        protocolo=_termo(input_dto.protocolo),
+        texto=_termo(input_dto.texto),
+        origem=_origem(input_dto.origem),
+        data_fato_de=de,
+        data_fato_ate=ate,
+    )
 
 
 async def carregar_ou_404(repositorio: RepositorioOcorrencia, ocorrencia_id: UUID) -> Ocorrencia:
@@ -56,9 +106,7 @@ class ListarOcorrencias(InterfaceListarOcorrencias):
         ator.exigir_papel(*PAPEIS_CONSULTA)
         limit = max(1, min(input_dto.limit, LIMITE_MAXIMO))
         offset = max(0, input_dto.offset)
-        # Agente só enxerga as próprias ocorrências
-        agente = ator.id if (ator.papel == Papel.AGENTE or input_dto.somente_minhas) else None
-        filtro = FiltroOcorrencias(status=_status(input_dto.status), agente_policial_id=agente, limit=limit, offset=offset)
+        filtro = montar_filtro(ator, input_dto, limit, offset)
         itens = await self._repositorio.listar(filtro)
         total = await self._repositorio.contar(filtro)
         return PaginaOcorrenciasOutput(itens=tuple(para_resumo(o) for o in itens), total=total, limit=limit, offset=offset)

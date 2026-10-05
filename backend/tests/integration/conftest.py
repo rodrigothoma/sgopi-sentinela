@@ -14,8 +14,15 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
+import infrastructure.database.models as models
+from adapters.outbound.seguranca.limitador_em_memoria import LimitadorTentativasEmMemoria
 from infrastructure.database.connection import Base, get_session
-import infrastructure.database.models as models  # noqa: F401
+from infrastructure.di import (
+    get_limitador_consulta_publica,
+    get_limitador_login,
+    get_limitador_registro_publico,
+    get_orquestrador_despacho,
+)
 
 IDS = {
     "agente": UUID("00000000-0000-0000-0000-000000000001"),
@@ -23,6 +30,7 @@ IDS = {
     "operador": UUID("00000000-0000-0000-0000-000000000003"),
     "agente2": UUID("00000000-0000-0000-0000-000000000004"),
     "supervisor": UUID("00000000-0000-0000-0000-000000000005"),
+    "perito": UUID("00000000-0000-0000-0000-000000000006"),
 }
 PAPEIS = {
     "agente": "AGENTE",
@@ -30,6 +38,7 @@ PAPEIS = {
     "operador": "OPERADOR_CENTRAL",
     "agente2": "AGENTE",
     "supervisor": "SUPERVISOR",
+    "perito": "PERITO",
 }
 SENHA_PADRAO = "Senha@123"
 
@@ -51,14 +60,14 @@ async def session_factory(engine):
 
 
 @pytest.fixture
-async def session(session_factory) -> AsyncGenerator[AsyncSession, None]:
+async def session(session_factory) -> AsyncGenerator[AsyncSession]:
     async with session_factory() as s:
         yield s
 
 
 @pytest.fixture
 async def usuarios(session_factory):
-    """Semeia um usuário por papel (RF12) com senha argon2 real."""
+    """Semeia um usuário por papel (RNF02) com senha argon2 real."""
     from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
 
     hasher = HasherArgon2()
@@ -69,6 +78,28 @@ async def usuarios(session_factory):
         s.add(models.UsuarioModel(nome="Inativo", login="inativo", senha_hash=hash_, papel="AGENTE", ativo=False))
         await s.commit()
     return IDS
+
+
+class _OrquestradorNoop:
+    """Noop para a suíte: ligar/desligar nunca tocam o Postgres real (flag #62 vem do .env)."""
+
+    def status(self) -> dict:
+        return {
+            "ligado": False,
+            "intervalo_segundos": 0,
+            "janela_carencia_segundos": 0,
+            "tempo_atendimento_segundos": 0,
+            "ticks": 0,
+            "ocioso": 0,
+            "despachados": 0,
+            "encerrados": 0,
+        }
+
+    async def ligar(self) -> bool:
+        return False
+
+    async def desligar(self) -> None:
+        return None
 
 
 @pytest.fixture
@@ -82,10 +113,18 @@ async def app(session_factory, usuarios):
             yield s
 
     application.dependency_overrides[get_session] = _get_session
+    application.dependency_overrides[get_orquestrador_despacho] = lambda: _OrquestradorNoop()
+    # Limitadores novos por teste: os singletons do processo acumulariam tentativas entre testes.
+    limitador_login = LimitadorTentativasEmMemoria(5, 900, 900)
+    limitador_publico = LimitadorTentativasEmMemoria(5, 600, 600)
+    application.dependency_overrides[get_limitador_login] = lambda: limitador_login
+    application.dependency_overrides[get_limitador_registro_publico] = lambda: limitador_publico
+    limitador_consulta = LimitadorTentativasEmMemoria(10, 600, 600)
+    application.dependency_overrides[get_limitador_consulta_publica] = lambda: limitador_consulta
     return application
 
 
 @pytest.fixture
-async def client(app) -> AsyncGenerator[AsyncClient, None]:
+async def client(app) -> AsyncGenerator[AsyncClient]:
     async with AsyncClient(transport=ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test") as c:
         yield c

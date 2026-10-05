@@ -1,3 +1,6 @@
+# Nome fixo do projeto: evita conflito no container_name quando a pasta do repositório é renomeada.
+name: sgopi-sentinela
+
 services:
   db:
     image: postgres:16-alpine
@@ -8,7 +11,9 @@ services:
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: sgopi
     ports:
-      - "5432:5432"
+      # Porta do host configurável (padrão 5433): evita colidir com um PostgreSQL nativo
+      # já escutando em localhost:5432, que faria o backend autenticar no servidor errado.
+      - "${SGOPI_DB_PORTA:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

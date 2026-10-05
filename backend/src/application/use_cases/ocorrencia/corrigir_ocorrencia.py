@@ -1,4 +1,4 @@
-"""Casos de uso do Agente autor (RF14): CorrigirOcorrencia e ReenviarOcorrencia."""
+"""Casos de uso do Agente autor (RF04): CorrigirOcorrencia e ReenviarOcorrencia."""
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator

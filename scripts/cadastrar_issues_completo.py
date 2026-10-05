@@ -297,7 +297,7 @@ Modernizar a interface de registro técnico de ocorrência utilizada pelo polici
     },
     {
         "milestone": "M3: Módulo Operacional & Policial (Área Restrita)",
-        "title": "Gestão da Cadeia de Custódia e Evidências Digitais com Hash SHA-256 (RF01 / RF22)",
+        "title": "Gestão da Cadeia de Custódia e Evidências Digitais com Hash SHA-256 (RF01)",
         "labels": ["frontend", "backend", "security"],
         "status": "Backlog",
         "body": """### Objetivo
@@ -352,7 +352,7 @@ Permitir ao operador da central despachar a viatura ideal para uma ocorrência v
     },
     {
         "milestone": "M4: Centro de Comando Tático, Despacho & Inteligência",
-        "title": "Gestão de Frota, Situações Operacionais e Controle do Simulador GPS (RF15 / RF16)",
+        "title": "Gestão de Frota, Situações Operacionais e Controle do Simulador GPS (RF02)",
         "labels": ["frontend", "feature"],
         "status": "Sprint Backlog",
         "body": """### Objetivo
@@ -406,7 +406,7 @@ Implementar o registro formal de armas, drogas, veículos e objetos apreendidos 
     # --- MILESTONE 5 ---
     {
         "milestone": "M5: Auditoria, Conformidade & Segurança",
-        "title": "Painel de Trilha de Auditoria Imutável e Logs com Máscara de CPF (RNF02 / RNF03 / RF20)",
+        "title": "Painel de Trilha de Auditoria Imutável e Logs com Máscara de CPF (RNF02 / RNF03)",
         "labels": ["frontend", "backend", "security"],
         "status": "Backlog",
         "body": """### Objetivo
@@ -465,7 +465,7 @@ Automatizar a validação end-to-end simulando a jornada completa no navegador: 
         "labels": ["qa", "backend"],
         "status": "Done",
         "body": """### Objetivo
-Assegurar alta confiabilidade do backend com suíte de testes contínua sobre o domínio e portas de aplicação (RNF06).
+Assegurar alta confiabilidade do backend com suíte de testes contínua sobre o domínio e portas de aplicação.
 
 ### Contexto & Regras de Engenharia
 - Executado via `uv run pytest --cov`.

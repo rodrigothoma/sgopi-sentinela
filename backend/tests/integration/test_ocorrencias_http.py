@@ -45,13 +45,19 @@ async def test_data_fato_futura_422(client):
     assert r.status_code == 422 and r.json()["code"] == "ocorrencia.data_fato_futura"
 
 
-async def test_cpf_invalido_422(client):
+async def test_documento_com_tamanho_invalido_422(client):
     r = await client.post(
         "/v1/ocorrencias",
-        json=corpo_ocorrencia(envolvidos=[{"nome": "X", "tipo": "SUSPEITO", "documento": "123.456.789-00"}]),
+        json=corpo_ocorrencia(envolvidos=[{"nome": "X", "tipo": "SUSPEITO", "documento": "123.456.78"}]),
         headers=await auth(client, "agente"),
     )
-    assert r.status_code == 422 and r.json()["code"] == "envolvido.cpf_invalido"
+    assert r.status_code == 422 and r.json()["code"] == "envolvido.documento_tamanho_invalido"
+    r = await client.post(
+        "/v1/ocorrencias",
+        json=corpo_ocorrencia(envolvidos=[{"nome": "X", "tipo": "SUSPEITO", "documento": "MG-12.345.678"}]),
+        headers=await auth(client, "agente"),
+    )
+    assert r.status_code == 422 and r.json()["code"] == "envolvido.documento_nao_numerico"
 
 
 async def test_descricao_curta_422_com_extra(client):
@@ -108,3 +114,14 @@ async def test_anexar_evidencia_rejeita_formato_e_ocorrencia_inexistente(client)
         headers=h,
     )
     assert r.status_code == 422 and r.json()["code"] == "evidencia.formato_invalido"
+
+
+async def test_listagem_mais_recentes_primeiro_traz_as_novas_na_primeira_pagina(client):
+    """Regressão: "Minhas ocorrências" buscava as 100 mais antigas e escondia as novas."""
+    ha = await auth(client, "agente")
+    protocolos = [(await registrar(client, ha))["numero_protocolo"] for _ in range(3)]
+    r = await client.get("/v1/ocorrencias", params={"limit": 2, "mais_recentes_primeiro": "true"}, headers=ha)
+    assert r.status_code == 200
+    assert [i["numero_protocolo"] for i in r.json()["itens"]] == [protocolos[2], protocolos[1]]
+    r = await client.get("/v1/ocorrencias", params={"limit": 2}, headers=ha)
+    assert [i["numero_protocolo"] for i in r.json()["itens"]] == protocolos[:2]  # padrão continua ascendente

@@ -1,4 +1,4 @@
-"""Integração HTTP: login, token, RBAC e auditoria de negação (RF11, RF12, RF20, RNF02*)."""
+"""Integração HTTP: login, token, RBAC e auditoria de negação (RNF02*, RNF03)."""
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
@@ -69,3 +69,32 @@ async def test_logins_sao_auditados(client, session):
     await client.post("/v1/auth/login", json={"login": "agente", "senha": "errada"})
     ops = (await session.execute(select(RegistroAuditoriaModel.operacao).order_by(RegistroAuditoriaModel.quando))).scalars().all()
     assert ops == ["auth.login", "auth.login_negado"]
+
+
+async def test_forca_bruta_no_login_bloqueia_com_429(client, session):
+    for _ in range(5):
+        r = await client.post("/v1/auth/login", json={"login": "delegado", "senha": "errada"})
+        assert r.status_code == 401
+    r = await client.post("/v1/auth/login", json={"login": "delegado", "senha": SENHA_PADRAO})
+    assert r.status_code == 429
+    assert r.json()["code"] == "auth.muitas_tentativas" and int(r.headers["Retry-After"]) > 0
+    negados = (
+        await session.execute(select(RegistroAuditoriaModel).where(RegistroAuditoriaModel.operacao == "auth.login_negado"))
+    ).scalars().all()
+    assert len(negados) == 5 and all(n.quem is None for n in negados)
+    assert negados[0].dados_depois["usuario_alvo_id"] == str(IDS["delegado"])
+
+
+async def test_token_de_usuario_desativado_deixa_de_valer(client, session_factory, usuarios):
+    """O JWT vale horas: desativar o usuário precisa cortar o acesso na próxima requisição."""
+    from sqlalchemy import update
+
+    from infrastructure.database.models import UsuarioModel
+    from tests.integration.helpers import auth
+
+    headers = await auth(client, "agente")
+    assert (await client.get("/v1/notificacoes/resumo", headers=headers)).status_code == 200
+    async with session_factory() as s:
+        await s.execute(update(UsuarioModel).where(UsuarioModel.id == usuarios["agente"]).values(ativo=False))
+        await s.commit()
+    assert (await client.get("/v1/notificacoes/resumo", headers=headers)).status_code == 401

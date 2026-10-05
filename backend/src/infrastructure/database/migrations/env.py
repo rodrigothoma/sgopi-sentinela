@@ -9,9 +9,9 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+import infrastructure.database.models  # noqa: F401 — registra os models na Base
 from infrastructure.config.settings import settings
 from infrastructure.database.connection import Base
-import infrastructure.database.models  # noqa: F401 — registra os models na Base
 
 config = context.config
 if config.config_file_name is not None:

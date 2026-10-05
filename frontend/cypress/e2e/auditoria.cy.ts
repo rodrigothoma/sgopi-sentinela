@@ -44,8 +44,9 @@ describe('Issue #47 — Trilha de Auditoria Imutável e RBAC (RNF02 / RNF03)', (
     // Não deve existir link para auditoria no menu
     cy.get('nav a[href="/auditoria"]').should('not.exist');
 
-    // Ao tentar acessar diretamente a URL /auditoria, é impedido
+    // Ao tentar acessar diretamente a URL /auditoria, vê o aviso de acesso negado (sem a trilha)
     cy.visit('/auditoria');
-    cy.url().should('not.include', '/auditoria');
+    cy.get('[data-cy="acesso-negado"]').should('contain.text', 'Acesso não autorizado');
+    cy.contains('Trilha de Auditoria').should('not.exist');
   });
 });

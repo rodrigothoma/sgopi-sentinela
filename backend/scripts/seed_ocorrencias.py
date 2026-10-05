@@ -273,7 +273,7 @@ async def semear_ocorrencias() -> None:
                     Envolvido(
                         nome="Marcos Vinicius Ribeiro",
                         tipo=TipoEnvolvido.SUSPEITO,
-                        documento="RS-10.987.654",
+                        documento="1098765432",
                     ),
                 ],
                 tipificacoes=[
@@ -327,7 +327,7 @@ async def semear_ocorrencias() -> None:
                     Envolvido(
                         nome="Vigilante Noturno",
                         tipo=TipoEnvolvido.COMUNICANTE,
-                        documento="RS-20.987.654",
+                        documento="2098765432",
                     ),
                 ],
                 tipificacoes=[
@@ -358,6 +358,198 @@ async def semear_ocorrencias() -> None:
             print(f"  + ocorrência '{p5}' (EM_CORRECAO) - Justificativa do delegado registrada")
 
         # ------------------------------------------------------------------
+        # 6. Ocorrência VALIDADA (Tráfico de Drogas - Centro)
+        # ------------------------------------------------------------------
+        p6 = f"SGOPI-{ano_atual}-000006"
+        res6 = await session.execute(select(OcorrenciaModel).where(OcorrenciaModel.numero_protocolo == p6))
+        if not res6.scalar_one_or_none():
+            criada_em6 = agora - timedelta(hours=6)
+            oc6 = Ocorrencia.registrar(
+                agente_policial_id=agente.id,
+                natureza="Tráfico Ilícito de Entorpecentes",
+                descricao="Apreensão de entorpecentes em residência na Rua Venâncio Aires após averiguação policial.",
+                localizacao="Rua Venâncio Aires, 450, Centro, Alegrete - RS",
+                coordenada=Coordenada(latitude=-29.7820, longitude=-55.7930),
+                data_hora_fato=criada_em6 - timedelta(minutes=40),
+                numero_protocolo=p6,
+                agora=criada_em6,
+                envolvidos=[
+                    Envolvido(nome="Guarnição Policial", tipo=TipoEnvolvido.COMUNICANTE, documento="00011122233"),
+                    Envolvido(nome="Suspeito Averiguado", tipo=TipoEnvolvido.SUSPEITO, documento="98765432100"),
+                ],
+                tipificacoes=[
+                    TipificacaoPenal(artigo="Art. 33, Lei 11.343/06", descricao="Tráfico ilícito de entorpecentes")
+                ],
+            )
+            oc6.validar(delegado.id, em=criada_em6 + timedelta(minutes=15))
+            await ocorrencia_repo.salvar(oc6)
+            print(f"  + ocorrência '{p6}' (VALIDADA) - Tráfico / Centro")
+
+        # ------------------------------------------------------------------
+        # 7. Ocorrência VALIDADA (Roubo a Transeunte - Parque Rui Ramos)
+        # ------------------------------------------------------------------
+        p7 = f"SGOPI-{ano_atual}-000007"
+        res7 = await session.execute(select(OcorrenciaModel).where(OcorrenciaModel.numero_protocolo == p7))
+        if not res7.scalar_one_or_none():
+            criada_em7 = agora - timedelta(hours=7)
+            oc7 = Ocorrencia.registrar(
+                agente_policial_id=agente.id,
+                natureza="Roubo a Transeunte",
+                descricao="Vítima abordada nas imediações do Parque Rui Ramos e despojada de pertences pessoais.",
+                localizacao="Parque Rui Ramos, Alegrete - RS",
+                coordenada=Coordenada(latitude=-29.7805, longitude=-55.7890),
+                data_hora_fato=criada_em7 - timedelta(minutes=50),
+                numero_protocolo=p7,
+                agora=criada_em7,
+                envolvidos=[
+                    Envolvido(nome="Fernanda Alencar", tipo=TipoEnvolvido.VITIMA, documento="87654321098"),
+                ],
+                tipificacoes=[
+                    TipificacaoPenal(artigo="Art. 157, CP", descricao="Subtrair coisa móvel alheia mediante violência ou grave ameaça")
+                ],
+            )
+            oc7.validar(delegado.id, em=criada_em7 + timedelta(minutes=20))
+            await ocorrencia_repo.salvar(oc7)
+            print(f"  + ocorrência '{p7}' (VALIDADA) - Roubo / Parque Rui Ramos")
+
+        # ------------------------------------------------------------------
+        # 8. Ocorrência VALIDADA (Receptação de Veículo - Estação Férrea)
+        # ------------------------------------------------------------------
+        p8 = f"SGOPI-{ano_atual}-000008"
+        res8 = await session.execute(select(OcorrenciaModel).where(OcorrenciaModel.numero_protocolo == p8))
+        if not res8.scalar_one_or_none():
+            criada_em8 = agora - timedelta(hours=8)
+            oc8 = Ocorrencia.registrar(
+                agente_policial_id=agente.id,
+                natureza="Receptação de Veículo",
+                descricao="Motocicleta com sinal identificador adulterado localizada estacionada perto da Estação Férrea.",
+                localizacao="Rua Bento Manoel, Estação Férrea, Alegrete - RS",
+                coordenada=Coordenada(latitude=-29.7792, longitude=-55.7815),
+                data_hora_fato=criada_em8 - timedelta(hours=1),
+                numero_protocolo=p8,
+                agora=criada_em8,
+                envolvidos=[
+                    Envolvido(nome="Fiscal Municipal", tipo=TipoEnvolvido.COMUNICANTE, documento="76543210987"),
+                ],
+                tipificacoes=[
+                    TipificacaoPenal(artigo="Art. 180, CP", descricao="Adquirir, receber, transportar ou ocultar coisa que sabe ser produto de crime")
+                ],
+            )
+            oc8.validar(delegado.id, em=criada_em8 + timedelta(minutes=25))
+            await ocorrencia_repo.salvar(oc8)
+            print(f"  + ocorrência '{p8}' (VALIDADA) - Receptação / Estação Férrea")
+
+        # ------------------------------------------------------------------
+        # 9. Ocorrência VALIDADA (Dano Qualificado - Praça Oswaldo Aranha)
+        # ------------------------------------------------------------------
+        p9 = f"SGOPI-{ano_atual}-000009"
+        res9 = await session.execute(select(OcorrenciaModel).where(OcorrenciaModel.numero_protocolo == p9))
+        if not res9.scalar_one_or_none():
+            criada_em9 = agora - timedelta(hours=9)
+            oc9 = Ocorrencia.registrar(
+                agente_policial_id=agente.id,
+                natureza="Dano Qualificado",
+                descricao="Depreciação de monumento público na Praça Oswaldo Aranha com quebra de equipamentos.",
+                localizacao="Praça Oswaldo Aranha, Centro, Alegrete - RS",
+                coordenada=Coordenada(latitude=-29.7842, longitude=-55.7915),
+                data_hora_fato=criada_em9 - timedelta(minutes=30),
+                numero_protocolo=p9,
+                agora=criada_em9,
+                envolvidos=[
+                    Envolvido(nome="Servidor Público Municipal", tipo=TipoEnvolvido.COMUNICANTE, documento="65432109876"),
+                ],
+                tipificacoes=[
+                    TipificacaoPenal(artigo="Art. 163, III, CP", descricao="Dano contra o patrimônio da União, de Estado ou de Município")
+                ],
+            )
+            oc9.validar(delegado.id, em=criada_em9 + timedelta(minutes=15))
+            await ocorrencia_repo.salvar(oc9)
+            print(f"  + ocorrência '{p9}' (VALIDADA) - Dano / Praça Oswaldo Aranha")
+
+        # ------------------------------------------------------------------
+        # 10. Ocorrência VALIDADA (Violência Doméstica - Bairro Ibirapuitã)
+        # ------------------------------------------------------------------
+        p10 = f"SGOPI-{ano_atual}-000010"
+        res10 = await session.execute(select(OcorrenciaModel).where(OcorrenciaModel.numero_protocolo == p10))
+        if not res10.scalar_one_or_none():
+            criada_em10 = agora - timedelta(hours=10)
+            oc10 = Ocorrencia.registrar(
+                agente_policial_id=agente.id,
+                natureza="Violência Doméstica / Ameaça",
+                descricao="Ameaça no âmbito doméstico contra ex-cônjuge com necessidade de proteção cautelar.",
+                localizacao="Rua Marquês de Olinda, Bairro Ibirapuitã, Alegrete - RS",
+                coordenada=Coordenada(latitude=-29.7995, longitude=-55.8030),
+                data_hora_fato=criada_em10 - timedelta(hours=1),
+                numero_protocolo=p10,
+                agora=criada_em10,
+                envolvidos=[
+                    Envolvido(nome="Ana Paula dos Santos", tipo=TipoEnvolvido.VITIMA, documento="54321098765", telefone="(55) 99123-4567"),
+                    Envolvido(nome="Ricardo Bastos", tipo=TipoEnvolvido.SUSPEITO, documento="43210987654"),
+                ],
+                tipificacoes=[
+                    TipificacaoPenal(artigo="Art. 147, CP", descricao="Ameaçar alguém, por palavra, escrito ou gesto, de causar-lhe mal injusto e grave")
+                ],
+            )
+            oc10.validar(delegado.id, em=criada_em10 + timedelta(minutes=10))
+            await ocorrencia_repo.salvar(oc10)
+            print(f"  + ocorrência '{p10}' (VALIDADA) - Violência Doméstica / Ibirapuitã")
+
+        # ------------------------------------------------------------------
+        # 11. Ocorrência VALIDADA (Furto Qualificado - Bairro Santos Dumont)
+        # ------------------------------------------------------------------
+        p11 = f"SGOPI-{ano_atual}-000011"
+        res11 = await session.execute(select(OcorrenciaModel).where(OcorrenciaModel.numero_protocolo == p11))
+        if not res11.scalar_one_or_none():
+            criada_em11 = agora - timedelta(hours=11)
+            oc11 = Ocorrencia.registrar(
+                agente_policial_id=agente.id,
+                natureza="Furto Qualificado",
+                descricao="Subtração de maquinário industrial de oficina mecânica durante a madrugada.",
+                localizacao="Av. Freitas Valle, Bairro Santos Dumont, Alegrete - RS",
+                coordenada=Coordenada(latitude=-29.7735, longitude=-55.7965),
+                data_hora_fato=criada_em11 - timedelta(hours=3),
+                numero_protocolo=p11,
+                agora=criada_em11,
+                envolvidos=[
+                    Envolvido(nome="Joaquim Teixeira", tipo=TipoEnvolvido.VITIMA, documento="32109876543"),
+                ],
+                tipificacoes=[
+                    TipificacaoPenal(artigo="Art. 155, § 4º, I, CP", descricao="Furto qualificado com destruição ou rompimento de obstáculo")
+                ],
+            )
+            oc11.validar(delegado.id, em=criada_em11 + timedelta(minutes=30))
+            await ocorrencia_repo.salvar(oc11)
+            print(f"  + ocorrência '{p11}' (VALIDADA) - Furto Qualificado / Santos Dumont")
+
+        # ------------------------------------------------------------------
+        # 12. Ocorrência VALIDADA (Disparo de Arma de Fogo - Bairro Piola)
+        # Espera despacho (manual ou automático) — nunca EM_ATENDIMENTO sem ordem.
+        # ------------------------------------------------------------------
+        p12 = f"SGOPI-{ano_atual}-000012"
+        res12 = await session.execute(select(OcorrenciaModel).where(OcorrenciaModel.numero_protocolo == p12))
+        if not res12.scalar_one_or_none():
+            criada_em12 = agora - timedelta(hours=1)
+            oc12 = Ocorrencia.registrar(
+                agente_policial_id=agente.id,
+                natureza="Disparo de Arma de Fogo em Via Pública",
+                descricao="Disparos de arma de fogo efetuados em via pública gerando pânico entre moradores.",
+                localizacao="Rua Dr. Lauro Dornelles, Bairro Piola, Alegrete - RS",
+                coordenada=Coordenada(latitude=-29.7760, longitude=-55.7760),
+                data_hora_fato=criada_em12 - timedelta(minutes=15),
+                numero_protocolo=p12,
+                agora=criada_em12,
+                envolvidos=[
+                    Envolvido(nome="Morador do Bairro", tipo=TipoEnvolvido.COMUNICANTE, documento="21098765432"),
+                ],
+                tipificacoes=[
+                    TipificacaoPenal(artigo="Art. 15, Lei 10.826/03", descricao="Disparar arma de fogo ou acionar munição em lugar habitado")
+                ],
+            )
+            oc12.validar(delegado.id, em=criada_em12 + timedelta(minutes=5))
+            await ocorrencia_repo.salvar(oc12)
+            print(f"  + ocorrência '{p12}' (VALIDADA) - Disparos / Piola — aguardando despacho")
+
+        # ------------------------------------------------------------------
         # Sincronização dos contadores sequenciais
         # ------------------------------------------------------------------
         seq_prot = await session.execute(
@@ -365,9 +557,9 @@ async def semear_ocorrencias() -> None:
         )
         row_prot = seq_prot.scalar_one_or_none()
         if not row_prot:
-            session.add(SequenciaProtocoloModel(ano=ano_atual, ultimo=5))
-        elif row_prot.ultimo < 5:
-            row_prot.ultimo = 5
+            session.add(SequenciaProtocoloModel(ano=ano_atual, ultimo=12))
+        elif row_prot.ultimo < 12:
+            row_prot.ultimo = 12
 
         seq_od = await session.execute(
             select(SequenciaOrdemDespachoModel).where(SequenciaOrdemDespachoModel.ano == ano_atual)

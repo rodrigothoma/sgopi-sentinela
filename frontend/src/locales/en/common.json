@@ -1,5 +1,7 @@
 {
-  "app": { "title": "SGOPI Sentinela" },
+  "app": {
+    "title": "SGOPI Sentinela"
+  },
   "idioma": "Language",
   "nav": {
     "home": "Home",
@@ -9,8 +11,15 @@
     "painel": "Tactical Dispatch",
     "frota": "Fleet",
     "auditoria": "Audit Trail",
-    "lookup": "Public Inquiry",
-    "police_access": "Police Portal"
+    "lookup": "Lookup Protocol",
+    "police_access": "Police Portal",
+    "inicio": "Home",
+    "inqueritos": "Inquests",
+    "laudos": "Forensic Reports",
+    "medidas": "Protective Orders",
+    "autenticar": "Authenticate document",
+    "indicadores": "Indicators",
+    "efetivo": "Staff"
   },
   "actions": {
     "save": "Save",
@@ -19,7 +28,8 @@
     "submit": "Submit Incident",
     "remover": "Remove",
     "sair": "Sign Out",
-    "atualizar": "Update"
+    "atualizar": "Update",
+    "confirmar": "Confirm"
   },
   "papel": {
     "AGENTE": "Field Officer",
@@ -27,7 +37,8 @@
     "OPERADOR_CENTRAL": "Dispatch Operator",
     "SUPERVISOR": "Supervisor",
     "PERITO": "Forensic Specialist",
-    "ESCRIVAO": "Clerk"
+    "ESCRIVAO": "Clerk",
+    "CIDADAO": "Citizen (public channel)"
   },
   "status": {
     "AGUARDANDO_REVISAO": "Pending Review",
@@ -35,7 +46,9 @@
     "REJEITADA": "Rejected",
     "VALIDADA": "Validated",
     "EM_ATENDIMENTO": "In Progress",
-    "ENCERRADA": "Closed"
+    "ENCERRADA": "Closed",
+    "ARQUIVADA": "Archived",
+    "EXCLUIDA": "Deleted"
   },
   "situacao": {
     "DISPONIVEL": "Available",
@@ -65,7 +78,7 @@
     "hero_label": "OFFICIAL SYSTEM — UNIPAMPA / ALEGRETE",
     "hero_subtitle": "Unified official channel for citizen incident reporting, technical police triage, and real-time tactical vehicle monitoring.",
     "cta_register": "Report Incident",
-    "cta_lookup": "Public Inquiry",
+    "cta_lookup": "Lookup Protocol",
     "split_word_1": "SENTINEL ONLINE",
     "split_word_2": "CITIZEN PORTAL",
     "split_word_3": "FULL READINESS",
@@ -84,9 +97,9 @@
       "card_register_title": "Report Incident",
       "card_register_desc": "Report theft, lost property, threats, and other incidents quickly, without queues and with interactive map location.",
       "card_register_action": "Report now",
-      "card_lookup_title": "Public Inquiry",
-      "card_lookup_desc": "Track the progress of your incident by protocol number, or verify the authenticity of a Police Report using its security key or QR Code.",
-      "card_lookup_action": "Inquire now",
+      "card_lookup_title": "Lookup Protocol",
+      "card_lookup_desc": "Track the status and progress of your reported incident in real time using the official protocol code.",
+      "card_lookup_action": "Check status",
       "card_operational_title": "Tactical Operations",
       "card_operational_desc": "Restricted access for field agents, triage delegates, and centralized dispatch operators.",
       "card_operational_action": "Access portal"
@@ -117,11 +130,11 @@
       "th_status": "Status"
     },
     "search": {
-      "title": "Already filed a report or received a document?",
-      "subtitle": "Enter the protocol number to track progress, or the Police Report's security key to verify its authenticity.",
-      "placeholder": "SGOPI-2026-000001 or XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",
-      "button": "Inquire",
-      "hint": "The system automatically detects whether the code is a protocol or an authenticity key."
+      "title": "Already Filed a Report?",
+      "subtitle": "Enter your official tracking protocol below to check the current status.",
+      "placeholder": "SGOPI-2026-000001",
+      "button": "Lookup",
+      "hint": "Example protocol: SGOPI-2026-000137"
     },
     "faq": {
       "title": "Frequently Asked Questions",
@@ -179,7 +192,18 @@
       "viatura.alterar_situacao": "Vehicle Status Changed",
       "evidencia.anexar": "Evidence Attached",
       "evidencia.download": "Evidence Downloaded",
-      "evidencia.verificar_integridade": "Evidence Integrity Checked"
+      "evidencia.verificar_integridade": "Evidence Integrity Checked",
+      "documento.autenticar": "Public authenticity lookup",
+      "documento.suspeita_fraude": "Suspected document fraud",
+      "documento.nao_localizado": "Document not found (public lookup)",
+      "auth.login_bloqueado": "Login blocked (too many attempts)",
+      "ocorrencias.exportar": "Occurrences exported",
+      "auditoria.exportar": "Audit trail exported",
+      "ocorrencia.redefinir_prioridade": "Priority redefined",
+      "usuario.cadastrar": "User created",
+      "usuario.alterar_papel": "User role changed",
+      "usuario.desativar": "User deactivated",
+      "usuario.reativar": "User reactivated"
     },
     "autor_sistema": "System / Citizen",
     "pesquisar_placeholder": "Filter by protocol, vehicle, author, IP or operation...",
@@ -249,7 +273,109 @@
       "nome": "Name",
       "tipo": "Type",
       "detalhe": "Additional Details"
-    }
+    },
+    "autor_nao_identificado": "Unidentified",
+    "exportar_csv": "Export CSV",
+    "exportar_dica": "Exports with the operation and entity filters (CPF masked). The export itself is audited."
+  },
+  "paginacao": {
+    "pagina": "Page",
+    "de": "of",
+    "registros": "incidents",
+    "anterior": "Previous page",
+    "proxima": "Next page"
+  },
+  "acesso_negado": {
+    "titulo": "Access not authorized",
+    "descricao": "Your role is not allowed to access this area of the system.",
+    "voltar": "Back to home"
+  },
+  "sidebar": {
+    "voltar_portal": "Back to the public portal",
+    "expandir": "Expand sidebar",
+    "recolher": "Collapse sidebar",
+    "abrir_menu": "Open navigation menu",
+    "alternar_idioma": "Language: {{idioma}} (click to switch)"
+  },
+  "prioridade": {
+    "titulo": "Priority",
+    "URGENTE": "Urgent",
+    "ALTA": "High",
+    "MEDIA": "Medium",
+    "BAIXA": "Low"
+  },
+  "indicadores": {
+    "titulo": "Operational indicators",
+    "subtitulo": "Occurrence volume, Chief review and dispatch times in the period.",
+    "periodo": "Period",
+    "ultimos_dias_one": "Last day",
+    "ultimos_dias_other": "Last {{count}} days",
+    "total_ocorrencias": "Occurrences in the period",
+    "tempo_decisao": "Report → Chief decision",
+    "tempo_validacao_despacho": "Validation → dispatch",
+    "tempo_despacho_encerramento": "Dispatch → closing",
+    "taxa_devolucao": "Return rate",
+    "taxa_rejeicao": "Rejection rate",
+    "amostras_one": "average of {{count}} occurrence",
+    "amostras_other": "average of {{count}} occurrences",
+    "de_decisoes_one": "of {{count}} decision",
+    "de_decisoes_other": "of {{count}} decisions",
+    "por_natureza": "Occurrences by nature",
+    "criadas_no_periodo": "Reported in the period (excluding deleted)",
+    "por_faixa_horaria": "Occurrences by hour",
+    "hora_do_fato": "Hour of the incident, in your time zone",
+    "decisoes": "Chief decisions",
+    "decisoes_sub": "Exits from the review queue in the period",
+    "decisao": "Decision",
+    "decisao_VALIDADA": "Validated",
+    "decisao_EM_CORRECAO": "Returned for correction",
+    "decisao_REJEITADA": "Rejected",
+    "despachos_por_hora": "Dispatches by hour",
+    "despachos_sub": "Dispatch orders issued in the period",
+    "despachos": "Dispatches",
+    "por_origem": "Occurrences by origin",
+    "frota_agora": "Fleet now",
+    "frota_sub": "Current vehicle status (no history recorded)",
+    "situacao": "Status",
+    "viaturas": "Vehicles",
+    "ocorrencias": "Occurrences",
+    "quantidade": "Count",
+    "outras": "Other natures",
+    "hora": "Hour",
+    "faixa_hora": "{{de}}h–{{ate}}h",
+    "ver_tabela": "View as table",
+    "sem_dados": "No data in the period."
+  },
+  "efetivo": {
+    "titulo": "Staff",
+    "subtitulo": "User registration and status. Nothing is deleted: leavers are deactivated, and everything goes to the audit trail.",
+    "novo": "New user",
+    "nome": "Name",
+    "login": "Login",
+    "senha_inicial": "Initial password",
+    "papel": "Role",
+    "situacao": "Status",
+    "acoes": "Actions",
+    "cadastrar": "Create",
+    "usuarios": "Users",
+    "mostrar_inativos": "Show inactive",
+    "ativo": "Active",
+    "inativo": "Inactive",
+    "desativar": "Deactivate",
+    "reativar": "Reactivate",
+    "voce": "you",
+    "papel_de": "Role of {{nome}}",
+    "proprio": "Nobody can change their own role or status",
+    "dica_senha": "Give the initial password to the user through a secure channel. Changing someone's role or deactivating them ends their open session.",
+    "erro_nome": "Enter the name.",
+    "erro_login": "Login: 3 to 50 characters, lowercase letters, digits, dot, hyphen or underscore only.",
+    "erro_senha": "The initial password must have at least {{minimo}} characters.",
+    "ok_cadastro": "User {{login}} created.",
+    "ok_papel": "Role changed.",
+    "ok_desativar": "User deactivated.",
+    "ok_reativar": "User reactivated.",
+    "confirmar_papel": "Change {{nome}}'s role to {{papel}}? Their open session will end.",
+    "confirmar_desativar": "Deactivate {{nome}}? They lose access immediately, but the record and history are kept.",
+    "confirmar_reativar": "Reactivate {{nome}}?"
   }
 }
-

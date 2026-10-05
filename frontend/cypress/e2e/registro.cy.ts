@@ -10,8 +10,8 @@ const PROTOCOLO = /SGOPI-\d{4}-\d{6}/;
 /** Preenche o formulário mínimo válido (com coordenada nos campos numéricos). */
 function preencherFormularioValido() {
   cy.contains('label', 'Natureza da ocorrência').find('input').type('Furto de veículo');
-  cy.contains('label', 'Endereço').find('input').type('Av. Brasil, 500 — Alegrete/RS');
-  cy.get('input[type="number"]').eq(0).type('-29.7833');
+  cy.get('#localizacao').type('Av. Brasil, 500 — Alegrete/RS');
+    cy.get('input[type="number"]').eq(0).type('-29.7833');
   cy.get('input[type="number"]').eq(1).type('-55.7919');
   cy.get('form.form textarea').first().type('Furto de veículo estacionado em via pública, sem violência.');
   cy.get('fieldset input[type="text"]').first().type('Maria da Silva');
@@ -25,9 +25,9 @@ describe('Issue #21 — Fluxo de registro', () => {
     cy.url().should('include', '/login');
   });
 
-  it('autentica o agente pela tela de login e vai para /registrar', () => {
+  it('autentica o agente pela tela de login e vai para a tela inicial', () => {
     cy.loginPelaTela('agente', 'Senha@123');
-    cy.url().should('include', '/registrar');
+    cy.url().should('include', '/inicio');
   });
 
   it('registra uma ocorrência e exibe o protocolo gerado', () => {
@@ -44,7 +44,7 @@ describe('Issue #21 — Fluxo de registro', () => {
     cy.intercept('POST', '/v1/ocorrencias').as('registro');
     cy.login('agente', '/registrar');
     cy.contains('label', 'Natureza da ocorrência').find('input').type('Furto de veículo');
-    cy.contains('label', 'Endereço').find('input').type('Av. Brasil, 500');
+    cy.get('#localizacao').type('Av. Brasil, 500');
     cy.get('form.form textarea').first().type('Furto de veículo estacionado em via pública.');
     cy.get('fieldset input[type="text"]').first().type('Maria da Silva');
     cy.contains('button', 'Adicionar envolvido').click();
@@ -69,7 +69,7 @@ describe('Issue #21 — Fluxo de registro', () => {
     cy.intercept('POST', '/v1/ocorrencias').as('registro');
     cy.login('agente', '/registrar');
     cy.contains('label', 'Natureza da ocorrência').find('input').type('Furto de veículo');
-    cy.contains('label', 'Endereço').find('input').type('Av. Brasil, 500');
+    cy.get('#localizacao').type('Av. Brasil, 500');
     cy.get('input[type="number"]').eq(0).type('-29.7833');
     cy.get('input[type="number"]').eq(1).type('-55.7919');
     cy.get('form.form textarea').first().type('Furto de veículo estacionado em via pública.');
@@ -103,6 +103,7 @@ describe('Issue #21 — Fluxo de registro', () => {
 
   it('operador não acessa a página de registro', () => {
     cy.login('operador', '/registrar');
-    cy.url().should('not.include', '/registrar');
+    cy.get('[data-cy="acesso-negado"]').should('contain.text', 'Acesso não autorizado');
+    cy.get('#natureza').should('not.exist');
   });
 });

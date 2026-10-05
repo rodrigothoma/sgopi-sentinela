@@ -1,5 +1,5 @@
 """
-Handlers globais de exceção (HEX-03, RNF08, RNF09).
+Handlers globais de exceção (HEX-03, Observabilidade).
 
 Corpo padronizado: {"detail": <mensagem i18n>, "code": <chave>, "request_id": <id>, "extra": {...}}.
 """
@@ -19,6 +19,7 @@ from domain.shared.exceptions import (
     CredenciaisInvalidasError,
     DomainError,
     EntidadeNaoEncontradaError,
+    MuitasTentativasError,
     TransicaoInvalidaError,
     ValorInvalidoError,
 )
@@ -32,6 +33,7 @@ STATUS_POR_EXCECAO: tuple[tuple[type[DomainError], int], ...] = (
     (CredenciaisInvalidasError, 401),
     (AcessoNegadoError, 403),
     (ConflitoError, 409),
+    (MuitasTentativasError, 429),
     (TransicaoInvalidaError, 422),
     (CampoObrigatorioError, 422),
     (ValorInvalidoError, 422),
@@ -59,6 +61,8 @@ def corpo_erro(request: Request, chave: str, status: int, extra: dict | None = N
     headers: dict[str, str] = {}
     if status == 401:
         headers["WWW-Authenticate"] = "Bearer"
+    if status == 429 and extra and "retry_after_segundos" in extra:
+        headers["Retry-After"] = str(extra["retry_after_segundos"])
     if rid:
         headers["X-Request-ID"] = rid
     return JSONResponse(status_code=status, content=conteudo, headers=headers)

@@ -1,4 +1,6 @@
 """Integração HTTP da conferência e download seguro de evidências."""
+import hashlib
+from datetime import datetime
 from uuid import uuid4
 
 import pytest
@@ -36,7 +38,18 @@ async def test_integridade_integra_e_sem_expor_chave(client, evidencia_http):
     ocorrencia, evidencia, model, headers, tmp_path = evidencia_http
     resposta = await client.get(url(ocorrencia, evidencia, "integridade"), headers=headers)
     assert resposta.status_code == 200
-    assert resposta.json() == {"evidencia_id": evidencia["id"], "estado": "INTEGRA"}
+    corpo = resposta.json()
+    assert set(corpo) == {
+        "evidencia_id",
+        "estado",
+        "hash_armazenado",
+        "hash_recalculado",
+        "verificado_em",
+    }
+    assert corpo["evidencia_id"] == evidencia["id"] and corpo["estado"] == "INTEGRA"
+    assert corpo["hash_armazenado"] == evidencia["hash_sha256"]
+    assert corpo["hash_recalculado"] == hashlib.sha256(CONTEUDO).hexdigest()
+    assert datetime.fromisoformat(corpo["verificado_em"]).tzinfo is not None
     serializado = resposta.text + str(resposta.headers)
     assert model.chave_armazenamento not in serializado and str(tmp_path) not in serializado
 
@@ -45,7 +58,10 @@ async def test_integridade_divergente(client, evidencia_http):
     ocorrencia, evidencia, model, headers, tmp_path = evidencia_http
     (tmp_path / model.chave_armazenamento).write_bytes(b"adulterado")
     resposta = await client.get(url(ocorrencia, evidencia, "integridade"), headers=headers)
-    assert resposta.status_code == 200 and resposta.json()["estado"] == "DIVERGENTE"
+    corpo = resposta.json()
+    assert resposta.status_code == 200 and corpo["estado"] == "DIVERGENTE"
+    assert corpo["hash_armazenado"] == evidencia["hash_sha256"]
+    assert corpo["hash_recalculado"] == hashlib.sha256(b"adulterado").hexdigest()
 
 
 async def test_download_conteudo_headers_e_sem_caminho(client, evidencia_http):

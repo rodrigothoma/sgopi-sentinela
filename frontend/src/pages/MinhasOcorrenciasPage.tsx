@@ -1,15 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { FiltrosOcorrenciasBar } from '../components/ocorrencias/FiltrosOcorrencias';
 import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
 import { OcorrenciaForm, paraInputLocal, paraRequest, type ValoresOcorrencia } from '../components/ocorrencias/OcorrenciaForm';
+import { PrioridadeBadge } from '../components/PrioridadeBadge';
 import { StatusBadge } from '../components/StatusBadge';
 import { formatarNatureza } from '../utils/formatarNatureza';
+import { useFiltrosOcorrenciasUrl } from '../hooks/useFiltrosOcorrenciasUrl';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
 import type { OcorrenciaDetalhe, OcorrenciaResumo } from '../types/api';
+import { temFiltroAtivo } from '../utils/filtrosOcorrencias';
 
-/** Agente: minhas ocorrências + correção/reenvio das devolvidas (RF14). */
+/** Agente: minhas ocorrências + correção/reenvio das devolvidas (RF04). */
 export const MinhasOcorrenciasPage: React.FC = () => {
   const { t } = useTranslation(['ocorrencias', 'common']);
   const { avisar } = useToast();
@@ -17,29 +22,53 @@ export const MinhasOcorrenciasPage: React.FC = () => {
   const [detalhe, setDetalhe] = useState<OcorrenciaDetalhe | null>(null);
   const [editando, setEditando] = useState(false);
   const [ocupado, setOcupado] = useState(false);
+  const [filtros, aplicarFiltros] = useFiltrosOcorrenciasUrl();
+
+  const [searchParams] = useSearchParams();
+  const paramOcorrenciaId = searchParams.get('ocorrencia');
 
   const carregar = useCallback(async () => {
     try {
-      setItens((await ocorrenciasService.listar([], 100)).itens.slice().reverse());
+      // As 100 mais recentes: inverter a lista no cliente escondia as novas quando havia mais de 100.
+      setItens((await ocorrenciasService.listar([], 100, 0, true, filtros)).itens);
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    }
+  }, [filtros, avisar]);
+
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
+  const abrir = useCallback(async (id: string) => {
+    setEditando(false);
+    try {
+      setDetalhe(await ocorrenciasService.buscarPorId(id));
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
     }
   }, [avisar]);
 
   useEffect(() => {
-    carregar();
-  }, [carregar]);
+    if (paramOcorrenciaId) {
+      abrir(paramOcorrenciaId);
+    }
+  }, [paramOcorrenciaId, abrir]);
 
-  const abrir = async (id: string) => {
-    setEditando(false);
-    setDetalhe(await ocorrenciasService.buscarPorId(id));
+  const recarregarDetalhe = async () => {
+    if (!detalhe) return;
+    try {
+      setDetalhe(await ocorrenciasService.buscarPorId(detalhe.ocorrencia_id));
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    }
   };
 
   const valoresDe = (o: OcorrenciaDetalhe): ValoresOcorrencia => ({
     natureza: o.natureza, descricao: o.descricao, localizacao: o.localizacao, latitude: o.latitude, longitude: o.longitude,
     dataHoraFatoLocal: paraInputLocal(new Date(o.data_hora_fato)),
     envolvidos: o.envolvidos.map((e) => ({ nome: e.nome, tipo: e.tipo, documento: e.documento ?? undefined })),
-    tipificacoes: o.tipificacoes, evidencias: [],
+    tipificacoes: o.tipificacoes, evidencias: [], itensApreendidos: [],
   });
 
   const reenviar = async () => {
@@ -60,12 +89,13 @@ export const MinhasOcorrenciasPage: React.FC = () => {
     <div className="pagina duas-colunas">
       <section className="card">
         <h2>{t('ocorrencias:minhas.titulo')}</h2>
-        {itens.length === 0 && <p className="muted">{t('ocorrencias:minhas.vazio')}</p>}
+        <FiltrosOcorrenciasBar valor={filtros} onAplicar={aplicarFiltros} />
+        {itens.length === 0 && <p className="muted">{t(temFiltroAtivo(filtros) ? 'ocorrencias:filtros.nenhum_resultado' : 'ocorrencias:minhas.vazio')}</p>}
         <ul className="lista clicavel">
           {itens.map((o) => (
             <li key={o.ocorrencia_id} className={detalhe?.ocorrencia_id === o.ocorrencia_id ? 'ativo' : ''} onClick={() => abrir(o.ocorrencia_id)}>
               <span><strong>{o.numero_protocolo}</strong> · {formatarNatureza(o.natureza, t)}</span>
-              <StatusBadge status={o.status} />
+              <span className="lista-badges"><StatusBadge status={o.status} /><PrioridadeBadge prioridade={o.prioridade} /></span>
             </li>
           ))}
         </ul>
@@ -74,7 +104,7 @@ export const MinhasOcorrenciasPage: React.FC = () => {
         {!detalhe && <p className="muted">{t('ocorrencias:minhas.selecione')}</p>}
         {detalhe && !editando && (
           <>
-            <OcorrenciaDetalheView o={detalhe} />
+            <OcorrenciaDetalheView o={detalhe} onAlterada={() => void recarregarDetalhe()} />
             {detalhe.status === 'EM_CORRECAO' && (
               <div className="acoes">
                 <button className="btn" onClick={() => setEditando(true)}>{t('ocorrencias:correcao.editar')}</button>

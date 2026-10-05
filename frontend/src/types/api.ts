@@ -1,7 +1,18 @@
-// Contratos espelhados do OpenAPI do backend (RNF12). Manter sincronizado por revisão.
-export type Papel = 'AGENTE' | 'DELEGADO' | 'OPERADOR_CENTRAL' | 'SUPERVISOR' | 'PERITO' | 'ESCRIVAO';
+// Contratos espelhados do OpenAPI do backend. Manter sincronizado por revisão.
+export type Papel = 'AGENTE' | 'DELEGADO' | 'OPERADOR_CENTRAL' | 'SUPERVISOR' | 'PERITO' | 'ESCRIVAO' | 'CIDADAO';
+/** Papéis humanos que podem ser destinatários de alerta tático (CIDADAO é o ator técnico do canal público). */
+export const PAPEIS_DESTINATARIOS_ALERTA: readonly Papel[] = ['AGENTE', 'OPERADOR_CENTRAL', 'SUPERVISOR', 'DELEGADO', 'PERITO', 'ESCRIVAO'];
+export type NivelCriticidade = 'ALTA' | 'CRITICA';
+export const NIVEIS_CRITICIDADE: readonly NivelCriticidade[] = ['CRITICA', 'ALTA'];
 export type TipoEnvolvido = 'VITIMA' | 'TESTEMUNHA' | 'SUSPEITO' | 'COMUNICANTE';
-export type StatusOcorrencia = 'AGUARDANDO_REVISAO' | 'EM_CORRECAO' | 'REJEITADA' | 'VALIDADA' | 'EM_ATENDIMENTO' | 'ENCERRADA';
+export type StatusOcorrencia = 'AGUARDANDO_REVISAO' | 'EM_CORRECAO' | 'REJEITADA' | 'VALIDADA' | 'EM_ATENDIMENTO' | 'ENCERRADA' | 'ARQUIVADA' | 'EXCLUIDA';
+/** Atos administrativos do Delegado (RF20): não permitidos em EM_ATENDIMENTO; EXCLUIDA é terminal. */
+export const STATUS_ARQUIVAVEIS: readonly StatusOcorrencia[] = ['AGUARDANDO_REVISAO', 'EM_CORRECAO', 'REJEITADA', 'VALIDADA', 'ENCERRADA'];
+export const STATUS_EXCLUIVEIS: readonly StatusOcorrencia[] = [...STATUS_ARQUIVAVEIS, 'ARQUIVADA'];
+/** Sugestão #7: a prioridade só muda enquanto a ocorrência ainda será triada ou atendida. */
+export const STATUS_PRIORIZAVEIS: readonly StatusOcorrencia[] = ['AGUARDANDO_REVISAO', 'EM_CORRECAO', 'VALIDADA', 'EM_ATENDIMENTO'];
+/** RF03 / UC03: apreensões só pelo Agente autor com a ocorrência registrada ou em andamento. */
+export const STATUS_ACEITAM_APREENSAO: readonly StatusOcorrencia[] = ['AGUARDANDO_REVISAO', 'EM_CORRECAO', 'VALIDADA', 'EM_ATENDIMENTO'];
 export type SituacaoViatura = 'DISPONIVEL' | 'EM_DESLOCAMENTO' | 'OPERANDO' | 'INDISPONIVEL';
 export type Sinal = 'OK' | 'SEM_SINAL' | 'SEM_POSICAO';
 
@@ -13,22 +24,77 @@ export interface TipificacaoDTO { artigo: string; descricao: string }
 export interface Evidencia {
   id: string; nome_original: string; formato: string; tamanho: number; hash_sha256: string; enviada_em: string;
 }
-export type EstadoIntegridadeEvidencia = 'INTEGRA' | 'DIVERGENTE';
-export interface IntegridadeEvidencia { evidencia_id: string; estado: EstadoIntegridadeEvidencia }
+export type EstadoIntegridadeEvidencia = 'INTEGRA' | 'DIVERGENTE' | 'ARQUIVO_AUSENTE';
+export interface IntegridadeEvidencia {
+  evidencia_id: string;
+  estado: EstadoIntegridadeEvidencia;
+  hash_armazenado: string;
+  hash_recalculado: string;
+  verificado_em: string;
+}
+
+// --- RF03: itens apreendidos e cadeia de custódia ---
+export type TipoItemApreendido = 'ARMA_DE_FOGO' | 'ARMA_BRANCA' | 'ENTORPECENTE' | 'VEICULO' | 'VALOR' | 'OBJETO';
+export type UnidadeMedida = 'UNIDADE' | 'GRAMA' | 'QUILOGRAMA' | 'MILILITRO' | 'LITRO';
+export type EstadoConservacao = 'NOVO' | 'BOM' | 'REGULAR' | 'DANIFICADO' | 'INSERVIVEL';
+export const TIPOS_ITEM_APREENDIDO: readonly TipoItemApreendido[] = ['ARMA_DE_FOGO', 'ARMA_BRANCA', 'ENTORPECENTE', 'VEICULO', 'VALOR', 'OBJETO'];
+export const UNIDADES_MEDIDA: readonly UnidadeMedida[] = ['UNIDADE', 'GRAMA', 'QUILOGRAMA', 'MILILITRO', 'LITRO'];
+export const ESTADOS_CONSERVACAO: readonly EstadoConservacao[] = ['NOVO', 'BOM', 'REGULAR', 'DANIFICADO', 'INSERVIVEL'];
+
+/** Entrada de cadastro (registro concomitante ou pela aba de apreensões). */
+export interface ItemApreendidoDTO {
+  tipo: TipoItemApreendido; descricao: string; quantidade: number; unidade: UnidadeMedida;
+  estado_conservacao: EstadoConservacao; numero_lacre: string; localizacao_deposito: string;
+  numero_serie?: string | null; marca?: string | null; calibre?: string | null;
+}
+export interface MovimentacaoCustodia { em: string; por_id: string; origem: string | null; destino: string; observacao: string | null }
+export interface ItemApreendido extends Required<Omit<ItemApreendidoDTO, 'numero_serie' | 'marca' | 'calibre'>> {
+  id: string; numero_serie: string | null; marca: string | null; calibre: string | null;
+  localizacao_atual: string; registrado_em: string; registrado_por_id: string; movimentacoes: MovimentacaoCustodia[];
+}
+export interface MovimentarCustodiaRequest { destino: string; observacao?: string | null }
+/** Auto de Apreensão: identificador único derivado do protocolo + hash SHA-256 do conteúdo (RNF03). */
+export interface AutoApreensao {
+  numero: string; ocorrencia_id: string; numero_protocolo: string; natureza: string; localizacao: string;
+  data_hora_fato: string; status: StatusOcorrencia; agente_policial_id: string;
+  emitido_em: string; emitido_por_id: string; hash_sha256: string; itens: ItemApreendido[];
+}
 
 export interface RegistrarOcorrenciaRequest {
   natureza: string; descricao: string; localizacao: string;
   latitude: number; longitude: number; data_hora_fato: string;
   tipificacoes: TipificacaoDTO[]; envolvidos: EnvolvidoDTO[];
+  /** RF03 — opcional: apreensão concomitante ao registro (mesma transação). */
+  itens_apreendidos?: ItemApreendidoDTO[];
+  /** Sugestão #7 — opcional: sem valor, o backend sugere pela natureza/tipificações. */
+  prioridade?: PrioridadeOcorrencia;
 }
 export interface CorrigirOcorrenciaRequest extends Partial<RegistrarOcorrenciaRequest> {}
 
-export interface OcorrenciaCriada { ocorrencia_id: string; numero_protocolo: string; status: StatusOcorrencia; criada_em: string }
+export interface OcorrenciaCriada { ocorrencia_id: string; numero_protocolo: string; status: StatusOcorrencia; criada_em: string; prioridade?: PrioridadeOcorrencia | null }
+
+/** Gravidade (sugestão #7), da mais grave para a mais leve. */
+export const PRIORIDADES = ['URGENTE', 'ALTA', 'MEDIA', 'BAIXA'] as const;
+export type PrioridadeOcorrencia = (typeof PRIORIDADES)[number];
 
 export interface OcorrenciaResumo {
   ocorrencia_id: string; numero_protocolo: string; natureza: string; localizacao: string;
   latitude: number; longitude: number; status: StatusOcorrencia; data_hora_fato: string;
   criada_em: string; atualizada_em: string; agente_policial_id: string; versao: number;
+  inquerito_id?: string | null;
+  origem?: OrigemOcorrencia;
+  prioridade?: PrioridadeOcorrencia;
+}
+export type OrigemOcorrencia = 'POLICIAL' | 'PUBLICA';
+
+/** Busca na listagem de ocorrências; datas no formato do ``<input type="date">`` (YYYY-MM-DD, horário local). */
+export interface FiltrosOcorrencias {
+  texto?: string;
+  protocolo?: string;
+  natureza?: string;
+  origem?: OrigemOcorrencia;
+  dataFatoDe?: string;
+  dataFatoAte?: string;
 }
 export interface EnvolvidoDetalhe {
   id: string;
@@ -41,16 +107,13 @@ export interface EnvolvidoDetalhe {
 export interface HistoricoStatus { de: string | null; para: StatusOcorrencia; em: string; por_id: string; justificativa: string | null }
 export interface OcorrenciaDetalhe extends OcorrenciaResumo {
   descricao: string; validada_por_id: string | null; justificativa_revisao: string | null; desfecho: string | null;
-  hash_narrativa: string | null; narrativa_integra: boolean | null; chave_autenticidade: string | null;
+  hash_narrativa: string | null; narrativa_integra: boolean | null;
+  /** RF08: chave pública do documento emitido (só após validação pelo Delegado). */
+  chave_autenticidade: string | null;
+  arquivada_por_id: string | null; motivo_arquivamento: string | null;
+  excluida_por_id: string | null; motivo_exclusao: string | null;
   envolvidos: EnvolvidoDetalhe[]; tipificacoes: TipificacaoDTO[]; evidencias: Evidencia[]; historico_status: HistoricoStatus[];
-}
-
-/** RF08: espelho público de conferência — sem dados pessoais. */
-export type SituacaoDocumento = 'VALIDO' | 'ADULTERADO';
-export interface DocumentoAutenticado {
-  numero_protocolo: string; situacao: SituacaoDocumento; emitido_em: string; consultado_em: string;
-  natureza: string; data_hora_fato: string; status_ocorrencia: StatusOcorrencia; hash_integridade: string;
-  tipificacoes: TipificacaoDTO[]; envolvidos_por_tipo: Partial<Record<TipoEnvolvido, number>>; quantidade_evidencias: number;
+  itens_apreendidos: ItemApreendido[];
 }
 export interface Pagina<T> { itens: T[]; total: number; limit: number; offset: number }
 
@@ -63,8 +126,15 @@ export interface Sugestoes { ocorrencia_id: string; sugestoes: ViaturaSugerida[]
 export interface OrdemDespacho {
   id: string; numero: string; ocorrencia_id: string; viatura_id: string; operador_id: string;
   criada_em: string; observacoes: string | null; ativa: boolean; encerrada_em: string | null;
+  /** Issue #64: true = viatura de apoio despachada com a ocorrência já em atendimento. */
+  apoio: boolean;
 }
-export interface StatusSimulador { ligado: boolean; intervalo_segundos: number; raio_metros: number; ticks: number; posicoes_emitidas: number }
+export interface StatusSimulador { ligado: boolean; intervalo_segundos: number; raio_metros: number; velocidade_kmh?: number; ticks: number; posicoes_emitidas: number }
+export interface StatusOrquestrador {
+  ligado: boolean; intervalo_segundos: number; janela_carencia_segundos: number; tempo_atendimento_segundos: number;
+  ticks: number; ocioso: number; despachados: number; encerrados: number;
+}
+export interface StatusSimuladorCompleto extends StatusSimulador { orquestrador: StatusOrquestrador }
 
 export interface EventoTempoReal { tipo: string; ocorrido_em: string; dados: Record<string, unknown> }
 
@@ -92,3 +162,58 @@ export interface FiltroAuditoria {
 }
 
 export interface ErroApi { detail: string; code: string; request_id: string | null; extra?: Record<string, unknown> }
+
+/** RF08 / UC08 — resultado da conferência pública do documento. */
+export type SituacaoDocumento = 'AUTENTICO' | 'ADULTERADO' | 'INDISPONIVEL';
+export interface DocumentoAutenticado {
+  numero_protocolo: string;
+  situacao: SituacaoDocumento;
+  chave_autenticidade: string;
+  chave_formatada: string;
+  emitido_em: string;
+  consultado_em: string;
+  natureza: string;
+  data_hora_fato: string;
+  status_ocorrencia: StatusOcorrencia;
+  hash_integridade: string;
+  tipificacoes: TipificacaoDTO[];
+  envolvidos_por_tipo: Record<string, number>;
+  quantidade_evidencias: number;
+}
+
+/** Sugestão #12 — evento da linha do tempo unificada da ocorrência. */
+export type TipoEventoLinhaDoTempo =
+  | 'STATUS' | 'DESPACHO' | 'ORDEM_ENCERRADA' | 'EVIDENCIA_ANEXADA' | 'INTEGRIDADE_VERIFICADA'
+  | 'ITEM_APREENDIDO' | 'CUSTODIA_MOVIMENTADA' | 'INQUERITO_VINCULADO' | 'LAUDO_SOLICITADO' | 'LAUDO_CONCLUIDO';
+export interface EventoLinhaDoTempo {
+  em: string;
+  tipo: TipoEventoLinhaDoTempo;
+  por_id: string | null;
+  por_nome: string | null;
+  detalhes: Record<string, string | boolean | number | null>;
+}
+
+/** Sugestão #11 — painel de indicadores operacionais. */
+export interface Contagem { chave: string; total: number }
+export interface Duracao { media_segundos: number | null; amostras: number }
+export interface Indicadores {
+  de: string; ate: string; fuso: string;
+  total_ocorrencias: number;
+  por_natureza: Contagem[];
+  por_origem: Contagem[];
+  por_faixa_horaria: number[];
+  decisoes: Contagem[];
+  taxa_devolucao: number | null;
+  taxa_rejeicao: number | null;
+  tempo_ate_decisao: Duracao;
+  tempo_validacao_despacho: Duracao;
+  tempo_despacho_encerramento: Duracao;
+  despachos_por_hora: number[];
+  viaturas_por_situacao: Contagem[];
+}
+
+/** Sugestão #13 — gestão do efetivo pelo Supervisor. */
+export interface UsuarioGestao { id: string; nome: string; login: string; papel: Papel; ativo: boolean }
+export interface CadastrarUsuarioRequest { nome: string; login: string; senha: string; papel: Papel }
+/** Papéis que o Supervisor pode atribuir (CIDADAO é o usuário técnico do canal público). */
+export const PAPEIS_ATRIBUIVEIS: readonly Papel[] = ['AGENTE', 'DELEGADO', 'OPERADOR_CENTRAL', 'SUPERVISOR', 'PERITO', 'ESCRIVAO'];

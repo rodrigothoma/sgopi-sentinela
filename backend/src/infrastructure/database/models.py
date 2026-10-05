@@ -9,9 +9,9 @@ são append-only (trigger no Postgres — ver migration 0001).
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, Uuid
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from infrastructure.database.connection import Base
@@ -28,6 +28,27 @@ class UsuarioModel(Base):
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
+class InqueritoModel(Base):
+    """Tabela de inquéritos policiais formais (RF06 / UC06)."""
+
+    __tablename__ = "inqueritos"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    numero: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    ementa: Mapped[str] = mapped_column(Text, nullable=False)
+    delegado_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="EM_ANDAMENTO", index=True)
+    relatorio_final: Mapped[str | None] = mapped_column(Text, nullable=True)
+    motivo_arquivamento: Mapped[str | None] = mapped_column(Text, nullable=True)
+    data_abertura: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    concluido_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    atualizado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    versao: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    ocorrencias: Mapped[list[OcorrenciaModel]] = relationship("OcorrenciaModel", back_populates="inquerito")
+
+
 class OcorrenciaModel(Base):
     """Tabela principal de ocorrências policiais."""
 
@@ -35,6 +56,7 @@ class OcorrenciaModel(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     agente_policial_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=False, index=True)
+    inquerito_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("inqueritos.id"), nullable=True, index=True)
     natureza: Mapped[str] = mapped_column(String(255), nullable=False)
     descricao: Mapped[str] = mapped_column(Text, nullable=False)
     localizacao: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -50,12 +72,25 @@ class OcorrenciaModel(Base):
     justificativa_revisao: Mapped[str | None] = mapped_column(Text, nullable=True)
     desfecho: Mapped[str | None] = mapped_column(Text, nullable=True)
     hash_narrativa: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    # RF08: chave pública do documento emitido; única entre as ocorrências validadas
-    chave_autenticidade: Mapped[str | None] = mapped_column(String(24), nullable=True, index=True, unique=True)
+    # Algoritmo do hash (NULL = v1 legado); permite evoluir a canonicalização sem invalidar documentos emitidos
+    hash_versao: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # RF08: chave pública do documento emitido na validação; única entre as ocorrências validadas
+    chave_autenticidade: Mapped[str | None] = mapped_column(String(24), nullable=True, unique=True, index=True)
+    # RF20: arquivamento / exclusão lógica autorizados pelo Delegado, sempre com motivo
+    arquivada_por_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True)
+    motivo_arquivamento: Mapped[str | None] = mapped_column(Text, nullable=True)
+    excluida_por_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True)
+    motivo_exclusao: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Canal de entrada (POLICIAL | PUBLICA) e hash do código de acompanhamento do cidadão
+    origem: Mapped[str] = mapped_column(String(20), nullable=False, default="POLICIAL", server_default="POLICIAL")
+    codigo_acompanhamento_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Sugestão #7: gravidade (BAIXA | MEDIA | ALTA | URGENTE) — ordena a fila do Delegado e o despacho
+    prioridade: Mapped[str] = mapped_column(String(10), nullable=False, default="MEDIA", server_default="MEDIA", index=True)
 
-    # optimistic locking (RNF11): ``versao`` é controlada pelo domínio e verificada
+    # optimistic locking (RNF03): ``versao`` é controlada pelo domínio e verificada
     # explicitamente pelo repositório (SELECT … FOR UPDATE + comparação).
 
+    inquerito: Mapped[InqueritoModel | None] = relationship("InqueritoModel", back_populates="ocorrencias")
     envolvidos: Mapped[list[EnvolvidoModel]] = relationship("EnvolvidoModel", back_populates="ocorrencia")
     tipificacoes: Mapped[list[TipificacaoModel]] = relationship("TipificacaoModel", back_populates="ocorrencia")
     historico: Mapped[list[HistoricoStatusModel]] = relationship(
@@ -63,6 +98,9 @@ class OcorrenciaModel(Base):
     )
     evidencias: Mapped[list[EvidenciaModel]] = relationship(
         "EvidenciaModel", order_by="EvidenciaModel.enviada_em", back_populates="ocorrencia"
+    )
+    itens_apreendidos: Mapped[list[ItemApreendidoModel]] = relationship(
+        "ItemApreendidoModel", order_by="ItemApreendidoModel.registrado_em", back_populates="ocorrencia"
     )
 
 
@@ -130,8 +168,50 @@ class EvidenciaModel(Base):
     ocorrencia: Mapped[OcorrenciaModel] = relationship("OcorrenciaModel", back_populates="evidencias")
 
 
+class ItemApreendidoModel(Base):
+    """Item apreendido (RF03): vínculo permanente à ocorrência; lacre único em toda a base (UC03 exc. I)."""
+
+    __tablename__ = "itens_apreendidos"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    ocorrencia_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("ocorrencias.id"), nullable=False, index=True)
+    tipo: Mapped[str] = mapped_column(String(20), nullable=False)
+    descricao: Mapped[str] = mapped_column(Text, nullable=False)
+    quantidade: Mapped[int] = mapped_column(Integer, nullable=False)
+    unidade: Mapped[str] = mapped_column(String(20), nullable=False, default="UNIDADE")
+    estado_conservacao: Mapped[str] = mapped_column(String(20), nullable=False)
+    numero_lacre: Mapped[str] = mapped_column(String(60), nullable=False, unique=True)
+    numero_serie: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    marca: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    calibre: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    localizacao_deposito: Mapped[str] = mapped_column(String(255), nullable=False)
+    registrado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    registrado_por_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=False)
+
+    ocorrencia: Mapped[OcorrenciaModel] = relationship("OcorrenciaModel", back_populates="itens_apreendidos")
+    movimentacoes: Mapped[list[MovimentacaoCustodiaModel]] = relationship(
+        "MovimentacaoCustodiaModel", order_by="MovimentacaoCustodiaModel.ordem"
+    )
+
+
+class MovimentacaoCustodiaModel(Base):
+    """Cadeia de custódia append-only (RF03 / RNF03*): quem, quando, de onde, para onde."""
+
+    __tablename__ = "movimentacoes_custodia"
+    __table_args__ = (UniqueConstraint("item_id", "ordem", name="uq_movimentacao_item_ordem"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    item_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("itens_apreendidos.id"), nullable=False, index=True)
+    ordem: Mapped[int] = mapped_column(Integer, nullable=False)
+    em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    por_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    origem: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    destino: Mapped[str] = mapped_column(String(255), nullable=False)
+    observacao: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
 class RegistroAuditoriaModel(Base):
-    """Auditoria append-only (RF20 / RNF03*)."""
+    """Auditoria append-only (RNF03*)."""
 
     __tablename__ = "registros_auditoria"
 
@@ -156,7 +236,7 @@ class SequenciaProtocoloModel(Base):
 
 
 class ViaturaModel(Base):
-    """Frota (RF15) com última posição desnormalizada (RF16)."""
+    """Frota (RF02) com última posição desnormalizada."""
 
     __tablename__ = "viaturas"
 
@@ -172,9 +252,19 @@ class ViaturaModel(Base):
 
 
 class OrdemDespachoModel(Base):
-    """Ordem de despacho (RF18): data/hora, operador, viatura e ocorrência (critério 5 do MVP)."""
+    """Ordem de despacho (RF02): data/hora, operador, viatura e ocorrência (critério 5 do MVP)."""
 
     __tablename__ = "ordens_despacho"
+    # No máximo uma ordem ativa por viatura: barra no banco dois despachos simultâneos da mesma viatura
+    __table_args__ = (
+        Index(
+            "uq_ordens_despacho_viatura_ativa",
+            "viatura_id",
+            unique=True,
+            postgresql_where=text("ativa"),
+            sqlite_where=text("ativa"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     numero: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
@@ -184,6 +274,8 @@ class OrdemDespachoModel(Base):
     criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     observacoes: Mapped[str | None] = mapped_column(Text, nullable=True)
     ativa: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+    # True = viatura de apoio (despacho com a ocorrência já EM_ATENDIMENTO)
+    apoio: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     encerrada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
@@ -194,3 +286,146 @@ class SequenciaOrdemDespachoModel(Base):
 
     ano: Mapped[int] = mapped_column(Integer, primary_key=True)
     ultimo: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class LaudoPericialModel(Base):
+    """Tabela de laudos periciais da Polícia Científica (RF07 / UC07)."""
+
+    __tablename__ = "laudos_periciais"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    numero_referencia: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    tipo_pericia: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    descricao_solicitacao: Mapped[str] = mapped_column(Text, nullable=False)
+    solicitante_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=False)
+    perito_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True)
+    ocorrencia_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("ocorrencias.id"), nullable=True, index=True)
+    inquerito_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("inqueritos.id"), nullable=True, index=True)
+    item_apreendido_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("itens_apreendidos.id"), nullable=True, index=True)
+    conclusoes_tecnicas: Mapped[str | None] = mapped_column(Text, nullable=True)
+    arquivo_chave: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    arquivo_nome: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    hash_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="SOLICITADO", index=True)
+    solicitado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    concluido_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    atualizado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    versao: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class MedidaProtetivaModel(Base):
+    """Tabela de medidas protetivas de urgência (RF09 / UC09)."""
+
+    __tablename__ = "medidas_protetivas"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    numero_referencia: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    ocorrencia_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("ocorrencias.id"), nullable=False, index=True)
+    delegado_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=False)
+    vitima_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    agressor_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    tipos_restricao: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    distancia_minima_metros: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    data_inicio: Mapped[date] = mapped_column(Date, nullable=False)
+    prazo_dias: Mapped[int] = mapped_column(Integer, nullable=False)
+    data_vencimento: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    condicoes_especificas: Mapped[str | None] = mapped_column(Text, nullable=True)
+    motivo_revogacao: Mapped[str | None] = mapped_column(Text, nullable=True)
+    justificativa_renovacao: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="ATIVA", index=True)
+    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    atualizada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    versao: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    alerta_vencimento_enviado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class SequenciaInqueritoModel(Base):
+    """Contador por ano para IP-AAAA-NNNNNN."""
+
+    __tablename__ = "sequencias_inquerito"
+
+    ano: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ultimo: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class SequenciaLaudoModel(Base):
+    """Contador por ano para LP-AAAA-NNNNNN."""
+
+    __tablename__ = "sequencias_laudo"
+
+    ano: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ultimo: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class SequenciaMedidaModel(Base):
+    """Contador por ano para MP-AAAA-NNNNNN."""
+
+    __tablename__ = "sequencias_medida"
+
+    ano: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ultimo: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class NotificacaoModel(Base):
+    """Tabela de notificações e alertas em tempo real do sistema (RF05, RF09, RF10)."""
+
+    __tablename__ = "notificacoes"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    usuario_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True, index=True)
+    papel_destinatario: Mapped[str | None] = mapped_column(String(30), nullable=True, index=True)
+    departamento_destinatario: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    tipo: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    titulo: Mapped[str] = mapped_column(String(255), nullable=False)
+    mensagem: Mapped[str] = mapped_column(Text, nullable=False)
+    prioridade: Mapped[str] = mapped_column(String(20), nullable=False, default="MEDIA")
+    link: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    lida: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    lida_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    metadados: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class NotificacaoLeituraModel(Base):
+    """Leitura de uma notificação por um usuário: o estado ``lida`` é individual, não do papel."""
+
+    __tablename__ = "notificacoes_leituras"
+
+    notificacao_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("notificacoes.id"), primary_key=True)
+    usuario_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"), primary_key=True)
+    lida_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ComunicacaoInteragenciasModel(Base):
+    """Tabela de comunicações e ofícios interagências (RF10 / UC10)."""
+
+    __tablename__ = "comunicacoes_interagencias"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    numero_oficio: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    protocolo_ocorrencia: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    departamento_origem: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    departamentos_destinatarios: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    remetente_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=False)
+    assunto: Mapped[str] = mapped_column(String(255), nullable=False)
+    corpo: Mapped[str] = mapped_column(Text, nullable=False)
+    nivel_sigilo: Mapped[str] = mapped_column(String(30), nullable=False, default="PADRAO")
+    prioridade: Mapped[str] = mapped_column(String(20), nullable=False, default="MEDIA")
+    status_entrega: Mapped[str] = mapped_column(String(30), nullable=False, default="ENTREGUE")
+    mensagem_pai_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("comunicacoes_interagencias.id"), nullable=True)
+    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class SequenciaOficioModel(Base):
+    """Contador por ano para OFI-AAAA-NNNNNN."""
+
+    __tablename__ = "sequencias_oficio"
+
+    ano: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ultimo: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+

@@ -31,27 +31,39 @@ def criar_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         log.info("SGOPI Sentinela iniciando", extra={"app_env": settings.app_env})
-        yield
-        from infrastructure.di import simulador
+        if settings.gerador_ocorrencias_ligado:
+            from infrastructure.di import gerador_ocorrencias
 
+            # Sem simulador-demo no banco: loga 'rode o seed', não inicia, servidor segue no ar.
+            await gerador_ocorrencias.ligar()
+        yield
+        from infrastructure.di import gerador_ocorrencias, orquestrador_despacho, simulador
+
+        # Ajuste 8: cancela e aguarda as tasks do gerador, do simulador e do orquestrador.
+        await gerador_ocorrencias.desligar()
         await simulador.desligar()
+        await orquestrador_despacho.desligar()
         log.info("SGOPI Sentinela encerrando")
 
+    # Em produção a superfície da API não é publicada (/docs, /redoc, /openapi.json)
+    documentacao = {} if not settings.is_production else {"docs_url": None, "redoc_url": None, "openapi_url": None}
     app = FastAPI(
         title="SGOPI Sentinela",
         description="Sistema de Gestão de Ocorrências Policiais Integradas",
         version="0.2.0",
         lifespan=lifespan,
+        **documentacao,
     )
 
-    # RNF02*: CORS por lista de origens (nunca "*" com credenciais — DIV-25)
+    # RNF02*: CORS por lista de origens. A autenticação é por Bearer (sem cookies), então
+    # não há credenciais de navegador a liberar; métodos e headers são os que a SPA usa.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-        expose_headers=["X-Request-ID"],
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Accept", "Accept-Language", "X-Request-ID"],
+        expose_headers=["X-Request-ID", "X-Sha256", "Content-Disposition", "Retry-After"],
     )
     app.add_middleware(RequestIdMiddleware)
     registrar_handlers(app)
@@ -59,11 +71,11 @@ def criar_app() -> FastAPI:
 
     @app.get("/health", tags=["health"])
     async def health(session: AsyncSession = Depends(get_session)) -> JSONResponse:
-        """Health check (RNF09): verifica o servidor e a conexão com o banco."""
+        """Health check: verifica o servidor e a conexão com o banco."""
         try:
             await session.execute(text("SELECT 1"))
             db = "up"
-        except Exception as exc:  # noqa: BLE001 — qualquer falha de banco degrada o serviço
+        except Exception as exc:
             log.error("health: banco indisponível: %s", exc)
             db = "down"
         corpo = {
@@ -79,20 +91,44 @@ def criar_app() -> FastAPI:
 
 def _registrar_routers(app: FastAPI) -> None:
     """Routers são registrados aqui; cada etapa do MVP adiciona os seus."""
+    from adapters.inbound.http.v1.apreensoes_router import router as apreensoes_router
     from adapters.inbound.http.v1.auditoria_router import router as auditoria_router
     from adapters.inbound.http.v1.auth_router import router as auth_router
-    from adapters.inbound.http.v1.ocorrencias_router import router as ocorrencias_router
     from adapters.inbound.http.v1.despacho_router import router as despacho_router
+    from adapters.inbound.http.v1.evidencias_router import router as evidencias_router
+    from adapters.inbound.http.v1.indicadores_router import router as indicadores_router
+    from adapters.inbound.http.v1.inqueritos_router import router as inqueritos_router
+    from adapters.inbound.http.v1.inteligencia_router import router as inteligencia_router
+    from adapters.inbound.http.v1.interagencias_router import router as interagencias_router
+    from adapters.inbound.http.v1.laudos_router import router as laudos_router
+    from adapters.inbound.http.v1.medidas_router import router as medidas_router
+    from adapters.inbound.http.v1.notificacoes_router import router as notificacoes_router
+    from adapters.inbound.http.v1.ocorrencias_publico_router import router as ocorrencias_publico_router
+    from adapters.inbound.http.v1.ocorrencias_router import router as ocorrencias_router
     from adapters.inbound.http.v1.publico_router import router as publico_router
+    from adapters.inbound.http.v1.revisao_router import router as revisao_router
+    from adapters.inbound.http.v1.usuarios_router import router as usuarios_router
     from adapters.inbound.http.v1.viaturas_router import router as viaturas_router
     from adapters.inbound.websocket.tempo_real_router import router as tempo_real_router
 
     app.include_router(auth_router)
+    app.include_router(usuarios_router)
+    app.include_router(ocorrencias_publico_router)
     app.include_router(ocorrencias_router)
+    app.include_router(evidencias_router)
+    app.include_router(revisao_router)
+    app.include_router(inqueritos_router)
+    app.include_router(laudos_router)
+    app.include_router(medidas_router)
+    app.include_router(apreensoes_router)
+    app.include_router(publico_router)
     app.include_router(auditoria_router)
     app.include_router(viaturas_router)
     app.include_router(despacho_router)
-    app.include_router(publico_router)
+    app.include_router(notificacoes_router)
+    app.include_router(inteligencia_router)
+    app.include_router(indicadores_router)
+    app.include_router(interagencias_router)
     app.include_router(tempo_real_router)
 
 

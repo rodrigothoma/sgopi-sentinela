@@ -1,4 +1,4 @@
-"""Eventos de despacho (RF17)."""
+"""Eventos de despacho (consumidos por tempo real / RF02 e RNF01)."""
 from datetime import datetime
 
 from domain.despacho.entity import OrdemDeDespacho

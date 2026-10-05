@@ -7,6 +7,7 @@
  */
 
 const JUSTIFICATIVA = 'Narrativa incompleta: informar placa e características do veículo.';
+const DESPACHO_AUTORIDADE = 'Regularidade formal verificada pela autoridade policial.';
 
 function validarPelaApi(ocorrenciaId: string) {
   cy.apiComo('delegado', 'POST', `/v1/ocorrencias/${ocorrenciaId}/validar`).its('status').should('eq', 200);
@@ -29,14 +30,27 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
     cy.criarOcorrenciaApi().then((o) => {
       cy.login('delegado', '/fila');
       abrirNaFila(o.numero_protocolo);
+      cy.contains('Despacho da autoridade').should('be.visible');
+      cy.get('#justificativa-revisao').type(DESPACHO_AUTORIDADE);
       cy.contains('button', 'Validar').click();
       cy.contains('.toast', 'validada', { matchCase: false }).should('be.visible');
       cy.get('.detalhe').should('contain.text', 'Validada');
+      cy.get('.detalhe').should('contain.text', DESPACHO_AUTORIDADE);
+      cy.get('.historico').should('contain.text', DESPACHO_AUTORIDADE);
       // sai do filtro "Aguardando revisão"
       cy.contains('.lista.clicavel li', o.numero_protocolo).should('not.exist');
       // aparece no filtro "Validadas / em atendimento"
       cy.contains('.tabs .tab', 'Validadas').click();
       cy.contains('.lista.clicavel li', o.numero_protocolo).should('be.visible');
+
+      cy.reload();
+      cy.contains('.tabs .tab', 'Validadas').click();
+      abrirNaFila(o.numero_protocolo);
+      cy.get('.detalhe').should('contain.text', DESPACHO_AUTORIDADE);
+
+      cy.login('agente', '/minhas');
+      cy.contains('.lista.clicavel li', o.numero_protocolo).click();
+      cy.get('.detalhe').should('contain.text', DESPACHO_AUTORIDADE);
     });
   });
 
@@ -44,19 +58,19 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
     cy.criarOcorrenciaApi().then((o) => {
       cy.login('delegado', '/fila');
       abrirNaFila(o.numero_protocolo);
-      cy.get('textarea').type('curta');
+      cy.get('#justificativa-revisao').type('curta');
       cy.contains('button', 'Devolver para correção').click();
       cy.contains('.toast', '10 caracteres').should('be.visible');
       cy.get('.detalhe').should('contain.text', 'Aguardando revisão');
     });
   });
 
-  it('delegado devolve, agente corrige e reenvia para revisão (RF14)', () => {
+  it('delegado devolve, agente corrige e reenvia para revisão (RF04)', () => {
     cy.criarOcorrenciaApi().then((o) => {
       // Delegado devolve
       cy.login('delegado', '/fila');
       abrirNaFila(o.numero_protocolo);
-      cy.get('textarea').type(JUSTIFICATIVA);
+      cy.get('#justificativa-revisao').type(JUSTIFICATIVA);
       cy.contains('button', 'Devolver para correção').click();
       cy.get('.detalhe').should('contain.text', 'Em correção');
 
@@ -74,11 +88,11 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
 
   it('delegado rejeita a ocorrência (terminal)', () => {
     cy.criarOcorrenciaApi().then((o) => {
-      cy.on('window:confirm', () => true);
       cy.login('delegado', '/fila');
       abrirNaFila(o.numero_protocolo);
-      cy.get('textarea').type('Fato atípico, sem materialidade delitiva.');
+      cy.get('#justificativa-revisao').type('Fato atípico, sem materialidade delitiva.');
       cy.contains('button', 'Rejeitar').click();
+      cy.get('[role="alertdialog"]').contains('button', 'Confirmar').click();
       cy.get('.detalhe').should('contain.text', 'Rejeitada');
       cy.contains('.tabs .tab', 'Rejeitadas').click();
       cy.contains('.lista.clicavel li', o.numero_protocolo).should('be.visible');
@@ -87,7 +101,8 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
 
   it('agente não acessa a fila de revisão', () => {
     cy.login('agente', '/fila');
-    cy.url().should('not.include', '/fila');
+    cy.get('[data-cy="acesso-negado"]').should('contain.text', 'Acesso não autorizado');
+    cy.get('.lista.clicavel').should('not.exist');
   });
 });
 

@@ -1,5 +1,5 @@
 """
-Serviço de domínio puro: sugestão das N viaturas mais próximas (RF18, DEC-05).
+Serviço de domínio puro: sugestão das N viaturas mais próximas (RF02, DEC-05).
 
 Elegíveis: DISPONIVEL **e** com posição válida (idade ≤ limite — RNF04*).
 Ordenação por distância Haversine crescente; empate por prefixo.

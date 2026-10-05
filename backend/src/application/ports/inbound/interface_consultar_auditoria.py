@@ -1,11 +1,10 @@
-"""Porta de entrada: consulta de auditoria (RF20 aceite 1) — somente Delegado/Supervisor."""
+"""Porta de entrada: consulta de auditoria (RNF03 aceite 1) — somente Delegado/Supervisor."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
-
 
 LIMITE_PADRAO_CONSULTA: int = 100
 LIMITE_MAXIMO_CONSULTA: int = 500

@@ -1,4 +1,4 @@
-"""Adapter de entrada: despacho tático (RF18) e encerramento (RF19)."""
+"""Adapter de entrada: despacho tático e encerramento (RF02)."""
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -6,7 +6,8 @@ from pydantic import BaseModel, Field
 
 from adapters.inbound.http.deps import exigir_papel
 from adapters.inbound.http.v1.ocorrencias_router import OcorrenciaDetalheSchema, _detalhe
-from adapters.inbound.http.v1.viaturas_router import ViaturaSchema, _schema as _viatura_schema
+from adapters.inbound.http.v1.viaturas_router import ViaturaSchema
+from adapters.inbound.http.v1.viaturas_router import _schema as _viatura_schema
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_despachar_viatura import (
     DespacharInput,
@@ -53,6 +54,7 @@ class OrdemDespachoSchema(BaseModel):
     observacoes: str | None
     ativa: bool
     encerrada_em: str | None
+    apoio: bool
 
 
 class EncerrarRequest(BaseModel):
@@ -65,7 +67,7 @@ def _ordem(o: OrdemDespachoOutput) -> OrdemDespachoSchema:
 
 @router.get("/v1/ocorrencias/{ocorrencia_id}/sugestoes-viaturas", response_model=SugestoesSchema)
 async def sugerir_viaturas(ocorrencia_id: UUID, ator: Ator = Depends(exigir_papel(*DESPACHO)), uc: InterfaceSugerirViaturasProximas = Depends(get_sugerir_viaturas)):
-    """As N viaturas DISPONIVEL com posição válida mais próximas (Haversine) da ocorrência VALIDADA (RF18)."""
+    """As N viaturas DISPONIVEL com posição válida mais próximas (Haversine) da ocorrência VALIDADA/EM_ATENDIMENTO (RF02, #64)."""
     out = await uc.executar(ator, ocorrencia_id)
     return SugestoesSchema(
         ocorrencia_id=out.ocorrencia_id,
@@ -77,7 +79,7 @@ async def sugerir_viaturas(ocorrencia_id: UUID, ator: Ator = Depends(exigir_pape
 
 @router.post("/v1/despachos", response_model=OrdemDespachoSchema, status_code=201)
 async def despachar(body: DespacharRequest, ator: Ator = Depends(exigir_papel(*DESPACHO)), uc: InterfaceDespacharViatura = Depends(get_despachar_viatura)):
-    """Cria a ordem de despacho atomicamente: ocorrência → EM_ATENDIMENTO, viatura → EM_DESLOCAMENTO (RF18, RNF11)."""
+    """Cria a ordem atômica: ocorrência VALIDADA → EM_ATENDIMENTO (principal) ou segunda ordem de apoio em EM_ATENDIMENTO (RF02, RNF03)."""
     return _ordem(await uc.executar(ator, DespacharInput(ocorrencia_id=body.ocorrencia_id, viatura_id=body.viatura_id, observacoes=body.observacoes)))
 
 
@@ -94,5 +96,5 @@ async def listar_despachos(
 
 @router.post("/v1/ocorrencias/{ocorrencia_id}/encerrar", response_model=OcorrenciaDetalheSchema)
 async def encerrar(ocorrencia_id: UUID, body: EncerrarRequest, ator: Ator = Depends(exigir_papel(Papel.OPERADOR_CENTRAL, Papel.DELEGADO, Papel.SUPERVISOR)), uc: InterfaceEncerrarOcorrencia = Depends(get_encerrar_ocorrencia)):
-    """EM_ATENDIMENTO → ENCERRADA; viaturas das ordens ativas voltam a DISPONIVEL (RF19)."""
+    """EM_ATENDIMENTO → ENCERRADA; viaturas das ordens ativas voltam a DISPONIVEL (RF02)."""
     return _detalhe(await uc.executar(ator, EncerrarInput(ocorrencia_id=ocorrencia_id, desfecho=body.desfecho)))

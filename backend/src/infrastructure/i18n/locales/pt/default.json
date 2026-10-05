@@ -1,5 +1,6 @@
 {
   "ocorrencia": {
+    "motivo_curto": "O motivo deve ter ao menos 10 caracteres",
     "created": "Ocorrência registrada com sucesso",
     "not_found": "Ocorrência não encontrada",
     "invalid_transition": "Transição de estado inválida",
@@ -14,13 +15,25 @@
     "justificativa_curta": "A justificativa deve ter ao menos 10 caracteres",
     "desfecho_vazio": "O desfecho do atendimento é obrigatório",
     "nao_e_autor": "Somente o agente autor pode alterar esta ocorrência",
-    "status_invalido": "Status de ocorrência inválido"
+    "status_invalido": "Status de ocorrência inválido",
+    "origem_invalida": "Origem de ocorrência inválida (use POLICIAL ou PUBLICA)",
+    "periodo_invalido": "A data inicial do fato não pode ser posterior à final",
+    "protocolo_nao_encontrado": "Ocorrência não encontrada com o protocolo e o código de acompanhamento informados.",
+    "declaracao_maioridade_ausente": "É obrigatório confirmar a declaração de maioridade (+18 anos) e veracidade dos fatos.",
+    "publica_nao_devolvivel": "Comunicação feita pelo cidadão não pode ser devolvida para correção: valide, rejeite ou arquive.",
+    "prioridade_invalida": "Prioridade inválida (use BAIXA, MEDIA, ALTA ou URGENTE)",
+    "prioridade_status_invalido": "A prioridade não pode ser alterada neste status",
+    "prioridade_inalterada": "A ocorrência já tem essa prioridade"
   },
   "envolvido": {
+    "documento_tamanho_invalido": "Documento com tamanho inválido: RG com 10 dígitos ou CPF com 11 dígitos",
+    "documento_nao_numerico": "O documento deve conter apenas números",
     "nome_vazio": "O nome do envolvido é obrigatório",
     "tipo_invalido": "Tipo de envolvido inválido",
     "cpf_invalido": "CPF inválido",
-    "duplicado": "Envolvido já adicionado a esta ocorrência"
+    "duplicado": "Envolvido já adicionado a esta ocorrência",
+    "nome_invalido": "O nome do envolvido deve conter apenas letras",
+    "cpf_comunicante_invalido": "O CPF informado é inválido. Por favor, confira os números digitados."
   },
   "tipificacao": {
     "artigo_vazio": "O artigo da tipificação é obrigatório",
@@ -50,14 +63,25 @@
   "usuario": {
     "nome_vazio": "O nome do usuário é obrigatório",
     "login_vazio": "O login é obrigatório",
-    "senha_vazia": "A senha é obrigatória"
+    "senha_vazia": "A senha é obrigatória",
+    "login_invalido": "Login deve ter de 3 a 50 caracteres: letras minúsculas, dígitos, ponto, hífen ou sublinhado",
+    "papel_inalterado": "O usuário já tem esse papel",
+    "ja_inativo": "O usuário já está inativo",
+    "ja_ativo": "O usuário já está ativo",
+    "sistema": "O usuário de sistema do canal público não é gerenciável",
+    "papel_invalido": "Papel inválido",
+    "proprio": "Ninguém altera o próprio papel ou a própria situação",
+    "nao_encontrado": "Usuário não encontrado",
+    "senha_curta": "A senha inicial deve ter ao menos 8 caracteres",
+    "login_em_uso": "Login já está em uso"
   },
   "auth": {
     "unauthorized": "Não autorizado",
     "forbidden": "Acesso negado",
     "credenciais_invalidas": "Login ou senha inválidos",
     "usuario_inativo": "Usuário inativo",
-    "token_invalido": "Token inválido ou expirado"
+    "token_invalido": "Token inválido ou expirado",
+    "muitas_tentativas": "Muitas tentativas de login malsucedidas. Aguarde alguns minutos e tente novamente."
   },
   "generic": {
     "internal_error": "Erro interno do servidor",
@@ -67,7 +91,8 @@
     "not_found": "Recurso não encontrado",
     "conflict": "Conflito com o estado atual do recurso",
     "versao_desatualizada": "O registro foi alterado por outro usuário; recarregue e tente novamente",
-    "http_error": "Erro na requisição"
+    "http_error": "Erro na requisição",
+    "muitas_tentativas": "Limite de requisições excedido. Aguarde alguns minutos e tente novamente."
   },
   "viatura": {
     "not_found": "Viatura não encontrada",
@@ -81,15 +106,52 @@
   "telemetria": {
     "timestamp_sem_fuso": "Timestamp sem fuso horário",
     "timestamp_fora_da_janela": "Timestamp da posição fora da janela aceita",
-    "posicao_retroativa": "Posição mais antiga que a última registrada"
+    "posicao_retroativa": "Posição mais antiga que a última registrada",
+    "exige_dispositivo": "Em produção a telemetria só é aceita do rastreador da viatura."
   },
   "despacho": {
     "numero_vazio": "Número da ordem é obrigatório",
     "ordem_ja_encerrada": "Ordem de despacho já encerrada",
     "viatura_indisponivel": "A viatura não está disponível para despacho"
   },
+  "apreensao": {
+    "descricao_vazia": "A descrição do item apreendido é obrigatória",
+    "quantidade_invalida": "A quantidade deve ser maior que zero",
+    "lacre_vazio": "O número do lacre é obrigatório",
+    "lacre_duplicado": "Número de lacre já cadastrado na base",
+    "localizacao_vazia": "A localização no depósito/cofre é obrigatória",
+    "arma_sem_calibre_ou_marca": "Arma de fogo exige calibre e marca",
+    "tipo_invalido": "Tipo de item apreendido inválido",
+    "unidade_invalida": "Unidade de medida inválida",
+    "estado_invalido": "Estado de conservação inválido",
+    "status_invalido": "A ocorrência não aceita apreensões neste status",
+    "duplicada": "O item já está vinculado à ocorrência",
+    "not_found": "Item apreendido não encontrado",
+    "destino_vazio": "O destino da custódia é obrigatório",
+    "destino_igual_origem": "O item já está custodiado nesse local",
+    "movimentacao_retroativa": "A movimentação não pode ser anterior à última registrada",
+    "data_sem_fuso": "A data deve informar o fuso horário",
+    "sem_itens": "A ocorrência não possui itens apreendidos para emitir o auto"
+  },
   "documento": {
-    "not_found": "Documento não localizado; confira a chave ou procure a delegacia emissora",
-    "chave_invalida": "Chave de autenticidade inválida; informe os 24 caracteres impressos no documento"
+    "not_found": "Documento não localizado. Confira a chave impressa ou procure a delegacia emissora.",
+    "codigo_invalido": "Código de verificação inválido: informe a chave de 24 caracteres ou o hash SHA-256 impresso no documento."
+  },
+  "medida": {
+    "destinatario_nao_cadastrado": "O destinatário precisa ser um e-mail cadastrado para um envolvido da ocorrência."
+  },
+  "laudo": {
+    "integridade_violada": "O arquivo do laudo não confere com o hash registrado na anexação.",
+    "arquivo_ausente": "Arquivo do laudo indisponível no armazenamento.",
+    "arquivo_grande": "O arquivo do laudo excede o tamanho máximo permitido.",
+    "sem_arquivo": "Este laudo ainda não possui arquivo homologado anexado."
+  },
+  "simulador": {
+    "desabilitado_em_producao": "O simulador de telemetria é recurso de demonstração e fica desabilitado em produção."
+  },
+  "indicadores": {
+    "fuso_invalido": "Fuso horário inválido",
+    "periodo_sem_fuso": "As datas do período devem informar o fuso horário",
+    "periodo_invalido": "Período inválido: o início deve ser anterior ao fim e o intervalo não pode passar de 366 dias"
   }
 }

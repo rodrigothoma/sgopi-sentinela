@@ -1,13 +1,10 @@
 import { api } from './api';
 import type { DocumentoAutenticado } from '../types/api';
 
-/** Portal público (RF08): não exige sessão; o interceptor só anexa o token se houver um. */
+/** RF08 / UC08 — portal público de autenticação de documentos (não exige login). */
 export const documentosService = {
-  async autenticar(chave: string): Promise<DocumentoAutenticado> {
-    return (await api.get<DocumentoAutenticado>(`/v1/publico/documentos/${encodeURIComponent(chave.trim())}`)).data;
-  },
-  /** URL absoluta da página pública — é o conteúdo do QR Code impresso no documento. */
-  urlPublica(chave: string): string {
-    return `${window.location.origin}/autenticar/${chave}`;
+  /** `codigo` é a chave de 24 caracteres (hífens opcionais) ou o hash SHA-256 impresso no documento. */
+  async autenticar(codigo: string): Promise<DocumentoAutenticado> {
+    return (await api.get<DocumentoAutenticado>(`/v1/publico/documentos/${encodeURIComponent(codigo.trim())}`)).data;
   },
 };

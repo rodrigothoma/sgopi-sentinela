@@ -1,0 +1,83 @@
+@startuml
+title UC04 — Validar Ocorrência com Despacho da Autoridade
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+actor "Delegado" as Delegado
+actor "Agente autor" as Agente
+boundary "FilaDelegadoPage" as Fila
+boundary "Detalhe da ocorrência" as Detalhe
+control "ocorrenciasService" as FrontService
+boundary "FastAPI\nocorrencias_router" as HTTP
+control "ValidarOcorrencia" as UC
+entity "Ocorrencia" as Dominio
+database "RepositorioOcorrencia\nSQLAlchemy" as Repo
+database "historico_status_ocorrencia\nappend-only" as Historico
+control "PortaAuditoria" as Auditoria
+database "registros_auditoria\nappend-only" as Log
+
+Delegado -> Fila: abrir ocorrência em AGUARDANDO_REVISAO
+Fila -> FrontService: buscarPorId(ocorrenciaId)
+FrontService -> HTTP: GET /v1/ocorrencias/{id}
+HTTP -> Repo: buscar_por_id(ocorrenciaId)
+Repo --> HTTP: ocorrência completa
+HTTP --> FrontService: detalhe + histórico
+FrontService --> Fila: exibir detalhe
+
+Delegado -> Fila: informar despacho opcional\ne selecionar Validar
+Fila -> FrontService: validar(ocorrenciaId, despacho?)
+FrontService -> HTTP: POST /v1/ocorrencias/{id}/validar\n{ despacho }
+HTTP -> HTTP: exigir papel DELEGADO
+HTTP -> UC: executar(ator, ValidarOcorrenciaInput)
+UC -> UC: exigir papel DELEGADO
+UC -> Repo: buscar_por_id(ocorrenciaId)
+Repo --> UC: ocorrência
+UC -> Dominio: validar(delegadoId, agora, despacho?)
+activate Dominio
+Dominio -> Dominio: normalizar despacho\n(vazio ou espaços = ausente)
+Dominio -> Dominio: transicionar para VALIDADA
+Dominio -> Dominio: espelhar justificativa_revisao\ne calcular hash_narrativa
+note right of Dominio
+  O despacho não integra
+  o hash_narrativa.
+end note
+Dominio --> UC: agregado atualizado
+deactivate Dominio
+UC -> Repo: salvar(ocorrência)
+Repo -> Historico: INSERT transição para VALIDADA\n+ despacho, ator e data/hora
+Repo -> Repo: UPDATE justificativa_revisao\nstatus, versão e hash_narrativa
+UC -> Auditoria: registrar("ocorrencia.validar",\ndados_depois.despacho)
+Auditoria -> Log: INSERT registro de auditoria
+UC -> UC: commit e publicar OcorrenciaValidada
+UC --> HTTP: OcorrenciaDetalheOutput
+HTTP --> FrontService: detalhe com despacho e histórico
+FrontService --> Fila: exibir VALIDADA e despacho
+
+alt despacho ausente
+  note over Fila,Dominio
+    A validação continua permitida;
+    justificativa_revisao e a justificativa
+    da transição ficam nulas.
+  end note
+else devolução ou rejeição
+  note over Fila,Dominio
+    A justificativa técnica permanece obrigatória
+    e segue o fluxo próprio de cada decisão.
+  end note
+end
+
+== Consulta posterior pelo Agente autor ==
+Agente -> Detalhe: abrir Minhas ocorrências
+Detalhe -> FrontService: buscarPorId(ocorrenciaId)
+FrontService -> HTTP: GET /v1/ocorrencias/{id}
+HTTP -> Repo: buscar_por_id(ocorrenciaId)
+Repo -> Historico: carregar histórico
+Historico --> Repo: transições imutáveis
+Repo --> HTTP: ocorrência + despacho + histórico
+HTTP --> FrontService: detalhe autorizado
+FrontService --> Detalhe: exibir Despacho da autoridade
+Detalhe --> Agente: consulta posterior confirmada
+
+@enduml

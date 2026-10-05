@@ -13,48 +13,132 @@ from contextlib import asynccontextmanager
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from adapters.inbound.simulador.gerador_ocorrencias import GeradorOcorrencias
+from adapters.inbound.simulador.orquestrador_despacho import OrquestradorDespacho
+from adapters.inbound.simulador.resolvedor_destino import ResolvedorDestinoSessao
+from adapters.inbound.simulador.roteador import RoteadorLinhaReta, RoteadorOSRM
 from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
 from adapters.inbound.websocket.gerenciador_conexoes import GerenciadorConexoes
-
 from adapters.outbound.arquivos.armazenamento_disco import ArmazenamentoDisco
+from adapters.outbound.email.enviador_email_smtp import EnviadorEmailSMTP
 from adapters.outbound.eventos.publicador_em_memoria import PublicadorEventosEmMemoria
 from adapters.outbound.persistence.auditoria_sqlalchemy import AuditoriaSQLAlchemy
+from adapters.outbound.persistence.comunicacao_interagencias_repositorio_sqlalchemy import (
+    ComunicacaoInteragenciasRepositorioSQLAlchemy,
+    GeradorNumeroOficioSQLAlchemy,
+)
+from adapters.outbound.persistence.gerador_numero_inquerito_sqlalchemy import GeradorNumeroInqueritoSQLAlchemy
+from adapters.outbound.persistence.gerador_numero_laudo_sqlalchemy import GeradorNumeroLaudoSQLAlchemy
+from adapters.outbound.persistence.gerador_numero_medida_sqlalchemy import GeradorNumeroMedidaSQLAlchemy
 from adapters.outbound.persistence.gerador_protocolo_sqlalchemy import GeradorProtocoloSQLAlchemy
+from adapters.outbound.persistence.indicadores_sqlalchemy import IndicadoresSQLAlchemy
+from adapters.outbound.persistence.inquerito_repositorio_sqlalchemy import InqueritoRepositorioSQLAlchemy
+from adapters.outbound.persistence.laudo_repositorio_sqlalchemy import LaudoRepositorioSQLAlchemy
+from adapters.outbound.persistence.medida_protetiva_repositorio_sqlalchemy import MedidaProtetivaRepositorioSQLAlchemy
+from adapters.outbound.persistence.notificacao_repositorio_sqlalchemy import NotificacaoRepositorioSQLAlchemy
 from adapters.outbound.persistence.ocorrencia_repositorio_sqlalchemy import OcorrenciaRepositorioSQLAlchemy
-from adapters.outbound.persistence.unidade_de_trabalho_sqlalchemy import UnidadeDeTrabalhoSQLAlchemy
 from adapters.outbound.persistence.ordem_despacho_repositorio_sqlalchemy import (
     GeradorNumeroOrdemSQLAlchemy,
     OrdemDespachoRepositorioSQLAlchemy,
 )
+from adapters.outbound.persistence.unidade_de_trabalho_sqlalchemy import UnidadeDeTrabalhoSQLAlchemy
 from adapters.outbound.persistence.usuario_repositorio_sqlalchemy import UsuarioRepositorioSQLAlchemy
 from adapters.outbound.persistence.viatura_repositorio_sqlalchemy import ViaturaRepositorioSQLAlchemy
 from adapters.outbound.relogio.relogio_sistema import RelogioSistema
+from adapters.outbound.seguranca.credencial_dispositivo_hmac import CredencialDispositivoHMAC
 from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
-from adapters.outbound.seguranca.provedor_token_jose import ProvedorTokenJose
-from application.ports.inbound.interface_autenticar_documento import InterfaceAutenticarDocumento
-from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
-from application.ports.inbound.interface_anexar_evidencia import InterfaceAnexarEvidencia
+from adapters.outbound.seguranca.limitador_em_memoria import LimitadorTentativasEmMemoria
+from adapters.outbound.seguranca.provedor_token_jwt import ProvedorTokenJWT
+from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_acessar_evidencia import (
     InterfaceObterEvidenciaParaDownload,
     InterfaceVerificarIntegridadeEvidencia,
 )
+from application.ports.inbound.interface_alertas_vencimento_medida import (
+    InterfaceEmitirAlertaVencimentoMedida,
+)
+from application.ports.inbound.interface_anexar_evidencia import InterfaceAnexarEvidencia
+from application.ports.inbound.interface_arquivar_ocorrencia import (
+    InterfaceArquivarOcorrencia,
+    InterfaceExcluirOcorrencia,
+)
+from application.ports.inbound.interface_autenticar_documento import InterfaceAutenticarDocumento
+from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
+from application.ports.inbound.interface_comunicacoes_interagencias import (
+    InterfaceConsultarComunicacoesInteragencias,
+    InterfaceEnviarComunicacaoInteragencias,
+    InterfaceResponderComunicacaoInteragencias,
+)
 from application.ports.inbound.interface_consultar_auditoria import InterfaceConsultarAuditoria
+from application.ports.inbound.interface_consultar_ocorrencia_publica import InterfaceConsultarOcorrenciaPublica
+from application.ports.inbound.interface_consultar_ocorrencias import (
+    InterfaceListarOcorrencias,
+    InterfaceObterDetalheOcorrencia,
+)
 from application.ports.inbound.interface_despachar_viatura import (
     InterfaceDespacharViatura,
     InterfaceEncerrarOcorrencia,
     InterfaceListarOrdensDespacho,
     InterfaceSugerirViaturasProximas,
 )
+from application.ports.inbound.interface_gerir_apreensoes import (
+    InterfaceEmitirAutoApreensao,
+    InterfaceMovimentarCustodia,
+    InterfaceRegistrarItemApreendido,
+)
+from application.ports.inbound.interface_gerir_inqueritos import (
+    InterfaceBuscarConexoesOcorrencia,
+    InterfaceConcluirInquerito,
+    InterfaceInstaurarInquerito,
+    InterfaceListarInqueritos,
+    InterfaceObterInquerito,
+    InterfaceVincularOcorrenciasInquerito,
+)
+from application.ports.inbound.interface_gerir_laudos import (
+    InterfaceAnexarLaudo,
+    InterfaceBaixarArquivoLaudo,
+    InterfaceListarLaudos,
+    InterfaceObterLaudo,
+    InterfaceSolicitarLaudo,
+)
+from application.ports.inbound.interface_gerir_medidas_protetivas import (
+    InterfaceConcederMedida,
+    InterfaceListarMedidas,
+    InterfaceRenovarMedida,
+    InterfaceRevogarMedida,
+)
+from application.ports.inbound.interface_gerir_usuarios import (
+    InterfaceAlterarPapelUsuario,
+    InterfaceCadastrarUsuario,
+    InterfaceDesativarUsuario,
+    InterfaceListarUsuariosGestao,
+    InterfaceReativarUsuario,
+)
 from application.ports.inbound.interface_gerir_viaturas import (
     InterfaceAlterarSituacaoViatura,
     InterfaceCadastrarViatura,
+    InterfaceEmitirCredencialTelemetria,
     InterfaceListarViaturas,
     InterfaceRegistrarPosicaoViatura,
 )
-from application.ports.inbound.interface_consultar_ocorrencias import (
-    InterfaceListarOcorrencias,
-    InterfaceObterDetalheOcorrencia,
+from application.ports.inbound.interface_indicadores import InterfaceCalcularIndicadores
+from application.ports.inbound.interface_inteligencia_areas_risco import (
+    InterfaceCalcularAreasRisco,
+    InterfaceConfirmarCienciaAlerta,
+    InterfaceEmitirAlertaCriticidade,
 )
+from application.ports.inbound.interface_linha_do_tempo import InterfaceLinhaDoTempo
+from application.ports.inbound.interface_listar_usuarios import InterfaceListarUsuarios
+from application.ports.inbound.interface_notificacoes import (
+    InterfaceCriarNotificacao,
+    InterfaceListarNotificacoes,
+    InterfaceMarcarNotificacaoLida,
+    InterfaceMarcarTodasNotificacoesLidas,
+)
+from application.ports.inbound.interface_redefinir_prioridade import InterfaceRedefinirPrioridade
+from application.ports.inbound.interface_registrar_exportacao import InterfaceRegistrarExportacao
+from application.ports.inbound.interface_registrar_ocorrencia_policial import InterfaceRegistrarOcorrenciaPolicial
+from application.ports.inbound.interface_registrar_ocorrencia_publica import InterfaceRegistrarOcorrenciaPublica
 from application.ports.inbound.interface_revisar_ocorrencia import (
     InterfaceCorrigirOcorrencia,
     InterfaceDevolverParaCorrecao,
@@ -62,40 +146,103 @@ from application.ports.inbound.interface_revisar_ocorrencia import (
     InterfaceRejeitarOcorrencia,
     InterfaceValidarOcorrencia,
 )
-from application.ports.inbound.interface_registrar_ocorrencia_policial import InterfaceRegistrarOcorrenciaPolicial
-from application.ports.outbound.gerador_numero_ordem import GeradorNumeroOrdem
 from application.ports.outbound.armazenamento_arquivos import ArmazenamentoArquivos
+from application.ports.outbound.consulta_indicadores import ConsultaIndicadores
+from application.ports.outbound.credencial_dispositivo import CredencialDispositivo
+from application.ports.outbound.gerador_numero_inquerito import GeradorNumeroInquerito
+from application.ports.outbound.gerador_numero_laudo import GeradorNumeroLaudo
+from application.ports.outbound.gerador_numero_medida import GeradorNumeroMedida
+from application.ports.outbound.gerador_numero_ordem import GeradorNumeroOrdem
 from application.ports.outbound.gerador_protocolo import GeradorProtocolo
 from application.ports.outbound.hasher_senha import HasherSenha
+from application.ports.outbound.limitador_tentativas import LimitadorTentativas
 from application.ports.outbound.porta_auditoria import PortaAuditoria
-from application.ports.outbound.publicador_eventos import PublicadorEventos
+from application.ports.outbound.porta_notificacao_email import PortaNotificacaoEmail
 from application.ports.outbound.provedor_token import ProvedorToken
+from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
+from application.ports.outbound.repositorio_comunicacao_interagencias import (
+    GeradorNumeroOficio,
+    RepositorioComunicacaoInteragencias,
+)
+from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
+from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
+from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
+from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.repositorio_ordem_despacho import RepositorioOrdemDespacho
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.auditoria.consultar_auditoria import ConsultarAuditoria
+from application.use_cases.auditoria.registrar_exportacao import RegistrarExportacao
 from application.use_cases.auth.autenticar_usuario import AutenticarUsuario
+from application.use_cases.despacho.despachar_viatura import DespacharViatura, ListarOrdensDespacho, SugerirViaturasProximas
+from application.use_cases.despacho.encerrar_ocorrencia import EncerrarOcorrencia
 from application.use_cases.documento.autenticar_documento import AutenticarDocumento
-from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
-from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
+from application.use_cases.indicadores.calcular_indicadores import CalcularIndicadores
+from application.use_cases.inquerito.buscar_conexoes import BuscarConexoesOcorrencia
+from application.use_cases.inquerito.consultar_inqueritos import ConcluirInquerito, ListarInqueritos, ObterInquerito
+from application.use_cases.inquerito.instaurar_inquerito import InstaurarInquerito
+from application.use_cases.inquerito.vincular_ocorrencias import VincularOcorrenciasInquerito
+from application.use_cases.inteligencia.calcular_areas_risco import (
+    CalcularAreasRiscoUseCase,
+    ConfirmarCienciaAlertaUseCase,
+    EmitirAlertaCriticidadeUseCase,
+)
+from application.use_cases.interagencias.gerir_comunicacoes import (
+    ConsultarComunicacoesInteragenciasUseCase,
+    EnviarComunicacaoInteragenciasUseCase,
+    ResponderComunicacaoInteragenciasUseCase,
+)
+from application.use_cases.laudo.anexar_laudo import AnexarLaudo
+from application.use_cases.laudo.baixar_laudo import BaixarArquivoLaudo
+from application.use_cases.laudo.consultar_laudos import ListarLaudos, ObterLaudo
+from application.use_cases.laudo.solicitar_laudo import SolicitarLaudo
+from application.use_cases.medida_protetiva.conceder_medida import ConcederMedida
+from application.use_cases.medida_protetiva.consultar_medidas import ConsultarMedidas
+from application.use_cases.medida_protetiva.emitir_alerta_vencimento import (
+    EmitirAlertaVencimentoMedidaUseCase,
+)
+from application.use_cases.medida_protetiva.renovar_medida import RenovarMedida
+from application.use_cases.medida_protetiva.revogar_medida import RevogarMedida
+from application.use_cases.notificacao.gerir_notificacoes import (
+    CriarNotificacaoUseCase,
+    ListarNotificacoesUseCase,
+    MarcarNotificacaoLidaUseCase,
+    MarcarTodasNotificacoesLidasUseCase,
+)
 from application.use_cases.ocorrencia.acessar_evidencia import (
     ObterEvidenciaParaDownload,
     VerificarIntegridadeEvidencia,
 )
+from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
+from application.use_cases.ocorrencia.apreensoes import EmitirAutoApreensao, MovimentarCustodia, RegistrarItemApreendido
+from application.use_cases.ocorrencia.arquivar_ocorrencia import ArquivarOcorrencia, ExcluirOcorrencia
+from application.use_cases.ocorrencia.consultar_ocorrencia_publica import ConsultarOcorrenciaPublica
+from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
 from application.use_cases.ocorrencia.corrigir_ocorrencia import CorrigirOcorrencia, ReenviarOcorrencia
-from application.use_cases.despacho.despachar_viatura import DespacharViatura, ListarOrdensDespacho, SugerirViaturasProximas
-from application.use_cases.despacho.encerrar_ocorrencia import EncerrarOcorrencia
-from application.use_cases.viatura.gerir_viaturas import AlterarSituacaoViatura, CadastrarViatura, ListarViaturas
-from application.use_cases.viatura.registrar_posicao_viatura import RegistrarPosicaoViatura
+from application.use_cases.ocorrencia.linha_do_tempo import MontarLinhaDoTempo
+from application.use_cases.ocorrencia.redefinir_prioridade import RedefinirPrioridade
+from application.use_cases.ocorrencia.registrar_ocorrencia_policial import RegistrarOcorrenciaPolicial
+from application.use_cases.ocorrencia.registrar_ocorrencia_publica import RegistrarOcorrenciaPublica
 from application.use_cases.ocorrencia.revisar_ocorrencia import (
     DevolverParaCorrecao,
     RejeitarOcorrencia,
     ValidarOcorrencia,
 )
-from application.use_cases.ocorrencia.registrar_ocorrencia_policial import RegistrarOcorrenciaPolicial
+from application.use_cases.usuario.gerir_usuarios import (
+    AlterarPapelUsuario,
+    CadastrarUsuario,
+    DesativarUsuario,
+    ListarUsuariosGestao,
+    ReativarUsuario,
+)
+from application.use_cases.usuario.listar_usuarios import ListarUsuarios
+from application.use_cases.viatura.emitir_credencial_telemetria import EmitirCredencialTelemetria
+from application.use_cases.viatura.gerir_viaturas import AlterarSituacaoViatura, CadastrarViatura, ListarViaturas
+from application.use_cases.viatura.registrar_posicao_viatura import RegistrarPosicaoViatura
+from domain.shared.geo import Coordenada
 from infrastructure.config.settings import settings
 from infrastructure.database.connection import AsyncSessionLocal, get_session
 
@@ -103,15 +250,37 @@ from infrastructure.database.connection import AsyncSessionLocal, get_session
 publicador_eventos = PublicadorEventosEmMemoria()
 relogio_sistema = RelogioSistema()
 hasher_argon2 = HasherArgon2()
-gerenciador_conexoes = GerenciadorConexoes()
-publicador_eventos.assinar(gerenciador_conexoes.transmitir)  # RF17: fan-out para os painéis
-provedor_token_jose = ProvedorTokenJose(settings.jwt_secret_key, settings.jwt_algorithm, settings.jwt_expires_in_hours)
+gerenciador_conexoes = GerenciadorConexoes(relogio_sistema)
+publicador_eventos.assinar(gerenciador_conexoes.transmitir)  # RF02 / RNF01: fan-out para os painéis
+provedor_token_jwt = ProvedorTokenJWT(settings.jwt_secret_key, settings.jwt_algorithm, settings.jwt_expires_in_hours)
 armazenamento_evidencias = ArmazenamentoDisco(settings.evidencias_diretorio)
+credencial_dispositivo = CredencialDispositivoHMAC(settings.telemetria_segredo_dispositivos)
+limitador_login = LimitadorTentativasEmMemoria(
+    settings.login_max_tentativas, settings.login_janela_segundos, settings.login_bloqueio_segundos
+)
+limitador_registro_publico = LimitadorTentativasEmMemoria(
+    settings.registro_publico_max_por_ip, settings.registro_publico_janela_segundos, settings.registro_publico_bloqueio_segundos
+)
+limitador_consulta_publica = LimitadorTentativasEmMemoria(
+    settings.consulta_publica_max_por_ip, settings.consulta_publica_janela_segundos, settings.consulta_publica_bloqueio_segundos
+)
+enviador_email = EnviadorEmailSMTP(
+    smtp_host=settings.smtp_host,
+    smtp_port=settings.smtp_port,
+    smtp_usuario=settings.smtp_usuario,
+    smtp_senha=settings.smtp_senha,
+    smtp_from=settings.smtp_remetente,
+    smtp_tls=settings.smtp_usar_tls,
+)
 
 
 # ------------------------------------------------------------ portas de saída
 def get_relogio() -> Relogio:
     return relogio_sistema
+
+
+def get_porta_notificacao_email() -> PortaNotificacaoEmail:
+    return enviador_email
 
 
 def get_publicador() -> PublicadorEventos:
@@ -123,11 +292,23 @@ def get_hasher() -> HasherSenha:
 
 
 def get_provedor_token() -> ProvedorToken:
-    return provedor_token_jose
+    return provedor_token_jwt
 
 
 def get_armazenamento_arquivos() -> ArmazenamentoArquivos:
     return armazenamento_evidencias
+
+
+def get_limitador_login() -> LimitadorTentativas:
+    return limitador_login
+
+
+def get_limitador_registro_publico() -> LimitadorTentativas:
+    return limitador_registro_publico
+
+
+def get_limitador_consulta_publica() -> LimitadorTentativas:
+    return limitador_consulta_publica
 
 
 def get_repositorio_usuario(session: AsyncSession = Depends(get_session)) -> RepositorioUsuario:
@@ -158,6 +339,10 @@ def get_repositorio_ocorrencia(session: AsyncSession = Depends(get_session)) -> 
     return OcorrenciaRepositorioSQLAlchemy(session)
 
 
+def get_repositorio_notificacao(session: AsyncSession = Depends(get_session)) -> RepositorioNotificacao:
+    return NotificacaoRepositorioSQLAlchemy(session)
+
+
 def get_auditoria(session: AsyncSession = Depends(get_session)) -> PortaAuditoria:
     return AuditoriaSQLAlchemy(session)
 
@@ -175,6 +360,20 @@ def get_registrar_ocorrencia(
     auditoria: PortaAuditoria = Depends(get_auditoria),
 ) -> InterfaceRegistrarOcorrenciaPolicial:
     return RegistrarOcorrenciaPolicial(repositorio, uow, relogio, gerador, auditoria)
+
+
+def get_registrar_ocorrencia_publica(
+    registrar: InterfaceRegistrarOcorrenciaPolicial = Depends(get_registrar_ocorrencia),
+    usuarios: RepositorioUsuario = Depends(get_repositorio_usuario),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceRegistrarOcorrenciaPublica:
+    return RegistrarOcorrenciaPublica(registrar, usuarios, uow)
+
+
+def get_consultar_ocorrencia_publica(
+    repositorio: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+) -> InterfaceConsultarOcorrenciaPublica:
+    return ConsultarOcorrenciaPublica(repositorio)
 
 
 def get_anexar_evidencia(
@@ -223,8 +422,13 @@ def get_autenticar_usuario(
     relogio: Relogio = Depends(get_relogio),
     auditoria: PortaAuditoria = Depends(get_auditoria),
     uow: UnidadeDeTrabalho = Depends(get_uow),
+    limitador: LimitadorTentativas = Depends(get_limitador_login),
 ) -> InterfaceAutenticarUsuario:
-    return AutenticarUsuario(repositorio, hasher, provedor, relogio, auditoria, uow)
+    return AutenticarUsuario(repositorio, hasher, provedor, relogio, auditoria, uow, limitador)
+
+
+def get_listar_usuarios(repositorio: RepositorioUsuario = Depends(get_repositorio_usuario)) -> InterfaceListarUsuarios:
+    return ListarUsuarios(repositorio)
 
 
 def get_listar_ocorrencias(repositorio: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia)) -> InterfaceListarOcorrencias:
@@ -245,16 +449,29 @@ def _deps_revisao(
     return repositorio, uow, relogio, auditoria, publicador
 
 
-def get_validar_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceValidarOcorrencia:
-    return ValidarOcorrencia(*deps)
+def get_validar_ocorrencia(
+    deps: tuple = Depends(_deps_revisao),
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+) -> InterfaceValidarOcorrencia:
+    return ValidarOcorrencia(*deps, notificacoes=notificacoes)
 
 
-def get_devolver_para_correcao(deps: tuple = Depends(_deps_revisao)) -> InterfaceDevolverParaCorrecao:
-    return DevolverParaCorrecao(*deps)
+def get_devolver_para_correcao(
+    deps: tuple = Depends(_deps_revisao),
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+) -> InterfaceDevolverParaCorrecao:
+    return DevolverParaCorrecao(*deps, notificacoes=notificacoes)
 
 
-def get_rejeitar_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceRejeitarOcorrencia:
-    return RejeitarOcorrencia(*deps)
+def get_rejeitar_ocorrencia(
+    deps: tuple = Depends(_deps_revisao),
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+) -> InterfaceRejeitarOcorrencia:
+    return RejeitarOcorrencia(*deps, notificacoes=notificacoes)
+
+
+def get_redefinir_prioridade(deps: tuple = Depends(_deps_revisao)) -> InterfaceRedefinirPrioridade:
+    return RedefinirPrioridade(*deps)
 
 
 def get_corrigir_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceCorrigirOcorrencia:
@@ -264,6 +481,22 @@ def get_corrigir_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceCo
 
 def get_reenviar_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceReenviarOcorrencia:
     return ReenviarOcorrencia(*deps)
+
+
+def get_arquivar_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceArquivarOcorrencia:
+    return ArquivarOcorrencia(*deps)
+
+
+def get_excluir_ocorrencia(deps: tuple = Depends(_deps_revisao)) -> InterfaceExcluirOcorrencia:
+    return ExcluirOcorrencia(*deps)
+
+
+def get_registrar_exportacao(
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    relogio: Relogio = Depends(get_relogio),
+) -> InterfaceRegistrarExportacao:
+    return RegistrarExportacao(auditoria, uow, relogio)
 
 
 def get_consultar_auditoria(
@@ -280,14 +513,26 @@ def get_consultar_auditoria(
     )
 
 
-# ------------------------------------------------------------ documento (RF08)
-def get_autenticar_documento(
-    repositorio: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
-    uow: UnidadeDeTrabalho = Depends(get_uow),
-    relogio: Relogio = Depends(get_relogio),
-    auditoria: PortaAuditoria = Depends(get_auditoria),
-) -> InterfaceAutenticarDocumento:
+# ----------------------------------------------------- documento público (RF08)
+def get_autenticar_documento(deps: tuple = Depends(_deps_revisao)) -> InterfaceAutenticarDocumento:
+    repositorio, uow, relogio, auditoria, _ = deps
     return AutenticarDocumento(repositorio, uow, relogio, auditoria)
+
+
+# ---------------------------------------------------------------- apreensões (RF03)
+def get_registrar_item_apreendido(deps: tuple = Depends(_deps_revisao)) -> InterfaceRegistrarItemApreendido:
+    repositorio, uow, relogio, auditoria, _ = deps
+    return RegistrarItemApreendido(repositorio, uow, relogio, auditoria)
+
+
+def get_movimentar_custodia(deps: tuple = Depends(_deps_revisao)) -> InterfaceMovimentarCustodia:
+    repositorio, uow, relogio, auditoria, _ = deps
+    return MovimentarCustodia(repositorio, uow, relogio, auditoria)
+
+
+def get_emitir_auto_apreensao(deps: tuple = Depends(_deps_revisao)) -> InterfaceEmitirAutoApreensao:
+    repositorio, uow, relogio, auditoria, _ = deps
+    return EmitirAutoApreensao(repositorio, uow, relogio, auditoria)
 
 
 # ------------------------------------------------------------------ viaturas
@@ -316,35 +561,86 @@ def get_listar_viaturas(
     return ListarViaturas(repositorio, relogio, settings.telemetria_max_idade_segundos)
 
 
-def get_registrar_posicao_viatura(
-    repositorio: RepositorioViatura = Depends(get_repositorio_viatura),
+def _registrar_posicao(session: AsyncSession, relogio: Relogio) -> RegistrarPosicaoViatura:
+    """Telemetria (HTTP ou simulador) com detecção de chegada ao local da ocorrência (RF18/RF19)."""
+    return RegistrarPosicaoViatura(
+        ViaturaRepositorioSQLAlchemy(session),
+        UnidadeDeTrabalhoSQLAlchemy(session),
+        relogio,
+        publicador_eventos,
+        settings.telemetria_max_idade_segundos,
+        ordens=OrdemDespachoRepositorioSQLAlchemy(session),
+        ocorrencias=OcorrenciaRepositorioSQLAlchemy(session),
+        auditoria=AuditoriaSQLAlchemy(session),
+        raio_chegada_metros=settings.despacho_raio_chegada_metros,
+    )
+
+
+def get_credencial_dispositivo() -> CredencialDispositivo:
+    return credencial_dispositivo
+
+
+def get_emitir_credencial_telemetria(
+    viaturas: RepositorioViatura = Depends(get_repositorio_viatura),
+    credenciais: CredencialDispositivo = Depends(get_credencial_dispositivo),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
     uow: UnidadeDeTrabalho = Depends(get_uow),
     relogio: Relogio = Depends(get_relogio),
-    publicador: PublicadorEventos = Depends(get_publicador),
+) -> InterfaceEmitirCredencialTelemetria:
+    return EmitirCredencialTelemetria(viaturas, credenciais, auditoria, uow, relogio)
+
+
+def get_registrar_posicao_viatura(
+    session: AsyncSession = Depends(get_session), relogio: Relogio = Depends(get_relogio)
 ) -> InterfaceRegistrarPosicaoViatura:
-    return RegistrarPosicaoViatura(repositorio, uow, relogio, publicador, settings.telemetria_max_idade_segundos)
+    return _registrar_posicao(session, relogio)
 
 
 # ----------------------------------------------------------------- simulador
 def montar_simulador(session_factory: async_sessionmaker, relogio: Relogio | None = None, **kw) -> SimuladorTelemetria:
-    """Monta o simulador com a fábrica de sessão informada (a suíte usa SQLite)."""
+    """Monta o simulador com a fábrica de sessão informada (a suíte usa SQLite).
+
+    O resolvedor de destino (issue #54) abre/fecha uma sessão de leitura por
+    tick via a mesma fábrica; o roteador é OSRM quando ``roteador_url`` (ou
+    ``SIMULADOR_ROTEADOR_URL``) está configurada, senão linha reta sem rede.
+    """
     relogio = relogio or relogio_sistema
 
     @asynccontextmanager
-    async def contexto() -> AsyncIterator[tuple[RepositorioViatura, InterfaceRegistrarPosicaoViatura]]:
+    async def contexto() -> AsyncIterator[tuple]:
         async with session_factory() as session:
-            repo = ViaturaRepositorioSQLAlchemy(session)
-            uc = RegistrarPosicaoViatura(
-                repo, UnidadeDeTrabalhoSQLAlchemy(session), relogio, publicador_eventos, settings.telemetria_max_idade_segundos
-            )
-            yield repo, uc
+            ordens = OrdemDespachoRepositorioSQLAlchemy(session)
+            ocorrencias = OcorrenciaRepositorioSQLAlchemy(session)
 
+            async def destino_de(viatura_id) -> Coordenada | None:
+                ordem = await ordens.buscar_ativa_por_viatura(viatura_id)
+                if ordem is None:
+                    return None
+                ocorrencia = await ocorrencias.buscar_por_id(ordem.ocorrencia_id)
+                return ocorrencia.coordenada if ocorrencia else None
+
+            yield ViaturaRepositorioSQLAlchemy(session), _registrar_posicao(session, relogio), destino_de
+
+    @asynccontextmanager
+    async def contexto_destinos() -> AsyncIterator[tuple[RepositorioOrdemDespacho, RepositorioOcorrencia]]:
+        async with session_factory() as session:
+            yield OrdemDespachoRepositorioSQLAlchemy(session), OcorrenciaRepositorioSQLAlchemy(session)
+
+    url = kw.get("roteador_url", settings.simulador_roteador_url)
+    timeout = kw.get("roteador_timeout_segundos", settings.simulador_roteador_timeout_segundos)
+    roteador = kw.get("roteador") or (RoteadorOSRM(url, timeout) if url.strip() else RoteadorLinhaReta())
     return SimuladorTelemetria(
         contexto,
         relogio,
         intervalo_segundos=kw.get("intervalo_segundos", settings.simulador_intervalo_segundos),
         raio_metros=kw.get("raio_metros", settings.simulador_raio_metros),
         semente=kw.get("semente"),
+        resolvedor=kw.get("resolvedor") or ResolvedorDestinoSessao(contexto_destinos),
+        roteador=roteador,
+        passo_destino_metros=kw.get("passo_destino_metros", settings.simulador_passo_destino_metros),
+        raio_chegada_metros=kw.get("raio_chegada_metros", settings.simulador_raio_chegada_metros),
+        jitter_chegada_metros=kw.get("jitter_chegada_metros", settings.simulador_jitter_chegada_metros),
+        velocidade_kmh=kw.get("velocidade_kmh", settings.simulador_velocidade_kmh),
     )
 
 
@@ -353,6 +649,124 @@ simulador = montar_simulador(AsyncSessionLocal)
 
 def get_simulador() -> SimuladorTelemetria:
     return simulador
+
+
+# ------------------------------------------------------- gerador demo (iss.55)
+def montar_gerador(session_factory: async_sessionmaker, relogio: Relogio | None = None, **kw) -> GeradorOcorrencias:
+    """Monta o gerador de ocorrências fictícias (driving adapter, opt-in).
+
+    A fábrica abre/fecha uma sessão por tick e resolve o autor
+    ``simulador-demo``; se ausente, o gerador loga 'rode o seed' e não inicia.
+    """
+    from application.ports.inbound.ator import Ator
+
+    relogio_efetivo = relogio or relogio_sistema
+
+    @asynccontextmanager
+    async def contexto() -> AsyncIterator[tuple[Ator | None, InterfaceRegistrarOcorrenciaPolicial]]:
+        async with session_factory() as session:
+            usuario = await UsuarioRepositorioSQLAlchemy(session).buscar_por_login("simulador-demo")
+            if usuario is None:
+                yield None, RegistrarOcorrenciaPolicial(
+                    OcorrenciaRepositorioSQLAlchemy(session),
+                    UnidadeDeTrabalhoSQLAlchemy(session),
+                    relogio_efetivo,
+                    GeradorProtocoloSQLAlchemy(session),
+                    AuditoriaSQLAlchemy(session),
+                )
+                return
+            ator = Ator(id=usuario.id, login=usuario.login, papel=usuario.papel)
+            uc = RegistrarOcorrenciaPolicial(
+                OcorrenciaRepositorioSQLAlchemy(session),
+                UnidadeDeTrabalhoSQLAlchemy(session),
+                relogio_efetivo,
+                GeradorProtocoloSQLAlchemy(session),
+                AuditoriaSQLAlchemy(session),
+            )
+            yield ator, uc
+
+    return GeradorOcorrencias(
+        contexto,
+        relogio_efetivo,
+        intervalo_segundos=kw.get("intervalo_segundos", settings.gerador_ocorrencias_intervalo_segundos),
+        semente=kw.get("semente"),
+    )
+
+
+gerador_ocorrencias = montar_gerador(AsyncSessionLocal)
+
+
+def get_gerador_ocorrencias() -> GeradorOcorrencias:
+    return gerador_ocorrencias
+
+
+# --------------------------------------------- orquestrador despacho (iss. 62/63)
+async def _resolver_ator(usuarios: UsuarioRepositorioSQLAlchemy, login: str) -> Ator | None:
+    """Ator do usuário demo (``simulador-operador``/``simulador-delegado``); None se o seed não rodou."""
+    usuario = await usuarios.buscar_por_login(login)
+    if usuario is None:
+        return None
+    return Ator(id=usuario.id, login=usuario.login, papel=usuario.papel)
+
+
+def montar_orquestrador_despacho(
+    session_factory: async_sessionmaker, relogio: Relogio | None = None, **kw
+) -> OrquestradorDespacho:
+    """Monta o orquestrador de despacho/encerramento automáticos (driving adapter, opt-in).
+
+    Cada ciclo abre/fecha uma sessão e resolve os atores ``simulador-operador`` e
+    ``simulador-delegado``; se ausentes, o orquestrador loga 'rode o seed' e não
+    inicia (padrão do gerador). Casos de uso concretos são injetados aqui, no
+    composition root — nunca instanciados dentro do adapter.
+    """
+    relogio_efetivo = relogio or relogio_sistema
+
+    @asynccontextmanager
+    async def contexto() -> AsyncIterator[tuple]:
+        async with session_factory() as session:
+            usuarios = UsuarioRepositorioSQLAlchemy(session)
+            yield (
+                ViaturaRepositorioSQLAlchemy(session),
+                OcorrenciaRepositorioSQLAlchemy(session),
+                OrdemDespachoRepositorioSQLAlchemy(session),
+                DespacharViatura(
+                    OcorrenciaRepositorioSQLAlchemy(session),
+                    ViaturaRepositorioSQLAlchemy(session),
+                    OrdemDespachoRepositorioSQLAlchemy(session),
+                    GeradorNumeroOrdemSQLAlchemy(session),
+                    UnidadeDeTrabalhoSQLAlchemy(session),
+                    relogio_efetivo,
+                    AuditoriaSQLAlchemy(session),
+                    publicador_eventos,
+                ),
+                EncerrarOcorrencia(
+                    OcorrenciaRepositorioSQLAlchemy(session),
+                    ViaturaRepositorioSQLAlchemy(session),
+                    OrdemDespachoRepositorioSQLAlchemy(session),
+                    UnidadeDeTrabalhoSQLAlchemy(session),
+                    relogio_efetivo,
+                    AuditoriaSQLAlchemy(session),
+                    publicador_eventos,
+                ),
+                await _resolver_ator(usuarios, "simulador-operador"),
+                await _resolver_ator(usuarios, "simulador-delegado"),
+            )
+
+    return OrquestradorDespacho(
+        contexto,
+        relogio_efetivo,
+        intervalo_segundos=kw.get("intervalo_segundos", settings.orquestrador_intervalo_segundos),
+        janela_carencia_segundos=kw.get("janela_carencia_segundos", settings.janela_carencia_segundos),
+        tempo_atendimento_segundos=kw.get("tempo_atendimento_segundos", settings.tempo_atendimento_segundos),
+        max_idade_segundos=kw.get("max_idade_segundos", settings.telemetria_max_idade_segundos),
+    )
+
+
+orquestrador_despacho = montar_orquestrador_despacho(AsyncSessionLocal)
+
+
+def get_orquestrador_despacho() -> OrquestradorDespacho:
+    return orquestrador_despacho
 
 
 # ------------------------------------------------------------------ despacho
@@ -391,3 +805,360 @@ def get_encerrar_ocorrencia(
     publicador: PublicadorEventos = Depends(get_publicador),
 ) -> InterfaceEncerrarOcorrencia:
     return EncerrarOcorrencia(ocorrencias, viaturas, ordens, uow, relogio, auditoria, publicador)
+
+
+# ------------------------------------------------------------------ inquéritos
+def get_repositorio_inquerito(session: AsyncSession = Depends(get_session)) -> RepositorioInquerito:
+    return InqueritoRepositorioSQLAlchemy(session)
+
+
+def get_gerador_numero_inquerito(session: AsyncSession = Depends(get_session)) -> GeradorNumeroInquerito:
+    return GeradorNumeroInqueritoSQLAlchemy(session)
+
+
+def get_instaurar_inquerito(
+    inqueritos: RepositorioInquerito = Depends(get_repositorio_inquerito),
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    gerador: GeradorNumeroInquerito = Depends(get_gerador_numero_inquerito),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+) -> InterfaceInstaurarInquerito:
+    return InstaurarInquerito(inqueritos, ocorrencias, gerador, relogio, uow, auditoria)
+
+
+def get_vincular_ocorrencias_inquerito(
+    inqueritos: RepositorioInquerito = Depends(get_repositorio_inquerito),
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+) -> InterfaceVincularOcorrenciasInquerito:
+    return VincularOcorrenciasInquerito(inqueritos, ocorrencias, relogio, uow, auditoria)
+
+
+def get_buscar_conexoes_ocorrencia(
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+) -> InterfaceBuscarConexoesOcorrencia:
+    return BuscarConexoesOcorrencia(ocorrencias)
+
+
+def get_listar_inqueritos(
+    inqueritos: RepositorioInquerito = Depends(get_repositorio_inquerito),
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+) -> InterfaceListarInqueritos:
+    return ListarInqueritos(inqueritos, ocorrencias)
+
+
+def get_obter_inquerito(
+    inqueritos: RepositorioInquerito = Depends(get_repositorio_inquerito),
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+) -> InterfaceObterInquerito:
+    return ObterInquerito(inqueritos, ocorrencias)
+
+
+def get_concluir_inquerito(
+    inqueritos: RepositorioInquerito = Depends(get_repositorio_inquerito),
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+) -> InterfaceConcluirInquerito:
+    return ConcluirInquerito(inqueritos, ocorrencias, relogio, uow, auditoria)
+
+
+# ------------------------------------------------------------------ laudos
+def get_repositorio_laudo(session: AsyncSession = Depends(get_session)) -> RepositorioLaudoPericial:
+    return LaudoRepositorioSQLAlchemy(session)
+
+
+def get_gerador_numero_laudo(session: AsyncSession = Depends(get_session)) -> GeradorNumeroLaudo:
+    return GeradorNumeroLaudoSQLAlchemy(session)
+
+
+def get_solicitar_laudo(
+    laudos: RepositorioLaudoPericial = Depends(get_repositorio_laudo),
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    inqueritos: RepositorioInquerito = Depends(get_repositorio_inquerito),
+    gerador: GeradorNumeroLaudo = Depends(get_gerador_numero_laudo),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+) -> InterfaceSolicitarLaudo:
+    return SolicitarLaudo(laudos, ocorrencias, inqueritos, gerador, relogio, uow, auditoria)
+
+
+def get_anexar_laudo(
+    laudos: RepositorioLaudoPericial = Depends(get_repositorio_laudo),
+    armazenamento: ArmazenamentoArquivos = Depends(get_armazenamento_arquivos),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+) -> InterfaceAnexarLaudo:
+    return AnexarLaudo(laudos, armazenamento, relogio, uow, auditoria)
+
+
+def get_listar_laudos(
+    laudos: RepositorioLaudoPericial = Depends(get_repositorio_laudo),
+) -> InterfaceListarLaudos:
+    return ListarLaudos(laudos)
+
+
+def get_obter_laudo(
+    laudos: RepositorioLaudoPericial = Depends(get_repositorio_laudo),
+) -> InterfaceObterLaudo:
+    return ObterLaudo(laudos)
+
+
+def get_baixar_arquivo_laudo(
+    laudos: RepositorioLaudoPericial = Depends(get_repositorio_laudo),
+    armazenamento: ArmazenamentoArquivos = Depends(get_armazenamento_arquivos),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    relogio: Relogio = Depends(get_relogio),
+) -> InterfaceBaixarArquivoLaudo:
+    return BaixarArquivoLaudo(laudos, armazenamento, auditoria, uow, relogio)
+
+
+# ------------------------------------------------------------------ medidas protetivas
+def get_repositorio_medida_protetiva(session: AsyncSession = Depends(get_session)) -> RepositorioMedidaProtetiva:
+    return MedidaProtetivaRepositorioSQLAlchemy(session)
+
+
+def get_gerador_numero_medida(session: AsyncSession = Depends(get_session)) -> GeradorNumeroMedida:
+    return GeradorNumeroMedidaSQLAlchemy(session)
+
+
+def get_conceder_medida(
+    medidas: RepositorioMedidaProtetiva = Depends(get_repositorio_medida_protetiva),
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    gerador: GeradorNumeroMedida = Depends(get_gerador_numero_medida),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+) -> InterfaceConcederMedida:
+    return ConcederMedida(medidas, ocorrencias, gerador, relogio, uow, auditoria)
+
+
+def get_renovar_medida(
+    medidas: RepositorioMedidaProtetiva = Depends(get_repositorio_medida_protetiva),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+) -> InterfaceRenovarMedida:
+    return RenovarMedida(medidas, relogio, uow, auditoria)
+
+
+def get_revogar_medida(
+    medidas: RepositorioMedidaProtetiva = Depends(get_repositorio_medida_protetiva),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+) -> InterfaceRevogarMedida:
+    return RevogarMedida(medidas, relogio, uow, auditoria)
+
+
+def get_listar_medidas(
+    medidas: RepositorioMedidaProtetiva = Depends(get_repositorio_medida_protetiva),
+    relogio: Relogio = Depends(get_relogio),
+) -> InterfaceListarMedidas:
+    return ConsultarMedidas(medidas, relogio)
+
+
+# ------------------------------------------------------------------ repositorios novos
+def get_repositorio_comunicacao_interagencias(session: AsyncSession = Depends(get_session)) -> RepositorioComunicacaoInteragencias:
+    return ComunicacaoInteragenciasRepositorioSQLAlchemy(session)
+
+
+# ------------------------------------------------------------------ notificacoes
+def get_listar_notificacoes(
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+) -> InterfaceListarNotificacoes:
+    return ListarNotificacoesUseCase(notificacoes)
+
+
+def get_marcar_notificacao_lida(
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceMarcarNotificacaoLida:
+    return MarcarNotificacaoLidaUseCase(notificacoes, relogio, uow)
+
+
+def get_marcar_todas_notificacoes_lidas(
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceMarcarTodasNotificacoesLidas:
+    return MarcarTodasNotificacoesLidasUseCase(notificacoes, relogio, uow)
+
+
+def get_criar_notificacao(
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    publicador: PublicadorEventos = Depends(get_publicador),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceCriarNotificacao:
+    return CriarNotificacaoUseCase(notificacoes, publicador, relogio, uow)
+
+
+# ------------------------------------------------------------------ alerta vencimento medida
+def get_emitir_alerta_vencimento(
+    medidas: RepositorioMedidaProtetiva = Depends(get_repositorio_medida_protetiva),
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    email: PortaNotificacaoEmail = Depends(get_porta_notificacao_email),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceEmitirAlertaVencimentoMedida:
+    return EmitirAlertaVencimentoMedidaUseCase(
+        repositorio_medida=medidas,
+        repositorio_ocorrencia=ocorrencias,
+        repositorio_notificacao=notificacoes,
+        porta_email=email,
+        porta_auditoria=auditoria,
+        publicador_eventos=publicador,
+        relogio=relogio,
+        uow=uow,
+    )
+
+
+# ------------------------------------------------------------------ inteligencia / areas de risco
+def get_calcular_areas_risco(
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    relogio: Relogio = Depends(get_relogio),
+) -> InterfaceCalcularAreasRisco:
+    return CalcularAreasRiscoUseCase(ocorrencias, relogio)
+
+
+def get_emitir_alerta_criticidade(
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceEmitirAlertaCriticidade:
+    return EmitirAlertaCriticidadeUseCase(notificacoes, auditoria, publicador, relogio, uow)
+
+
+def get_confirmar_ciencia_alerta(
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceConfirmarCienciaAlerta:
+    return ConfirmarCienciaAlertaUseCase(notificacoes, auditoria, relogio, uow)
+
+
+# ------------------------------------------------------------------ comunicacao interagencias
+def get_gerador_numero_oficio(session: AsyncSession = Depends(get_session)) -> GeradorNumeroOficio:
+    return GeradorNumeroOficioSQLAlchemy(session)
+
+
+def get_enviar_comunicacao_interagencias(
+    comunicacoes: RepositorioComunicacaoInteragencias = Depends(get_repositorio_comunicacao_interagencias),
+    gerador_oficio: GeradorNumeroOficio = Depends(get_gerador_numero_oficio),
+    ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceEnviarComunicacaoInteragencias:
+    return EnviarComunicacaoInteragenciasUseCase(
+        repositorio_comunicacao=comunicacoes,
+        gerador_oficio=gerador_oficio,
+        repositorio_ocorrencia=ocorrencias,
+        repositorio_notificacao=notificacoes,
+        porta_auditoria=auditoria,
+        publicador_eventos=publicador,
+        relogio=relogio,
+        uow=uow,
+    )
+
+
+def get_consultar_comunicacoes_interagencias(
+    comunicacoes: RepositorioComunicacaoInteragencias = Depends(get_repositorio_comunicacao_interagencias),
+) -> InterfaceConsultarComunicacoesInteragencias:
+    return ConsultarComunicacoesInteragenciasUseCase(comunicacoes)
+
+
+def get_responder_comunicacao_interagencias(
+    comunicacoes: RepositorioComunicacaoInteragencias = Depends(get_repositorio_comunicacao_interagencias),
+    gerador_oficio: GeradorNumeroOficio = Depends(get_gerador_numero_oficio),
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+    relogio: Relogio = Depends(get_relogio),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+) -> InterfaceResponderComunicacaoInteragencias:
+    return ResponderComunicacaoInteragenciasUseCase(
+        repositorio_comunicacao=comunicacoes,
+        gerador_oficio=gerador_oficio,
+        repositorio_notificacao=notificacoes,
+        porta_auditoria=auditoria,
+        publicador_eventos=publicador,
+        relogio=relogio,
+        uow=uow,
+    )
+
+
+# ------------------------------------------------------- linha do tempo (sugestão #12)
+def get_linha_do_tempo(
+    repositorio: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
+    ordens: RepositorioOrdemDespacho = Depends(get_repositorio_ordem),
+    viaturas: RepositorioViatura = Depends(get_repositorio_viatura),
+    laudos: RepositorioLaudoPericial = Depends(get_repositorio_laudo),
+    inqueritos: RepositorioInquerito = Depends(get_repositorio_inquerito),
+    usuarios: RepositorioUsuario = Depends(get_repositorio_usuario),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+) -> InterfaceLinhaDoTempo:
+    return MontarLinhaDoTempo(repositorio, ordens, viaturas, laudos, inqueritos, usuarios, auditoria)
+
+
+# ----------------------------------------------------------- indicadores (sugestão #11)
+def get_consulta_indicadores(session: AsyncSession = Depends(get_session)) -> ConsultaIndicadores:
+    return IndicadoresSQLAlchemy(session)
+
+
+def get_calcular_indicadores(
+    consulta: ConsultaIndicadores = Depends(get_consulta_indicadores),
+    relogio: Relogio = Depends(get_relogio),
+) -> InterfaceCalcularIndicadores:
+    return CalcularIndicadores(consulta, relogio)
+
+
+# ------------------------------------------------- gestão de usuários (sugestão #13)
+def get_listar_usuarios_gestao(
+    repositorio: RepositorioUsuario = Depends(get_repositorio_usuario),
+) -> InterfaceListarUsuariosGestao:
+    return ListarUsuariosGestao(repositorio)
+
+
+def _deps_gestao_usuarios(
+    repositorio: RepositorioUsuario = Depends(get_repositorio_usuario),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    relogio: Relogio = Depends(get_relogio),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+) -> tuple:
+    return repositorio, uow, relogio, auditoria
+
+
+def get_cadastrar_usuario(
+    deps: tuple = Depends(_deps_gestao_usuarios), hasher: HasherSenha = Depends(get_hasher)
+) -> InterfaceCadastrarUsuario:
+    return CadastrarUsuario(*deps, hasher)
+
+
+def get_alterar_papel_usuario(deps: tuple = Depends(_deps_gestao_usuarios)) -> InterfaceAlterarPapelUsuario:
+    return AlterarPapelUsuario(*deps)
+
+
+def get_desativar_usuario(deps: tuple = Depends(_deps_gestao_usuarios)) -> InterfaceDesativarUsuario:
+    return DesativarUsuario(*deps)
+
+
+def get_reativar_usuario(deps: tuple = Depends(_deps_gestao_usuarios)) -> InterfaceReativarUsuario:
+    return ReativarUsuario(*deps)

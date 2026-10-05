@@ -1,15 +1,16 @@
 """
-Seed reproduzível de desenvolvimento/demo (RNF07, RF12, DIV-23).
+Seed reproduzível de desenvolvimento/demo (RNF02, DIV-23).
 
     uv run alembic upgrade head
     uv run python -m scripts.seed
 
 Idempotente: usuários e viaturas já existentes (por login/prefixo) são mantidos.
-Dados fictícios (RNF10). Senha padrão de todos os usuários: ``Senha@123``.
+Dados fictícios (LGPD). Senha padrão de todos os usuários: ``Senha@123``.
 """
 from __future__ import annotations
 
 import asyncio
+import secrets
 import sys
 from pathlib import Path
 
@@ -23,10 +24,23 @@ from infrastructure.database.connection import AsyncSessionLocal  # noqa: E402
 SENHA_PADRAO = "Senha@123"
 
 USUARIOS = [
-    ("Agente Silva", "agente", Papel.AGENTE),
-    ("Delegada Souza", "delegado", Papel.DELEGADO),
-    ("Operador Lima", "operador", Papel.OPERADOR_CENTRAL),
+    ("Agente Rodrigo", "agente", Papel.AGENTE),
+    ("Delegado Fade", "delegado", Papel.DELEGADO),
+    ("Operador Matheus", "operador", Papel.OPERADOR_CENTRAL),
+    # Sugestão #13: gestão do efetivo é exclusiva do Supervisor
+    ("Supervisor Demo", "supervisor", Papel.SUPERVISOR),
 ]
+
+
+async def _semear_ator_simulador(
+    repo: UsuarioRepositorioSQLAlchemy, hasher: HasherArgon2, *, login: str, nome: str, papel: Papel
+) -> None:
+    """Autor da simulação com senha aleatória — login sempre falha."""
+    if await repo.buscar_por_login(login):
+        print(f"  = usuário '{login}' já existe")
+        return
+    await repo.salvar(Usuario(nome=nome, login=login, senha_hash=hasher.gerar_hash(secrets.token_urlsafe(48)), papel=papel))
+    print(f"  + usuário '{login}' ({papel.value}, senha inutilizável)")
 
 
 async def semear_usuarios() -> None:
@@ -39,6 +53,26 @@ async def semear_usuarios() -> None:
                 continue
             await repo.salvar(Usuario(nome=nome, login=login, senha_hash=hasher.gerar_hash(SENHA_PADRAO), papel=papel))
             print(f"  + usuário '{login}' ({papel.value})")
+        if not await repo.buscar_por_login("simulador-demo"):
+            # Issue #55: autor das ocorrências fictícias — senha aleatória, login sempre falha.
+            await repo.salvar(
+                Usuario(
+                    nome="Simulador Demo",
+                    login="simulador-demo",
+                    senha_hash=hasher.gerar_hash(secrets.token_urlsafe(48)),
+                    papel=Papel.AGENTE,
+                )
+            )
+            print("  + usuário 'simulador-demo' (AGENTE, senha inutilizável)")
+        else:
+            print("  = usuário 'simulador-demo' já existe")
+
+        await _semear_ator_simulador(
+            repo, hasher, login="simulador-operador", nome="Simulador Operador", papel=Papel.OPERADOR_CENTRAL
+        )
+        await _semear_ator_simulador(
+            repo, hasher, login="simulador-delegado", nome="Simulador Delegado", papel=Papel.DELEGADO
+        )
         await session.commit()
 
 

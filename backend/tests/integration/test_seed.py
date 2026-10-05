@@ -1,11 +1,10 @@
-"""Testes do script reproduzível de seed (Issue #52 / RNF07 / RNF10)."""
+"""Testes do script reproduzível de seed (Issue #52 / LGPD)."""
 import pytest
 from sqlalchemy import select
 
 from domain.ocorrencia.status import StatusOcorrencia
 from infrastructure.database.models import OcorrenciaModel, UsuarioModel, ViaturaModel
 from scripts.seed import main as run_seed
-from scripts.seed_documento_demo import CHAVE_DEMO
 
 
 @pytest.mark.asyncio
@@ -13,16 +12,15 @@ async def test_seed_completo_e_idempotente(session_factory, monkeypatch):
     monkeypatch.setattr("scripts.seed.AsyncSessionLocal", session_factory)
     monkeypatch.setattr("scripts.seed_viaturas.AsyncSessionLocal", session_factory)
     monkeypatch.setattr("scripts.seed_ocorrencias.AsyncSessionLocal", session_factory)
-    monkeypatch.setattr("scripts.seed_documento_demo.AsyncSessionLocal", session_factory)
 
     # 1. Primeira execução: deve semear usuários, viaturas e ocorrências
     await run_seed()
 
     async with session_factory() as s:
         usuarios = (await s.execute(select(UsuarioModel))).scalars().all()
-        assert len(usuarios) >= 3
+        assert len(usuarios) >= 4
         logins = {u.login for u in usuarios}
-        assert {"agente", "delegado", "operador"}.issubset(logins)
+        assert {"agente", "delegado", "operador", "simulador-demo"}.issubset(logins)
 
         viaturas = (await s.execute(select(ViaturaModel))).scalars().all()
         assert len(viaturas) == 5
@@ -32,10 +30,8 @@ async def test_seed_completo_e_idempotente(session_factory, monkeypatch):
             assert v.latitude is not None
             assert v.longitude is not None
 
-        # 5 ocorrências do roteiro de demonstração + 1 documento emitido do RF08
         ocorrencias = (await s.execute(select(OcorrenciaModel))).scalars().all()
-        assert len(ocorrencias) == 6
-        assert any(o.chave_autenticidade == CHAVE_DEMO for o in ocorrencias)
+        assert len(ocorrencias) == 12
         statuses = {o.status for o in ocorrencias}
         assert StatusOcorrencia.AGUARDANDO_REVISAO.value in statuses
         assert StatusOcorrencia.VALIDADA.value in statuses
@@ -50,6 +46,22 @@ async def test_seed_completo_e_idempotente(session_factory, monkeypatch):
         total_u = len((await s.execute(select(UsuarioModel))).scalars().all())
         total_v = len((await s.execute(select(ViaturaModel))).scalars().all())
         total_o = len((await s.execute(select(OcorrenciaModel))).scalars().all())
-        assert total_u >= 3
+        assert total_u >= 4
         assert total_v == 5
-        assert total_o == 6
+        assert total_o == 12
+
+
+@pytest.mark.asyncio
+async def test_simulador_demo_senha_inutilizavel(session_factory, monkeypatch):
+    """Issue #55 ajuste 1: simulador-demo nunca loga com Senha@123."""
+    from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
+
+    monkeypatch.setattr("scripts.seed.AsyncSessionLocal", session_factory)
+    monkeypatch.setattr("scripts.seed_viaturas.AsyncSessionLocal", session_factory)
+    monkeypatch.setattr("scripts.seed_ocorrencias.AsyncSessionLocal", session_factory)
+    await run_seed()
+
+    async with session_factory() as s:
+        demo = (await s.execute(select(UsuarioModel).where(UsuarioModel.login == "simulador-demo"))).scalar_one()
+        assert demo.papel == "AGENTE"
+        assert not HasherArgon2().verificar("Senha@123", demo.senha_hash)

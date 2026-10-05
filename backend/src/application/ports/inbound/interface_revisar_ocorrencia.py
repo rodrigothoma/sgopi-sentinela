@@ -1,4 +1,4 @@
-"""Porta de entrada: revisão pelo Delegado (RF04*) e correção/reenvio pelo Agente (RF14)."""
+"""Porta de entrada: revisão pelo Delegado e correção/reenvio pelo Agente (RF04)."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -16,6 +16,12 @@ class DecisaoRevisaoInput:
 
 
 @dataclass(frozen=True)
+class ValidarOcorrenciaInput:
+    ocorrencia_id: UUID
+    despacho: str | None = None
+
+
+@dataclass(frozen=True)
 class CorrigirOcorrenciaInput:
     ocorrencia_id: UUID
     natureza: str | None = None
@@ -30,7 +36,7 @@ class CorrigirOcorrenciaInput:
 
 class InterfaceValidarOcorrencia(ABC):
     @abstractmethod
-    async def executar(self, ator: Ator, input_dto: DecisaoRevisaoInput) -> OcorrenciaDetalheOutput: ...
+    async def executar(self, ator: Ator, input_dto: ValidarOcorrenciaInput) -> OcorrenciaDetalheOutput: ...
 
 
 class InterfaceDevolverParaCorrecao(ABC):

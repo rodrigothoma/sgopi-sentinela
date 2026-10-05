@@ -1,4 +1,4 @@
-"""Caso de uso para validar, armazenar e vincular uma evidência digital (RF22)."""
+"""Caso de uso para validar, armazenar e vincular uma evidência digital (RF01)."""
 from __future__ import annotations
 
 import hashlib

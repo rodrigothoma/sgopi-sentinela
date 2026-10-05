@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 SRC = Path(__file__).resolve().parents[2] / "src"
-PROIBIDOS_DOMAIN = {"application", "adapters", "infrastructure", "fastapi", "starlette", "sqlalchemy", "pydantic", "jose", "argon2", "alembic", "httpx"}
+PROIBIDOS_DOMAIN = {"application", "adapters", "infrastructure", "fastapi", "starlette", "sqlalchemy", "pydantic", "jose", "jwt", "argon2", "alembic", "httpx"}
 PROIBIDOS_APPLICATION = PROIBIDOS_DOMAIN - {"application"}
 
 

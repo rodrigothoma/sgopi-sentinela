@@ -5,8 +5,9 @@ import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { viaturasService } from '../services/viaturasService';
 import type { Viatura } from '../types/api';
+import { formatarDataHora } from '../utils/datas';
 
-/** Operador: cadastro e situação manual da frota (RF15). */
+/** Operador: cadastro e situação manual da frota (RF02). */
 export const FrotaPage: React.FC = () => {
   const { t } = useTranslation(['painel', 'common']);
   const { avisar } = useToast();
@@ -41,7 +42,9 @@ export const FrotaPage: React.FC = () => {
 
   const alternar = async (v: Viatura) => {
     try {
-      await viaturasService.alterarSituacao(v.id, v.situacao === 'INDISPONIVEL' ? 'DISPONIVEL' : 'INDISPONIVEL');
+      const nova = v.situacao === 'INDISPONIVEL' ? 'DISPONIVEL' : 'INDISPONIVEL';
+      await viaturasService.alterarSituacao(v.id, nova);
+      avisar(t(nova === 'DISPONIVEL' ? 'painel:frota.marcada_disponivel' : 'painel:frota.marcada_indisponivel', { prefixo: v.prefixo }), 'sucesso');
       carregar();
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
@@ -67,7 +70,7 @@ export const FrotaPage: React.FC = () => {
               <td>{v.placa}</td>
               <td><StatusBadge status={v.situacao} grupo="situacao" /></td>
               <td><StatusBadge status={v.sinal} grupo="sinal" /></td>
-              <td className="muted">{v.posicao_registrada_em ? new Date(v.posicao_registrada_em).toLocaleString() : '—'}</td>
+              <td className="muted">{v.posicao_registrada_em ? formatarDataHora(v.posicao_registrada_em) : '—'}</td>
               <td>
                 {(v.situacao === 'DISPONIVEL' || v.situacao === 'INDISPONIVEL') && (
                   <button className="btn btn-sm" onClick={() => alternar(v)}>

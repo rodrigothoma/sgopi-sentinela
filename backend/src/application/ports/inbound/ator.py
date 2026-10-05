@@ -16,7 +16,7 @@ class Ator:
     ip: str | None = None
 
     def exigir_papel(self, *papeis: Papel) -> None:
-        """Defesa em profundidade: o caso de uso re-verifica o papel (RF12)."""
+        """Defesa em profundidade: o caso de uso re-verifica o papel (RNF02)."""
         if self.papel not in papeis:
             raise AcessoNegadoError(
                 f"Papel {self.papel.value} não autorizado; exigido: {', '.join(p.value for p in papeis)}.",

@@ -1,5 +1,5 @@
 """
-Entidade RegistroAuditoria (RF20 / RNF03) — append-only.
+Entidade RegistroAuditoria (RNF03) — append-only.
 """
 from __future__ import annotations
 

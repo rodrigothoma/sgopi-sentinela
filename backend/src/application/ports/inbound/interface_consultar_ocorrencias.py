@@ -1,10 +1,12 @@
-"""Porta de entrada: consulta de ocorrências (RF13) — listagem paginada e detalhe completo."""
+"""Porta de entrada: consulta de ocorrências (RF01) — listagem paginada e detalhe completo."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from datetime import datetime
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_anexar_evidencia import EvidenciaOutput
+from application.ports.inbound.interface_gerir_apreensoes import ItemApreendidoOutput
 
 
 @dataclass(frozen=True)
@@ -13,6 +15,14 @@ class ListarOcorrenciasInput:
     limit: int = 50
     offset: int = 0
     somente_minhas: bool = False
+    mais_recentes_primeiro: bool = False
+    ordenar_por_prioridade: bool = False
+    natureza: str | None = None
+    protocolo: str | None = None
+    texto: str | None = None
+    origem: str | None = None  # POLICIAL | PUBLICA
+    data_fato_de: datetime | None = None
+    data_fato_ate: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -54,6 +64,9 @@ class OcorrenciaResumoOutput:
     atualizada_em: str
     agente_policial_id: UUID
     versao: int
+    inquerito_id: UUID | None = None
+    origem: str = "POLICIAL"  # POLICIAL | PUBLICA
+    prioridade: str = "MEDIA"  # BAIXA | MEDIA | ALTA | URGENTE
 
 
 @dataclass(frozen=True)
@@ -65,9 +78,14 @@ class OcorrenciaDetalheOutput(OcorrenciaResumoOutput):
     hash_narrativa: str | None = None
     narrativa_integra: bool | None = None
     chave_autenticidade: str | None = None
+    arquivada_por_id: UUID | None = None
+    motivo_arquivamento: str | None = None
+    excluida_por_id: UUID | None = None
+    motivo_exclusao: str | None = None
     envolvidos: tuple[EnvolvidoOutput, ...] = field(default_factory=tuple)
     tipificacoes: tuple[TipificacaoOutput, ...] = field(default_factory=tuple)
     evidencias: tuple[EvidenciaOutput, ...] = field(default_factory=tuple)
+    itens_apreendidos: tuple[ItemApreendidoOutput, ...] = field(default_factory=tuple)
     historico_status: tuple[HistoricoStatusOutput, ...] = field(default_factory=tuple)
 
 

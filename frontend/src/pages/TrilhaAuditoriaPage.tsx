@@ -6,7 +6,8 @@ import { StatusBadge } from '../components/StatusBadge';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { auditoriaService } from '../services/auditoriaService';
-import type { RegistroAuditoria } from '../types/api';
+import type { FiltroAuditoria, RegistroAuditoria } from '../types/api';
+import { formatarData, formatarDataHora, formatarHora } from '../utils/datas';
 
 const OPERACOES: string[] = [
   'ocorrencia.registrar',
@@ -21,10 +22,18 @@ const OPERACOES: string[] = [
   'viatura.alterar_situacao',
   'auth.login',
   'auth.login_negado',
+  'auth.login_bloqueado',
   'auth.acesso_negado',
   'evidencia.anexar',
   'evidencia.download',
   'evidencia.verificar_integridade',
+  'ocorrencias.exportar',
+  'auditoria.exportar',
+  'ocorrencia.redefinir_prioridade',
+  'usuario.cadastrar',
+  'usuario.alterar_papel',
+  'usuario.desativar',
+  'usuario.reativar',
 ];
 
 const ENTIDADES: string[] = [
@@ -33,7 +42,11 @@ const ENTIDADES: string[] = [
   'OrdemDeDespacho',
   'Evidencia',
   'Usuario',
+  'Exportacao',
 ];
+
+/** Tentativa de login falha não tem autor conhecido (quem tentou pode não ser o titular do login). */
+const OPERACOES_SEM_AUTOR_IDENTIFICADO = ['auth.login_negado', 'auth.login_bloqueado'];
 
 function getBadgeClasse(operacao: string): string {
   if (operacao.includes('rejeitar') || operacao.includes('negado')) {
@@ -49,15 +62,18 @@ function getBadgeClasse(operacao: string): string {
 }
 
 /**
- * Painel de Trilha de Auditoria Imutável (RF20 / RNF02 / RNF03).
+ * Painel de Trilha de Auditoria Imutável (RNF02 / RNF03).
  * Acesso exclusivo: DELEGADO e SUPERVISOR.
  */
 export const TrilhaAuditoriaPage: React.FC = () => {
   const { t } = useTranslation('common');
+  const rotuloSemAutor = (operacao: string) =>
+    t(OPERACOES_SEM_AUTOR_IDENTIFICADO.includes(operacao) ? 'auditoria.autor_nao_identificado' : 'auditoria.autor_sistema');
   const { avisar } = useToast();
 
   const [registros, setRegistros] = useState<RegistroAuditoria[]>([]);
   const [carregando, setCarregando] = useState<boolean>(false);
+  const [exportando, setExportando] = useState<boolean>(false);
   const [busca, setBusca] = useState<string>('');
   const [filtroOperacao, setFiltroOperacao] = useState<string>('TODAS');
   const [filtroEntidade, setFiltroEntidade] = useState<string>('TODAS');
@@ -65,20 +81,36 @@ export const TrilhaAuditoriaPage: React.FC = () => {
   const [abaModal, setAbaModal] = useState<'amigavel' | 'json'>('amigavel');
   const [copiado, setCopiado] = useState<boolean>(false);
 
+  const filtroServidor = useMemo((): FiltroAuditoria => {
+    const params: FiltroAuditoria = {};
+    if (filtroOperacao !== 'TODAS') params.operacao = filtroOperacao;
+    if (filtroEntidade !== 'TODAS') params.entidade = filtroEntidade;
+    return params;
+  }, [filtroOperacao, filtroEntidade]);
+
   const carregar = useCallback(async () => {
     setCarregando(true);
     try {
-      const params: { operacao?: string; entidade?: string; limit: number } = { limit: 200 };
-      if (filtroOperacao !== 'TODAS') params.operacao = filtroOperacao;
-      if (filtroEntidade !== 'TODAS') params.entidade = filtroEntidade;
-      const data = await auditoriaService.listar(params);
-      setRegistros(data);
+      setRegistros(await auditoriaService.listar({ ...filtroServidor, limit: 200 }));
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
     } finally {
       setCarregando(false);
     }
-  }, [filtroOperacao, filtroEntidade, avisar]);
+  }, [filtroServidor, avisar]);
+
+  /** Exporta com os filtros de operação/entidade (a busca livre é só local, na tela). */
+  const exportar = useCallback(async () => {
+    setExportando(true);
+    try {
+      await auditoriaService.exportarCsv(filtroServidor);
+      carregar();
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    } finally {
+      setExportando(false);
+    }
+  }, [filtroServidor, carregar, avisar]);
 
   useEffect(() => {
     carregar();
@@ -225,9 +257,14 @@ export const TrilhaAuditoriaPage: React.FC = () => {
             {t('auditoria.subtitulo')}
           </p>
         </div>
-        <Button variant="secondary" size="sm" loading={carregando} onClick={carregar}>
-          {t('actions.atualizar')}
-        </Button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button variant="secondary" size="sm" loading={exportando} onClick={exportar} title={t('auditoria.exportar_dica')}>
+            {t('auditoria.exportar_csv')}
+          </Button>
+          <Button variant="secondary" size="sm" loading={carregando} onClick={carregar}>
+            {t('actions.atualizar')}
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -324,9 +361,9 @@ export const TrilhaAuditoriaPage: React.FC = () => {
               registrosFiltrados.map((reg) => (
                 <tr key={reg.id} style={{ borderBottom: '1px solid var(--line)' }}>
                   <td style={{ padding: '12px 16px', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
-                    <strong>{new Date(reg.quando).toLocaleDateString()}</strong>
+                    <strong>{formatarData(reg.quando)}</strong>
                     <br />
-                    <span className="muted">{new Date(reg.quando).toLocaleTimeString()}</span>
+                    <span className="muted">{formatarHora(reg.quando)}</span>
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <span
@@ -379,7 +416,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                         </span>
                       ) : (
                         <span className="muted" style={{ fontStyle: 'italic', fontSize: '0.82rem' }}>
-                          {t('auditoria.autor_sistema')}
+                          {rotuloSemAutor(reg.operacao)}
                         </span>
                       )}
                     </td>
@@ -546,7 +583,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
               >
                 <div>
                   <span className="muted">{t('auditoria.coluna_quando')}:</span>
-                  <div>{new Date(detalheSelecionado.quando).toLocaleString()}</div>
+                  <div>{formatarDataHora(detalheSelecionado.quando)}</div>
                 </div>
                 <div>
                   <span className="muted">{t('auditoria.coluna_entidade')}:</span>
@@ -572,7 +609,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
                       </strong>
                     ) : (
                       <span className="muted" style={{ fontStyle: 'italic' }}>
-                        {t('auditoria.autor_sistema')}
+                        {rotuloSemAutor(detalheSelecionado.operacao)}
                       </span>
                     )}
                   </div>

@@ -1,10 +1,10 @@
-"""SugerirViaturasProximas, DespacharViatura, EncerrarOcorrencia com fakes (RF18, RF19, RNF11)."""
+"""SugerirViaturasProximas, DespacharViatura, EncerrarOcorrencia com fakes (RF02, RNF03)."""
 from datetime import timedelta
 
 import pytest
 
 from application.ports.inbound.interface_despachar_viatura import DespacharInput, EncerrarInput, ListarOrdensInput
-from application.ports.inbound.interface_revisar_ocorrencia import DecisaoRevisaoInput
+from application.ports.inbound.interface_revisar_ocorrencia import ValidarOcorrenciaInput
 from application.use_cases.despacho.despachar_viatura import DespacharViatura, ListarOrdensDespacho, SugerirViaturasProximas
 from application.use_cases.despacho.encerrar_ocorrencia import EncerrarOcorrencia
 from application.use_cases.ocorrencia.revisar_ocorrencia import ValidarOcorrencia
@@ -44,7 +44,7 @@ async def frota(viaturas):
 @pytest.fixture
 async def validada(registrar, deps):
     o = await registrar()
-    await ValidarOcorrencia(*deps).executar(DELEGADO, DecisaoRevisaoInput(o.ocorrencia_id))
+    await ValidarOcorrencia(*deps).executar(DELEGADO, ValidarOcorrenciaInput(o.ocorrencia_id))
     return o.ocorrencia_id
 
 
@@ -96,10 +96,46 @@ async def test_despacho_manual_de_viatura_sem_gps_e_permitido(validada, frota, d
     assert ordem.viatura_id == frota["VTR-04"]
 
 
+async def test_despacho_de_apoio_em_atendimento_cria_segunda_ordem_sem_transicao(validada, frota, despachar, repositorio, viaturas, ordens, publicador):
+    """Issue #64: ocorrência EM_ATENDIMENTO recebe viatura de apoio sem nova transição de estado (UC02 Cenário Alt. I)."""
+    principal = await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-01"]))
+    assert principal.apoio is False
+    apoio = await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
+    assert apoio.apoio is True
+    assert (await repositorio.buscar_por_id(validada)).status.value == "EM_ATENDIMENTO"
+    assert (await viaturas.buscar_por_id(frota["VTR-02"])).situacao == SituacaoViatura.EM_DESLOCAMENTO
+    # apenas o despacho principal emite o evento de transição
+    assert publicador.tipos().count("OcorrenciaDespachada") == 1
+    listadas = await ListarOrdensDespacho(ordens).executar(OPERADOR, ListarOrdensInput(ocorrencia_id=validada, somente_ativas=True))
+    assert len(listadas) == 2 and {o.apoio for o in listadas} == {True, False}
+
+
+async def test_sugestoes_de_apoio_excluem_viaturas_empenhadas(validada, frota, despachar, repositorio, viaturas, relogio):
+    """Issue #64: sugestões também valem para EM_ATENDIMENTO e não repetem viatura já empenhada."""
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
+    out = await SugerirViaturasProximas(repositorio, viaturas, relogio, 60, 3).executar(OPERADOR, validada)
+    assert [s.viatura.prefixo for s in out.sugestoes] == ["VTR-01", "VTR-03"]
+    assert not out.sem_elegiveis
+
+
+async def test_encerrar_libera_principal_e_apoio(validada, frota, despachar, encerrar, repositorio, viaturas, ordens, relogio, auditoria, publicador):
+    """Issue #64: encerramento único fecha a ocorrência e libera todas as viaturas (principal + apoio)."""
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-01"]))
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
+    relogio.avancar(hours=1)
+    det = await encerrar.executar(DELEGADO, EncerrarInput(validada, "Apoio liberado; cenário isolado e normalizado."))
+    assert det.status == "ENCERRADA"
+    for pid in (frota["VTR-01"], frota["VTR-02"]):
+        assert (await viaturas.buscar_por_id(pid)).situacao == SituacaoViatura.DISPONIVEL
+    assert all(not o.ativa for o in await ordens.listar(validada))
+    assert {"VTR-01", "VTR-02"} == set(auditoria.registros[-1].dados_depois["viaturas_liberadas"])
+    assert publicador.tipos().count("ViaturaSituacaoAlterada") >= 2
+
+
 async def test_despacho_de_viatura_nao_disponivel_409(validada, frota, despachar, registrar, deps, viaturas):
     await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
     outra = await registrar()
-    await ValidarOcorrencia(*deps).executar(DELEGADO, DecisaoRevisaoInput(outra.ocorrencia_id))
+    await ValidarOcorrencia(*deps).executar(DELEGADO, ValidarOcorrenciaInput(outra.ocorrencia_id))
     with pytest.raises(ConflitoError) as e:
         await despachar.executar(OPERADOR, DespacharInput(outra.ocorrencia_id, frota["VTR-02"]))
     assert e.value.chave == "despacho.viatura_indisponivel"
@@ -147,3 +183,135 @@ async def test_encerrar_exige_em_atendimento(validada, encerrar):
 async def test_agente_nao_encerra(validada, encerrar):
     with pytest.raises(AcessoNegadoError):
         await encerrar.executar(AGENTE, EncerrarInput(validada, "x"))
+
+
+# ------------------------------------------------ deslocamento e chegada ao local (RF18/RF19)
+def _telemetria_com_chegada(viaturas, ordens, repositorio, relogio, publicador, auditoria, raio=50.0):
+    from application.use_cases.viatura.registrar_posicao_viatura import RegistrarPosicaoViatura
+    from tests.fakes.portas_fake import UnidadeDeTrabalhoFake
+
+    return RegistrarPosicaoViatura(
+        viaturas, UnidadeDeTrabalhoFake(), relogio, publicador, 60,
+        ordens=ordens, ocorrencias=repositorio, auditoria=auditoria, raio_chegada_metros=raio,
+    )
+
+
+async def test_telemetria_detecta_chegada_e_avisa_operador(validada, frota, despachar, viaturas, ordens, repositorio, relogio, publicador, auditoria):
+    from application.ports.inbound.interface_gerir_viaturas import RegistrarPosicaoInput
+
+    ordem = await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-01"]))
+    telemetria = _telemetria_com_chegada(viaturas, ordens, repositorio, relogio, publicador, auditoria)
+    ocorrencia = await repositorio.buscar_por_id(validada)
+
+    # ainda longe (≈ 1,3 km): segue EM_DESLOCAMENTO, sem evento de chegada
+    relogio.avancar(seconds=1)
+    await telemetria.executar(RegistrarPosicaoInput(frota["VTR-01"], -29.795, -55.795, relogio.agora(), origem="simulador"))
+    assert (await viaturas.buscar_por_id(frota["VTR-01"])).situacao == SituacaoViatura.EM_DESLOCAMENTO
+    assert "ViaturaChegouAoLocal" not in publicador.tipos()
+
+    # a 20 m da ocorrência: chega → OPERANDO, audita e avisa o painel
+    relogio.avancar(seconds=1)
+    out = await telemetria.executar(RegistrarPosicaoInput(
+        frota["VTR-01"], ocorrencia.coordenada.latitude + 0.00018, ocorrencia.coordenada.longitude, relogio.agora(), origem="simulador",
+    ))
+    assert out.situacao == "OPERANDO"
+    chegada = [e for e in publicador.eventos if e.tipo == "ViaturaChegouAoLocal"]
+    assert len(chegada) == 1
+    assert chegada[0].dados["ocorrencia_id"] == str(validada) and chegada[0].dados["numero_ordem"] == ordem.numero
+    assert chegada[0].dados["numero_protocolo"] == ocorrencia.numero_protocolo and chegada[0].dados["situacao"] == "OPERANDO"
+    assert chegada[0].dados["distancia_metros"] <= 50
+    assert auditoria.operacoes()[-1] == "viatura.chegada_ao_local"
+    # a ordem continua ativa (o encerramento é decisão do operador — RF19)
+    assert (await ordens.buscar_ativa_por_viatura(frota["VTR-01"])).ativa
+
+    # já no local: novas posições não geram segunda chegada
+    relogio.avancar(seconds=1)
+    await telemetria.executar(RegistrarPosicaoInput(frota["VTR-01"], ocorrencia.coordenada.latitude, ocorrencia.coordenada.longitude, relogio.agora()))
+    assert publicador.tipos().count("ViaturaChegouAoLocal") == 1
+
+
+async def test_telemetria_sem_ordem_ativa_ou_sem_repositorios_nao_muda_situacao(frota, viaturas, ordens, repositorio, relogio, publicador, auditoria):
+    from application.ports.inbound.interface_gerir_viaturas import RegistrarPosicaoInput
+    from application.use_cases.viatura.registrar_posicao_viatura import RegistrarPosicaoViatura
+    from tests.fakes.portas_fake import UnidadeDeTrabalhoFake
+
+    v = await viaturas.buscar_por_id(frota["VTR-01"])
+    v.despachar(AGORA)  # EM_DESLOCAMENTO sem ordem (estado inconsistente hipotético)
+    await viaturas.salvar(v)
+    relogio.avancar(seconds=1)
+    await _telemetria_com_chegada(viaturas, ordens, repositorio, relogio, publicador, auditoria).executar(
+        RegistrarPosicaoInput(frota["VTR-01"], -29.78, -55.79, relogio.agora())
+    )
+    assert (await viaturas.buscar_por_id(frota["VTR-01"])).situacao == SituacaoViatura.EM_DESLOCAMENTO
+    # sem repositórios de ordens/ocorrências (telemetria "pura"), nunca detecta chegada
+    simples = RegistrarPosicaoViatura(viaturas, UnidadeDeTrabalhoFake(), relogio, publicador, 60)
+    await simples.executar(RegistrarPosicaoInput(frota["VTR-01"], -29.78, -55.79, relogio.agora()))
+    assert "ViaturaChegouAoLocal" not in publicador.tipos()
+
+
+async def test_simulador_conduz_viatura_despachada_ate_a_ocorrencia(validada, frota, despachar, viaturas, ordens, repositorio, relogio, publicador, auditoria):
+    from contextlib import asynccontextmanager
+
+    from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
+
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-03"]))  # ≈ 12 km de distância
+    ocorrencia = await repositorio.buscar_por_id(validada)
+    telemetria = _telemetria_com_chegada(viaturas, ordens, repositorio, relogio, publicador, auditoria)
+
+    async def destino_de(viatura_id):
+        ordem = await ordens.buscar_ativa_por_viatura(viatura_id)
+        return (await repositorio.buscar_por_id(ordem.ocorrencia_id)).coordenada if ordem else None
+
+    @asynccontextmanager
+    async def contexto():
+        yield viaturas, telemetria, destino_de
+
+    sim = SimuladorTelemetria(contexto, relogio, intervalo_segundos=1.0, raio_metros=100, semente=7, velocidade_kmh=3600.0)  # 1 km/tick
+    distancias = []
+    for _ in range(15):
+        relogio.avancar(seconds=1)
+        await sim.tick()
+        v = await viaturas.buscar_por_id(frota["VTR-03"])
+        distancias.append(v.ultima_posicao.coordenada.distancia_km(ocorrencia.coordenada))
+        if v.situacao == SituacaoViatura.OPERANDO:
+            break
+    # aproxima-se monotonicamente ~1 km por tick e para exatamente no local
+    assert all(b < a for a, b in zip(distancias, distancias[1:], strict=False))
+    assert v.situacao == SituacaoViatura.OPERANDO and distancias[-1] == 0.0
+    assert publicador.tipos().count("ViaturaChegouAoLocal") == 1
+
+    # no local, permanece parada (mantendo o sinal) enquanto as disponíveis seguem patrulhando
+    relogio.avancar(seconds=1)
+    await sim.tick()
+    parada = await viaturas.buscar_por_id(frota["VTR-03"])
+    assert parada.ultima_posicao.coordenada == ocorrencia.coordenada and parada.ultima_posicao.registrada_em == relogio.agora()
+    assert (await viaturas.buscar_por_id(frota["VTR-01"])).ultima_posicao.coordenada != Coordenada(-29.80, -55.80)
+
+
+async def test_apoio_incrementa_versao_da_ocorrencia(validada, frota, despachar, repositorio):
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-01"]))
+    versao = (await repositorio.buscar_por_id(validada)).versao
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
+    assert (await repositorio.buscar_por_id(validada)).versao == versao + 1
+
+
+async def test_apoio_concorrente_com_encerramento_e_recusado(validada, frota, despachar, encerrar, repositorio):
+    """Regressão: o encerramento grava entre a leitura e a gravação do apoio → conflito de versão, não ordem órfã."""
+    await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-01"]))
+    original = repositorio.buscar_por_id
+
+    async def buscar_e_encerrar_em_paralelo(ocorrencia_id):
+        lida = await original(ocorrencia_id)
+        repositorio.buscar_por_id = original
+        await encerrar.executar(DELEGADO, EncerrarInput(validada, "Atendimento concluído no local."))
+        return lida
+
+    repositorio.buscar_por_id = buscar_e_encerrar_em_paralelo
+    with pytest.raises(ConflitoError):
+        await despachar.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
+    assert (await repositorio.buscar_por_id(validada)).status.value == "ENCERRADA"
+
+
+async def test_registrar_apoio_exige_em_atendimento(validada, repositorio):
+    with pytest.raises(TransicaoInvalidaError):
+        (await repositorio.buscar_por_id(validada)).registrar_apoio(OPERADOR.id, AGORA)

@@ -1,0 +1,115 @@
+{
+  "titulo": "Inquéritos Policiais (IP)",
+  "subtitulo": "Procedimentos investigatórios oficiais presididos pelo Delegado de Polícia.",
+  "btn_instaurar": "Instaurar Inquérito Policial",
+  "carregando": "Carregando inquéritos...",
+  "nenhum_encontrado": "Nenhum inquérito policial encontrado para o filtro selecionado.",
+  "nenhuma_ocorrencia": "Nenhuma ocorrência vinculada a este inquérito policial.",
+  "filtros": {
+    "todos": "Todos",
+    "em_andamento": "Em Andamento",
+    "concluidos": "Concluídos",
+    "arquivados": "Arquivados"
+  },
+  "tabela": {
+    "numero": "Nº Inquérito (Portaria)",
+    "titulo": "Título / Objeto da Investigação",
+    "delegado": "Delegado Presidente",
+    "ocorrencias": "Ocorrências",
+    "status": "Situação",
+    "data_abertura": "Abertura",
+    "acoes": "Ações"
+  },
+  "status": {
+    "EM_ANDAMENTO": "Em Andamento",
+    "CONCLUIDO": "Concluído",
+    "ARQUIVADO": "Arquivado"
+  },
+  "acoes": {
+    "detalhes": "Ver Detalhes",
+    "vincular": "Vincular Ocorrências",
+    "buscar_conexoes": "Buscar Conexões",
+    "concluir": "Concluir IP",
+    "arquivar": "Arquivar IP",
+    "cancelar": "Cancelar",
+    "fechar": "Fechar",
+    "confirmar": "Confirmar"
+  },
+  "detalhes": {
+    "titulo": "Painel do Inquérito Policial",
+    "informacoes_gerais": "Informações Gerais do Procedimento",
+    "portaria": "Portaria de Instauração",
+    "data_abertura": "Data de Instauração",
+    "delegado_id": "Delegado de Polícia (ID)",
+    "descricao_linhas": "Descrição e Linhas Investigatórias",
+    "relatorio_final": "Relatório Final Conclusivo",
+    "ocorrencias_vinculadas": "Ocorrências Policiais Vinculadas",
+    "status_atual": "Status Atual"
+  },
+  "modal_instaurar": {
+    "titulo": "Instaurar Novo Inquérito Policial (IP)",
+    "campo_titulo": "Título do Inquérito / Objeto *",
+    "placeholder_titulo": "Ex: Operação Rastreio — Quadrilha de Roubo a Residências",
+    "campo_portaria": "Portaria de Instauração (Opcional)",
+    "placeholder_portaria": "Ex: Portaria nº 042/2026 - 1ª DP",
+    "campo_descricao": "Descrição dos Fatos e Linhas de Investigação *",
+    "placeholder_descricao": "Descreva as circunstâncias determinantes da abertura do procedimento investigativo...",
+    "btn_submit": "Instaurar Inquérito",
+    "submetendo": "Instaurando..."
+  },
+  "modal_vincular": {
+    "titulo": "Vincular Ocorrências Validadas ao Inquérito",
+    "subtitulo": "Selecione as ocorrências policiais elegíveis para consolidação probatória neste inquérito.",
+    "nenhuma_elegivel": "Nenhuma ocorrência validada disponível para vinculação.",
+    "btn_submit": "Vincular Selecionadas",
+    "submetendo": "Vinculando..."
+  },
+  "modal_conexoes": {
+    "titulo": "Sugestões de Conexões Criminais",
+    "subtitulo": "Cruzamento automatizado por pessoas envolvidas em comum, mesma natureza penal e proximidade geográfica.",
+    "nenhuma_sugestao": "Nenhuma conexão criminal detectada para as ocorrências deste inquérito.",
+    "score": "Score de Conexão",
+    "motivos": "Critérios de Correlação Detectados",
+    "motivo_envolvidos": "Envolvidos em Comum",
+    "motivo_natureza": "Mesma Natureza Penal",
+    "motivo_proximidade": "Proximidade Geográfica (Raio < 2 km)",
+    "btn_vincular": "Vincular ao Inquérito",
+    "btn_incluir": "Incluir na Seleção",
+    "ja_incluida": "Já Incluída",
+    "conexoes_para": "Conexões criminais detectadas para",
+    "selecionar_para_conexoes": "Selecione uma ocorrência para analisar conexões criminais automáticas."
+  },
+  "modal_concluir": {
+    "titulo": "Conclusão de Inquérito Policial",
+    "subtitulo": "Elaboração do Relatório Final Conclusivo circunstanciado com remessa ao Ministério Público / Poder Judiciário.",
+    "campo_relatorio": "Relatório Final Conclusivo *",
+    "placeholder_relatorio": "Apresente o resumo das diligências, autoria, materialidade e indiciamento...",
+    "btn_submit": "Concluir Procedimento",
+    "submetendo": "Concluindo..."
+  },
+  "notificacoes": {
+    "instaurado_sucesso": "Inquérito policial instaurado com sucesso!",
+    "vinculado_sucesso": "Ocorrência(s) vinculada(s) com sucesso ao inquérito policial!",
+    "concluido_sucesso": "Inquérito policial concluído com sucesso!",
+    "arquivado_sucesso": "Inquérito policial arquivado formalmente."
+  },
+  "validacoes": {
+    "ementa_min": "A ementa deve conter no mínimo 10 caracteres.",
+    "relatorio_min": "O relatório final deve conter no mínimo 10 caracteres."
+  },
+  "ocorrencias_vinculadas_qtd": "ocorrência(s) vinculada(s)",
+  "total": "Total",
+  "paginacao": {
+    "pagina": "Página",
+    "de": "de",
+    "registros": "ocorrências"
+  },
+  "busca_placeholder": "Filtrar por protocolo, natureza ou local...",
+  "adicionar_manual_placeholder": "Digitar protocolo (SGOPI-...) ou ID UUID",
+  "btn_adicionar_id": "Adicionar",
+  "fato_principal": "Fato Principal",
+  "tornar_principal": "Definir como Principal",
+  "ocorrencias_selecionadas": "Ocorrências Selecionadas",
+  "vinculada": "Vinculada",
+  "nenhum_resultado_busca": "Nenhuma ocorrência encontrada para o filtro informado."
+}

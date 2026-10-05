@@ -1,4 +1,4 @@
-"""Eventos de domínio do contexto de ocorrências (consumidos por RF17)."""
+"""Eventos de domínio do contexto de ocorrências (consumidos por tempo real / RF02 e RNF01)."""
 from datetime import datetime
 from uuid import UUID
 
@@ -35,3 +35,15 @@ def ocorrencia_despachada(ocorrencia_id: UUID, em: datetime, **extra: object) ->
 
 def ocorrencia_encerrada(ocorrencia_id: UUID, em: datetime, **extra: object) -> EventoDominio:
     return _evento("OcorrenciaEncerrada", ocorrencia_id, "ENCERRADA", em, **extra)
+
+
+def ocorrencia_arquivada(ocorrencia_id: UUID, em: datetime, **extra: object) -> EventoDominio:
+    return _evento("OcorrenciaArquivada", ocorrencia_id, "ARQUIVADA", em, **extra)
+
+
+def ocorrencia_excluida(ocorrencia_id: UUID, em: datetime, **extra: object) -> EventoDominio:
+    return _evento("OcorrenciaExcluida", ocorrencia_id, "EXCLUIDA", em, **extra)
+
+
+def ocorrencia_prioridade_alterada(ocorrencia_id: UUID, status: str, em: datetime, **extra: object) -> EventoDominio:
+    return _evento("OcorrenciaPrioridadeAlterada", ocorrencia_id, status, em, **extra)

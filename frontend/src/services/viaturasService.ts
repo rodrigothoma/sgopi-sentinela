@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { SituacaoViatura, StatusSimulador, Viatura } from '../types/api';
+import type { SituacaoViatura, StatusSimuladorCompleto, Viatura } from '../types/api';
 
 export const viaturasService = {
   async listar(): Promise<Viatura[]> {
@@ -11,13 +11,13 @@ export const viaturasService = {
   async alterarSituacao(id: string, situacao: Extract<SituacaoViatura, 'DISPONIVEL' | 'INDISPONIVEL'>): Promise<Viatura> {
     return (await api.patch<Viatura>(`/v1/viaturas/${id}/situacao`, { situacao })).data;
   },
-  async simulador(): Promise<StatusSimulador> {
-    return (await api.get<StatusSimulador>('/v1/simulador')).data;
+  async simulador(): Promise<StatusSimuladorCompleto> {
+    return (await api.get<StatusSimuladorCompleto>('/v1/simulador')).data;
   },
-  async ligarSimulador(): Promise<StatusSimulador> {
-    return (await api.post<StatusSimulador>('/v1/simulador/ligar')).data;
+  async ligarSimulador(): Promise<StatusSimuladorCompleto> {
+    return (await api.post<StatusSimuladorCompleto>('/v1/simulador/ligar')).data;
   },
-  async desligarSimulador(): Promise<StatusSimulador> {
-    return (await api.post<StatusSimulador>('/v1/simulador/desligar')).data;
+  async desligarSimulador(): Promise<StatusSimuladorCompleto> {
+    return (await api.post<StatusSimuladorCompleto>('/v1/simulador/desligar')).data;
   },
 };

@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { NavbarPublica } from '../components/layout/NavbarPublica';
 import { SeletorCoordenada } from '../components/painel/SeletorCoordenada';
-import { CENTRO_PADRAO } from '../components/painel/leaflet';
 import { paraInputLocal } from '../components/ocorrencias/OcorrenciaForm';
 import { mensagemDeErro, registrarOcorrenciaPublica } from '../services/api';
 import { Button } from '../components/common/Button';
@@ -16,6 +16,10 @@ import {
   validarEmail,
 } from '../utils/cpf';
 
+// Oculto por enquanto: o domínio só aceita documento numérico (CPF/RG), então um passaporte
+// alfanumérico seria recusado no envio. Reativar quando o backend aceitar documento estrangeiro.
+const PERMITE_DOCUMENTO_ESTRANGEIRO = false;
+
 const NATUREZA_CHAVES = [
   { chave: 'furto', valorPadrao: 'Furto' },
   { chave: 'perda_extravio', valorPadrao: 'Perda ou Extravio de Documento/Objeto' },
@@ -28,6 +32,7 @@ const NATUREZA_CHAVES = [
 
 export const RegistroCidadaoPage: React.FC = () => {
   const { t } = useTranslation(['publico', 'common']);
+  const navigate = useNavigate();
 
   const opcoesNatureza: GlideSelectOption[] = useMemo(() => {
     return NATUREZA_CHAVES.map((n) => ({
@@ -50,13 +55,14 @@ export const RegistroCidadaoPage: React.FC = () => {
   const [naturezaPersonalizada, setNaturezaPersonalizada] = useState('');
   const [descricao, setDescricao] = useState('');
   const [localizacao, setLocalizacao] = useState('');
-  const [latitude, setLatitude] = useState<number>(CENTRO_PADRAO[0]);
-  const [longitude, setLongitude] = useState<number>(CENTRO_PADRAO[1]);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [dataHora, setDataHora] = useState(paraInputLocal(new Date()));
 
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [protocoloGerado, setProtocoloGerado] = useState<string | null>(null);
+  const [codigoAcompanhamento, setCodigoAcompanhamento] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,6 +121,10 @@ export const RegistroCidadaoPage: React.FC = () => {
       setErro(t('publico:registro.erros.localizacao_obrigatoria'));
       return;
     }
+    if (latitude === null || longitude === null) {
+      setErro(t('publico:registro.erros.coordenada_obrigatoria'));
+      return;
+    }
     if (descricao.trim().length < 20) {
       setErro(t('publico:registro.erros.descricao_curta'));
       return;
@@ -145,6 +155,7 @@ export const RegistroCidadaoPage: React.FC = () => {
         data_hora_fato: new Date(dataHora).toISOString(),
       });
       setProtocoloGerado(res.numero_protocolo);
+      setCodigoAcompanhamento(res.codigo_acompanhamento);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setErro(mensagemDeErro(err, t('publico:registro.erros.falha_registro')));
@@ -155,7 +166,7 @@ export const RegistroCidadaoPage: React.FC = () => {
 
   const copiarProtocolo = () => {
     if (!protocoloGerado) return;
-    navigator.clipboard.writeText(protocoloGerado);
+    navigator.clipboard.writeText(`${protocoloGerado} · ${codigoAcompanhamento ?? ''}`);
     setCopiado(true);
     setTimeout(() => setCopiado(false), 2500);
   };
@@ -190,6 +201,8 @@ export const RegistroCidadaoPage: React.FC = () => {
             <div className="protocolo-banner">
               <span className="small muted">{t('publico:registro.protocolo_label')}</span>
               <span className="protocolo-codigo">{protocoloGerado}</span>
+              <span className="small muted" style={{ marginTop: 8 }}>{t('publico:registro.codigo_label')}</span>
+              <span className="protocolo-codigo" id="codigo-acompanhamento">{codigoAcompanhamento}</span>
               <Button
                 type="button"
                 variant="outline"
@@ -204,7 +217,11 @@ export const RegistroCidadaoPage: React.FC = () => {
             <p className="muted small">{t('publico:registro.guardar_aviso')}</p>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24, flexWrap: 'wrap' }}>
-              <Button to={`/consulta?protocolo=${protocoloGerado}`} variant="primary">
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => navigate(`/consulta?protocolo=${encodeURIComponent(protocoloGerado)}`, { state: { codigo: codigoAcompanhamento } })}
+              >
                 {t('publico:registro.acompanhar_status')}
               </Button>
               <Button
@@ -212,6 +229,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                 variant="ghost"
                 onClick={() => {
                   setProtocoloGerado(null);
+                  setCodigoAcompanhamento(null);
                   setNome('');
                   setCpf('');
                   setPassaporte('');
@@ -220,6 +238,8 @@ export const RegistroCidadaoPage: React.FC = () => {
                   setDeclaracaoMaioridade(false);
                   setDescricao('');
                   setLocalizacao('');
+                  setLatitude(null);
+                  setLongitude(null);
                 }}
               >
                 {t('publico:registro.novo_registro')}
@@ -302,6 +322,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                     <label htmlFor="campo-documento" style={{ margin: 0 }}>
                       {!isEstrangeiro ? t('publico:registro.cpf_label') : t('publico:registro.passaporte_label')}
                     </label>
+                    {PERMITE_DOCUMENTO_ESTRANGEIRO && (
                     <SpringCheck
                       label={t('publico:registro.estrangeiro_check')}
                       checked={isEstrangeiro}
@@ -320,6 +341,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                       checkColor="#ffffff"
                       style={{ minHeight: 'unset' }}
                     />
+                    )}
                   </div>
                   {!isEstrangeiro ? (
                     <input

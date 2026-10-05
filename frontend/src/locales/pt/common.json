@@ -1,5 +1,7 @@
 {
-  "app": { "title": "SGOPI Sentinela" },
+  "app": {
+    "title": "SGOPI Sentinela"
+  },
   "idioma": "Idioma",
   "nav": {
     "home": "Início",
@@ -9,8 +11,15 @@
     "painel": "Painel tático",
     "frota": "Frota",
     "auditoria": "Trilha de auditoria",
-    "lookup": "Consulta pública",
-    "police_access": "Acesso Policial"
+    "lookup": "Consultar protocolo",
+    "police_access": "Acesso Policial",
+    "inicio": "Início",
+    "inqueritos": "Inquéritos",
+    "laudos": "Laudos Periciais",
+    "medidas": "Medidas Protetivas",
+    "autenticar": "Autenticar documento",
+    "indicadores": "Indicadores",
+    "efetivo": "Efetivo"
   },
   "actions": {
     "save": "Salvar",
@@ -19,7 +28,8 @@
     "submit": "Registrar ocorrência",
     "remover": "Remover",
     "sair": "Sair",
-    "atualizar": "Atualizar"
+    "atualizar": "Atualizar",
+    "confirmar": "Confirmar"
   },
   "papel": {
     "AGENTE": "Agente",
@@ -27,7 +37,8 @@
     "OPERADOR_CENTRAL": "Operador da Central",
     "SUPERVISOR": "Supervisor",
     "PERITO": "Perito",
-    "ESCRIVAO": "Escrivão"
+    "ESCRIVAO": "Escrivão",
+    "CIDADAO": "Cidadão (canal público)"
   },
   "status": {
     "AGUARDANDO_REVISAO": "Aguardando revisão",
@@ -35,7 +46,9 @@
     "REJEITADA": "Rejeitada",
     "VALIDADA": "Validada",
     "EM_ATENDIMENTO": "Em atendimento",
-    "ENCERRADA": "Encerrada"
+    "ENCERRADA": "Encerrada",
+    "ARQUIVADA": "Arquivada",
+    "EXCLUIDA": "Excluída"
   },
   "situacao": {
     "DISPONIVEL": "Disponível",
@@ -65,7 +78,7 @@
     "hero_label": "SISTEMA OFICIAL — UNIPAMPA / ALEGRETE",
     "hero_subtitle": "Canal oficial e unificado para registro de ocorrências pelo cidadão, triagem técnica pela autoridade policial e monitoramento de viaturas em tempo real.",
     "cta_register": "Registrar Ocorrência",
-    "cta_lookup": "Consulta Pública",
+    "cta_lookup": "Consultar Protocolo",
     "split_word_1": "SENTINELA ONLINE",
     "split_word_2": "PORTAL CIDADAO",
     "split_word_3": "PRONTIDAO TOTAL",
@@ -84,9 +97,9 @@
       "card_register_title": "Registrar Ocorrência",
       "card_register_desc": "Comunique furtos, extravios, ameaças e outros fatos de forma rápida, sem filas e com localização no mapa.",
       "card_register_action": "Registrar agora",
-      "card_lookup_title": "Consulta Pública",
-      "card_lookup_desc": "Acompanhe o andamento da sua ocorrência pelo número de protocolo ou confira a autenticidade de um Boletim de Ocorrência pela chave de segurança ou QR Code.",
-      "card_lookup_action": "Consultar agora",
+      "card_lookup_title": "Consultar Protocolo",
+      "card_lookup_desc": "Acompanhe a situação e o andamento da sua ocorrência em tempo real utilizando o código do protocolo oficial.",
+      "card_lookup_action": "Verificar status",
       "card_operational_title": "Painel Operacional",
       "card_operational_desc": "Acesso restrito para Agentes de campo, Delegados de triagem e Operadores da Central de Despacho.",
       "card_operational_action": "Entrar no sistema"
@@ -117,11 +130,11 @@
       "th_status": "Status"
     },
     "search": {
-      "title": "Já registrou uma ocorrência ou recebeu um documento?",
-      "subtitle": "Digite o número de protocolo para acompanhar o andamento, ou a chave de segurança do Boletim para conferir a autenticidade.",
-      "placeholder": "SGOPI-2026-000001 ou XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",
+      "title": "Já registrou uma ocorrência?",
+      "subtitle": "Digite seu número de protocolo para consultar o status atual.",
+      "placeholder": "SGOPI-2026-000001",
       "button": "Consultar",
-      "hint": "O sistema identifica automaticamente se o código é um protocolo ou uma chave de autenticidade."
+      "hint": "Exemplo de protocolo: SGOPI-2026-000137"
     },
     "faq": {
       "title": "Perguntas Frequentes",
@@ -179,7 +192,18 @@
       "viatura.alterar_situacao": "Situação de viatura alterada",
       "evidencia.anexar": "Evidência anexada",
       "evidencia.download": "Download de evidência",
-      "evidencia.verificar_integridade": "Verificação de integridade"
+      "evidencia.verificar_integridade": "Verificação de integridade",
+      "documento.autenticar": "Consulta pública de autenticidade",
+      "documento.suspeita_fraude": "Suspeita de fraude documental",
+      "documento.nao_localizado": "Documento não localizado (consulta pública)",
+      "auth.login_bloqueado": "Login bloqueado (excesso de tentativas)",
+      "ocorrencias.exportar": "Ocorrências exportadas",
+      "auditoria.exportar": "Trilha de auditoria exportada",
+      "ocorrencia.redefinir_prioridade": "Prioridade redefinida",
+      "usuario.cadastrar": "Usuário cadastrado",
+      "usuario.alterar_papel": "Papel de usuário alterado",
+      "usuario.desativar": "Usuário desativado",
+      "usuario.reativar": "Usuário reativado"
     },
     "autor_sistema": "Sistema / Cidadão",
     "pesquisar_placeholder": "Filtrar por protocolo, viatura, autor, IP ou operação...",
@@ -249,8 +273,109 @@
       "nome": "Nome",
       "tipo": "Tipo",
       "detalhe": "Detalhes Adicionais"
-    }
+    },
+    "autor_nao_identificado": "Não identificado",
+    "exportar_csv": "Exportar CSV",
+    "exportar_dica": "Exporta com os filtros de operação e entidade (CPF mascarado). A exportação também é auditada."
+  },
+  "paginacao": {
+    "pagina": "Página",
+    "de": "de",
+    "registros": "ocorrências",
+    "anterior": "Página anterior",
+    "proxima": "Próxima página"
+  },
+  "acesso_negado": {
+    "titulo": "Acesso não autorizado",
+    "descricao": "O seu perfil não tem permissão para acessar esta área do sistema.",
+    "voltar": "Voltar ao início"
+  },
+  "sidebar": {
+    "voltar_portal": "Voltar ao Portal Público",
+    "expandir": "Expandir barra lateral",
+    "recolher": "Recolher barra lateral",
+    "abrir_menu": "Abrir menu de navegação",
+    "alternar_idioma": "Idioma: {{idioma}} (clique para alternar)"
+  },
+  "prioridade": {
+    "titulo": "Prioridade",
+    "URGENTE": "Urgente",
+    "ALTA": "Alta",
+    "MEDIA": "Média",
+    "BAIXA": "Baixa"
+  },
+  "indicadores": {
+    "titulo": "Indicadores operacionais",
+    "subtitulo": "Volume de ocorrências, triagem do Delegado e tempos de despacho no período.",
+    "periodo": "Período",
+    "ultimos_dias_one": "Último dia",
+    "ultimos_dias_other": "Últimos {{count}} dias",
+    "total_ocorrencias": "Ocorrências no período",
+    "tempo_decisao": "Registro → decisão do Delegado",
+    "tempo_validacao_despacho": "Validação → despacho",
+    "tempo_despacho_encerramento": "Despacho → encerramento",
+    "taxa_devolucao": "Taxa de devolução",
+    "taxa_rejeicao": "Taxa de rejeição",
+    "amostras_one": "média de {{count}} ocorrência",
+    "amostras_other": "média de {{count}} ocorrências",
+    "de_decisoes_one": "de {{count}} decisão",
+    "de_decisoes_other": "de {{count}} decisões",
+    "por_natureza": "Ocorrências por natureza",
+    "criadas_no_periodo": "Registradas no período (exceto excluídas)",
+    "por_faixa_horaria": "Ocorrências por faixa horária",
+    "hora_do_fato": "Hora do fato, no seu fuso horário",
+    "decisoes": "Decisões do Delegado",
+    "decisoes_sub": "Saídas da fila de revisão no período",
+    "decisao": "Decisão",
+    "decisao_VALIDADA": "Validadas",
+    "decisao_EM_CORRECAO": "Devolvidas para correção",
+    "decisao_REJEITADA": "Rejeitadas",
+    "despachos_por_hora": "Despachos por faixa horária",
+    "despachos_sub": "Ordens de despacho emitidas no período",
+    "despachos": "Despachos",
+    "por_origem": "Ocorrências por origem",
+    "frota_agora": "Frota agora",
+    "frota_sub": "Situação atual das viaturas (sem série histórica)",
+    "situacao": "Situação",
+    "viaturas": "Viaturas",
+    "ocorrencias": "Ocorrências",
+    "quantidade": "Quantidade",
+    "outras": "Outras naturezas",
+    "hora": "Faixa horária",
+    "faixa_hora": "{{de}}h–{{ate}}h",
+    "ver_tabela": "Ver como tabela",
+    "sem_dados": "Sem dados no período."
+  },
+  "efetivo": {
+    "titulo": "Efetivo",
+    "subtitulo": "Cadastro e situação dos usuários. Nada é apagado: quem sai é desativado, e tudo fica na trilha de auditoria.",
+    "novo": "Novo usuário",
+    "nome": "Nome",
+    "login": "Login",
+    "senha_inicial": "Senha inicial",
+    "papel": "Papel",
+    "situacao": "Situação",
+    "acoes": "Ações",
+    "cadastrar": "Cadastrar",
+    "usuarios": "Usuários",
+    "mostrar_inativos": "Mostrar inativos",
+    "ativo": "Ativo",
+    "inativo": "Inativo",
+    "desativar": "Desativar",
+    "reativar": "Reativar",
+    "voce": "você",
+    "papel_de": "Papel de {{nome}}",
+    "proprio": "Ninguém altera o próprio papel ou a própria situação",
+    "dica_senha": "Repasse a senha inicial ao usuário por canal seguro. Ao trocar o papel ou desativar alguém, a sessão aberta dessa pessoa é encerrada.",
+    "erro_nome": "Informe o nome.",
+    "erro_login": "Login: de 3 a 50 caracteres, só letras minúsculas, dígitos, ponto, hífen ou sublinhado.",
+    "erro_senha": "A senha inicial deve ter ao menos {{minimo}} caracteres.",
+    "ok_cadastro": "Usuário {{login}} cadastrado.",
+    "ok_papel": "Papel alterado.",
+    "ok_desativar": "Usuário desativado.",
+    "ok_reativar": "Usuário reativado.",
+    "confirmar_papel": "Alterar o papel de {{nome}} para {{papel}}? A sessão aberta dessa pessoa será encerrada.",
+    "confirmar_desativar": "Desativar {{nome}}? A pessoa perde o acesso na hora, mas o cadastro e o histórico são mantidos.",
+    "confirmar_reativar": "Reativar {{nome}}?"
   }
 }
-
-
