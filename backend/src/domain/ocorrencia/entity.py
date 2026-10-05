@@ -23,9 +23,11 @@ from uuid import UUID, uuid4
 
 from domain.ocorrencia.apreensao import ItemApreendido, MovimentacaoCustodia
 from domain.ocorrencia.autenticidade import SituacaoDocumento, gerar_chave_autenticidade
+from domain.ocorrencia.prioridade import PRIORIDADE_PADRAO, PrioridadeOcorrencia, sugerir_prioridade
 from domain.ocorrencia.status import (
     ESTADOS_ACEITAM_APREENSAO,
     ESTADOS_EDITAVEIS,
+    ESTADOS_PRIORIZAVEIS,
     StatusOcorrencia,
     proximo_estado,
 )
@@ -186,6 +188,7 @@ class Ocorrencia:
     motivo_exclusao: str | None = None
     inquerito_id: UUID | None = None
     origem: OrigemOcorrencia = OrigemOcorrencia.POLICIAL
+    prioridade: PrioridadeOcorrencia = PRIORIDADE_PADRAO
     # Canal público: hash SHA-256 do código secreto entregue ao cidadão para acompanhar o registro
     codigo_acompanhamento_hash: str | None = None
     tipificacoes: list[TipificacaoPenal] = field(default_factory=list)
@@ -235,11 +238,13 @@ class Ocorrencia:
         itens_apreendidos: list[ItemApreendido] | None = None,
         origem: OrigemOcorrencia = OrigemOcorrencia.POLICIAL,
         codigo_acompanhamento_hash: str | None = None,
+        prioridade: PrioridadeOcorrencia | None = None,
     ) -> Ocorrencia:
         """Cria uma ocorrência válida em AGUARDANDO_REVISAO (RF01*, UC01 regras 1 e 3).
 
         ``itens_apreendidos`` é opcional: registro de apreensão concomitante (UC01 cenário
         alternativo I → UC03), na mesma transação e sem incrementar a versão.
+        ``prioridade`` ausente → sugerida pela natureza e tipificações (sugestão #7).
         """
         cls._validar_campos(natureza, descricao, localizacao, data_hora_fato, agora)
         if not envolvidos:
@@ -260,6 +265,9 @@ class Ocorrencia:
             criada_em=agora,
             origem=origem,
             codigo_acompanhamento_hash=codigo_acompanhamento_hash,
+            prioridade=prioridade or sugerir_prioridade(
+                natureza, (f"{t.artigo} {t.descricao}" for t in tipificacoes or [])
+            ),
         )
         for envolvido in envolvidos:
             ocorrencia.adicionar_envolvido(envolvido)
@@ -516,6 +524,24 @@ class Ocorrencia:
         self._transicionar("excluir", delegado_id, em, motivo.strip())
         self.excluida_por_id = delegado_id
         self.motivo_exclusao = motivo.strip()
+
+    def redefinir_prioridade(self, nova: PrioridadeOcorrencia, justificativa: str, em: datetime) -> PrioridadeOcorrencia:
+        """Ajuste da gravidade na revisão (sugestão #7): exige justificativa e ocorrência ainda em fluxo.
+
+        Devolve a prioridade anterior (para a auditoria)."""
+        self._exigir_justificativa(justificativa)
+        if self.status not in ESTADOS_PRIORIZAVEIS:
+            raise TransicaoInvalidaError(
+                f"A prioridade não pode ser alterada no status {self.status.value}.",
+                chave="ocorrencia.prioridade_status_invalido",
+                status_atual=self.status.value,
+            )
+        if nova == self.prioridade:
+            raise ValorInvalidoError("A ocorrência já tem essa prioridade.", chave="ocorrencia.prioridade_inalterada")
+        anterior = self.prioridade
+        self.prioridade = nova
+        self._tocar(em)
+        return anterior
 
     # ------------------------------------------------------------------ apoio
     def _exigir_autor(self, agente_id: UUID) -> None:

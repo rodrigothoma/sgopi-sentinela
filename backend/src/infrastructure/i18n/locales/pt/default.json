@@ -16,9 +16,14 @@
     "desfecho_vazio": "O desfecho do atendimento é obrigatório",
     "nao_e_autor": "Somente o agente autor pode alterar esta ocorrência",
     "status_invalido": "Status de ocorrência inválido",
+    "origem_invalida": "Origem de ocorrência inválida (use POLICIAL ou PUBLICA)",
+    "periodo_invalido": "A data inicial do fato não pode ser posterior à final",
     "protocolo_nao_encontrado": "Ocorrência não encontrada com o protocolo e o código de acompanhamento informados.",
     "declaracao_maioridade_ausente": "É obrigatório confirmar a declaração de maioridade (+18 anos) e veracidade dos fatos.",
-    "publica_nao_devolvivel": "Comunicação feita pelo cidadão não pode ser devolvida para correção: valide, rejeite ou arquive."
+    "publica_nao_devolvivel": "Comunicação feita pelo cidadão não pode ser devolvida para correção: valide, rejeite ou arquive.",
+    "prioridade_invalida": "Prioridade inválida (use BAIXA, MEDIA, ALTA ou URGENTE)",
+    "prioridade_status_invalido": "A prioridade não pode ser alterada neste status",
+    "prioridade_inalterada": "A ocorrência já tem essa prioridade"
   },
   "envolvido": {
     "documento_tamanho_invalido": "Documento com tamanho inválido: RG com 10 dígitos ou CPF com 11 dígitos",
@@ -58,7 +63,17 @@
   "usuario": {
     "nome_vazio": "O nome do usuário é obrigatório",
     "login_vazio": "O login é obrigatório",
-    "senha_vazia": "A senha é obrigatória"
+    "senha_vazia": "A senha é obrigatória",
+    "login_invalido": "Login deve ter de 3 a 50 caracteres: letras minúsculas, dígitos, ponto, hífen ou sublinhado",
+    "papel_inalterado": "O usuário já tem esse papel",
+    "ja_inativo": "O usuário já está inativo",
+    "ja_ativo": "O usuário já está ativo",
+    "sistema": "O usuário de sistema do canal público não é gerenciável",
+    "papel_invalido": "Papel inválido",
+    "proprio": "Ninguém altera o próprio papel ou a própria situação",
+    "nao_encontrado": "Usuário não encontrado",
+    "senha_curta": "A senha inicial deve ter ao menos 8 caracteres",
+    "login_em_uso": "Login já está em uso"
   },
   "auth": {
     "unauthorized": "Não autorizado",
@@ -133,5 +148,10 @@
   },
   "simulador": {
     "desabilitado_em_producao": "O simulador de telemetria é recurso de demonstração e fica desabilitado em produção."
+  },
+  "indicadores": {
+    "fuso_invalido": "Fuso horário inválido",
+    "periodo_sem_fuso": "As datas do período devem informar o fuso horário",
+    "periodo_invalido": "Período inválido: o início deve ser anterior ao fim e o intervalo não pode passar de 366 dias"
   }
 }

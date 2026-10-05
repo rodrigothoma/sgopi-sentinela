@@ -1,14 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { FiltrosOcorrenciasBar } from '../components/ocorrencias/FiltrosOcorrencias';
 import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
 import { OcorrenciaForm, paraInputLocal, paraRequest, type ValoresOcorrencia } from '../components/ocorrencias/OcorrenciaForm';
+import { PrioridadeBadge } from '../components/PrioridadeBadge';
 import { StatusBadge } from '../components/StatusBadge';
 import { formatarNatureza } from '../utils/formatarNatureza';
+import { useFiltrosOcorrenciasUrl } from '../hooks/useFiltrosOcorrenciasUrl';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
 import type { OcorrenciaDetalhe, OcorrenciaResumo } from '../types/api';
+import { temFiltroAtivo } from '../utils/filtrosOcorrencias';
 
 /** Agente: minhas ocorrências + correção/reenvio das devolvidas (RF04). */
 export const MinhasOcorrenciasPage: React.FC = () => {
@@ -18,6 +22,7 @@ export const MinhasOcorrenciasPage: React.FC = () => {
   const [detalhe, setDetalhe] = useState<OcorrenciaDetalhe | null>(null);
   const [editando, setEditando] = useState(false);
   const [ocupado, setOcupado] = useState(false);
+  const [filtros, aplicarFiltros] = useFiltrosOcorrenciasUrl();
 
   const [searchParams] = useSearchParams();
   const paramOcorrenciaId = searchParams.get('ocorrencia');
@@ -25,11 +30,11 @@ export const MinhasOcorrenciasPage: React.FC = () => {
   const carregar = useCallback(async () => {
     try {
       // As 100 mais recentes: inverter a lista no cliente escondia as novas quando havia mais de 100.
-      setItens((await ocorrenciasService.listar([], 100, 0, true)).itens);
+      setItens((await ocorrenciasService.listar([], 100, 0, true, filtros)).itens);
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
     }
-  }, [avisar]);
+  }, [filtros, avisar]);
 
   useEffect(() => {
     carregar();
@@ -84,12 +89,13 @@ export const MinhasOcorrenciasPage: React.FC = () => {
     <div className="pagina duas-colunas">
       <section className="card">
         <h2>{t('ocorrencias:minhas.titulo')}</h2>
-        {itens.length === 0 && <p className="muted">{t('ocorrencias:minhas.vazio')}</p>}
+        <FiltrosOcorrenciasBar valor={filtros} onAplicar={aplicarFiltros} />
+        {itens.length === 0 && <p className="muted">{t(temFiltroAtivo(filtros) ? 'ocorrencias:filtros.nenhum_resultado' : 'ocorrencias:minhas.vazio')}</p>}
         <ul className="lista clicavel">
           {itens.map((o) => (
             <li key={o.ocorrencia_id} className={detalhe?.ocorrencia_id === o.ocorrencia_id ? 'ativo' : ''} onClick={() => abrir(o.ocorrencia_id)}>
               <span><strong>{o.numero_protocolo}</strong> · {formatarNatureza(o.natureza, t)}</span>
-              <StatusBadge status={o.status} />
+              <span className="lista-badges"><StatusBadge status={o.status} /><PrioridadeBadge prioridade={o.prioridade} /></span>
             </li>
           ))}
         </ul>

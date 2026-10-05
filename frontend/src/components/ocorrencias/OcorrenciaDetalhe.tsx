@@ -12,6 +12,8 @@ import type { Evidencia, IntegridadeEvidencia, OcorrenciaDetalhe as Detalhe } fr
 import { StatusBadge } from '../StatusBadge';
 import { formatarNatureza } from '../../utils/formatarNatureza';
 import { ApreensoesAba } from './ApreensoesAba';
+import { LinhaDoTempoAba } from './LinhaDoTempoAba';
+import { PrioridadeBadge } from '../PrioridadeBadge';
 import { SpringCheck } from '../common/SpringCheck';
 import { GlideSelect, type GlideSelectOption } from '../common/GlideSelect';
 import { ComprovanteOcorrencia } from './ComprovanteOcorrencia';
@@ -130,7 +132,7 @@ const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = 
   );
 };
 
-type Aba = 'detalhe' | 'apreensoes';
+type Aba = 'detalhe' | 'apreensoes' | 'linha_tempo';
 
 interface Props {
   o: Detalhe;
@@ -403,11 +405,16 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
         <button role="tab" aria-selected={aba === 'apreensoes'} className={`tab ${aba === 'apreensoes' ? 'ativo' : ''}`} onClick={() => setAba('apreensoes')} data-cy="tab-apreensoes">
           {t('ocorrencias:apreensoes.titulo')} ({o.itens_apreendidos.length})
         </button>
+        <button role="tab" aria-selected={aba === 'linha_tempo'} className={`tab ${aba === 'linha_tempo' ? 'ativo' : ''}`} onClick={() => setAba('linha_tempo')}>
+          {t('ocorrencias:linha_tempo.aba')}
+        </button>
       </div>
       {aba === 'apreensoes' && <ApreensoesAba o={o} onAlterada={onAlterada} />}
+      {aba === 'linha_tempo' && <LinhaDoTempoAba ocorrenciaId={o.ocorrencia_id} versao={o.versao} />}
       {aba === 'detalhe' && (<>
       <dl className="grid2">
         <dt>{t('ocorrencias:form.natureza_label')}</dt><dd>{formatarNatureza(o.natureza, t)}</dd>
+        {o.prioridade && <><dt>{t('ocorrencias:prioridade.titulo')}</dt><dd><PrioridadeBadge prioridade={o.prioridade} /></dd></>}
         <dt>{t('ocorrencias:form.data_hora_fato_label')}</dt><dd>{fmt(o.data_hora_fato)}</dd>
         <dt>{t('ocorrencias:form.localizacao_label')}</dt><dd>{o.localizacao}</dd>
         <dt>{t('ocorrencias:form.coordenada_label')}</dt><dd>{o.latitude.toFixed(5)}, {o.longitude.toFixed(5)}</dd>

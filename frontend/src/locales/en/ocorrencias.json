@@ -287,5 +287,56 @@
     "url": "Verification page",
     "hash": "SHA-256 verification hash",
     "lgpd": "Public verification shows only document identification data — never personal data of the people involved (LGPD)."
+  },
+  "filtros": {
+    "texto": "Search report or location",
+    "texto_placeholder": "Search in the report or location…",
+    "buscar": "Search",
+    "limpar": "Clear",
+    "mais": "More filters",
+    "protocolo": "Protocol",
+    "natureza": "Nature",
+    "data_de": "Incident from",
+    "data_ate": "Incident until",
+    "origem": "Origin",
+    "origem_todas": "All",
+    "origem_POLICIAL": "Police report",
+    "origem_PUBLICA": "Citizen report",
+    "nenhum_resultado": "No occurrence matches the search.",
+    "exportar_csv": "Export CSV",
+    "exportar_dica": "Exports the current tab and search. The export is recorded in the audit trail."
+  },
+  "prioridade": {
+    "titulo": "Priority",
+    "campo": "Priority",
+    "ajuda": "optional — if left blank, the system suggests it from the nature and legal classifications",
+    "automatica": "Automatic (suggested by the system)",
+    "atribuida": "priority",
+    "nova": "New priority",
+    "justificativa": "Justification",
+    "salvar": "Change priority",
+    "ok": "Priority changed."
+  },
+  "linha_tempo": {
+    "aba": "Timeline",
+    "vazia": "Nothing recorded yet.",
+    "por": "by {{nome}}",
+    "apoio": "support",
+    "lacre": "seal",
+    "integridade_INTEGRA": "intact",
+    "integridade_DIVERGENTE": "divergent",
+    "integridade_ARQUIVO_AUSENTE": "file missing",
+    "tipos": {
+      "STATUS": "Status change",
+      "DESPACHO": "Vehicle dispatched",
+      "ORDEM_ENCERRADA": "Dispatch order closed",
+      "EVIDENCIA_ANEXADA": "Evidence attached",
+      "INTEGRIDADE_VERIFICADA": "Evidence integrity checked",
+      "ITEM_APREENDIDO": "Item seized",
+      "CUSTODIA_MOVIMENTADA": "Custody moved",
+      "INQUERITO_VINCULADO": "Linked to investigation",
+      "LAUDO_SOLICITADO": "Forensic report requested",
+      "LAUDO_CONCLUIDO": "Forensic report completed"
+    }
   }
 }

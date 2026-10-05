@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapaTatico } from '../components/painel/MapaTatico';
+import { PrioridadeBadge } from '../components/PrioridadeBadge';
 import { StatusBadge } from '../components/StatusBadge';
 import { useAuth } from '../hooks/useAuth';
 import { useTempoReal } from '../hooks/useTempoReal';
@@ -87,7 +88,7 @@ export const PainelTaticoPage: React.FC = () => {
     try {
       const [vs, os, ods, sim, areas] = await Promise.all([
         viaturasService.listar(),
-        ocorrenciasService.listar(['VALIDADA', 'EM_ATENDIMENTO'], 200),
+        ocorrenciasService.listar(['VALIDADA', 'EM_ATENDIMENTO'], 200, 0, false, undefined, true),
         despachoService.listar(true),
         viaturasService.simulador().catch(() => null),
         inteligenciaService.obterAreasRisco(periodoDias).catch(() => []),
@@ -140,7 +141,7 @@ export const PainelTaticoPage: React.FC = () => {
         break;
       }
       case 'OcorrenciaValidada':
-        ocorrenciasService.listar(['VALIDADA', 'EM_ATENDIMENTO'], 200).then((p) => setOcorrencias(p.itens)).catch(() => undefined);
+        ocorrenciasService.listar(['VALIDADA', 'EM_ATENDIMENTO'], 200, 0, false, undefined, true).then((p) => setOcorrencias(p.itens)).catch(() => undefined);
         break;
       case 'OcorrenciaDespachada':
         setOcorrencias((os) => os.map((o) => (o.ocorrencia_id === d.ocorrencia_id ? { ...o, status: 'EM_ATENDIMENTO' } : o)));
@@ -440,7 +441,7 @@ export const PainelTaticoPage: React.FC = () => {
               {ocorrencias.map((o) => (
                 <li key={o.ocorrencia_id} className={o.ocorrencia_id === selecionada ? 'ativo' : ''} onClick={() => selecionar(o.ocorrencia_id)}>
                   <span><strong>{o.numero_protocolo}</strong> · {o.natureza}<br /><small className="muted">{o.localizacao}</small></span>
-                  <StatusBadge status={o.status} />
+                  <span className="lista-badges"><StatusBadge status={o.status} /><PrioridadeBadge prioridade={o.prioridade} /></span>
                 </li>
               ))}
             </ul>
@@ -454,7 +455,7 @@ export const PainelTaticoPage: React.FC = () => {
                 {emAberto.map((o) => (
                   <li key={o.ocorrencia_id} className={o.ocorrencia_id === selecionada ? 'ativo' : ''} onClick={() => selecionar(o.ocorrencia_id)}>
                     <span><strong>{o.numero_protocolo}</strong> · {o.natureza}<br /><small className="muted">{idade(o.criada_em)}</small></span>
-                    <StatusBadge status={o.status} />
+                    <span className="lista-badges"><StatusBadge status={o.status} /><PrioridadeBadge prioridade={o.prioridade} /></span>
                   </li>
                 ))}
               </ul>

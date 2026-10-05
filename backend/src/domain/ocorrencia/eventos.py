@@ -43,3 +43,7 @@ def ocorrencia_arquivada(ocorrencia_id: UUID, em: datetime, **extra: object) -> 
 
 def ocorrencia_excluida(ocorrencia_id: UUID, em: datetime, **extra: object) -> EventoDominio:
     return _evento("OcorrenciaExcluida", ocorrencia_id, "EXCLUIDA", em, **extra)
+
+
+def ocorrencia_prioridade_alterada(ocorrencia_id: UUID, status: str, em: datetime, **extra: object) -> EventoDominio:
+    return _evento("OcorrenciaPrioridadeAlterada", ocorrencia_id, status, em, **extra)

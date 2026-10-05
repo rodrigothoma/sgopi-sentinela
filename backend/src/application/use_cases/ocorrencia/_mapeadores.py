@@ -61,6 +61,7 @@ def para_resumo(o: Ocorrencia) -> OcorrenciaResumoOutput:
         versao=o.versao,
         inquerito_id=o.inquerito_id,
         origem=o.origem.value,
+        prioridade=o.prioridade.value,
     )
 
 

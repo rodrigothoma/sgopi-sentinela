@@ -15,6 +15,7 @@ from application.ports.inbound.interface_despachar_viatura import DespacharInput
 from application.use_cases.despacho.despachar_viatura import DespacharViatura
 from application.use_cases.despacho.encerrar_ocorrencia import EncerrarOcorrencia
 from domain.ocorrencia.entity import Ocorrencia
+from domain.ocorrencia.prioridade import PrioridadeOcorrencia
 from domain.ocorrencia.status import StatusOcorrencia
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
@@ -63,7 +64,14 @@ class _Ambiente:
         return OrquestradorDespacho(self.contexto, self.relogio, **defaults)
 
 
-def _ocorrencia(validada_em: datetime, id: UUID | None = None, lat: float = -29.78, lng: float = -55.79) -> Ocorrencia:
+def _ocorrencia(
+    validada_em: datetime,
+    id: UUID | None = None,
+    lat: float = -29.78,
+    lng: float = -55.79,
+    prioridade: PrioridadeOcorrencia = PrioridadeOcorrencia.MEDIA,
+    criada_em: datetime = AGORA - timedelta(hours=2),
+) -> Ocorrencia:
     return Ocorrencia(
         id=id or uuid4(),
         agente_policial_id=uuid4(),
@@ -73,9 +81,10 @@ def _ocorrencia(validada_em: datetime, id: UUID | None = None, lat: float = -29.
         coordenada=Coordenada(lat, lng),
         data_hora_fato=AGORA - timedelta(hours=2),
         numero_protocolo=f"2026.01.{uuid4().hex[:6]}",
-        criada_em=AGORA - timedelta(hours=2),
+        criada_em=criada_em,
         status=StatusOcorrencia.VALIDADA,
         atualizada_em=validada_em,
+        prioridade=prioridade,
     )
 
 
@@ -151,6 +160,19 @@ async def test_despacho_feliz_usa_ator_operador():
     ativas = await env.ordens.listar(somente_ativas=True)
     assert len(ativas) == 1
     assert ativas[0].observacoes == OBSERVACOES_DESPACHO
+
+
+async def test_com_uma_viatura_atende_primeiro_a_mais_grave():
+    """Sugestão #7: a ocorrência mais antiga (MEDIA) espera; a URGENTE, mais nova, recebe a única viatura."""
+    env = _Ambiente()
+    antiga = _ocorrencia(validada_em=AGORA - timedelta(minutes=5), criada_em=AGORA - timedelta(hours=3))
+    urgente = _ocorrencia(
+        validada_em=AGORA - timedelta(minutes=5), criada_em=AGORA - timedelta(hours=1), prioridade=PrioridadeOcorrencia.URGENTE
+    )
+    await _guardar(env, antiga, urgente, _viatura("VTR-01"))
+    await env.orquestrador().tick()
+    [ordem] = await env.ordens.listar(somente_ativas=True)
+    assert ordem.ocorrencia_id == urgente.id
 
 
 async def test_unicidade_uma_viatura_para_duas_ocorrencias():

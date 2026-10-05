@@ -287,5 +287,56 @@
     "url": "Página de verificação",
     "hash": "Hash SHA-256 de verificação",
     "lgpd": "A conferência pública exibe apenas dados de identificação do documento — nunca dados pessoais dos envolvidos (LGPD)."
+  },
+  "filtros": {
+    "texto": "Buscar no relato ou local",
+    "texto_placeholder": "Buscar no relato ou na localização…",
+    "buscar": "Buscar",
+    "limpar": "Limpar",
+    "mais": "Mais filtros",
+    "protocolo": "Protocolo",
+    "natureza": "Natureza",
+    "data_de": "Fato a partir de",
+    "data_ate": "Fato até",
+    "origem": "Origem",
+    "origem_todas": "Todas",
+    "origem_POLICIAL": "Registro policial",
+    "origem_PUBLICA": "Comunicação do cidadão",
+    "nenhum_resultado": "Nenhuma ocorrência corresponde à busca.",
+    "exportar_csv": "Exportar CSV",
+    "exportar_dica": "Exporta a aba e a busca atuais. A exportação fica registrada na trilha de auditoria."
+  },
+  "prioridade": {
+    "titulo": "Prioridade",
+    "campo": "Prioridade",
+    "ajuda": "opcional — se não escolher, o sistema sugere pela natureza e pelas tipificações",
+    "automatica": "Automática (sugerida pelo sistema)",
+    "atribuida": "prioridade",
+    "nova": "Nova prioridade",
+    "justificativa": "Justificativa",
+    "salvar": "Alterar prioridade",
+    "ok": "Prioridade alterada."
+  },
+  "linha_tempo": {
+    "aba": "Linha do tempo",
+    "vazia": "Nada registrado ainda.",
+    "por": "por {{nome}}",
+    "apoio": "apoio",
+    "lacre": "lacre",
+    "integridade_INTEGRA": "íntegra",
+    "integridade_DIVERGENTE": "divergente",
+    "integridade_ARQUIVO_AUSENTE": "arquivo ausente",
+    "tipos": {
+      "STATUS": "Mudança de status",
+      "DESPACHO": "Viatura despachada",
+      "ORDEM_ENCERRADA": "Ordem de despacho encerrada",
+      "EVIDENCIA_ANEXADA": "Evidência anexada",
+      "INTEGRIDADE_VERIFICADA": "Integridade da evidência verificada",
+      "ITEM_APREENDIDO": "Item apreendido",
+      "CUSTODIA_MOVIMENTADA": "Custódia movimentada",
+      "INQUERITO_VINCULADO": "Vinculada a inquérito",
+      "LAUDO_SOLICITADO": "Laudo solicitado",
+      "LAUDO_CONCLUIDO": "Laudo concluído"
+    }
   }
 }

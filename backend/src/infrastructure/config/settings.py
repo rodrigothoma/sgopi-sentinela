@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     app_env: str = "development"
-    database_url: str = "postgresql+asyncpg://postgres:admin@localhost:5432/sgopi"
+    database_url: str = "postgresql+asyncpg://postgres:admin@localhost:5433/sgopi"
     database_echo: bool = False
 
     # RNF02*: JWT de turno (8 h), CORS por lista de origens

@@ -7,6 +7,13 @@ import type { PontoCalor } from '../../utils/manchas';
 import type { AreaRisco } from '../../services/inteligenciaService';
 import { CENTRO_PADRAO, corrigirIconesLeaflet, iconeOcorrencia, iconeViatura } from './leaflet';
 import { escaparHtml } from '../../utils/html';
+import i18n from '../../i18n';
+
+/** Rótulo do marcador: protocolo, natureza e, quando houver, a gravidade (sugestão #7). */
+function rotuloOcorrencia(o: OcorrenciaResumo): string {
+  const prioridade = o.prioridade ? ` · ${i18n.t(`common:prioridade.${o.prioridade}`)}` : '';
+  return escaparHtml(`${o.numero_protocolo} · ${o.natureza}${prioridade}`);
+}
 
 /** Campo interno do leaflet.heat: redesenho agendado via requestAnimationFrame. */
 type HeatLayerInterno = L.HeatLayer & { _frame?: number | null };
@@ -110,10 +117,12 @@ export const MapaTatico: React.FC<Props> = ({
       const existente = ocorrenciasRef.current.get(o.ocorrencia_id);
       if (existente) {
         existente.setLatLng([o.latitude, o.longitude]).setIcon(icone);
-        existente.setZIndexOffset(o.ocorrencia_id === selecionada ? 1000 : 0);
+        existente.setTooltipContent(rotuloOcorrencia(o));
+        existente.setZIndexOffset(o.ocorrencia_id === selecionada ? 1000 : o.prioridade === 'URGENTE' ? 500 : 0);
       } else {
         const m = L.marker([o.latitude, o.longitude], { icon: icone }).addTo(map);
-        m.bindTooltip(escaparHtml(`${o.numero_protocolo} · ${o.natureza}`));
+        m.bindTooltip(rotuloOcorrencia(o));
+        if (o.prioridade === 'URGENTE') m.setZIndexOffset(500);
         m.on('click', () => selecionarRef.current(o.ocorrencia_id));
         ocorrenciasRef.current.set(o.ocorrencia_id, m);
       }

@@ -1,12 +1,15 @@
 """ListarOcorrencias / ObterDetalheOcorrencia (RF01, LGPD)."""
+from datetime import timedelta
 from uuid import uuid4
 
 import pytest
 
 from application.ports.inbound.interface_consultar_ocorrencias import ListarOcorrenciasInput
 from application.use_cases.ocorrencia.consultar_ocorrencias import ListarOcorrencias, ObterDetalheOcorrencia
+from domain.ocorrencia.entity import OrigemOcorrencia
 from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from tests.fakes.atores import AGENTE, DELEGADO, OPERADOR, OUTRO_AGENTE
+from tests.unit.use_cases.conftest import AGORA
 
 
 async def test_lista_fila_ordenada_mais_antiga_primeiro(registrar, repositorio, relogio):
@@ -68,3 +71,49 @@ async def test_detalhe_404_e_403_para_outro_agente(registrar, repositorio):
         await ObterDetalheOcorrencia(repositorio).executar(DELEGADO, uuid4())
     with pytest.raises(AcessoNegadoError):
         await ObterDetalheOcorrencia(repositorio).executar(OUTRO_AGENTE, o.ocorrencia_id)
+
+
+# ------------------------------------------------- sugestão #1: filtros e busca
+async def _listar(repositorio, ator=DELEGADO, **kw):
+    return await ListarOcorrencias(repositorio).executar(ator, ListarOcorrenciasInput(**kw))
+
+
+async def test_busca_por_natureza_protocolo_e_texto_ignora_maiusculas(registrar, repositorio):
+    furto = await registrar(natureza="Furto", localizacao="Rua dos Andradas, 10")
+    roubo = await registrar(natureza="Roubo a pedestre", descricao="Roubo de celular mediante grave ameaça.")
+    assert [i.ocorrencia_id for i in (await _listar(repositorio, natureza="  rOuBo ")).itens] == [roubo.ocorrencia_id]
+    assert [i.ocorrencia_id for i in (await _listar(repositorio, protocolo=furto.numero_protocolo.lower())).itens] == [furto.ocorrencia_id]
+    assert (await _listar(repositorio, texto="CELULAR")).total == 1  # descrição
+    assert (await _listar(repositorio, texto="andradas")).total == 1  # localização
+    assert (await _listar(repositorio, texto="   ")).total == 2  # termo vazio = sem filtro
+
+
+async def test_busca_por_periodo_do_fato(registrar, repositorio):
+    antiga = await registrar(data_hora_fato=AGORA - timedelta(days=10))
+    recente = await registrar(data_hora_fato=AGORA - timedelta(hours=1))
+    pagina = await _listar(repositorio, data_fato_de=AGORA - timedelta(days=1))
+    assert [i.ocorrencia_id for i in pagina.itens] == [recente.ocorrencia_id]
+    pagina = await _listar(repositorio, data_fato_ate=(AGORA - timedelta(days=5)).replace(tzinfo=None))  # sem fuso = UTC
+    assert [i.ocorrencia_id for i in pagina.itens] == [antiga.ocorrencia_id]
+
+
+async def test_periodo_invertido_e_origem_invalida(repositorio):
+    with pytest.raises(ValorInvalidoError) as exc:
+        await _listar(repositorio, data_fato_de=AGORA, data_fato_ate=AGORA - timedelta(days=1))
+    assert exc.value.chave == "ocorrencia.periodo_invalido"
+    with pytest.raises(ValorInvalidoError) as exc:
+        await _listar(repositorio, origem="XPTO")
+    assert exc.value.chave == "ocorrencia.origem_invalida"
+
+
+async def test_busca_por_origem(registrar, repositorio):
+    o = await registrar()
+    assert (await _listar(repositorio, origem="policial")).total == 1
+    assert (await _listar(repositorio, origem="PUBLICA")).total == 0
+    repositorio._store[o.ocorrencia_id].origem = OrigemOcorrencia.PUBLICA
+    assert (await _listar(repositorio, origem="PUBLICA")).total == 1
+
+
+async def test_filtros_nao_furam_o_rbac_do_agente(registrar, repositorio):
+    await registrar(OUTRO_AGENTE, natureza="Roubo")
+    assert (await _listar(repositorio, AGENTE, natureza="Roubo")).total == 0
