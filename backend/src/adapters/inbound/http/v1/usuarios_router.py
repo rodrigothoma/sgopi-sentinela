@@ -1,4 +1,4 @@
-"""Adapter de entrada: /v1/usuarios — efetivo ativo (RF12) e gestão pelo Supervisor (sugestão #13)."""
+"""Adapter de entrada: /v1/usuarios — efetivo ativo (RF12) e gestão pelo Supervisor e pelo Operador da Central (sugestão #13)."""
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -30,6 +30,8 @@ from infrastructure.di import (
 
 router = APIRouter(prefix="/v1/usuarios", tags=["usuarios"])
 CONSULTA = (Papel.AGENTE, Papel.DELEGADO, Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
+# Gestão do efetivo: Supervisor e Operador da Central (o caso de uso re-verifica)
+GESTORES = (Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL)
 
 
 class UsuarioResumoSchema(BaseModel):
@@ -73,20 +75,20 @@ async def listar_usuarios(
 
 @router.get("/gestao", response_model=list[UsuarioGestaoSchema])
 async def listar_usuarios_gestao(
-    ator: Ator = Depends(exigir_papel(Papel.SUPERVISOR)),
+    ator: Ator = Depends(exigir_papel(*GESTORES)),
     uc: InterfaceListarUsuariosGestao = Depends(get_listar_usuarios_gestao),
 ) -> list[UsuarioGestaoSchema]:
-    """Todos os usuários, inclusive inativos (sem o usuário de sistema do canal público). Somente SUPERVISOR."""
+    """Todos os usuários, inclusive inativos (sem o usuário de sistema do canal público). Somente SUPERVISOR e OPERADOR_CENTRAL."""
     return [_gestao(u) for u in await uc.executar(ator)]
 
 
 @router.post("", response_model=UsuarioGestaoSchema, status_code=201)
 async def cadastrar_usuario(
     body: CadastrarUsuarioRequest,
-    ator: Ator = Depends(exigir_papel(Papel.SUPERVISOR)),
+    ator: Ator = Depends(exigir_papel(*GESTORES)),
     uc: InterfaceCadastrarUsuario = Depends(get_cadastrar_usuario),
 ) -> UsuarioGestaoSchema:
-    """Cadastra um usuário ativo com senha inicial informada pelo Supervisor (auditado)."""
+    """Cadastra um usuário ativo com senha inicial informada pelo gestor (auditado)."""
     return _gestao(await uc.executar(ator, CadastrarUsuarioInput(nome=body.nome, login=body.login, senha=body.senha, papel=body.papel)))
 
 
@@ -94,7 +96,7 @@ async def cadastrar_usuario(
 async def alterar_papel(
     usuario_id: UUID,
     body: AlterarPapelRequest,
-    ator: Ator = Depends(exigir_papel(Papel.SUPERVISOR)),
+    ator: Ator = Depends(exigir_papel(*GESTORES)),
     uc: InterfaceAlterarPapelUsuario = Depends(get_alterar_papel_usuario),
 ) -> UsuarioGestaoSchema:
     """Troca o papel (nunca o próprio); a sessão do usuário afetado deixa de valer."""
@@ -105,7 +107,7 @@ async def alterar_papel(
 async def desativar_usuario(
     usuario_id: UUID,
     body: SituacaoRequest | None = None,
-    ator: Ator = Depends(exigir_papel(Papel.SUPERVISOR)),
+    ator: Ator = Depends(exigir_papel(*GESTORES)),
     uc: InterfaceDesativarUsuario = Depends(get_desativar_usuario),
 ) -> UsuarioGestaoSchema:
     """Desativação lógica (``ativo = false``, nunca DELETE); a sessão aberta cai na próxima requisição."""
@@ -117,7 +119,7 @@ async def desativar_usuario(
 async def reativar_usuario(
     usuario_id: UUID,
     body: SituacaoRequest | None = None,
-    ator: Ator = Depends(exigir_papel(Papel.SUPERVISOR)),
+    ator: Ator = Depends(exigir_papel(*GESTORES)),
     uc: InterfaceReativarUsuario = Depends(get_reativar_usuario),
 ) -> UsuarioGestaoSchema:
     """Devolve o usuário ao efetivo ativo."""

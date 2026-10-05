@@ -161,3 +161,18 @@ async def test_gestao_de_usuarios_ponta_a_ponta(client, session):
     for op in ("usuario.cadastrar", "usuario.alterar_papel", "usuario.desativar", "usuario.reativar"):
         assert op in operacoes
     assert (await client.get("/v1/usuarios/gestao", headers=await auth(client, "delegado"))).status_code == 403
+
+
+async def test_operador_da_central_tambem_gerencia_usuarios(client):
+    ho = await auth(client, "operador")
+    r = await client.post("/v1/usuarios", json={"nome": "Dora", "login": "dora", "senha": "NovaSenha1", "papel": "AGENTE"}, headers=ho)
+    assert r.status_code == 201, r.text
+    uid = r.json()["id"]
+    assert (await client.patch(f"/v1/usuarios/{uid}/papel", json={"papel": "PERITO"}, headers=ho)).json()["papel"] == "PERITO"
+    assert (await client.post(f"/v1/usuarios/{uid}/desativar", headers=ho)).json()["ativo"] is False
+    assert (await client.post(f"/v1/usuarios/{uid}/reativar", headers=ho)).json()["ativo"] is True
+    assert (await client.get("/v1/usuarios/gestao", headers=ho)).status_code == 200
+    r = await client.post(f"/v1/usuarios/{IDS['operador']}/desativar", headers=ho)
+    assert r.status_code == 403 and r.json()["code"] == "usuario.proprio"
+    for login in ("agente", "delegado"):
+        assert (await client.get("/v1/usuarios/gestao", headers=await auth(client, login))).status_code == 403

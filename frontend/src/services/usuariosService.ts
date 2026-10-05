@@ -6,7 +6,7 @@ export const usuariosService = {
   async listar(): Promise<Usuario[]> {
     return (await api.get<Usuario[]>('/v1/usuarios')).data;
   },
-  /** Somente SUPERVISOR: todos os usuários, inclusive inativos (sugestão #13). */
+  /** SUPERVISOR e OPERADOR_CENTRAL: todos os usuários, inclusive inativos (sugestão #13). */
   async listarGestao(): Promise<UsuarioGestao[]> {
     return (await api.get<UsuarioGestao[]>('/v1/usuarios/gestao')).data;
   },

@@ -1,4 +1,4 @@
-"""Porta de entrada: gestão do efetivo pelo Supervisor (sugestão #13 — RNF02). Sem DELETE: desativação lógica."""
+"""Porta de entrada: gestão do efetivo pelo Supervisor e pelo Operador da Central (sugestão #13 — RNF02). Sem DELETE: desativação lógica."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from uuid import UUID

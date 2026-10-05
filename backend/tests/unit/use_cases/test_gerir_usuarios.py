@@ -18,7 +18,7 @@ from application.use_cases.usuario.gerir_usuarios import (
 )
 from domain.shared.exceptions import AcessoNegadoError, ConflitoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.entity import Papel, Usuario
-from tests.fakes.atores import DELEGADO
+from tests.fakes.atores import AGENTE, DELEGADO, OPERADOR
 from tests.fakes.auth_fake import HasherFake, RepositorioUsuarioFake
 
 SUPERVISOR = Ator(id=UUID("00000000-0000-0000-0000-000000000005"), login="supervisor", papel=Papel.SUPERVISOR, ip="10.0.0.1")
@@ -130,3 +130,24 @@ def test_entidade_bloqueia_usuario_de_sistema():
         cidadao.reativar()
     with pytest.raises(ValorInvalidoError):
         cidadao.alterar_papel(Papel.AGENTE)
+
+
+async def test_operador_da_central_gerencia_como_o_supervisor(gestao, usuarios, auditoria):
+    out = await CadastrarUsuario(*gestao, HasherFake()).executar(
+        OPERADOR, CadastrarUsuarioInput(nome="Bia", login="bia", senha="Senha@123", papel="AGENTE")
+    )
+    assert (await AlterarPapelUsuario(*gestao).executar(OPERADOR, AlterarPapelInput(out.id, "PERITO"))).papel == "PERITO"
+    assert (await DesativarUsuario(*gestao).executar(OPERADOR, AlterarSituacaoUsuarioInput(out.id))).ativo is False
+    assert (await ReativarUsuario(*gestao).executar(OPERADOR, AlterarSituacaoUsuarioInput(out.id))).ativo is True
+    assert [u.login for u in await ListarUsuariosGestao(usuarios).executar(OPERADOR)] == ["bia"]
+    assert {r.quem for r in auditoria.registros} == {OPERADOR.id}
+    with pytest.raises(AcessoNegadoError):
+        await DesativarUsuario(*gestao).executar(OPERADOR, AlterarSituacaoUsuarioInput(OPERADOR.id))
+
+
+@pytest.mark.parametrize("ator", [AGENTE, DELEGADO])
+async def test_demais_papeis_nao_gerenciam(gestao, usuarios, ator):
+    with pytest.raises(AcessoNegadoError):
+        await ListarUsuariosGestao(usuarios).executar(ator)
+    with pytest.raises(AcessoNegadoError):
+        await AlterarPapelUsuario(*gestao).executar(ator, AlterarPapelInput(uuid4(), "AGENTE"))

@@ -67,7 +67,7 @@ export default function App() {
                   <Route path="/frota" element={<RequireRole papeis={['OPERADOR_CENTRAL', 'SUPERVISOR']}><FrotaPage /></RequireRole>} />
                   <Route path="/auditoria" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><TrilhaAuditoriaPage /></RequireRole>} />
                   <Route path="/indicadores" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR', 'OPERADOR_CENTRAL']}><IndicadoresPage /></RequireRole>} />
-                  <Route path="/efetivo" element={<RequireRole papeis={['SUPERVISOR']}><EfetivoPage /></RequireRole>} />
+                  <Route path="/efetivo" element={<RequireRole papeis={['SUPERVISOR', 'OPERADOR_CENTRAL']}><EfetivoPage /></RequireRole>} />
                 </Route>
 
                 {/* Redirecionamentos de aliases amigáveis */}

@@ -354,18 +354,18 @@ Um endpoint `GET /v1/ocorrencias/{id}/linha-do-tempo` monta a sequência a parti
 **Status: ✅ Implementado (05/10/2026), sem a senha provisória obrigatória.**
 - **Domínio:** `Usuario.cadastrar` valida o login (3 a 50 caracteres: minúsculas, dígitos, `.`, `_` e `-`). Também foram criados `alterar_papel`, `desativar` e `reativar`. O usuário de sistema `CIDADAO` não pode ser gerido nem atribuído.
 - **Casos de uso:** `ListarUsuariosGestao`, `CadastrarUsuario`, `AlterarPapelUsuario`, `DesativarUsuario` e `ReativarUsuario`.
-  - Só o SUPERVISOR pode executá-los, e ninguém age sobre a própria conta (`usuario.proprio`).
+  - Só o SUPERVISOR e o OPERADOR_CENTRAL podem executá-los (o Operador foi incluído depois, a pedido da equipe), e ninguém age sobre a própria conta (`usuario.proprio`).
   - Login duplicado retorna 409.
   - Não existe `DELETE`: a retirada é `ativo = false`.
   - Tudo é auditado com o estado anterior e o novo (`usuario.cadastrar`, `usuario.alterar_papel`, `usuario.desativar`, `usuario.reativar`), sem senha na trilha.
 - **Rotas:** `GET /v1/usuarios/gestao`, `POST /v1/usuarios`, `PATCH /v1/usuarios/{id}/papel`, `POST /v1/usuarios/{id}/desativar` e `POST /v1/usuarios/{id}/reativar`.
 - **Sessões (substitui o #10 neste ponto):** a checagem por requisição (`exigir_usuario_ativo`) agora também compara o papel do token com o do cadastro. Desativar alguém ou trocar seu papel derruba a sessão aberta na requisição seguinte (401).
 - **Seed:** o seed passou a criar o usuário `supervisor` (SUPERVISOR); sem ele ninguém conseguiria usar a gestão.
-- **Frontend:** página "Efetivo" (`/efetivo`, somente SUPERVISOR) com:
+- **Frontend:** página "Efetivo" (`/efetivo`, para SUPERVISOR e OPERADOR_CENTRAL) com:
   - formulário de cadastro com senha inicial;
   - tabela com troca de papel, desativação e reativação, todas confirmadas antes de executar;
   - filtro de inativos;
-  - controles bloqueados na própria linha do supervisor.
+  - controles bloqueados na linha do próprio usuário logado.
 - **Fora deste item:** `deve_trocar_senha = true` e a política de senha dependem do #6, que não foi implementado. Por enquanto a senha inicial é definida pelo Supervisor (mínimo de 8 caracteres), e o usuário não é obrigado a trocá-la.
 - **Testes:** `test_gerir_usuarios.py` e o teste de integração do item #7, que cobre o fluxo completo, incluindo a queda da sessão após a troca de papel e o login recusado do usuário desativado.
 

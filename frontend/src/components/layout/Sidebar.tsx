@@ -214,7 +214,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
     { to: '/frota', label: t('nav.frota'), icon: <IconFrota />, visivel: tem('OPERADOR_CENTRAL', 'SUPERVISOR') },
     { to: '/auditoria', label: t('nav.auditoria'), icon: <IconAuditoria />, visivel: tem('DELEGADO', 'SUPERVISOR') },
     { to: '/indicadores', label: t('nav.indicadores'), icon: <IconIndicadores />, visivel: tem('DELEGADO', 'SUPERVISOR', 'OPERADOR_CENTRAL') },
-    { to: '/efetivo', label: t('nav.efetivo'), icon: <IconEfetivo />, visivel: tem('SUPERVISOR') },
+    { to: '/efetivo', label: t('nav.efetivo'), icon: <IconEfetivo />, visivel: tem('SUPERVISOR', 'OPERADOR_CENTRAL') },
   ];
 
   const handleLinkClick = () => {

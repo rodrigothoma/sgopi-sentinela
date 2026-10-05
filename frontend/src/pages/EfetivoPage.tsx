@@ -11,7 +11,7 @@ const TAMANHO_MINIMO_SENHA = 8;
 const LOGIN_VALIDO = /^[a-z0-9._-]{3,50}$/;
 const vazio = (): CadastrarUsuarioRequest => ({ nome: '', login: '', senha: '', papel: 'AGENTE' });
 
-/** Sugestão #13: o Supervisor cadastra, troca o papel, desativa e reativa usuários — nunca apaga. */
+/** Sugestão #13: o Supervisor e o Operador da Central cadastram, trocam o papel, desativam e reativam usuários — nunca apagam. */
 export const EfetivoPage: React.FC = () => {
   const { t } = useTranslation('common');
   const { avisar } = useToast();

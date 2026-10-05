@@ -2,7 +2,7 @@
 Casos de uso de gestão do efetivo (sugestão #13 — RNF02): ListarUsuariosGestao, CadastrarUsuario,
 AlterarPapelUsuario, DesativarUsuario e ReativarUsuario.
 
-Regras: só o SUPERVISOR executa; ninguém altera o próprio papel nem a própria situação; nada é
+Regras: só o SUPERVISOR e o OPERADOR_CENTRAL executam; ninguém altera o próprio papel nem a própria situação; nada é
 apagado (``ativo = false``); tudo é auditado com o estado anterior e o novo. A sessão de quem foi
 desativado ou mudou de papel deixa de valer na requisição seguinte (o token é conferido contra o
 cadastro a cada chamada).
@@ -32,7 +32,7 @@ from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import AcessoNegadoError, ConflitoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.entity import TAMANHO_MINIMO_SENHA, Papel, Usuario, interpretar_papel
 
-PAPEL_GESTOR = Papel.SUPERVISOR
+PAPEIS_GESTORES = (Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL)
 ENTIDADE_USUARIO = "Usuario"
 
 
@@ -45,7 +45,7 @@ class ListarUsuariosGestao(InterfaceListarUsuariosGestao):
         self._repositorio = repositorio
 
     async def executar(self, ator: Ator) -> tuple[UsuarioGestaoOutput, ...]:
-        ator.exigir_papel(PAPEL_GESTOR)
+        ator.exigir_papel(*PAPEIS_GESTORES)
         return tuple(para_gestao(u) for u in await self._repositorio.listar() if u.papel != Papel.CIDADAO)
 
 
@@ -75,8 +75,8 @@ class _GestaoBase:
         )
 
     async def _alvo(self, ator: Ator, usuario_id) -> Usuario:
-        """Carrega o usuário-alvo; o Supervisor não age sobre a própria conta."""
-        ator.exigir_papel(PAPEL_GESTOR)
+        """Carrega o usuário-alvo; o gestor não age sobre a própria conta."""
+        ator.exigir_papel(*PAPEIS_GESTORES)
         if usuario_id == ator.id:
             raise AcessoNegadoError("Ninguém altera o próprio papel ou situação.", chave="usuario.proprio")
         usuario = await self._repositorio.buscar_por_id(usuario_id)
@@ -98,7 +98,7 @@ class CadastrarUsuario(_GestaoBase, InterfaceCadastrarUsuario):
         self._hasher = hasher
 
     async def executar(self, ator: Ator, input_dto: CadastrarUsuarioInput) -> UsuarioGestaoOutput:
-        ator.exigir_papel(PAPEL_GESTOR)
+        ator.exigir_papel(*PAPEIS_GESTORES)
         papel = interpretar_papel(input_dto.papel)
         if len(input_dto.senha or "") < TAMANHO_MINIMO_SENHA:
             raise ValorInvalidoError(
