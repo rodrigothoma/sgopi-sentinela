@@ -36,6 +36,8 @@ EVENTOS_OPERACIONAIS = frozenset(
 # Mesmos papéis das rotas REST correspondentes (medidas_router / interagencias_router)
 PAPEIS_MEDIDAS = frozenset({Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL, Papel.AGENTE, Papel.ESCRIVAO})
 PAPEIS_INTERAGENCIAS = frozenset({Papel.DELEGADO, Papel.SUPERVISOR, Papel.ESCRIVAO, Papel.OPERADOR_CENTRAL})
+# Novo registro entra na fila de triagem (RF04): quem revisa e quem supervisiona tomam ciência.
+PAPEIS_NOVA_OCORRENCIA = frozenset({Papel.DELEGADO, Papel.SUPERVISOR})
 
 
 def _destinatario_da_notificacao(evento: EventoDominio, ator: Ator) -> bool:
@@ -55,6 +57,7 @@ def _alerta_criticidade(evento: EventoDominio, ator: Ator) -> bool:
 _REGRAS: dict[str, Regra] = {
     "NOTIFICACAO_EMITIDA": _destinatario_da_notificacao,
     "ALERTA_CRITICIDADE": _alerta_criticidade,
+    "OcorrenciaCriada": lambda _e, ator: ator.papel in PAPEIS_NOVA_OCORRENCIA,
     "MEDIDA_VENCIMENTO_ALERTA": lambda _e, ator: ator.papel in PAPEIS_MEDIDAS,
     "COMUNICACAO_INTERAGENCIAS_CRIADA": lambda _e, ator: ator.papel in PAPEIS_INTERAGENCIAS,
 }

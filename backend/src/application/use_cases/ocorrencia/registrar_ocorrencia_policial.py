@@ -7,6 +7,8 @@ Orquestra a criação do agregado Ocorrencia via factory e delega a persistênci
 Itens apreendidos são opcionais no registro (UC01 cenário alternativo I → UC03/RF03):
 entram na mesma transação, com lacre único em toda a base e auditoria por item.
 """
+from datetime import datetime
+
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     InterfaceRegistrarOcorrenciaPolicial,
@@ -15,12 +17,17 @@ from application.ports.inbound.interface_registrar_ocorrencia_policial import (
 )
 from application.ports.outbound.gerador_protocolo import GeradorProtocolo
 from application.ports.outbound.porta_auditoria import PortaAuditoria
+from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
+from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia.apreensoes import auditoria_registro_item, exigir_lacre_inedito, montar_item
 from domain.auditoria.entity import RegistroAuditoria
+from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
+from domain.notificacao.eventos import notificacao_emitida
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, OrigemOcorrencia, TipificacaoPenal, TipoEnvolvido
+from domain.ocorrencia.eventos import ocorrencia_criada
 from domain.ocorrencia.prioridade import interpretar_prioridade
 from domain.shared.exceptions import ValorInvalidoError
 from domain.shared.geo import Coordenada
@@ -28,6 +35,9 @@ from domain.usuario.entity import Papel
 
 # Registro policial só pelo Agente; comunicação pública só pelo ator de sistema CIDADAO.
 _PAPEL_POR_ORIGEM = {OrigemOcorrencia.POLICIAL: Papel.AGENTE, OrigemOcorrencia.PUBLICA: Papel.CIDADAO}
+
+ROTA_FILA_DELEGADO = "/fila"
+TITULO_NOVA_OCORRENCIA = "Nova ocorrência {protocolo} aguardando revisão"
 
 
 class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
@@ -40,12 +50,16 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
         relogio: Relogio,
         gerador_protocolo: GeradorProtocolo,
         auditoria: PortaAuditoria,
+        publicador: PublicadorEventos | None = None,
+        notificacoes: RepositorioNotificacao | None = None,
     ) -> None:
         self._repositorio = repositorio
         self._uow = uow
         self._relogio = relogio
         self._gerador_protocolo = gerador_protocolo
         self._auditoria = auditoria
+        self._publicador = publicador
+        self._notificacoes = notificacoes
 
     async def executar(self, ator: Ator, input_dto: RegistrarOcorrenciaInput) -> RegistrarOcorrenciaOutput:
         ator.exigir_papel(_PAPEL_POR_ORIGEM[input_dto.origem])
@@ -106,7 +120,27 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
             )
             for item in ocorrencia.itens_apreendidos:
                 await self._auditoria.registrar(auditoria_registro_item(ator, ocorrencia, item, agora))
+            notificacao = await self._notificar_delegado(ocorrencia, agora)
             await self._uow.commit()
+
+        if self._publicador is not None:
+            await self._publicador.publicar(
+                ocorrencia_criada(
+                    ocorrencia.id,
+                    agora,
+                    numero_protocolo=ocorrencia.numero_protocolo,
+                    natureza=ocorrencia.natureza,
+                    localizacao=ocorrencia.localizacao,
+                    latitude=ocorrencia.coordenada.latitude,
+                    longitude=ocorrencia.coordenada.longitude,
+                    prioridade=ocorrencia.prioridade.value,
+                    criada_em=ocorrencia.criada_em.isoformat(),
+                    agente_policial_id=str(ocorrencia.agente_policial_id),
+                    origem=ocorrencia.origem.value,
+                )
+            )
+            if notificacao is not None:
+                await self._publicador.publicar(notificacao_emitida(notificacao))
 
         return RegistrarOcorrenciaOutput(
             ocorrencia_id=ocorrencia.id,
@@ -115,6 +149,33 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
             criada_em=ocorrencia.criada_em.isoformat(),
             prioridade=ocorrencia.prioridade.value,
         )
+
+    async def _notificar_delegado(self, ocorrencia: Ocorrencia, agora: datetime) -> Notificacao | None:
+        """Aviso de nova ocorrência à fila do Delegado; retry com o mesmo protocolo não duplica."""
+        if self._notificacoes is None:
+            return None
+        protocolo = ocorrencia.numero_protocolo
+        duplicada = await self._notificacoes.buscar_por_metadado(
+            "numero_protocolo", protocolo, tipo=TipoNotificacao.NOVA_OCORRENCIA.value
+        )
+        if duplicada is not None:
+            return None
+        notificacao = Notificacao.criar(
+            titulo=TITULO_NOVA_OCORRENCIA.format(protocolo=protocolo),
+            mensagem=f"{ocorrencia.natureza} — {ocorrencia.localizacao}",
+            tipo=TipoNotificacao.NOVA_OCORRENCIA,
+            prioridade=PrioridadeNotificacao.MEDIA,
+            papel_destinatario=Papel.DELEGADO.value,
+            link=f"{ROTA_FILA_DELEGADO}?ocorrencia={ocorrencia.id}",
+            metadados={
+                "ocorrencia_id": str(ocorrencia.id),
+                "numero_protocolo": protocolo,
+                "natureza": ocorrencia.natureza,
+                "status": ocorrencia.status.value,
+            },
+            instante=agora,
+        )
+        return await self._notificacoes.salvar(notificacao)
 
 
 def _tipo_envolvido(valor: str) -> TipoEnvolvido:

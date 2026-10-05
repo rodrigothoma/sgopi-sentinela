@@ -42,3 +42,7 @@ class RepositorioNotificacao(ABC):
     @abstractmethod
     async def marcar_todas_lidas(self, usuario_id: UUID | None, papel: str | None, instante: datetime) -> int:
         """Marca como lidas todas as notificações do usuário ou papel."""
+
+    @abstractmethod
+    async def buscar_por_metadado(self, chave: str, valor: str, tipo: str | None = None) -> Notificacao | None:
+        """Busca notificação ativa por metadado (deduplicação de emissões: alerta do dia, novo registro)."""

@@ -77,6 +77,16 @@ class RepoNotifFake(RepositorioNotificacao):
     async def marcar_todas_lidas(self, usuario_id, papel, instante):
         return len(self.itens)
 
+    async def buscar_por_metadado(self, chave: str, valor: str, tipo: str | None = None) -> Notificacao | None:
+        return next(
+            (
+                n
+                for n in self.itens.values()
+                if (tipo is None or n.tipo.value == tipo) and (n.metadados or {}).get(chave) == valor
+            ),
+            None,
+        )
+
 
 class AuditoriaFake(PortaAuditoria):
     def __init__(self) -> None:

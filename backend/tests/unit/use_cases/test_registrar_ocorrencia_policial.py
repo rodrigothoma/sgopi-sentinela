@@ -11,10 +11,13 @@ from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     RegistrarOcorrenciaInput,
     TipificacaoInputDTO,
 )
+from application.ports.outbound.gerador_protocolo import GeradorProtocolo
 from application.use_cases.ocorrencia.registrar_ocorrencia_policial import RegistrarOcorrenciaPolicial
+from domain.notificacao.entity import TipoNotificacao
 from domain.shared.exceptions import AcessoNegadoError, CampoObrigatorioError, ValorInvalidoError
 from tests.fakes.atores import AGENTE, DELEGADO
-from tests.fakes.portas_fake import AuditoriaFake, GeradorProtocoloFake, RelogioFake, UnidadeDeTrabalhoFake
+from tests.fakes.portas_fake import AuditoriaFake, GeradorProtocoloFake, PublicadorEventosFake, RelogioFake, UnidadeDeTrabalhoFake
+from tests.fakes.repositorio_notificacao_fake import RepositorioNotificacaoFake
 from tests.fakes.repositorio_ocorrencia_fake import RepositorioOcorrenciaFake
 
 AGORA = datetime(2026, 9, 13, 12, 0, tzinfo=UTC)
@@ -119,3 +122,76 @@ async def test_registrar_tipo_envolvido_invalido(use_case):
 async def test_registrar_somente_agente(use_case):
     with pytest.raises(AcessoNegadoError):
         await use_case.executar(DELEGADO, _input_valido())
+
+
+# ------------------------------------------------------------------ tempo real + notificação (issue #68)
+class _GeradorProtocoloFixo(GeradorProtocolo):
+    def __init__(self, protocolo: str) -> None:
+        self._protocolo = protocolo
+
+    async def proximo(self, ano: int) -> str:
+        return self._protocolo
+
+
+@pytest.fixture
+def publicador():
+    return PublicadorEventosFake()
+
+
+@pytest.fixture
+def notificacoes():
+    return RepositorioNotificacaoFake()
+
+
+@pytest.fixture
+def use_case_rt(repositorio, uow, auditoria, publicador, notificacoes):
+    return RegistrarOcorrenciaPolicial(
+        repositorio, uow, RelogioFake(AGORA), GeradorProtocoloFake(), auditoria, publicador, notificacoes
+    )
+
+
+async def test_registrar_publica_evento_e_notifica_delegado(use_case_rt, notificacoes, publicador):
+    out = await use_case_rt.executar(AGENTE, _input_valido())
+    [n] = notificacoes.itens
+    assert n.tipo == TipoNotificacao.NOVA_OCORRENCIA
+    assert n.papel_destinatario == "DELEGADO"
+    assert n.metadados["numero_protocolo"] == out.numero_protocolo
+    assert n.link == f"/fila?ocorrencia={out.ocorrencia_id}"
+    assert publicador.tipos() == ["OcorrenciaCriada", "NOTIFICACAO_EMITIDA"]
+    evento = publicador.eventos[0]
+    assert evento.dados == {
+        "ocorrencia_id": str(out.ocorrencia_id),
+        "status": "AGUARDANDO_REVISAO",
+        "numero_protocolo": out.numero_protocolo,
+        "natureza": "Furto",
+        "localizacao": "Av. Brasil, 500",
+        "latitude": -29.78,
+        "longitude": -55.79,
+        "prioridade": out.prioridade,
+        "criada_em": out.criada_em,
+        "agente_policial_id": str(AGENTE.id),
+        "origem": "POLICIAL",
+    }
+    assert publicador.eventos[1].dados["papel_destinatario"] == "DELEGADO"
+
+
+async def test_registrar_publica_notificacao_depois_do_commit(use_case_rt, uow, publicador):
+    await use_case_rt.executar(AGENTE, _input_valido())
+    assert uow.commits == 1
+    assert publicador.tipos() == ["OcorrenciaCriada", "NOTIFICACAO_EMITIDA"]
+
+
+async def test_retry_com_mesmo_protocolo_nao_duplica_notificacao(repositorio, uow, auditoria, publicador, notificacoes):
+    uc = RegistrarOcorrenciaPolicial(
+        repositorio, uow, RelogioFake(AGORA), _GeradorProtocoloFixo("SGOPI-2026-000001"), auditoria, publicador, notificacoes
+    )
+    await uc.executar(AGENTE, _input_valido())
+    await uc.executar(AGENTE, _input_valido())
+    [n] = notificacoes.itens
+    assert n.metadados["numero_protocolo"] == "SGOPI-2026-000001"
+
+
+async def test_sem_portas_opcionais_mantem_comportamento_atual(use_case, notificacoes):
+    out = await use_case.executar(AGENTE, _input_valido())
+    assert out.status == "AGUARDANDO_REVISAO"
+    assert notificacoes.itens == []
