@@ -377,5 +377,9 @@
     "confirmar_papel": "Alterar o papel de {{nome}} para {{papel}}? A sessão aberta dessa pessoa será encerrada.",
     "confirmar_desativar": "Desativar {{nome}}? A pessoa perde o acesso na hora, mas o cadastro e o histórico são mantidos.",
     "confirmar_reativar": "Reativar {{nome}}?"
+  },
+  "tempo_real": {
+    "nova_ocorrencia": "Nova ocorrência {{protocolo}} ({{natureza}}) aguardando revisão.",
+    "validada": "Ocorrência {{protocolo}} validada pelo Delegado."
   }
 }

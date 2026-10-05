@@ -138,6 +138,7 @@
     "titulo": "Fila de revisão",
     "vazia": "Nenhuma ocorrência neste filtro.",
     "selecione": "Selecione uma ocorrência da fila.",
+    "nova": "NOVA",
     "filtro_0": "Aguardando revisão",
     "filtro_1": "Em correção",
     "filtro_2": "Validadas / em atendimento",

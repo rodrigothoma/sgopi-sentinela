@@ -9,17 +9,55 @@ import { useAuth } from '../hooks/useAuth';
 import { StatusBadge } from '../components/StatusBadge';
 import { useConfirmacao } from '../components/common/ConfirmDialog';
 import { useFiltrosOcorrenciasUrl } from '../hooks/useFiltrosOcorrenciasUrl';
+import { useTempoRealListener } from '../hooks/useTempoReal';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
 import { formatarNatureza } from '../utils/formatarNatureza';
-import { STATUS_ARQUIVAVEIS, STATUS_EXCLUIVEIS, STATUS_PRIORIZAVEIS, type OcorrenciaDetalhe, type OcorrenciaResumo, type StatusOcorrencia } from '../types/api';
+import {
+  STATUS_ARQUIVAVEIS, STATUS_EXCLUIVEIS, STATUS_PRIORIZAVEIS,
+  type OcorrenciaDetalhe, type OcorrenciaResumo, type OrigemOcorrencia,
+  type PrioridadeOcorrencia, type StatusOcorrencia,
+} from '../types/api';
 import { formatarDataHora } from '../utils/datas';
+import type { EventoTempoReal } from '../types/api';
 
 const FILTROS: StatusOcorrencia[][] = [
   ['AGUARDANDO_REVISAO'], ['EM_CORRECAO'], ['VALIDADA', 'EM_ATENDIMENTO'], ['REJEITADA', 'ENCERRADA'], ['ARQUIVADA', 'EXCLUIDA'],
 ];
 const MINIMO_MOTIVO = 10;
+
+const PESO_PRIORIDADE: Record<PrioridadeOcorrencia, number> = { URGENTE: 4, ALTA: 3, MEDIA: 2, BAIXA: 1 };
+
+/** Ordem da fila: mais graves primeiro; dentro da mesma gravidade, a mais antiga. */
+function inserirOrdenado(itens: OcorrenciaResumo[], nova: OcorrenciaResumo): OcorrenciaResumo[] {
+  return [...itens, nova].sort(
+    (a, b) =>
+      (PESO_PRIORIDADE[b.prioridade ?? 'MEDIA'] - PESO_PRIORIDADE[a.prioridade ?? 'MEDIA']) ||
+      a.criada_em.localeCompare(b.criada_em),
+  );
+}
+
+/** Chegada em tempo real sem refetch total: a notificação da fila reconstrói o resumo. */
+function resumoDaNotificacao(d: Record<string, unknown>): OcorrenciaResumo {
+  const criadaEm = String(d.criada_em ?? new Date().toISOString());
+  return {
+    ocorrencia_id: String(d.ocorrencia_id ?? ''),
+    numero_protocolo: String(d.numero_protocolo ?? ''),
+    natureza: String(d.natureza ?? ''),
+    localizacao: String(d.localizacao ?? ''),
+    latitude: Number(d.latitude ?? 0),
+    longitude: Number(d.longitude ?? 0),
+    status: 'AGUARDANDO_REVISAO',
+    data_hora_fato: criadaEm,
+    criada_em: criadaEm,
+    atualizada_em: criadaEm,
+    agente_policial_id: String(d.agente_policial_id ?? ''),
+    versao: 0,
+    origem: (d.origem as OrigemOcorrencia) ?? 'POLICIAL',
+    prioridade: (d.prioridade as PrioridadeOcorrencia) ?? 'MEDIA',
+  };
+}
 
 /** Delegado: fila de triagem (mais antiga primeiro) e decisões validar/devolver/rejeitar (RF04*, RF01). */
 export const FilaDelegadoPage: React.FC = () => {
@@ -39,6 +77,9 @@ export const FilaDelegadoPage: React.FC = () => {
 
   const [searchParams] = useSearchParams();
   const paramOcorrenciaId = searchParams.get('ocorrencia');
+
+  // Ocorrências que entraram por WebSocket e ainda não foram abertas (badge "nova").
+  const [novas, setNovas] = useState<Set<string>>(new Set());
 
   // Só a resposta da requisição mais recente vale: trocar de aba rápido não deixa
   // uma resposta atrasada da aba anterior sobrescrever a lista.
@@ -72,7 +113,31 @@ export const FilaDelegadoPage: React.FC = () => {
     carregar();
   }, [carregar]);
 
+  // Fila reativa (issue #68): nova ocorrência entra na aba de triagem sem F5.
+  // Com filtros de busca ativos a entrada local não é confiável — refaz a consulta.
+  useTempoRealListener({
+    onEvento: (e: EventoTempoReal) => {
+      if (e.tipo !== 'OcorrenciaCriada' || !FILTROS[filtro].includes('AGUARDANDO_REVISAO')) return;
+      const d = e.dados as Record<string, unknown>;
+      if (Object.values(filtros).some(Boolean)) {
+        carregar();
+        return;
+      }
+      const id = String(d.ocorrencia_id ?? '');
+      if (!id || pagina.itens.some((o) => o.ocorrencia_id === id)) return;
+      setPagina((p) => ({ itens: inserirOrdenado(p.itens, resumoDaNotificacao(d)), total: p.total + 1 }));
+      setNovas((s) => new Set(s).add(id));
+    },
+    onReconectar: carregar,
+  });
+
   const abrir = useCallback(async (id: string) => {
+    setNovas((s) => {
+      if (!s.has(id)) return s;
+      const copia = new Set(s);
+      copia.delete(id);
+      return copia;
+    });
     setMotivo('');
     setJustificativa('');
     try {
@@ -169,7 +234,10 @@ export const FilaDelegadoPage: React.FC = () => {
           {pagina.itens.map((o) => (
             <li key={o.ocorrencia_id} className={detalhe?.ocorrencia_id === o.ocorrencia_id ? 'ativo' : ''} onClick={() => abrir(o.ocorrencia_id)}>
               <span><strong>{o.numero_protocolo}</strong> · {formatarNatureza(o.natureza, t)}<br /><small className="muted">{formatarDataHora(o.criada_em)}</small></span>
-              <span className="lista-badges"><StatusBadge status={o.status} /><PrioridadeBadge prioridade={o.prioridade} /></span>
+              <span className="lista-badges">
+                {novas.has(o.ocorrencia_id) && <span className="badge-nova">{t('ocorrencias:fila.nova')}</span>}
+                <StatusBadge status={o.status} /><PrioridadeBadge prioridade={o.prioridade} />
+              </span>
             </li>
           ))}
         </ul>
