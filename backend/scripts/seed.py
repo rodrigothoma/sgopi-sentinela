@@ -91,12 +91,6 @@ async def main() -> None:
     except ImportError as e:
         print(f"  ! Não foi possível carregar seed_ocorrencias: {e}")
 
-    try:
-        from scripts.seed_documento_demo import semear_documento_demo  # Etapa 9 (RF08)
-        await semear_documento_demo()
-    except ImportError as e:
-        print(f"  ! Não foi possível carregar seed_documento_demo: {e}")
-
 
 if __name__ == "__main__":
     asyncio.run(main())

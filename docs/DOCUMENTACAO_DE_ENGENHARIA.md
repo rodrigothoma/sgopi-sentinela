@@ -263,7 +263,7 @@ Para garantir a viabilidade técnica do MVP e o alinhamento com a Arquitetura He
   
 * **Gestão de Dependências e Execução:** Utilização do **uv**. O uv será responsável por padronizar a instalação das bibliotecas e a configuração do ambiente de desenvolvimento entre os membros da equipe.
 
-* **Persistência de Dados:** **PostgreSQL 16** como banco de dados relacional, utilizando **SQLAlchemy 2.0 (async)** com driver **asyncpg** para mapeamento objeto-relacional e **Alembic** para versionamento de migrações de esquema.
+* **Persistência de Dados:** **PostgreSQL 16** como banco de dados relacional, utilizando **SQLAlchemy 2.0 (async)** para mapeamento objeto-relacional e **Alembic** para versionamento de migrações de esquema.
   
 * **Interface Gráfica (Frontend):** Desenvolvida em **React 18 + TypeScript**, com build via **Vite**.
   * *Painel Tático:* Renderização e interação com o mapa utilizando a biblioteca **Leaflet**, conectada aos *tiles* do **OpenStreetMap**.
