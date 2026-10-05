@@ -39,6 +39,8 @@ markers = ["e2e: testes ponta a ponta contra o backend real em :8000 (pulados se
 [tool.coverage.run]
 source = ["src/domain", "src/application"]
 branch = true
+# SQLAlchemy async roda sobre greenlet: sem isso o tracer do 3.13 (ctrace) perde as linhas após cada await
+concurrency = ["greenlet", "thread"]
 
 [tool.coverage.report]
 fail_under = 80
