@@ -6,7 +6,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { auditoriaService } from '../services/auditoriaService';
-import type { RegistroAuditoria } from '../types/api';
+import type { FiltroAuditoria, RegistroAuditoria } from '../types/api';
 import { formatarData, formatarDataHora, formatarHora } from '../utils/datas';
 
 const OPERACOES: string[] = [
@@ -27,6 +27,13 @@ const OPERACOES: string[] = [
   'evidencia.anexar',
   'evidencia.download',
   'evidencia.verificar_integridade',
+  'ocorrencias.exportar',
+  'auditoria.exportar',
+  'ocorrencia.redefinir_prioridade',
+  'usuario.cadastrar',
+  'usuario.alterar_papel',
+  'usuario.desativar',
+  'usuario.reativar',
 ];
 
 const ENTIDADES: string[] = [
@@ -35,6 +42,7 @@ const ENTIDADES: string[] = [
   'OrdemDeDespacho',
   'Evidencia',
   'Usuario',
+  'Exportacao',
 ];
 
 /** Tentativa de login falha não tem autor conhecido (quem tentou pode não ser o titular do login). */
@@ -65,6 +73,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
 
   const [registros, setRegistros] = useState<RegistroAuditoria[]>([]);
   const [carregando, setCarregando] = useState<boolean>(false);
+  const [exportando, setExportando] = useState<boolean>(false);
   const [busca, setBusca] = useState<string>('');
   const [filtroOperacao, setFiltroOperacao] = useState<string>('TODAS');
   const [filtroEntidade, setFiltroEntidade] = useState<string>('TODAS');
@@ -72,20 +81,36 @@ export const TrilhaAuditoriaPage: React.FC = () => {
   const [abaModal, setAbaModal] = useState<'amigavel' | 'json'>('amigavel');
   const [copiado, setCopiado] = useState<boolean>(false);
 
+  const filtroServidor = useMemo((): FiltroAuditoria => {
+    const params: FiltroAuditoria = {};
+    if (filtroOperacao !== 'TODAS') params.operacao = filtroOperacao;
+    if (filtroEntidade !== 'TODAS') params.entidade = filtroEntidade;
+    return params;
+  }, [filtroOperacao, filtroEntidade]);
+
   const carregar = useCallback(async () => {
     setCarregando(true);
     try {
-      const params: { operacao?: string; entidade?: string; limit: number } = { limit: 200 };
-      if (filtroOperacao !== 'TODAS') params.operacao = filtroOperacao;
-      if (filtroEntidade !== 'TODAS') params.entidade = filtroEntidade;
-      const data = await auditoriaService.listar(params);
-      setRegistros(data);
+      setRegistros(await auditoriaService.listar({ ...filtroServidor, limit: 200 }));
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
     } finally {
       setCarregando(false);
     }
-  }, [filtroOperacao, filtroEntidade, avisar]);
+  }, [filtroServidor, avisar]);
+
+  /** Exporta com os filtros de operação/entidade (a busca livre é só local, na tela). */
+  const exportar = useCallback(async () => {
+    setExportando(true);
+    try {
+      await auditoriaService.exportarCsv(filtroServidor);
+      carregar();
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    } finally {
+      setExportando(false);
+    }
+  }, [filtroServidor, carregar, avisar]);
 
   useEffect(() => {
     carregar();
@@ -232,9 +257,14 @@ export const TrilhaAuditoriaPage: React.FC = () => {
             {t('auditoria.subtitulo')}
           </p>
         </div>
-        <Button variant="secondary" size="sm" loading={carregando} onClick={carregar}>
-          {t('actions.atualizar')}
-        </Button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button variant="secondary" size="sm" loading={exportando} onClick={exportar} title={t('auditoria.exportar_dica')}>
+            {t('auditoria.exportar_csv')}
+          </Button>
+          <Button variant="secondary" size="sm" loading={carregando} onClick={carregar}>
+            {t('actions.atualizar')}
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}

@@ -7,9 +7,10 @@ O repositório NÃO confirma transação — isso é papel da UnidadeDeTrabalho.
 """
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from datetime import datetime
 from uuid import UUID
 
-from domain.ocorrencia.entity import Ocorrencia
+from domain.ocorrencia.entity import Ocorrencia, OrigemOcorrencia
 from domain.ocorrencia.status import StatusOcorrencia
 
 
@@ -21,6 +22,16 @@ class FiltroOcorrencias:
     offset: int = 0
     # Padrão: mais antiga primeiro (fila do UC04); True para "minhas", que mostra as recentes
     mais_recentes_primeiro: bool = False
+    # Sugestão #7: gravidade decrescente antes do critério de data (fila do Delegado e despacho)
+    ordenar_por_prioridade: bool = False
+    # Busca (sem diferenciar maiúsculas): trechos de natureza, protocolo e descrição/localização
+    natureza: str | None = None
+    protocolo: str | None = None
+    texto: str | None = None
+    origem: OrigemOcorrencia | None = None
+    # Intervalo fechado sobre data_hora_fato
+    data_fato_de: datetime | None = None
+    data_fato_ate: datetime | None = None
 
 
 class RepositorioOcorrencia(ABC):
@@ -51,7 +62,8 @@ class RepositorioOcorrencia(ABC):
 
     @abstractmethod
     async def listar(self, filtro: FiltroOcorrencias) -> list[Ocorrencia]:
-        """Lista ordenada por criada_em (ascendente por padrão — UC04; ver ``mais_recentes_primeiro``)."""
+        """Lista ordenada por criada_em (ascendente por padrão — UC04; ver ``mais_recentes_primeiro``),
+        precedida pela prioridade decrescente quando ``ordenar_por_prioridade``."""
         ...
 
     @abstractmethod

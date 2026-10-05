@@ -1,14 +1,19 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { FiltrosOcorrenciasBar } from '../components/ocorrencias/FiltrosOcorrencias';
 import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
+import { PainelPrioridade } from '../components/ocorrencias/PainelPrioridade';
+import { PrioridadeBadge } from '../components/PrioridadeBadge';
+import { useAuth } from '../hooks/useAuth';
 import { StatusBadge } from '../components/StatusBadge';
 import { useConfirmacao } from '../components/common/ConfirmDialog';
+import { useFiltrosOcorrenciasUrl } from '../hooks/useFiltrosOcorrenciasUrl';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
 import { formatarNatureza } from '../utils/formatarNatureza';
-import { STATUS_ARQUIVAVEIS, STATUS_EXCLUIVEIS, type OcorrenciaDetalhe, type OcorrenciaResumo, type StatusOcorrencia } from '../types/api';
+import { STATUS_ARQUIVAVEIS, STATUS_EXCLUIVEIS, STATUS_PRIORIZAVEIS, type OcorrenciaDetalhe, type OcorrenciaResumo, type StatusOcorrencia } from '../types/api';
 import { formatarDataHora } from '../utils/datas';
 
 const FILTROS: StatusOcorrencia[][] = [
@@ -20,6 +25,7 @@ const MINIMO_MOTIVO = 10;
 export const FilaDelegadoPage: React.FC = () => {
   const { t } = useTranslation(['ocorrencias', 'common']);
   const { avisar } = useToast();
+  const { tem } = useAuth();
   const [filtro, setFiltro] = useState(0);
   const [pagina, setPagina] = useState<{ itens: OcorrenciaResumo[]; total: number }>({ itens: [], total: 0 });
   const [detalhe, setDetalhe] = useState<OcorrenciaDetalhe | null>(null);
@@ -27,7 +33,9 @@ export const FilaDelegadoPage: React.FC = () => {
   const [justificativa, setJustificativa] = useState('');
   const [motivo, setMotivo] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  const [exportando, setExportando] = useState(false);
   const [confirmar, dialogoConfirmacao] = useConfirmacao();
+  const [filtros, aplicarFiltros] = useFiltrosOcorrenciasUrl();
 
   const [searchParams] = useSearchParams();
   const paramOcorrenciaId = searchParams.get('ocorrencia');
@@ -39,13 +47,26 @@ export const FilaDelegadoPage: React.FC = () => {
   const carregar = useCallback(async () => {
     const requisicao = ++ultimaRequisicao.current;
     try {
-      const p = await ocorrenciasService.listar(FILTROS[filtro], 100);
+      // Mais graves primeiro; dentro da mesma gravidade, a mais antiga (sugestão #7)
+      const p = await ocorrenciasService.listar(FILTROS[filtro], 100, 0, false, filtros, true);
       if (requisicao !== ultimaRequisicao.current) return;
       setPagina({ itens: p.itens, total: p.total });
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
     }
-  }, [filtro, avisar]);
+  }, [filtro, filtros, avisar]);
+
+  /** CSV da aba e da busca atuais (a exportação fica registrada na trilha de auditoria). */
+  const exportar = async () => {
+    setExportando(true);
+    try {
+      await ocorrenciasService.exportarCsv(FILTROS[filtro], filtros);
+    } catch (err) {
+      avisar(mensagemDeErro(err), 'erro');
+    } finally {
+      setExportando(false);
+    }
+  };
 
   useEffect(() => {
     carregar();
@@ -131,7 +152,13 @@ export const FilaDelegadoPage: React.FC = () => {
     <div className="pagina duas-colunas">
       {dialogoConfirmacao}
       <section className="card">
-        <h2>{t('ocorrencias:fila.titulo')} <span className="muted">({pagina.total})</span></h2>
+        <div className="cabecalho-lista">
+          <h2>{t('ocorrencias:fila.titulo')} <span className="muted">({pagina.total})</span></h2>
+          <button className="btn btn-ghost btn-sm" disabled={exportando || pagina.total === 0} onClick={exportar} title={t('ocorrencias:filtros.exportar_dica')}>
+            {t('ocorrencias:filtros.exportar_csv')}
+          </button>
+        </div>
+        <FiltrosOcorrenciasBar valor={filtros} onAplicar={aplicarFiltros} mostrarOrigem />
         <div className="tabs">
           {FILTROS.map((_, i) => (
             <button key={i} className={`tab ${i === filtro ? 'ativo' : ''}`} onClick={() => setFiltro(i)}>{t(`ocorrencias:fila.filtro_${i}`)}</button>
@@ -142,7 +169,7 @@ export const FilaDelegadoPage: React.FC = () => {
           {pagina.itens.map((o) => (
             <li key={o.ocorrencia_id} className={detalhe?.ocorrencia_id === o.ocorrencia_id ? 'ativo' : ''} onClick={() => abrir(o.ocorrencia_id)}>
               <span><strong>{o.numero_protocolo}</strong> · {formatarNatureza(o.natureza, t)}<br /><small className="muted">{formatarDataHora(o.criada_em)}</small></span>
-              <StatusBadge status={o.status} />
+              <span className="lista-badges"><StatusBadge status={o.status} /><PrioridadeBadge prioridade={o.prioridade} /></span>
             </li>
           ))}
         </ul>
@@ -152,6 +179,9 @@ export const FilaDelegadoPage: React.FC = () => {
         {detalhe && (
           <>
             <OcorrenciaDetalheView o={detalhe} onAlterada={() => void recarregarDetalhe()} />
+            {tem('DELEGADO') && STATUS_PRIORIZAVEIS.includes(detalhe.status) && (
+              <PainelPrioridade detalhe={detalhe} onAlterada={(r) => { setDetalhe(r); carregar(); }} />
+            )}
             {detalhe.status === 'AGUARDANDO_REVISAO' && (
               <div className="painel-decisao">
                 <label>

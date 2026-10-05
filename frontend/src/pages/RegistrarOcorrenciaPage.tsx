@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OcorrenciaForm, paraRequest, valoresVazios } from '../components/ocorrencias/OcorrenciaForm';
+import { PrioridadeBadge } from '../components/PrioridadeBadge';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
+import type { PrioridadeOcorrencia } from '../types/api';
 
 export const RegistrarOcorrenciaPage: React.FC = () => {
   const { t } = useTranslation(['ocorrencias', 'common']);
   const { avisar } = useToast();
   const [ocupado, setOcupado] = useState(false);
   const [protocolo, setProtocolo] = useState<string | null>(null);
+  const [prioridade, setPrioridade] = useState<PrioridadeOcorrencia | null>(null);
   const [chave, setChave] = useState(0); // reinicia o formulário após sucesso
 
   return (
@@ -18,6 +21,7 @@ export const RegistrarOcorrenciaPage: React.FC = () => {
       {protocolo && (
         <div className="alerta sucesso">
           {t('ocorrencias:toast.success', { protocolo })} — {t('ocorrencias:registro.aguardando')}
+          {prioridade && <> · {t('ocorrencias:prioridade.atribuida')} <PrioridadeBadge prioridade={prioridade} /></>}
         </div>
       )}
       <OcorrenciaForm
@@ -27,11 +31,13 @@ export const RegistrarOcorrenciaPage: React.FC = () => {
         ocupado={ocupado}
         permitirEvidencias
         permitirApreensoes
+        permitirPrioridade
         onSubmit={async (v) => {
           setOcupado(true);
           try {
             const r = await ocorrenciasService.registrar(paraRequest(v));
             setProtocolo(r.numero_protocolo);
+            setPrioridade(r.prioridade ?? null);
             try {
               for (const arquivo of v.evidencias) {
                 await ocorrenciasService.anexarEvidencia(r.ocorrencia_id, arquivo);

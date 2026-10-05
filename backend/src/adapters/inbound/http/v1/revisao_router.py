@@ -19,6 +19,7 @@ from application.ports.inbound.interface_arquivar_ocorrencia import (
     InterfaceArquivarOcorrencia,
     InterfaceExcluirOcorrencia,
 )
+from application.ports.inbound.interface_redefinir_prioridade import InterfaceRedefinirPrioridade, RedefinirPrioridadeInput
 from application.ports.inbound.interface_registrar_ocorrencia_policial import TipificacaoInputDTO
 from application.ports.inbound.interface_revisar_ocorrencia import (
     CorrigirOcorrenciaInput,
@@ -36,6 +37,7 @@ from infrastructure.di import (
     get_corrigir_ocorrencia,
     get_devolver_para_correcao,
     get_excluir_ocorrencia,
+    get_redefinir_prioridade,
     get_reenviar_ocorrencia,
     get_rejeitar_ocorrencia,
     get_validar_ocorrencia,
@@ -56,6 +58,11 @@ class MotivoRequest(BaseModel):
     """Motivo obrigatório dos atos administrativos do Delegado (RF20)."""
 
     motivo: str = Field(min_length=1, max_length=2000)
+
+
+class PrioridadeRequest(BaseModel):
+    prioridade: str = Field(max_length=10)  # BAIXA | MEDIA | ALTA | URGENTE
+    justificativa: str = Field(min_length=1, max_length=2000)
 
 
 class CorrigirOcorrenciaRequest(BaseModel):
@@ -156,3 +163,18 @@ async def excluir(
     """Exclusão *lógica* (→ EXCLUIDA) com motivo obrigatório (RF20, RNF03*). Somente DELEGADO.
     Nada é apagado do banco: a ocorrência some das listagens padrão, mas segue consultável para auditoria."""
     return _detalhe(await use_case.executar(ator, AutorizacaoDelegadoInput(ocorrencia_id=ocorrencia_id, motivo=body.motivo)))
+
+
+@router.post("/{ocorrencia_id}/prioridade", response_model=OcorrenciaDetalheSchema)
+async def redefinir_prioridade(
+    ocorrencia_id: UUID,
+    body: PrioridadeRequest,
+    ator: Ator = Depends(exigir_papel(Papel.DELEGADO)),
+    use_case: InterfaceRedefinirPrioridade = Depends(get_redefinir_prioridade),
+) -> OcorrenciaDetalheSchema:
+    """Ajusta a gravidade da ocorrência ainda em fluxo, com justificativa auditada (sugestão #7). Somente DELEGADO."""
+    return _detalhe(
+        await use_case.executar(
+            ator, RedefinirPrioridadeInput(ocorrencia_id=ocorrencia_id, prioridade=body.prioridade, justificativa=body.justificativa)
+        )
+    )

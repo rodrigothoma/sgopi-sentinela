@@ -26,6 +26,8 @@ const PainelTaticoPage = lazy(() => import('./pages/PainelTaticoPage').then((m) 
 const RegistrarOcorrenciaPage = lazy(() => import('./pages/RegistrarOcorrenciaPage').then((m) => ({ default: m.RegistrarOcorrenciaPage })));
 const RegistroCidadaoPage = lazy(() => import('./pages/RegistroCidadaoPage').then((m) => ({ default: m.RegistroCidadaoPage })));
 const ComunicacaoInteragenciasPage = lazy(() => import('./pages/ComunicacaoInteragenciasPage').then((m) => ({ default: m.ComunicacaoInteragenciasPage })));
+const IndicadoresPage = lazy(() => import('./pages/IndicadoresPage').then((m) => ({ default: m.IndicadoresPage })));
+const EfetivoPage = lazy(() => import('./pages/EfetivoPage').then((m) => ({ default: m.EfetivoPage })));
 const TrilhaAuditoriaPage = lazy(() => import('./pages/TrilhaAuditoriaPage').then((m) => ({ default: m.TrilhaAuditoriaPage })));
 
 const Carregando = () => {
@@ -64,6 +66,8 @@ export default function App() {
                   <Route path="/interagencias" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR', 'AGENTE', 'OPERADOR_CENTRAL', 'PERITO']}><ComunicacaoInteragenciasPage /></RequireRole>} />
                   <Route path="/frota" element={<RequireRole papeis={['OPERADOR_CENTRAL', 'SUPERVISOR']}><FrotaPage /></RequireRole>} />
                   <Route path="/auditoria" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><TrilhaAuditoriaPage /></RequireRole>} />
+                  <Route path="/indicadores" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR', 'OPERADOR_CENTRAL']}><IndicadoresPage /></RequireRole>} />
+                  <Route path="/efetivo" element={<RequireRole papeis={['SUPERVISOR']}><EfetivoPage /></RequireRole>} />
                 </Route>
 
                 {/* Redirecionamentos de aliases amigáveis */}

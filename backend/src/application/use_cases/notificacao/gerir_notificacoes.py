@@ -15,7 +15,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
-from domain.shared.eventos import EventoDominio
+from domain.notificacao.eventos import notificacao_emitida
 from domain.shared.exceptions import EntidadeNaoEncontradaError
 
 
@@ -139,22 +139,5 @@ class CriarNotificacaoUseCase(InterfaceCriarNotificacao):
         else:
             salva = await self._repo.salvar(notificacao)
 
-        # Transmite via WebSocket
-        evento = EventoDominio(
-            tipo="NOTIFICACAO_EMITIDA",
-            ocorrido_em=agora,
-            dados={
-                "id": str(salva.id),
-                "titulo": salva.titulo,
-                "mensagem": salva.mensagem,
-                "tipo": salva.tipo.value if hasattr(salva.tipo, "value") else str(salva.tipo),
-                "prioridade": salva.prioridade.value if hasattr(salva.prioridade, "value") else str(salva.prioridade),
-                "usuario_id": str(salva.usuario_id) if salva.usuario_id else None,
-                "papel_destinatario": salva.papel_destinatario,
-                "departamento_destinatario": salva.departamento_destinatario,
-                "link": salva.link,
-                "criada_em": salva.criada_em.isoformat(),
-            },
-        )
-        await self._publicador.publicar(evento)
+        await self._publicador.publicar(notificacao_emitida(salva))
         return salva

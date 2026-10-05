@@ -61,10 +61,12 @@ def extrair_ator(token: str | None, request: Request, provedor: ProvedorToken, r
 
 
 async def exigir_usuario_ativo(ator: Ator, usuarios: RepositorioUsuario) -> None:
-    """O JWT vale por horas: sem esta checagem um usuário desativado seguiria operando até expirar."""
+    """O JWT vale por horas: sem esta checagem um usuário desativado seguiria operando até expirar.
+    O papel do token também precisa conferir com o cadastro: após uma troca de papel (sugestão #13)
+    a sessão antiga deixa de valer e o usuário entra de novo já com o papel novo."""
     usuario = await usuarios.buscar_por_id(ator.id)
-    if usuario is None or not usuario.ativo:
-        raise CredenciaisInvalidasError("Usuário inativo ou inexistente.", chave="auth.unauthorized")
+    if usuario is None or not usuario.ativo or usuario.papel != ator.papel:
+        raise CredenciaisInvalidasError("Usuário inativo, inexistente ou com papel alterado.", chave="auth.unauthorized")
 
 
 async def ator_atual(

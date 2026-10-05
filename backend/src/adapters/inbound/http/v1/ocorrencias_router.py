@@ -6,13 +6,17 @@ exige token; o ator vem do JWT, nunca do body. O canal público, as evidências 
 Delegado ficam em ``ocorrencias_publico_router``, ``evidencias_router`` e ``revisao_router``;
 os schemas compartilhados por eles moram aqui.
 """
-from datetime import datetime
+from dataclasses import asdict, replace
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from adapters.inbound.http.deps import exigir_papel
+from adapters.inbound.http.exportacao_csv import FormatoExportacao, resposta_csv
 from adapters.inbound.http.v1.apreensoes_router import ItemApreendidoSchema, RegistrarItemApreendidoRequest, item_schema
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_acessar_evidencia import EstadoIntegridadeEvidencia
@@ -23,6 +27,12 @@ from application.ports.inbound.interface_consultar_ocorrencias import (
     OcorrenciaDetalheOutput,
     OcorrenciaResumoOutput,
 )
+from application.ports.inbound.interface_linha_do_tempo import EventoLinhaDoTempoOutput, InterfaceLinhaDoTempo
+from application.ports.inbound.interface_registrar_exportacao import (
+    InterfaceRegistrarExportacao,
+    RecursoExportavel,
+    RegistrarExportacaoInput,
+)
 from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     EnvolvidoInputDTO,
     InterfaceRegistrarOcorrenciaPolicial,
@@ -31,11 +41,21 @@ from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     TipificacaoInputDTO,
 )
 from domain.usuario.entity import Papel
-from infrastructure.di import get_listar_ocorrencias, get_obter_detalhe_ocorrencia, get_registrar_ocorrencia
+from infrastructure.di import (
+    get_linha_do_tempo,
+    get_listar_ocorrencias,
+    get_obter_detalhe_ocorrencia,
+    get_registrar_exportacao,
+    get_registrar_ocorrencia,
+)
 
 router = APIRouter(prefix="/v1/ocorrencias", tags=["ocorrencias"])
 
 PAPEIS_CONSULTA = (Papel.AGENTE, Papel.DELEGADO, Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
+PAPEIS_EXPORTACAO = (Papel.DELEGADO, Papel.SUPERVISOR)
+TAMANHO_MAXIMO_BUSCA = 200
+TAMANHO_PAGINA_EXPORTACAO = 200
+LIMITE_EXPORTACAO = 5000
 
 
 # ------------------------------------------------------------------ schemas
@@ -63,6 +83,8 @@ class RegistrarOcorrenciaRequest(BaseModel):
     envolvidos: list[EnvolvidoSchema] = []
     # RF03 — opcional: apreensão concomitante ao registro (mesma transação; lacre único na base)
     itens_apreendidos: list[RegistrarItemApreendidoRequest] = []
+    # Sugestão #7 — opcional: ausente, o sistema sugere pela natureza/tipificações
+    prioridade: str | None = Field(default=None, max_length=10)
 
 
 class OcorrenciaResponse(BaseModel):
@@ -70,6 +92,7 @@ class OcorrenciaResponse(BaseModel):
     numero_protocolo: str
     status: str
     criada_em: str
+    prioridade: str | None = None  # só no registro policial; o canal público não expõe a triagem
 
 
 class EvidenciaSchema(BaseModel):
@@ -106,6 +129,7 @@ class OcorrenciaResumoSchema(BaseModel):
     versao: int
     inquerito_id: UUID | None = None
     origem: str = "POLICIAL"
+    prioridade: str = "MEDIA"
 
 
 class EnvolvidoDetalheSchema(BaseModel):
@@ -142,6 +166,14 @@ class OcorrenciaDetalheSchema(OcorrenciaResumoSchema):
     evidencias: list[EvidenciaSchema]
     itens_apreendidos: list[ItemApreendidoSchema]
     historico_status: list[HistoricoStatusSchema]
+
+
+class EventoLinhaDoTempoSchema(BaseModel):
+    em: str
+    tipo: str
+    por_id: UUID | None = None
+    por_nome: str | None = None
+    detalhes: dict[str, Any]
 
 
 class PaginaOcorrenciasSchema(BaseModel):
@@ -207,38 +239,107 @@ async def registrar_ocorrencia(
         tipificacoes=tuple(TipificacaoInputDTO(artigo=t.artigo, descricao=t.descricao) for t in body.tipificacoes),
         envolvidos=tuple(_envolvido_dto(e) for e in body.envolvidos),
         itens_apreendidos=tuple(ItemApreendidoInputDTO(**i.model_dump()) for i in body.itens_apreendidos),
+        prioridade=body.prioridade,
     )
     out = await use_case.executar(ator, input_dto)
     return OcorrenciaResponse(
-        ocorrencia_id=str(out.ocorrencia_id), numero_protocolo=out.numero_protocolo, status=out.status, criada_em=out.criada_em
+        ocorrencia_id=str(out.ocorrencia_id),
+        numero_protocolo=out.numero_protocolo,
+        status=out.status,
+        criada_em=out.criada_em,
+        prioridade=out.prioridade,
     )
 
+
+
+def filtros_listagem(
+    status: list[str] = Query(default=[]),
+    somente_minhas: bool = Query(default=False),
+    mais_recentes_primeiro: bool = Query(default=False),
+    ordenar_por_prioridade: bool = Query(default=False),
+    natureza: str | None = Query(default=None, max_length=TAMANHO_MAXIMO_BUSCA),
+    protocolo: str | None = Query(default=None, max_length=TAMANHO_MAXIMO_BUSCA),
+    texto: str | None = Query(default=None, max_length=TAMANHO_MAXIMO_BUSCA),
+    origem: str | None = Query(default=None, max_length=20),
+    data_fato_de: datetime | None = Query(default=None),
+    data_fato_ate: datetime | None = Query(default=None),
+) -> ListarOcorrenciasInput:
+    """Filtros comuns à listagem e à exportação; a paginação é aplicada por cada rota."""
+    return ListarOcorrenciasInput(
+        status=tuple(status),
+        somente_minhas=somente_minhas,
+        mais_recentes_primeiro=mais_recentes_primeiro,
+        ordenar_por_prioridade=ordenar_por_prioridade,
+        natureza=natureza,
+        protocolo=protocolo,
+        texto=texto,
+        origem=origem,
+        data_fato_de=data_fato_de,
+        data_fato_ate=data_fato_ate,
+    )
 
 
 @router.get("", response_model=PaginaOcorrenciasSchema)
 @router.get("/", response_model=PaginaOcorrenciasSchema, include_in_schema=False)
 async def listar_ocorrencias(
-    status: list[str] = Query(default=[]),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    somente_minhas: bool = Query(default=False),
-    mais_recentes_primeiro: bool = Query(default=False),
+    filtros: ListarOcorrenciasInput = Depends(filtros_listagem),
     ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
     use_case: InterfaceListarOcorrencias = Depends(get_listar_ocorrencias),
 ) -> PaginaOcorrenciasSchema:
     """Lista ocorrências por status, da mais antiga para a mais nova (RF01), ou o inverso com
-    ``mais_recentes_primeiro``. Agente só vê as próprias."""
-    pagina = await use_case.executar(
+    ``mais_recentes_primeiro``; ``ordenar_por_prioridade`` põe as mais graves antes. Aceita busca por natureza, protocolo, texto (descrição/localização),
+    origem e período do fato. Agente só vê as próprias."""
+    pagina = await use_case.executar(ator, replace(filtros, limit=limit, offset=offset))
+    return PaginaOcorrenciasSchema(itens=[_resumo(i) for i in pagina.itens], total=pagina.total, limit=pagina.limit, offset=pagina.offset)
+
+
+CABECALHO_CSV = (
+    "numero_protocolo", "natureza", "status", "prioridade", "origem", "data_hora_fato", "localizacao",
+    "latitude", "longitude", "criada_em", "atualizada_em", "agente_policial_id", "inquerito_id",
+)
+
+
+def _linha_csv(o: OcorrenciaResumoOutput) -> tuple[object, ...]:
+    return tuple(getattr(o, coluna) for coluna in CABECALHO_CSV)
+
+
+async def _todas_as_paginas(
+    use_case: InterfaceListarOcorrencias, ator: Ator, filtros: ListarOcorrenciasInput
+) -> list[OcorrenciaResumoOutput]:
+    """Percorre a listagem paginada até esgotá-la ou atingir o teto de exportação."""
+    itens: list[OcorrenciaResumoOutput] = []
+    while len(itens) < LIMITE_EXPORTACAO:
+        pagina = await use_case.executar(ator, replace(filtros, limit=TAMANHO_PAGINA_EXPORTACAO, offset=len(itens)))
+        itens.extend(pagina.itens)
+        if not pagina.itens or len(itens) >= pagina.total:
+            break
+    return itens[:LIMITE_EXPORTACAO]
+
+
+@router.get("/exportar", response_class=StreamingResponse)
+async def exportar_ocorrencias(
+    formato: FormatoExportacao = Query(default=FormatoExportacao.CSV),
+    filtros: ListarOcorrenciasInput = Depends(filtros_listagem),
+    ator: Ator = Depends(exigir_papel(*PAPEIS_EXPORTACAO)),
+    use_case: InterfaceListarOcorrencias = Depends(get_listar_ocorrencias),
+    registrar_exportacao: InterfaceRegistrarExportacao = Depends(get_registrar_exportacao),
+) -> StreamingResponse:
+    """Exporta a listagem filtrada em CSV (até ``LIMITE_EXPORTACAO`` linhas). Somente Delegado/Supervisor;
+    a exportação é auditada (RNF03)."""
+    itens = await _todas_as_paginas(use_case, ator, filtros)
+    await registrar_exportacao.executar(
         ator,
-        ListarOcorrenciasInput(
-            status=tuple(status),
-            limit=limit,
-            offset=offset,
-            somente_minhas=somente_minhas,
-            mais_recentes_primeiro=mais_recentes_primeiro,
+        RegistrarExportacaoInput(
+            recurso=RecursoExportavel.OCORRENCIAS,
+            formato=formato.value,
+            total_linhas=len(itens),
+            filtros={k: v for k, v in asdict(filtros).items() if k not in ("limit", "offset")},
         ),
     )
-    return PaginaOcorrenciasSchema(itens=[_resumo(i) for i in pagina.itens], total=pagina.total, limit=pagina.limit, offset=pagina.offset)
+    nome = f"ocorrencias_{datetime.now(UTC):%Y%m%d_%H%M%S}.csv"
+    return resposta_csv(nome, CABECALHO_CSV, (_linha_csv(o) for o in itens))
 
 
 @router.get("/{ocorrencia_id}", response_model=OcorrenciaDetalheSchema)
@@ -249,3 +350,17 @@ async def obter_ocorrencia(
 ) -> OcorrenciaDetalheSchema:
     """Detalhe completo com envolvidos, tipificações e histórico de status (RF01)."""
     return _detalhe(await use_case.executar(ator, ocorrencia_id))
+
+
+def _evento_schema(e: EventoLinhaDoTempoOutput) -> EventoLinhaDoTempoSchema:
+    return EventoLinhaDoTempoSchema(em=e.em, tipo=e.tipo.value, por_id=e.por_id, por_nome=e.por_nome, detalhes=e.detalhes)
+
+
+@router.get("/{ocorrencia_id}/linha-do-tempo", response_model=list[EventoLinhaDoTempoSchema])
+async def linha_do_tempo(
+    ocorrencia_id: UUID,
+    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    use_case: InterfaceLinhaDoTempo = Depends(get_linha_do_tempo),
+) -> list[EventoLinhaDoTempoSchema]:
+    """Status, despachos, evidências, apreensões, inquérito e laudos em ordem cronológica (sugestão #12)."""
+    return [_evento_schema(e) for e in await use_case.executar(ator, ocorrencia_id)]

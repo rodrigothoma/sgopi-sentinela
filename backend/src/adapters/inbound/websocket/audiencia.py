@@ -26,6 +26,7 @@ EVENTOS_OPERACIONAIS = frozenset(
         "OcorrenciaEncerrada",
         "OcorrenciaArquivada",
         "OcorrenciaExcluida",
+        "OcorrenciaPrioridadeAlterada",
         "OrdemDeDespachoCriada",
         "PosicaoAtualizada",
         "ViaturaSituacaoAlterada",

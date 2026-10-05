@@ -1916,3 +1916,102 @@ dl.grid2 dd { margin: 0 0 8px; }
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+/* --- Busca na listagem de ocorrências (fila do Delegado / minhas) --- */
+.filtros-ocorrencias { margin-bottom: 12px; }
+.filtros-ocorrencias-linha { display: flex; gap: 8px; align-items: center; }
+.filtros-ocorrencias-linha input { flex: 1; min-width: 0; }
+.filtros-ocorrencias details { margin-top: 6px; }
+.filtros-ocorrencias summary { cursor: pointer; user-select: none; }
+.filtros-ocorrencias-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+.filtros-ocorrencias-grade label { margin-top: 8px; font-size: .75rem; }
+.filtros-ocorrencias-grade input, .filtros-ocorrencias-grade select { margin-top: 4px; text-transform: none; letter-spacing: normal; font-family: inherit; }
+@media (max-width: 640px) {
+  .filtros-ocorrencias-grade { grid-template-columns: minmax(0, 1fr); }
+}
+.cabecalho-lista { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cabecalho-lista h2 { margin: 0; }
+
+/* --- Prioridade da ocorrência (sugestão #7): forma do marcador + rótulo, não só a cor --- */
+.badge-prioridade { font-size: .78rem; }
+.badge-prioridade-URGENTE { color: #f87171; }
+.badge-prioridade-URGENTE::before { content: '▲▲'; letter-spacing: -2px; }
+.badge-prioridade-ALTA { color: #fb923c; }
+.badge-prioridade-ALTA::before { content: '▲'; }
+.badge-prioridade-MEDIA { color: var(--muted); }
+.badge-prioridade-MEDIA::before { content: '■'; }
+.badge-prioridade-BAIXA { color: var(--muted); opacity: .8; }
+.badge-prioridade-BAIXA::before { content: '▼'; }
+[data-theme="light"] .badge-prioridade-URGENTE { color: #dc2626; }
+[data-theme="light"] .badge-prioridade-ALTA { color: #c2410c; }
+.lista-badges { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.painel-prioridade { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.painel-prioridade h4 { display: flex; gap: 10px; align-items: center; margin: 0 0 4px; }
+.painel-prioridade-linha { display: grid; grid-template-columns: minmax(120px, 1fr) 2fr; gap: 0 12px; margin-bottom: 10px; }
+@media (max-width: 640px) { .painel-prioridade-linha { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- Linha do tempo da ocorrência (sugestão #12) --- */
+.linha-tempo { list-style: none; margin: 12px 0; padding: 0 0 0 18px; border-left: 2px solid var(--line); }
+.linha-tempo-item { position: relative; padding: 0 0 16px 12px; }
+.linha-tempo-item::before {
+  content: ''; position: absolute; left: -25px; top: 4px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--primary); box-shadow: 0 0 0 2px var(--card);
+}
+.linha-tempo-cabecalho { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.linha-tempo-corpo { margin: 2px 0; overflow-wrap: anywhere; }
+.linha-tempo-texto { margin: 4px 0 0; color: var(--muted); }
+
+/* --- Painel de indicadores (sugestão #11) --- */
+.indicadores-cabecalho { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.indicadores-cabecalho h1 { margin: 0 0 4px; }
+.indicadores-filtros { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.indicadores-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 900px) { .indicadores-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .indicadores-kpis { grid-template-columns: minmax(0, 1fr); } }
+.indicadores-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 900px) { .indicadores-grade { grid-template-columns: minmax(0, 1fr); } }
+.indicador-cartao { min-width: 0; }
+.indicador-cartao h3 { margin: 0; }
+.indicador-cartao > p.small { margin: 2px 0 12px; }
+
+.barras-h { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.barras-h-linha { display: grid; grid-template-columns: minmax(90px, 38%) 1fr; gap: 10px; align-items: center; border-radius: 6px; }
+.barras-h-linha:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.barras-h-rotulo { font-size: .85rem; overflow-wrap: anywhere; }
+.barras-h-trilho { display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* barra fina (≤ 24px), ponta arredondada em 4px e base reta; cresce a partir da mesma linha de base */
+.barras-h-barra { display: block; height: 14px; min-width: 2px; background: var(--primary); border-radius: 0 4px 4px 0; flex: none; max-width: calc(100% - 64px); }
+.barras-h-valor { font-size: .8rem; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.colunas-hora { position: relative; }
+.colunas-hora svg { width: 100%; height: auto; display: block; }
+.grafico-grade { stroke: var(--line); stroke-width: 1; }
+.grafico-eixo { fill: var(--muted); font-size: 10px; }
+.grafico-valor { fill: var(--ink); font-size: 11px; font-weight: 600; }
+.grafico-marca { fill: var(--primary); }
+.grafico-marca.foco { fill: color-mix(in srgb, var(--primary) 75%, var(--ink)); }
+.grafico-tooltip {
+  position: absolute; top: 0; transform: translateX(-50%); pointer-events: none; white-space: nowrap;
+  background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 6px;
+  padding: 4px 8px; font-size: .78rem; box-shadow: 0 4px 12px rgb(0 0 0 / .18);
+}
+.grafico-tabela { margin-top: 8px; }
+.grafico-tabela summary { cursor: pointer; }
+.grafico-tabela table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: .82rem; }
+.grafico-tabela th, .grafico-tabela td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); }
+.grafico-tabela td:last-child, .grafico-tabela th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* --- Gestão do efetivo (sugestão #13) --- */
+.efetivo-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: 0 12px; align-items: end; }
+@media (max-width: 900px) { .efetivo-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .efetivo-form { grid-template-columns: minmax(0, 1fr); } }
+.efetivo-toggle { display: inline-flex; gap: 6px; align-items: center; margin: 0; text-transform: none; letter-spacing: normal; font-family: inherit; font-weight: 500; }
+.efetivo-toggle input { width: auto; }
+.tabela-rolavel { overflow-x: auto; }
+.efetivo-tabela select { min-width: 160px; padding: 6px 8px; }
+.efetivo-tabela tr.inativo td { color: var(--muted); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+/* a tabela rola dentro do cartão; a página não ganha rolagem horizontal no celular */
+.efetivo, .efetivo .card, .tabela-rolavel { min-width: 0; max-width: 100%; }
+/* ancora o texto só para leitores de tela (.sr-only) dentro do contêiner rolável */
+.tabela-rolavel { position: relative; }

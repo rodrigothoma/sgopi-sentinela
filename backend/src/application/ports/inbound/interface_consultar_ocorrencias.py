@@ -1,6 +1,7 @@
 """Porta de entrada: consulta de ocorrências (RF01) — listagem paginada e detalhe completo."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from datetime import datetime
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
@@ -15,6 +16,13 @@ class ListarOcorrenciasInput:
     offset: int = 0
     somente_minhas: bool = False
     mais_recentes_primeiro: bool = False
+    ordenar_por_prioridade: bool = False
+    natureza: str | None = None
+    protocolo: str | None = None
+    texto: str | None = None
+    origem: str | None = None  # POLICIAL | PUBLICA
+    data_fato_de: datetime | None = None
+    data_fato_ate: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -58,6 +66,7 @@ class OcorrenciaResumoOutput:
     versao: int
     inquerito_id: UUID | None = None
     origem: str = "POLICIAL"  # POLICIAL | PUBLICA
+    prioridade: str = "MEDIA"  # BAIXA | MEDIA | ALTA | URGENTE
 
 
 @dataclass(frozen=True)

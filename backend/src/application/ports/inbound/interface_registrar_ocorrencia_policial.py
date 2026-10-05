@@ -55,6 +55,8 @@ class RegistrarOcorrenciaInput:
     tipificacoes: tuple[TipificacaoInputDTO, ...] = field(default_factory=tuple)
     envolvidos: tuple[EnvolvidoInputDTO, ...] = field(default_factory=tuple)
     itens_apreendidos: tuple[ItemApreendidoInputDTO, ...] = field(default_factory=tuple)
+    # Sugestão #7: ajuste do Agente (BAIXA | MEDIA | ALTA | URGENTE); ausente → sugerida pelo domínio
+    prioridade: str | None = None
     # Preenchidos só pelo canal público (RegistrarOcorrenciaPublica); o router policial nunca os expõe
     origem: OrigemOcorrencia = OrigemOcorrencia.POLICIAL
     codigo_acompanhamento_hash: str | None = None
@@ -66,6 +68,7 @@ class RegistrarOcorrenciaOutput:
     numero_protocolo: str
     status: str
     criada_em: str  # ISO 8601
+    prioridade: str = "MEDIA"
 
 
 class InterfaceRegistrarOcorrenciaPolicial(ABC):

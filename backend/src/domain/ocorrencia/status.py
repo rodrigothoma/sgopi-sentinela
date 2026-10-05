@@ -47,6 +47,9 @@ ESTADOS_ACEITAM_APREENSAO = frozenset(
     }
 )
 
+# Sugestão #7: a prioridade só pode ser redefinida enquanto a ocorrência ainda será triada ou atendida.
+ESTADOS_PRIORIZAVEIS = ESTADOS_ACEITAM_APREENSAO
+
 # Arquivar: qualquer estado fora do atendimento e que ainda não foi arquivado/excluído.
 ESTADOS_ARQUIVAVEIS = frozenset(
     {

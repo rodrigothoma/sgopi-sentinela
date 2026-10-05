@@ -16,9 +16,14 @@
     "desfecho_vazio": "Outcome is required",
     "nao_e_autor": "Only the authoring agent can change this occurrence",
     "status_invalido": "Invalid occurrence status",
+    "origem_invalida": "Invalid occurrence origin (use POLICIAL or PUBLICA)",
+    "periodo_invalido": "The start date of the incident cannot be after the end date",
     "protocolo_nao_encontrado": "No incident found for the given protocol number and tracking code.",
     "declaracao_maioridade_ausente": "You must confirm the age (18+) and truthfulness declaration.",
-    "publica_nao_devolvivel": "Citizen-filed reports cannot be returned for correction: validate, reject or archive them."
+    "publica_nao_devolvivel": "Citizen-filed reports cannot be returned for correction: validate, reject or archive them.",
+    "prioridade_invalida": "Invalid priority (use BAIXA, MEDIA, ALTA or URGENTE)",
+    "prioridade_status_invalido": "The priority cannot be changed in this status",
+    "prioridade_inalterada": "The occurrence already has this priority"
   },
   "envolvido": {
     "documento_tamanho_invalido": "Invalid document length: ID with 10 digits or CPF with 11 digits",
@@ -58,7 +63,17 @@
   "usuario": {
     "nome_vazio": "User name is required",
     "login_vazio": "Login is required",
-    "senha_vazia": "Password is required"
+    "senha_vazia": "Password is required",
+    "login_invalido": "Login must have 3 to 50 characters: lowercase letters, digits, dot, hyphen or underscore",
+    "papel_inalterado": "The user already has this role",
+    "ja_inativo": "The user is already inactive",
+    "ja_ativo": "The user is already active",
+    "sistema": "The public channel system user cannot be managed",
+    "papel_invalido": "Invalid role",
+    "proprio": "Nobody can change their own role or status",
+    "nao_encontrado": "User not found",
+    "senha_curta": "The initial password must have at least 8 characters",
+    "login_em_uso": "Login is already in use"
   },
   "auth": {
     "unauthorized": "Unauthorized",
@@ -133,5 +148,10 @@
   },
   "simulador": {
     "desabilitado_em_producao": "The telemetry simulator is a demo feature and is disabled in production."
+  },
+  "indicadores": {
+    "fuso_invalido": "Invalid time zone",
+    "periodo_sem_fuso": "Period dates must include a time zone",
+    "periodo_invalido": "Invalid period: the start must precede the end and the range cannot exceed 366 days"
   }
 }

@@ -7,7 +7,8 @@ alteração em domain/, application/, ports/, migrações ou na máquina de esta
 
 Regras implementadas:
 - Só despacha ocorrência ``VALIDADA`` esperando além de ``janela_carencia_segundos``
-  (medido por ``atualizada_em`` == instante da validação);
+  (medido por ``atualizada_em`` == instante da validação), as mais graves primeiro
+  (prioridade URGENTE → BAIXA, depois a mais antiga — sugestão #7);
 - A viatura ``DISPONIVEL`` mais próxima é escolhida pelo serviço de proximidade do
   domínio (Haversine + ``posicao_valida``) — nunca recalcula distância aqui (RNF04);
 - Viatura com GPS vencido (> ``max_idade_segundos``) nunca é despachada (RNF04);
@@ -246,7 +247,9 @@ class OrquestradorDespacho:
             return False
         empenhadas = {ordem.ocorrencia_id for ordem in ativas}
         candidatas = [
-            o for o in await ocorrencias.listar(FiltroOcorrencias(status=(StatusOcorrencia.VALIDADA,), limit=LIMITE_OCORRENCIAS))
+            o for o in await ocorrencias.listar(
+                FiltroOcorrencias(status=(StatusOcorrencia.VALIDADA,), limit=LIMITE_OCORRENCIAS, ordenar_por_prioridade=True)
+            )
             if o.id not in empenhadas and (agora - o.atualizada_em).total_seconds() >= self.janela_carencia
         ][:capacidade]
         if not candidatas:

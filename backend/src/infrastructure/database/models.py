@@ -84,6 +84,8 @@ class OcorrenciaModel(Base):
     # Canal de entrada (POLICIAL | PUBLICA) e hash do código de acompanhamento do cidadão
     origem: Mapped[str] = mapped_column(String(20), nullable=False, default="POLICIAL", server_default="POLICIAL")
     codigo_acompanhamento_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Sugestão #7: gravidade (BAIXA | MEDIA | ALTA | URGENTE) — ordena a fila do Delegado e o despacho
+    prioridade: Mapped[str] = mapped_column(String(10), nullable=False, default="MEDIA", server_default="MEDIA", index=True)
 
     # optimistic locking (RNF03): ``versao`` é controlada pelo domínio e verificada
     # explicitamente pelo repositório (SELECT … FOR UPDATE + comparação).

@@ -9,6 +9,8 @@ export type StatusOcorrencia = 'AGUARDANDO_REVISAO' | 'EM_CORRECAO' | 'REJEITADA
 /** Atos administrativos do Delegado (RF20): não permitidos em EM_ATENDIMENTO; EXCLUIDA é terminal. */
 export const STATUS_ARQUIVAVEIS: readonly StatusOcorrencia[] = ['AGUARDANDO_REVISAO', 'EM_CORRECAO', 'REJEITADA', 'VALIDADA', 'ENCERRADA'];
 export const STATUS_EXCLUIVEIS: readonly StatusOcorrencia[] = [...STATUS_ARQUIVAVEIS, 'ARQUIVADA'];
+/** Sugestão #7: a prioridade só muda enquanto a ocorrência ainda será triada ou atendida. */
+export const STATUS_PRIORIZAVEIS: readonly StatusOcorrencia[] = ['AGUARDANDO_REVISAO', 'EM_CORRECAO', 'VALIDADA', 'EM_ATENDIMENTO'];
 /** RF03 / UC03: apreensões só pelo Agente autor com a ocorrência registrada ou em andamento. */
 export const STATUS_ACEITAM_APREENSAO: readonly StatusOcorrencia[] = ['AGUARDANDO_REVISAO', 'EM_CORRECAO', 'VALIDADA', 'EM_ATENDIMENTO'];
 export type SituacaoViatura = 'DISPONIVEL' | 'EM_DESLOCAMENTO' | 'OPERANDO' | 'INDISPONIVEL';
@@ -64,10 +66,16 @@ export interface RegistrarOcorrenciaRequest {
   tipificacoes: TipificacaoDTO[]; envolvidos: EnvolvidoDTO[];
   /** RF03 — opcional: apreensão concomitante ao registro (mesma transação). */
   itens_apreendidos?: ItemApreendidoDTO[];
+  /** Sugestão #7 — opcional: sem valor, o backend sugere pela natureza/tipificações. */
+  prioridade?: PrioridadeOcorrencia;
 }
 export interface CorrigirOcorrenciaRequest extends Partial<RegistrarOcorrenciaRequest> {}
 
-export interface OcorrenciaCriada { ocorrencia_id: string; numero_protocolo: string; status: StatusOcorrencia; criada_em: string }
+export interface OcorrenciaCriada { ocorrencia_id: string; numero_protocolo: string; status: StatusOcorrencia; criada_em: string; prioridade?: PrioridadeOcorrencia | null }
+
+/** Gravidade (sugestão #7), da mais grave para a mais leve. */
+export const PRIORIDADES = ['URGENTE', 'ALTA', 'MEDIA', 'BAIXA'] as const;
+export type PrioridadeOcorrencia = (typeof PRIORIDADES)[number];
 
 export interface OcorrenciaResumo {
   ocorrencia_id: string; numero_protocolo: string; natureza: string; localizacao: string;
@@ -75,8 +83,19 @@ export interface OcorrenciaResumo {
   criada_em: string; atualizada_em: string; agente_policial_id: string; versao: number;
   inquerito_id?: string | null;
   origem?: OrigemOcorrencia;
+  prioridade?: PrioridadeOcorrencia;
 }
 export type OrigemOcorrencia = 'POLICIAL' | 'PUBLICA';
+
+/** Busca na listagem de ocorrências; datas no formato do ``<input type="date">`` (YYYY-MM-DD, horário local). */
+export interface FiltrosOcorrencias {
+  texto?: string;
+  protocolo?: string;
+  natureza?: string;
+  origem?: OrigemOcorrencia;
+  dataFatoDe?: string;
+  dataFatoAte?: string;
+}
 export interface EnvolvidoDetalhe {
   id: string;
   nome: string;
@@ -161,3 +180,40 @@ export interface DocumentoAutenticado {
   envolvidos_por_tipo: Record<string, number>;
   quantidade_evidencias: number;
 }
+
+/** Sugestão #12 — evento da linha do tempo unificada da ocorrência. */
+export type TipoEventoLinhaDoTempo =
+  | 'STATUS' | 'DESPACHO' | 'ORDEM_ENCERRADA' | 'EVIDENCIA_ANEXADA' | 'INTEGRIDADE_VERIFICADA'
+  | 'ITEM_APREENDIDO' | 'CUSTODIA_MOVIMENTADA' | 'INQUERITO_VINCULADO' | 'LAUDO_SOLICITADO' | 'LAUDO_CONCLUIDO';
+export interface EventoLinhaDoTempo {
+  em: string;
+  tipo: TipoEventoLinhaDoTempo;
+  por_id: string | null;
+  por_nome: string | null;
+  detalhes: Record<string, string | boolean | number | null>;
+}
+
+/** Sugestão #11 — painel de indicadores operacionais. */
+export interface Contagem { chave: string; total: number }
+export interface Duracao { media_segundos: number | null; amostras: number }
+export interface Indicadores {
+  de: string; ate: string; fuso: string;
+  total_ocorrencias: number;
+  por_natureza: Contagem[];
+  por_origem: Contagem[];
+  por_faixa_horaria: number[];
+  decisoes: Contagem[];
+  taxa_devolucao: number | null;
+  taxa_rejeicao: number | null;
+  tempo_ate_decisao: Duracao;
+  tempo_validacao_despacho: Duracao;
+  tempo_despacho_encerramento: Duracao;
+  despachos_por_hora: number[];
+  viaturas_por_situacao: Contagem[];
+}
+
+/** Sugestão #13 — gestão do efetivo pelo Supervisor. */
+export interface UsuarioGestao { id: string; nome: string; login: string; papel: Papel; ativo: boolean }
+export interface CadastrarUsuarioRequest { nome: string; login: string; senha: string; papel: Papel }
+/** Papéis que o Supervisor pode atribuir (CIDADAO é o usuário técnico do canal público). */
+export const PAPEIS_ATRIBUIVEIS: readonly Papel[] = ['AGENTE', 'DELEGADO', 'OPERADOR_CENTRAL', 'SUPERVISOR', 'PERITO', 'ESCRIVAO'];
