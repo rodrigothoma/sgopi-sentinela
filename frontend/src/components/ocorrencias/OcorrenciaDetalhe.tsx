@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
@@ -28,20 +28,25 @@ const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = 
   const [erro, setErro] = useState<string | null>(null);
   const [baixando, setBaixando] = useState(false);
 
-  useEffect(() => {
-    let ativo = true;
+  const verificarIntegridade = useCallback(async (estaAtivo: () => boolean = () => true) => {
     setEstado('CARREGANDO');
     setErro(null);
-    ocorrenciasService.verificarIntegridade(ocorrenciaId, evidencia.id)
-      .then((resultado) => { if (ativo) setEstado(resultado.estado); })
-      .catch((falha) => {
-        if (!ativo) return;
-        const indisponivel = falha?.response?.status === 404;
-        setEstado(indisponivel ? 'INDISPONIVEL' : 'ERRO');
-        setErro(mensagemDeErro(falha, t('ocorrencias:evidencias.integridade_erro')));
-      });
+    try {
+      const resultado = await ocorrenciasService.verificarIntegridade(ocorrenciaId, evidencia.id);
+      if (estaAtivo()) setEstado(resultado.estado);
+    } catch (falha) {
+      if (!estaAtivo()) return;
+      const indisponivel = axios.isAxiosError(falha) && falha.response?.status === 404;
+      setEstado(indisponivel ? 'INDISPONIVEL' : 'ERRO');
+      setErro(mensagemDeErro(falha, t('ocorrencias:evidencias.integridade_erro')));
+    }
+  }, [evidencia.id, ocorrenciaId, t]);
+
+  useEffect(() => {
+    let ativo = true;
+    void verificarIntegridade(() => ativo);
     return () => { ativo = false; };
-  }, [ocorrenciaId, evidencia.id, t]);
+  }, [verificarIntegridade]);
 
   const baixar = async () => {
     setBaixando(true);
@@ -66,6 +71,16 @@ const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = 
       <div className="evidencia-hash"><strong>SHA-256:</strong> <code>{evidencia.hash_sha256}</code></div>
       <div className="evidencia-acoes">
         <span className={classe}>{t(`ocorrencias:evidencias.integridade_${estado.toLowerCase()}`)}</span>
+        <button
+          type="button"
+          className="btn btn-sm btn-outline"
+          disabled={estado === 'CARREGANDO' || baixando}
+          onClick={() => void verificarIntegridade()}
+        >
+          {estado === 'CARREGANDO'
+            ? t('ocorrencias:evidencias.verificando')
+            : t('ocorrencias:evidencias.verificar_novamente')}
+        </button>
         <button className="btn btn-sm" disabled={estado !== 'INTEGRA' || baixando} onClick={baixar}>
           {baixando ? t('ocorrencias:evidencias.baixando') : t('ocorrencias:evidencias.download')}
         </button>

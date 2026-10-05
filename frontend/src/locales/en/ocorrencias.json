@@ -73,6 +73,8 @@
     "integridade_divergente": "File divergent",
     "integridade_indisponivel": "File unavailable",
     "integridade_erro": "Could not verify file integrity",
+    "verificar_novamente": "Check again",
+    "verificando": "Checking…",
     "download": "Download",
     "baixando": "Downloading…",
     "download_erro": "Could not download evidence",

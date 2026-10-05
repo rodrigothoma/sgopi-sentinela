@@ -73,6 +73,8 @@
     "integridade_divergente": "Arquivo divergente",
     "integridade_indisponivel": "Arquivo indisponível",
     "integridade_erro": "Não foi possível verificar a integridade",
+    "verificar_novamente": "Verificar novamente",
+    "verificando": "Verificando…",
     "download": "Baixar",
     "baixando": "Baixando…",
     "download_erro": "Não foi possível baixar a evidência",
