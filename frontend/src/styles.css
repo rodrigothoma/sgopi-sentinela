@@ -2015,3 +2015,43 @@ dl.grid2 dd { margin: 0 0 8px; }
 .efetivo, .efetivo .card, .tabela-rolavel { min-width: 0; max-width: 100%; }
 /* ancora o texto só para leitores de tela (.sr-only) dentro do contêiner rolável */
 .tabela-rolavel { position: relative; }
+
+/* --- Campo de senha com alternador de visibilidade --- */
+.campo-senha {
+  position: relative;
+  display: block;
+}
+
+/* Espaço à direita para o botão não cobrir o texto digitado. */
+.campo-senha input {
+  padding-right: 42px;
+}
+
+.campo-senha-olho {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.campo-senha-olho:hover {
+  color: var(--ink);
+  background: var(--card-hover);
+}
+
+.campo-senha-olho:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}

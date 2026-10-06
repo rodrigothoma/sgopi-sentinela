@@ -142,7 +142,9 @@
     "filtro_1": "Em correção",
     "filtro_2": "Validadas / em atendimento",
     "filtro_3": "Rejeitadas / encerradas",
-    "filtro_4": "Arquivadas / excluídas"
+    "filtro_4": "Arquivadas / excluídas",
+    "espera": "há {{tempo}}",
+    "espera_titulo": "Tempo aguardando decisão"
   },
   "revisao": {
     "despacho_label": "Despacho da autoridade (opcional ao validar)",

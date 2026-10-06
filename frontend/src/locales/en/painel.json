@@ -118,5 +118,20 @@
   "areas_risco": {
     "mostrar": "Risk Areas",
     "ocultar": "Hide Risk Areas"
+  },
+  "mapa_indisponivel": {
+    "titulo": "Map provider unavailable",
+    "subtitulo": "Showing the tabular incident report while the map service is unreachable (RNF04).",
+    "tentar_novamente": "Retry the map",
+    "col_protocolo": "Protocol",
+    "col_natureza": "Nature",
+    "col_endereco": "Address / district",
+    "col_status": "Status",
+    "sem_ocorrencias": "No active incidents at the moment."
+  },
+  "alerta_recebido": {
+    "titulo": "Criticality alert received",
+    "recebido_em": "Received at {{hora}}",
+    "dispensar": "Dismiss"
   }
 }

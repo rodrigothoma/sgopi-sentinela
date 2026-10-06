@@ -377,5 +377,11 @@
     "confirmar_papel": "Alterar o papel de {{nome}} para {{papel}}? A sessão aberta dessa pessoa será encerrada.",
     "confirmar_desativar": "Desativar {{nome}}? A pessoa perde o acesso na hora, mas o cadastro e o histórico são mantidos.",
     "confirmar_reativar": "Reativar {{nome}}?"
+  },
+  "busca": {
+    "placeholder": "Buscar protocolo, natureza…",
+    "rotulo": "Busca global de ocorrências",
+    "buscando": "Buscando…",
+    "vazio": "Nada encontrado"
   }
 }

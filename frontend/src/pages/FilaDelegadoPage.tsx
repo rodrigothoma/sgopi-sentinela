@@ -10,6 +10,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { useConfirmacao } from '../components/common/ConfirmDialog';
 import { useFiltrosOcorrenciasUrl } from '../hooks/useFiltrosOcorrenciasUrl';
 import { useToast } from '../hooks/useToast';
+import { EsperaBadge } from '../components/ocorrencias/EsperaBadge';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
 import { formatarNatureza } from '../utils/formatarNatureza';
@@ -19,6 +20,12 @@ import { formatarDataHora } from '../utils/datas';
 const FILTROS: StatusOcorrencia[][] = [
   ['AGUARDANDO_REVISAO'], ['EM_CORRECAO'], ['VALIDADA', 'EM_ATENDIMENTO'], ['REJEITADA', 'ENCERRADA'], ['ARQUIVADA', 'EXCLUIDA'],
 ];
+
+/** Aba que contém o status — usada ao abrir por link direto (``?ocorrencia=``). */
+const abaDoStatus = (status: StatusOcorrencia): number => {
+  const indice = FILTROS.findIndex((grupo) => grupo.includes(status));
+  return indice >= 0 ? indice : 0;
+};
 const MINIMO_MOTIVO = 10;
 
 /** Delegado: fila de triagem (mais antiga primeiro) e decisões validar/devolver/rejeitar (RF04*, RF01). */
@@ -82,11 +89,25 @@ export const FilaDelegadoPage: React.FC = () => {
     }
   }, [avisar]);
 
+  // Link direto: além de abrir o detalhe, posiciona a aba no status da ocorrência —
+  // senão ela abre selecionada mas invisível na lista, que continua em outra aba.
   useEffect(() => {
-    if (paramOcorrenciaId) {
-      abrir(paramOcorrenciaId);
-    }
-  }, [paramOcorrenciaId, abrir]);
+    if (!paramOcorrenciaId) return;
+    let ativo = true;
+    (async () => {
+      setMotivo('');
+      setJustificativa('');
+      try {
+        const encontrada = await ocorrenciasService.buscarPorId(paramOcorrenciaId);
+        if (!ativo) return;
+        setDetalhe(encontrada);
+        setFiltro(abaDoStatus(encontrada.status));
+      } catch (err) {
+        if (ativo) avisar(mensagemDeErro(err), 'erro');
+      }
+    })();
+    return () => { ativo = false; };
+  }, [paramOcorrenciaId, avisar]);
 
   const recarregarDetalhe = async () => {
     if (!detalhe) return;
@@ -169,7 +190,7 @@ export const FilaDelegadoPage: React.FC = () => {
           {pagina.itens.map((o) => (
             <li key={o.ocorrencia_id} className={detalhe?.ocorrencia_id === o.ocorrencia_id ? 'ativo' : ''} onClick={() => abrir(o.ocorrencia_id)}>
               <span><strong>{o.numero_protocolo}</strong> · {formatarNatureza(o.natureza, t)}<br /><small className="muted">{formatarDataHora(o.criada_em)}</small></span>
-              <span className="lista-badges"><StatusBadge status={o.status} /><PrioridadeBadge prioridade={o.prioridade} /></span>
+              <span className="lista-badges"><EsperaBadge desde={o.criada_em} status={o.status} /><StatusBadge status={o.status} /><PrioridadeBadge prioridade={o.prioridade} /></span>
             </li>
           ))}
         </ul>

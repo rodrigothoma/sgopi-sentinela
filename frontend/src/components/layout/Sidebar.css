@@ -399,3 +399,91 @@
     backdrop-filter: blur(2px);
   }
 }
+
+/* ─── Contador de pendências no menu ─────────────────────────────────── */
+.sidebar-badge {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.sidebar.colapsada .sidebar-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  margin-left: 0;
+}
+
+.sidebar.colapsada .sidebar-nav .sidebar-link {
+  position: relative;
+}
+
+/* ─── Busca global ───────────────────────────────────────────────────── */
+.busca-global {
+  position: relative;
+  padding: 0 12px 10px;
+}
+
+.busca-global-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+
+.busca-global-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.busca-global-resultados {
+  position: absolute;
+  z-index: 50;
+  left: 12px;
+  right: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow-pop);
+}
+
+.busca-global-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.busca-global-item:hover {
+  background: var(--card-hover);
+}
+
+.busca-global-detalhe {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.busca-global-vazio {
+  padding: 10px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}

@@ -8,6 +8,7 @@ import { useTempoReal } from '../hooks/useTempoReal';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { despachoService } from '../services/despachoService';
+import { tocarBipeAlerta } from '../utils/bipe';
 import { ocorrenciasService } from '../services/ocorrenciasService';
 import { viaturasService } from '../services/viaturasService';
 import {
@@ -42,6 +43,12 @@ export const PainelTaticoPage: React.FC = () => {
   const [ordens, setOrdens] = useState<OrdemDespacho[]>([]);
   const [selecionada, setSelecionada] = useState<string | null>(null);
   const [sugestoes, setSugestoes] = useState<Sugestoes | null>(null);
+  // RNF04 / UC05 exceção I: o mapa segue montado e oculto, para voltar sozinho quando os tiles responderem.
+  const [tilesDisponiveis, setTilesDisponiveis] = useState(true);
+  // UC11: último alerta crítico recebido por WebSocket, exibido em destaque até ser dispensado.
+  const [alertaRecebido, setAlertaRecebido] = useState<{
+    id: string; titulo: string; mensagem: string; nivel: string; em: string;
+  } | null>(null);
   const [simulador, setSimulador] = useState<StatusSimuladorCompleto | null>(null);
   const [desfecho, setDesfecho] = useState('');
   const [ocupado, setOcupado] = useState(false);
@@ -153,6 +160,20 @@ export const PainelTaticoPage: React.FC = () => {
         setOcorrencias((os) => os.filter((o) => o.ocorrencia_id !== d.ocorrencia_id));
         despachoService.listar(true).then(setOrdens).catch(() => undefined);
         break;
+      case 'ALERTA_CRITICIDADE': {
+        // UC11 passo 4 e pós-condição 1: o alerta já era publicado pelo backend, mas
+        // só chegava pelo polling de 15 s do sino, e sem destaque sonoro.
+        const dados = (e.dados.dados ?? {}) as Record<string, unknown>;
+        setAlertaRecebido({
+          id: String(e.dados.notificacao_id ?? e.ocorrido_em),
+          titulo: String(e.dados.titulo ?? ''),
+          mensagem: String(e.dados.mensagem ?? ''),
+          nivel: String(dados.nivel_criticidade ?? 'CRITICA'),
+          em: e.ocorrido_em,
+        });
+        tocarBipeAlerta();
+        break;
+      }
       default:
         break;
     }
@@ -389,16 +410,92 @@ export const PainelTaticoPage: React.FC = () => {
               )}
             </div>
           )}
-          <MapaTatico
-            viaturas={viaturas}
-            ocorrencias={ocorrencias}
-            ordens={ordens}
-            selecionada={selecionada}
-            onSelecionarOcorrencia={selecionar}
-            heatAtivo={heatAtivo}
-            pontosCalor={pontosCalor}
-            areasRisco={areasRiscoAtivo ? areasRisco : []}
-          />
+          {/* UC11 passo 4 / pós-condição 1: alerta crítico em destaque, chegando por WebSocket */}
+          {alertaRecebido && (
+            <div
+              className="alerta erro"
+              role="alert"
+              aria-live="assertive"
+              style={{ borderLeft: '4px solid var(--danger)', background: 'rgba(239, 68, 68, 0.12)' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+                <div>
+                  <strong style={{ fontSize: '1rem' }}>
+                    🚨 {t('painel:alerta_recebido.titulo')} &middot;{' '}
+                    <span style={{ color: 'var(--danger)' }}>
+                      {t(`painel:alerta.criticidade.${alertaRecebido.nivel}`, { defaultValue: alertaRecebido.nivel })}
+                    </span>
+                  </strong>
+                  <div style={{ marginTop: '0.2rem', fontWeight: 600 }}>{alertaRecebido.titulo}</div>
+                  <div style={{ fontSize: '0.88rem', opacity: 0.9 }}>{alertaRecebido.mensagem}</div>
+                  <div style={{ fontSize: '0.78rem', opacity: 0.75, marginTop: '0.25rem' }}>
+                    {t('painel:alerta_recebido.recebido_em', { hora: formatarHora(alertaRecebido.em) })}
+                  </div>
+                </div>
+                <button className="btn btn-sm btn-ghost" onClick={() => setAlertaRecebido(null)}>
+                  {t('painel:alerta_recebido.dispensar')}
+                </button>
+              </div>
+            </div>
+          )}
+          {/* RNF04 / UC05 exceção I: provedor de mapas fora do ar → relatório tabular */}
+          {!tilesDisponiveis && (
+            <div className="alerta erro" role="alert" style={{ borderLeft: '4px solid var(--warn)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <div>
+                  <strong>🗺️ {t('painel:mapa_indisponivel.titulo')}</strong>
+                  <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{t('painel:mapa_indisponivel.subtitulo')}</div>
+                </div>
+                <button className="btn btn-sm btn-ghost" onClick={() => setTilesDisponiveis(true)}>
+                  {t('painel:mapa_indisponivel.tentar_novamente')}
+                </button>
+              </div>
+              <div style={{ marginTop: '0.75rem', overflowX: 'auto' }}>
+                <table className="tabela" style={{ width: '100%', fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr>
+                      <th>{t('painel:mapa_indisponivel.col_protocolo')}</th>
+                      <th>{t('painel:mapa_indisponivel.col_natureza')}</th>
+                      <th>{t('painel:mapa_indisponivel.col_endereco')}</th>
+                      <th>{t('painel:mapa_indisponivel.col_status')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ocorrencias.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="muted">{t('painel:mapa_indisponivel.sem_ocorrencias')}</td>
+                      </tr>
+                    )}
+                    {ocorrencias.map((o) => (
+                      <tr
+                        key={o.ocorrencia_id}
+                        onClick={() => selecionar(o.ocorrencia_id)}
+                        style={{ cursor: 'pointer', background: selecionada === o.ocorrencia_id ? 'var(--card-hover)' : undefined }}
+                      >
+                        <td><strong>{o.numero_protocolo}</strong></td>
+                        <td>{o.natureza}</td>
+                        <td>{o.localizacao}</td>
+                        <td><StatusBadge status={o.status} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+          <div style={tilesDisponiveis ? undefined : { display: 'none' }}>
+            <MapaTatico
+              viaturas={viaturas}
+              ocorrencias={ocorrencias}
+              ordens={ordens}
+              selecionada={selecionada}
+              onSelecionarOcorrencia={selecionar}
+              heatAtivo={heatAtivo}
+              pontosCalor={pontosCalor}
+              areasRisco={areasRiscoAtivo ? areasRisco : []}
+              onDisponibilidadeTiles={setTilesDisponiveis}
+            />
+          </div>
           {semSinal.length > 0 && (
             <div className="alerta aviso">
               ⚠ {t('painel:sem_sinal.alerta', { n: semSinal.length })}

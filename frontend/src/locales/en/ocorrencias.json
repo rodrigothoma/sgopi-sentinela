@@ -142,7 +142,9 @@
     "filtro_1": "Needs correction",
     "filtro_2": "Validated / in progress",
     "filtro_3": "Rejected / closed",
-    "filtro_4": "Archived / deleted"
+    "filtro_4": "Archived / deleted",
+    "espera": "{{tempo}} ago",
+    "espera_titulo": "Time awaiting decision"
   },
   "revisao": {
     "despacho_label": "Authority decision (optional when validating)",

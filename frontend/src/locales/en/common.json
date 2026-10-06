@@ -377,5 +377,11 @@
     "confirmar_papel": "Change {{nome}}'s role to {{papel}}? Their open session will end.",
     "confirmar_desativar": "Deactivate {{nome}}? They lose access immediately, but the record and history are kept.",
     "confirmar_reativar": "Reactivate {{nome}}?"
+  },
+  "busca": {
+    "placeholder": "Search protocol, nature…",
+    "rotulo": "Global incident search",
+    "buscando": "Searching…",
+    "vazio": "Nothing found"
   }
 }

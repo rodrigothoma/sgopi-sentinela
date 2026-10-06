@@ -118,5 +118,20 @@
   "areas_risco": {
     "mostrar": "Áreas de Risco",
     "ocultar": "Ocultar Áreas de Risco"
+  },
+  "mapa_indisponivel": {
+    "titulo": "Provedor de mapas indisponível",
+    "subtitulo": "Exibindo o relatório tabular das ocorrências enquanto o serviço de mapas não responde (RNF04).",
+    "tentar_novamente": "Tentar o mapa novamente",
+    "col_protocolo": "Protocolo",
+    "col_natureza": "Natureza",
+    "col_endereco": "Endereço / bairro",
+    "col_status": "Situação",
+    "sem_ocorrencias": "Nenhuma ocorrência ativa no momento."
+  },
+  "alerta_recebido": {
+    "titulo": "Alerta de criticidade recebido",
+    "recebido_em": "Recebido às {{hora}}",
+    "dispensar": "Dispensar"
   }
 }
