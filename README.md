@@ -129,9 +129,9 @@ Os limites são configuráveis no `.env` (ver `backend/.env.example`). O limitad
 <!-- Números da suíte: atualize SOMENTE esta tabela (demais documentos apontam para cá). -->
 | Suíte | Situação atual |
 | :--- | :--- |
-| pytest (backend) | **744 testes** coletados — 731 unitários/integração + 13 E2E de API |
-| Cobertura (`domain/` + `application/`) | **≈ 95 %** (meta ≥ 80 % no agregado; piso por arquivo: 85 % em `domain/`, 75 % em `application/`) |
-| Vitest (frontend) | **7 testes** em 3 arquivos (`src/utils/__tests__`) |
+| pytest (backend) | **828 testes** coletados — 815 unitários/integração + 13 E2E de API |
+| Cobertura (`domain/` + `application/`) | **≈ 96 %** (meta ≥ 80 % no agregado; piso por arquivo: 85 % em `domain/`, 75 % em `application/`) |
+| Vitest (frontend) | **16 testes** em 5 arquivos (`src/utils/__tests__`) |
 | Cypress (frontend) | **36 testes** em 7 specs |
 
 ```bash
