@@ -1,6 +1,7 @@
 """Caso de uso: Motor avançado de sugestão de conexões criminais entre ocorrências (RF06 / UC06 / sq06)."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import re
 import unicodedata
 from uuid import UUID
@@ -12,10 +13,15 @@ from application.ports.inbound.interface_gerir_inqueritos import (
 )
 from application.ports.inbound.interface_inteligencia_areas_risco import InterfaceCalcularAreasRisco
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
-from domain.ocorrencia.entity import TipoEnvolvido
+from domain.ocorrencia.apreensao import ItemApreendido, TipoItemApreendido
+from domain.ocorrencia.entity import TipoEnvolvido, TipificacaoPenal
 from domain.ocorrencia.status import StatusOcorrencia
-from domain.shared.exceptions import EntidadeNaoEncontradaError
+from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.shared.geo import Coordenada
+
+PADRAO_PLACA = re.compile(r"\b([A-Z]{3}-?[0-9][0-9A-Z][0-9]{2})\b", re.IGNORECASE)
+TAMANHO_MINIMO_PLACA = 6
+TAMANHO_MINIMO_NUMERO_SERIE = 5
 
 NOMES_GENERICOS: set[str] = {
     "desconhecido",
@@ -67,6 +73,42 @@ def _pertencem_mesma_familia(nat1: str, nat2: str) -> bool:
         if any(term in n1 for term in familia) and any(term in n2 for term in familia):
             return True
     return False
+
+
+def _para_utc(dt: datetime) -> datetime:
+    """Garante datetime com timezone UTC para operações matemáticas seguras."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _extrair_artigo(t: TipificacaoPenal) -> str:
+    """Artigo penal normalizado (sem espaços nas bordas) para comparação."""
+    return t.artigo.strip()
+
+
+def _normalizar_identificador(valor: str) -> str:
+    """Mantém apenas letras e dígitos em maiúsculas (placa, chassi, número de série)."""
+    return re.sub(r"[^A-Za-z0-9]", "", valor).upper()
+
+
+def _extrair_placas_e_series(itens: list[ItemApreendido]) -> tuple[set[str], set[str]]:
+    """Placas de veículos e números de série dos demais itens (armas, objetos) para correlação.
+
+    O ``numero_serie`` de um veículo conta apenas como placa, para não pontuar o mesmo
+    identificador duas vezes.
+    """
+    placas: set[str] = set()
+    series: set[str] = set()
+    for item in itens:
+        num_serie = _normalizar_identificador(item.numero_serie or "")
+        if item.tipo == TipoItemApreendido.VEICULO:
+            if len(num_serie) >= TAMANHO_MINIMO_PLACA:
+                placas.add(num_serie)
+            placas.update(_normalizar_identificador(m) for m in PADRAO_PLACA.findall(item.descricao or ""))
+        elif len(num_serie) >= TAMANHO_MINIMO_NUMERO_SERIE:
+            series.add(num_serie)
+    return placas, series
 
 
 class BuscarConexoesOcorrencia(InterfaceBuscarConexoesOcorrencia):
@@ -180,7 +222,7 @@ class BuscarConexoesOcorrencia(InterfaceBuscarConexoesOcorrencia):
                         motivos.append(f"Mesmo comunicante/testemunha em ambos os fatos: {nome_fmt}")
 
             # -------------------------------------------------------------
-            # 2. Causa / Natureza Delituosa e Tipificações Penais
+            # 2. Causa / Natureza Delituosa, Tipificações e Itens Apreendidos
             # -------------------------------------------------------------
             nat_pivo = pivo.natureza.strip().lower()
             nat_cand = cand.natureza.strip().lower()
@@ -194,32 +236,30 @@ class BuscarConexoesOcorrencia(InterfaceBuscarConexoesOcorrencia):
                 mesma_natureza_ou_familia = True
                 motivos.append(f"Naturezas criminais afins: {pivo.natureza} e {cand.natureza}")
 
-            # Tipificações secundárias em comum
+            # Tipificações penais em comum
             if pivo.tipificacoes and cand.tipificacoes:
-                tips_pivo = {t.codigo.strip() for t in pivo.tipificacoes if t.codigo and t.codigo.strip()}
-                tips_cand = {t.codigo.strip() for t in cand.tipificacoes if t.codigo and t.codigo.strip()}
+                tips_pivo = {_extrair_artigo(t) for t in pivo.tipificacoes if _extrair_artigo(t)}
+                tips_cand = {_extrair_artigo(t) for t in cand.tipificacoes if _extrair_artigo(t)}
                 tips_comuns = tips_pivo & tips_cand
                 if tips_comuns:
                     pontuacao += 25
                     mesma_natureza_ou_familia = True
-                    motivos.append(f"Tipificação penal coincidente: {', '.join(tips_comuns)}")
+                    motivos.append(f"Tipificação penal coincidente: {', '.join(sorted(tips_comuns))}")
 
-            # Veículo com mesma placa envolvido
+            # Itens apreendidos: Veículo com mesma placa / Armas com mesma série
             if pivo.itens_apreendidos and cand.itens_apreendidos:
-                placas_pivo = {
-                    re.sub(r"[^A-Za-z0-9]", "", item.identificador).upper()
-                    for item in pivo.itens_apreendidos
-                    if item.tipo and "VEICULO" in item.tipo.value and item.identificador
-                }
-                placas_cand = {
-                    re.sub(r"[^A-Za-z0-9]", "", item.identificador).upper()
-                    for item in cand.itens_apreendidos
-                    if item.tipo and "VEICULO" in item.tipo.value and item.identificador
-                }
+                placas_pivo, series_pivo = _extrair_placas_e_series(pivo.itens_apreendidos)
+                placas_cand, series_cand = _extrair_placas_e_series(cand.itens_apreendidos)
+
                 placas_comuns = placas_pivo & placas_cand
                 if placas_comuns:
                     pontuacao += 80
-                    motivos.append(f"Veículo com mesma placa envolvido: {', '.join(placas_comuns)}")
+                    motivos.append(f"Veículo com mesma placa envolvido: {', '.join(sorted(placas_comuns))}")
+
+                series_comuns = series_pivo & series_cand
+                if series_comuns:
+                    pontuacao += 85
+                    motivos.append(f"Item/Arma com mesmo número de série: {', '.join(sorted(series_comuns))}")
 
             # -------------------------------------------------------------
             # 3. Inteligência Territorial: Áreas de Risco vs Distância Pura
@@ -236,12 +276,15 @@ class BuscarConexoesOcorrencia(InterfaceBuscarConexoesOcorrencia):
                 lon_c = area.get("longitude")
                 raio_m = area.get("raio_metros", 500)
                 if lat_c is not None and lon_c is not None and pivo.coordenada and cand.coordenada:
-                    centro = Coordenada(lat_c, lon_c)
-                    d_pivo = pivo.coordenada.distancia_km(centro) * 1000
-                    d_cand = cand.coordenada.distancia_km(centro) * 1000
-                    if d_pivo <= raio_m and d_cand <= raio_m:
-                        area_match = area
-                        break
+                    try:
+                        centro = Coordenada(float(lat_c), float(lon_c))
+                        d_pivo = pivo.coordenada.distancia_km(centro) * 1000
+                        d_cand = cand.coordenada.distancia_km(centro) * 1000
+                        if d_pivo <= raio_m and d_cand <= raio_m:
+                            area_match = area
+                            break
+                    except (TypeError, ValueError, ValorInvalidoError):
+                        continue  # área de risco com centro inválido não participa do cruzamento
 
             if area_match:
                 pontuacao += 50
@@ -267,7 +310,9 @@ class BuscarConexoesOcorrencia(InterfaceBuscarConexoesOcorrencia):
             # -------------------------------------------------------------
             # 4. Correlação Temporal
             # -------------------------------------------------------------
-            delta_horas = abs((pivo.data_hora_fato - cand.data_hora_fato).total_seconds()) / 3600.0
+            dt_pivo = _para_utc(pivo.data_hora_fato)
+            dt_cand = _para_utc(cand.data_hora_fato)
+            delta_horas = abs((dt_pivo - dt_cand).total_seconds()) / 3600.0
             if delta_horas <= 24 and (houve_envolvido or mesma_natureza_ou_familia or mesma_area_risco):
                 pontuacao += 25
                 motivos.append(f"Fatos ocorridos no mesmo intervalo de 24h ({int(delta_horas)}h de diferença)")

@@ -7,6 +7,7 @@ from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_inteligencia_areas_risco import InterfaceCalcularAreasRisco
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.use_cases.inquerito.buscar_conexoes import BuscarConexoesOcorrencia
+from domain.ocorrencia.apreensao import EstadoConservacao, ItemApreendido, TipoItemApreendido
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido, TipificacaoPenal
 from domain.ocorrencia.status import StatusOcorrencia
 from domain.shared.geo import Coordenada
@@ -62,9 +63,11 @@ def criar_ocorrencia_validada(
     natureza: str = "Roubo a Transeunte",
     envolvidos: list[Envolvido] | None = None,
     tipificacoes: list[TipificacaoPenal] | None = None,
+    itens_apreendidos: list[ItemApreendido] | None = None,
     lat: float = -29.7845,
     lon: float = -55.7912,
     horas_atras: int = 2,
+    data_hora_fato_custom: datetime | None = None,
 ) -> Ocorrencia:
     agora = datetime(2026, 10, 5, 12, 0, 0, tzinfo=timezone.utc)
     oc = Ocorrencia.registrar(
@@ -72,9 +75,10 @@ def criar_ocorrencia_validada(
         agente_policial_id=uuid4(),
         natureza=natureza,
         descricao="Descrição dos fatos para apuração formal da ocorrência policial.",
-        data_hora_fato=agora - timedelta(hours=horas_atras),
+        data_hora_fato=data_hora_fato_custom or (agora - timedelta(hours=horas_atras)),
         envolvidos=envolvidos or [Envolvido(nome="Vítima Genérica", tipo=TipoEnvolvido.VITIMA)],
         tipificacoes=tipificacoes or [],
+        itens_apreendidos=itens_apreendidos or [],
         localizacao="Rua dos Andradas, 100, Alegrete",
         coordenada=Coordenada(lat, lon),
         agora=agora - timedelta(hours=horas_atras),
@@ -298,3 +302,107 @@ async def test_ordenacao_por_maior_relevancia(ator_delegado):
     # A primeira conexão deve ser a do mesmo suspeito (score significativamente mais alto)
     assert conexoes[0].ocorrencia_id == oc_cand_suspeito.id
     assert conexoes[0].pontuacao_relevancia > conexoes[1].pontuacao_relevancia
+
+
+def criar_item(
+    tipo: TipoItemApreendido, descricao: str, numero_serie: str | None = None
+) -> ItemApreendido:
+    return ItemApreendido(
+        tipo=tipo,
+        descricao=descricao,
+        quantidade=1,
+        estado_conservacao=EstadoConservacao.BOM,
+        numero_lacre=f"LACRE-{uuid4().hex[:8]}",
+        localizacao_deposito="Depósito Central",
+        registrado_em=datetime(2026, 10, 5, 12, 0, 0, tzinfo=timezone.utc),
+        registrado_por_id=uuid4(),
+        numero_serie=numero_serie,
+        marca="Taurus" if tipo is TipoItemApreendido.ARMA_DE_FOGO else None,
+        calibre=".38" if tipo is TipoItemApreendido.ARMA_DE_FOGO else None,
+    )
+
+
+@pytest.mark.asyncio
+async def test_conexao_mesma_tipificacao_penal(ator_delegado):
+    tip = TipificacaoPenal(artigo=" Art. 157 CP ", descricao="Roubo")
+    oc_pivo = criar_ocorrencia_validada(protocolo="SGOPI-2026-000060", natureza="Ameaça", tipificacoes=[tip])
+    oc_cand = criar_ocorrencia_validada(
+        protocolo="SGOPI-2026-000061",
+        natureza="Tráfico de Drogas",
+        tipificacoes=[TipificacaoPenal(artigo="Art. 157 CP", descricao="Roubo majorado")],
+        lat=-30.5,
+        lon=-56.5,
+    )
+
+    conexoes = await BuscarConexoesOcorrencia(FakeRepoOcorrencia([oc_pivo, oc_cand])).executar(
+        ator_delegado, oc_pivo.id
+    )
+
+    assert len(conexoes) == 1
+    assert "Tipificação penal coincidente: Art. 157 CP" in conexoes[0].motivo_conexao
+
+
+@pytest.mark.asyncio
+async def test_conexao_mesma_placa_conta_uma_unica_vez(ator_delegado):
+    oc_pivo = criar_ocorrencia_validada(
+        protocolo="SGOPI-2026-000070",
+        itens_apreendidos=[criar_item(TipoItemApreendido.VEICULO, "Gol prata", numero_serie="ABC-1D23")],
+    )
+    oc_cand = criar_ocorrencia_validada(
+        protocolo="SGOPI-2026-000071",
+        natureza="Furto de Veículo",
+        itens_apreendidos=[criar_item(TipoItemApreendido.VEICULO, "VW Gol placa abc1d23 abandonado")],
+        lat=-30.5,
+        lon=-56.5,
+    )
+
+    conexoes = await BuscarConexoesOcorrencia(FakeRepoOcorrencia([oc_pivo, oc_cand])).executar(
+        ator_delegado, oc_pivo.id
+    )
+
+    assert len(conexoes) == 1
+    assert "Veículo com mesma placa envolvido: ABC1D23" in conexoes[0].motivo_conexao
+    assert "mesmo número de série" not in conexoes[0].motivo_conexao
+
+
+@pytest.mark.asyncio
+async def test_conexao_arma_com_mesmo_numero_de_serie(ator_delegado):
+    oc_pivo = criar_ocorrencia_validada(
+        protocolo="SGOPI-2026-000080",
+        natureza="Ameaça",
+        itens_apreendidos=[criar_item(TipoItemApreendido.ARMA_DE_FOGO, "Revólver .38", numero_serie="kx-55021")],
+    )
+    oc_cand = criar_ocorrencia_validada(
+        protocolo="SGOPI-2026-000081",
+        natureza="Tráfico de Drogas",
+        itens_apreendidos=[criar_item(TipoItemApreendido.ARMA_DE_FOGO, "Revólver", numero_serie="KX55021")],
+        lat=-30.5,
+        lon=-56.5,
+    )
+
+    conexoes = await BuscarConexoesOcorrencia(FakeRepoOcorrencia([oc_pivo, oc_cand])).executar(
+        ator_delegado, oc_pivo.id
+    )
+
+    assert len(conexoes) == 1
+    assert "Item/Arma com mesmo número de série: KX55021" in conexoes[0].motivo_conexao
+
+
+@pytest.mark.asyncio
+async def test_correlacao_temporal_com_datas_sem_fuso(ator_delegado):
+    oc_pivo = criar_ocorrencia_validada(protocolo="SGOPI-2026-000090", natureza="Furto")
+    oc_cand = criar_ocorrencia_validada(
+        protocolo="SGOPI-2026-000091",
+        natureza="Furto",
+        lat=-30.5,
+        lon=-56.5,
+    )
+    # Persistências legadas podem devolver datetime sem tzinfo
+    oc_cand.data_hora_fato = oc_pivo.data_hora_fato.replace(tzinfo=None) - timedelta(hours=5)
+
+    conexoes = await BuscarConexoesOcorrencia(FakeRepoOcorrencia([oc_pivo, oc_cand])).executar(
+        ator_delegado, oc_pivo.id
+    )
+
+    assert len(conexoes) == 1
+    assert "mesmo intervalo de 24h (5h de diferença)" in conexoes[0].motivo_conexao
