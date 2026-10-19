@@ -5,9 +5,9 @@ from uuid import UUID
 
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_consultar_auditoria import (
+    LIMITE_MAXIMO_CONSULTA,
     ConsultarAuditoriaInput,
     InterfaceConsultarAuditoria,
-    LIMITE_MAXIMO_CONSULTA,
     RegistroAuditoriaOutput,
 )
 from application.ports.outbound.porta_auditoria import PortaAuditoria

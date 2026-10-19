@@ -12,7 +12,7 @@ from domain.ocorrencia.entity import (
     TipificacaoPenal,
     TipoEnvolvido,
 )
-from domain.ocorrencia.status import ESTADOS_ARQUIVAVEIS, ESTADOS_EXCLUIVEIS, StatusOcorrencia, TRANSICOES
+from domain.ocorrencia.status import ESTADOS_ARQUIVAVEIS, ESTADOS_EXCLUIVEIS, TRANSICOES, StatusOcorrencia
 from domain.shared.exceptions import (
     AcessoNegadoError,
     CampoObrigatorioError,
@@ -420,3 +420,36 @@ def test_encerrada_e_terminal():
     o.encerrar(OPERADOR, "Atendido.", AGORA)
     with pytest.raises(TransicaoInvalidaError):
         o.despachar(OPERADOR, AGORA)
+
+
+def test_hash_v2_distingue_texto_deslocado_entre_campos():
+    """N5: na v1 'a\\nb' + 'c' e 'a' + 'b\\nc' colidiam; o JSON canônico separa os campos."""
+    from domain.ocorrencia.entity import VERSAO_HASH_LEGADA
+
+    base = "Descrição longa o suficiente para o registro"
+    a = _registrar(descricao=f"{base}\nRua X", localizacao="Centro")
+    b = _registrar(descricao=base, localizacao="Rua X\nCentro")
+    assert a.calcular_hash_narrativa(VERSAO_HASH_LEGADA) == b.calcular_hash_narrativa(VERSAO_HASH_LEGADA)
+    assert a.calcular_hash_narrativa() != b.calcular_hash_narrativa()
+
+
+def test_validacao_grava_versao_atual_e_documento_legado_segue_verificavel():
+    from domain.ocorrencia.entity import VERSAO_HASH_ATUAL, VERSAO_HASH_LEGADA
+
+    o = _registrar()
+    o.validar(DELEGADO, AGORA)
+    assert o.hash_versao == VERSAO_HASH_ATUAL and o.narrativa_integra() is True
+
+    legado = _registrar()
+    legado.validar(DELEGADO, AGORA)
+    legado.hash_versao, legado.hash_narrativa = None, legado.calcular_hash_narrativa(VERSAO_HASH_LEGADA)
+    assert legado.narrativa_integra() is True
+
+
+def test_hash_v2_cobre_as_evidencias():
+    o = _registrar()
+    sem = o.calcular_hash_narrativa()
+    o.evidencias.append(
+        Evidencia(nome_original="foto.jpg", formato="jpg", tamanho=10, hash_sha256="a" * 64, chave_armazenamento="k", enviada_em=AGORA)
+    )
+    assert o.calcular_hash_narrativa() != sem

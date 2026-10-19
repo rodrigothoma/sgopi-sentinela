@@ -15,7 +15,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
-from domain.shared.eventos import EventoDominio
+from domain.notificacao.eventos import notificacao_emitida
 from domain.shared.exceptions import EntidadeNaoEncontradaError
 
 
@@ -28,13 +28,15 @@ class ListarNotificacoesUseCase(InterfaceListarNotificacoes):
         ator: Ator,
         apenas_nao_lidas: bool = False,
         limite: int = 50,
+        offset: int = 0,
     ) -> tuple[list[Notificacao], int]:
-        papel_str = ator.papel.value if hasattr(ator.papel, "value") else str(ator.papel)
+        papel_str = ator.papel.value
         notificacoes = await self._repo.listar(
             usuario_id=ator.id,
             papel=papel_str,
             apenas_nao_lidas=apenas_nao_lidas,
             limite=limite,
+            offset=offset,
         )
         total_nao_lidas = await self._repo.contar_nao_lidas(usuario_id=ator.id, papel=papel_str)
         return notificacoes, total_nao_lidas
@@ -52,17 +54,19 @@ class MarcarNotificacaoLidaUseCase(InterfaceMarcarNotificacaoLida):
         self._uow = uow
 
     async def executar(self, notificacao_id: UUID, ator: Ator) -> Notificacao:
+        """A leitura é registrada só para o ator; notificação de outro destinatário é 404 (não vaza existência)."""
         notif = await self._repo.obter_por_id(notificacao_id)
-        if notif is None:
-            raise EntidadeNaoEncontradaError("Notificação não encontrada.")
+        if notif is None or not notif.destinada_a(ator.id, ator.papel.value):
+            raise EntidadeNaoEncontradaError("Notificação não encontrada.", chave="generic.not_found")
         agora = self._relogio.agora()
         notif.marcar_lida(agora)
         if self._uow:
             async with self._uow:
-                salva = await self._repo.salvar(notif)
+                await self._repo.registrar_leitura(notif.id, ator.id, agora)
                 await self._uow.commit()
-            return salva
-        return await self._repo.salvar(notif)
+        else:
+            await self._repo.registrar_leitura(notif.id, ator.id, agora)
+        return notif
 
 
 class MarcarTodasNotificacoesLidasUseCase(InterfaceMarcarTodasLidas):
@@ -135,22 +139,5 @@ class CriarNotificacaoUseCase(InterfaceCriarNotificacao):
         else:
             salva = await self._repo.salvar(notificacao)
 
-        # Transmite via WebSocket
-        evento = EventoDominio(
-            tipo="NOTIFICACAO_EMITIDA",
-            ocorrido_em=agora,
-            dados={
-                "id": str(salva.id),
-                "titulo": salva.titulo,
-                "mensagem": salva.mensagem,
-                "tipo": salva.tipo.value if hasattr(salva.tipo, "value") else str(salva.tipo),
-                "prioridade": salva.prioridade.value if hasattr(salva.prioridade, "value") else str(salva.prioridade),
-                "usuario_id": str(salva.usuario_id) if salva.usuario_id else None,
-                "papel_destinatario": salva.papel_destinatario,
-                "departamento_destinatario": salva.departamento_destinatario,
-                "link": salva.link,
-                "criada_em": salva.criada_em.isoformat(),
-            },
-        )
-        await self._publicador.publicar(evento)
+        await self._publicador.publicar(notificacao_emitida(salva))
         return salva

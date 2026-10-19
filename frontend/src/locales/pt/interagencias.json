@@ -1,0 +1,34 @@
+{
+  "titulo": "Comunicação Interagências",
+  "subtitulo": "Despacho e tramitação oficial entre órgãos de Segurança Pública (Ofícios OFI-YYYY-XXXXXX)",
+  "btn_novo_oficio": "Novo Ofício Interagências",
+  "busca_protocolo": "Filtrar por protocolo de ocorrência...",
+  "vazio": "Nenhuma comunicação interagências encontrada.",
+  "col_oficio": "Ofício",
+  "col_origem": "Origem",
+  "col_destinatarios": "Destinatários",
+  "col_assunto": "Assunto",
+  "col_prioridade": "Prioridade",
+  "col_data": "Data/Hora",
+  "col_acoes": "Ações",
+  "btn_responder": "Enviar Despacho",
+  "btn_despachar": "Despachar Ofício",
+  "sucesso_envio": "Ofício {{numero}} despachado com sucesso!",
+  "sucesso_resposta": "Despacho {{numero}} anexado à thread!",
+  "validacao": {
+    "selecione_destinatario": "Selecione ao menos um departamento destinatário",
+    "assunto_curto": "O assunto deve ter no mínimo 5 caracteres",
+    "corpo_curto": "O corpo deve ter no mínimo 10 caracteres"
+  },
+  "modal_novo": {
+    "titulo": "Novo Ofício Interagências",
+    "subtitulo": "Emissão formal de ofício com numeração sequencial OFI-YYYY-XXXXXX para integração de Segurança Pública.",
+    "origem": "Órgão de Origem",
+    "prioridade": "Prioridade",
+    "destinatarios": "Órgãos Destinatários (ao menos um)",
+    "sigilo": "Grau de Sigilo",
+    "protocolo": "Protocolo Vinculado",
+    "assunto": "Assunto do Ofício",
+    "corpo": "Texto / Despacho do Ofício"
+  }
+}

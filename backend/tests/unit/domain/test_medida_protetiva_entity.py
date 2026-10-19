@@ -1,6 +1,7 @@
 """Testes unitários da entidade MedidaProtetiva (RF09 / UC09)."""
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
+
 import pytest
 
 from domain.medida_protetiva.entity import MedidaProtetiva, StatusMedida, TipoRestricao

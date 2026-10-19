@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
@@ -8,10 +8,12 @@ import { mensagemDeErro } from '../../services/api';
 import { ocorrenciasService } from '../../services/ocorrenciasService';
 import { laudosService } from '../../services/laudosService';
 import { medidasService } from '../../services/medidasService';
-import type { Evidencia, OcorrenciaDetalhe as Detalhe } from '../../types/api';
+import type { Evidencia, IntegridadeEvidencia, OcorrenciaDetalhe as Detalhe } from '../../types/api';
 import { StatusBadge } from '../StatusBadge';
 import { formatarNatureza } from '../../utils/formatarNatureza';
 import { ApreensoesAba } from './ApreensoesAba';
+import { LinhaDoTempoAba } from './LinhaDoTempoAba';
+import { PrioridadeBadge } from '../PrioridadeBadge';
 import { SpringCheck } from '../common/SpringCheck';
 import { GlideSelect, type GlideSelectOption } from '../common/GlideSelect';
 import { ComprovanteOcorrencia } from './ComprovanteOcorrencia';
@@ -20,53 +22,108 @@ import { formatarDataHora } from '../../utils/datas';
 
 const fmt = (iso: string) => formatarDataHora(iso);
 
-type EstadoVisual = 'CARREGANDO' | 'INTEGRA' | 'DIVERGENTE' | 'INDISPONIVEL' | 'ERRO';
+/**
+ * NAO_VERIFICADA é o estado inicial: conferir a integridade relê o arquivo inteiro e grava auditoria
+ * (append-only), então só acontece quando o usuário pede ou no download — nunca ao abrir o detalhe (N4).
+ */
+type EstadoVisual = 'NAO_VERIFICADA' | 'CARREGANDO' | 'INTEGRA' | 'DIVERGENTE' | 'INDISPONIVEL' | 'ERRO';
 
 const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = ({ ocorrenciaId, evidencia }) => {
   const { t } = useTranslation(['ocorrencias']);
-  const [estado, setEstado] = useState<EstadoVisual>('CARREGANDO');
+  const { avisar } = useToast();
+  const [estado, setEstado] = useState<EstadoVisual>('NAO_VERIFICADA');
+  const [resultado, setResultado] = useState<IntegridadeEvidencia | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [baixando, setBaixando] = useState(false);
 
-  useEffect(() => {
-    let ativo = true;
+  const verificarIntegridade = useCallback(async () => {
     setEstado('CARREGANDO');
+    setResultado(null);
     setErro(null);
-    ocorrenciasService.verificarIntegridade(ocorrenciaId, evidencia.id)
-      .then((resultado) => { if (ativo) setEstado(resultado.estado); })
-      .catch((falha) => {
-        if (!ativo) return;
-        const indisponivel = falha?.response?.status === 404;
-        setEstado(indisponivel ? 'INDISPONIVEL' : 'ERRO');
-        setErro(mensagemDeErro(falha, t('ocorrencias:evidencias.integridade_erro')));
-      });
-    return () => { ativo = false; };
-  }, [ocorrenciaId, evidencia.id, t]);
+    try {
+      const resultado = await ocorrenciasService.verificarIntegridade(ocorrenciaId, evidencia.id);
+      setEstado(resultado.estado === 'ARQUIVO_AUSENTE' ? 'INDISPONIVEL' : resultado.estado);
+      setResultado(resultado);
+    } catch (falha) {
+      const indisponivel = axios.isAxiosError(falha) && falha.response?.status === 404;
+      setEstado(indisponivel ? 'INDISPONIVEL' : 'ERRO');
+      setErro(mensagemDeErro(falha, t('ocorrencias:evidencias.integridade_erro')));
+    }
+  }, [evidencia.id, ocorrenciaId, t]);
 
   const baixar = async () => {
     setBaixando(true);
     setErro(null);
     try {
       await ocorrenciasService.baixarEvidencia(ocorrenciaId, evidencia);
+      avisar(t('ocorrencias:evidencias.download_integridade_confirmada'), 'sucesso');
     } catch (falha) {
-      if (axios.isAxiosError(falha) && falha.response?.status === 409) setEstado('DIVERGENTE');
-      if (axios.isAxiosError(falha) && falha.response?.status === 404) setEstado('INDISPONIVEL');
+      if (axios.isAxiosError(falha) && [404, 409].includes(falha.response?.status ?? 0)) {
+        setResultado(null);
+        setEstado(falha.response?.status === 409 ? 'DIVERGENTE' : 'INDISPONIVEL');
+      }
       setErro(mensagemDeErro(falha, t('ocorrencias:evidencias.download_erro')));
     } finally {
       setBaixando(false);
     }
   };
 
-  const classe = estado === 'INTEGRA' ? 'ok' : estado === 'CARREGANDO' ? 'muted' : 'erro';
+  const classe = estado === 'INTEGRA' ? 'ok' : estado === 'CARREGANDO' || estado === 'NAO_VERIFICADA' ? 'muted' : 'erro';
   return (
     <li className="evidencia-item">
-      <div>
-        <strong>{evidencia.nome_original}</strong> · {evidencia.formato.toUpperCase()} · {(evidencia.tamanho / 1024).toFixed(1)} KB · {fmt(evidencia.enviada_em)}
+      <div className="evidencia-metadados">
+        <strong>{evidencia.nome_original}</strong>
+        <span>{evidencia.formato.toUpperCase()} · {(evidencia.tamanho / 1024).toFixed(1)} KB</span>
+        <span>{fmt(evidencia.enviada_em)}</span>
       </div>
-      <div className="evidencia-hash"><strong>SHA-256:</strong> <code>{evidencia.hash_sha256}</code></div>
+      <div className="evidencia-integridade">
+        <div className="evidencia-hash">
+          <strong>{t('ocorrencias:evidencias.hash_armazenado')}:</strong>
+          <code>{resultado?.hash_armazenado ?? evidencia.hash_sha256}</code>
+        </div>
+        {resultado && (
+          <>
+            <div className="evidencia-hash">
+              <strong>{t('ocorrencias:evidencias.hash_recalculado')}:</strong>
+              <code>{resultado.hash_recalculado}</code>
+            </div>
+            <div className="evidencia-integridade-resumo">
+              <span className={resultado.estado === 'INTEGRA' ? 'ok' : 'erro'}>
+                {t(`ocorrencias:evidencias.hashes_${resultado.estado === 'INTEGRA' ? 'correspondem' : 'divergem'}`)}
+              </span>
+              <span><strong>{t('ocorrencias:evidencias.verificado_em')}:</strong> {fmt(resultado.verificado_em)}</span>
+            </div>
+          </>
+        )}
+        {estado === 'INDISPONIVEL' && (
+          <div className="evidencia-hash">
+            <strong>{t('ocorrencias:evidencias.hash_recalculado')}:</strong>
+            <span>{t('ocorrencias:evidencias.hash_indisponivel')}</span>
+          </div>
+        )}
+      </div>
       <div className="evidencia-acoes">
-        <span className={classe}>{t(`ocorrencias:evidencias.integridade_${estado.toLowerCase()}`)}</span>
-        <button className="btn btn-sm" disabled={estado !== 'INTEGRA' || baixando} onClick={baixar}>
+        <span className={`${classe} evidencia-estado`}>
+          {t(`ocorrencias:evidencias.integridade_${estado.toLowerCase()}`)}
+        </span>
+        <button
+          type="button"
+          className="btn btn-sm btn-outline"
+          disabled={estado === 'CARREGANDO' || baixando}
+          onClick={() => void verificarIntegridade()}
+        >
+          {estado === 'CARREGANDO'
+            ? t('ocorrencias:evidencias.verificando')
+            : estado === 'NAO_VERIFICADA'
+              ? t('ocorrencias:evidencias.verificar')
+              : t('ocorrencias:evidencias.verificar_novamente')}
+        </button>
+        {/* O download confere o SHA-256 no servidor: não depende de verificação prévia */}
+        <button
+          className="btn btn-sm"
+          disabled={estado === 'CARREGANDO' || estado === 'DIVERGENTE' || estado === 'INDISPONIVEL' || baixando}
+          onClick={baixar}
+        >
           {baixando ? t('ocorrencias:evidencias.baixando') : t('ocorrencias:evidencias.download')}
         </button>
       </div>
@@ -75,7 +132,7 @@ const EvidenciaItem: React.FC<{ ocorrenciaId: string; evidencia: Evidencia }> = 
   );
 };
 
-type Aba = 'detalhe' | 'apreensoes';
+type Aba = 'detalhe' | 'apreensoes' | 'linha_tempo';
 
 interface Props {
   o: Detalhe;
@@ -158,8 +215,14 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
     [o.envolvidos, t],
   );
 
+  // Aba e comprovante voltam ao padrão só ao trocar de ocorrência: recarregar o detalhe da mesma
+  // (ex.: após registrar uma apreensão) gera um novo array de envolvidos e não pode tirar o usuário da aba.
   useEffect(() => {
     setAba('detalhe');
+    setComprovante(false);
+  }, [o.ocorrencia_id]);
+
+  useEffect(() => {
     const vitimas = o.envolvidos.filter((e) => e.tipo === 'VITIMA');
     const suspeitos = o.envolvidos.filter((e) => e.tipo === 'SUSPEITO');
     if (vitimas.length > 0) {
@@ -342,11 +405,16 @@ export const OcorrenciaDetalheView: React.FC<Props> = ({ o, onAlterada }) => {
         <button role="tab" aria-selected={aba === 'apreensoes'} className={`tab ${aba === 'apreensoes' ? 'ativo' : ''}`} onClick={() => setAba('apreensoes')} data-cy="tab-apreensoes">
           {t('ocorrencias:apreensoes.titulo')} ({o.itens_apreendidos.length})
         </button>
+        <button role="tab" aria-selected={aba === 'linha_tempo'} className={`tab ${aba === 'linha_tempo' ? 'ativo' : ''}`} onClick={() => setAba('linha_tempo')}>
+          {t('ocorrencias:linha_tempo.aba')}
+        </button>
       </div>
       {aba === 'apreensoes' && <ApreensoesAba o={o} onAlterada={onAlterada} />}
+      {aba === 'linha_tempo' && <LinhaDoTempoAba ocorrenciaId={o.ocorrencia_id} versao={o.versao} />}
       {aba === 'detalhe' && (<>
       <dl className="grid2">
         <dt>{t('ocorrencias:form.natureza_label')}</dt><dd>{formatarNatureza(o.natureza, t)}</dd>
+        {o.prioridade && <><dt>{t('ocorrencias:prioridade.titulo')}</dt><dd><PrioridadeBadge prioridade={o.prioridade} /></dd></>}
         <dt>{t('ocorrencias:form.data_hora_fato_label')}</dt><dd>{fmt(o.data_hora_fato)}</dd>
         <dt>{t('ocorrencias:form.localizacao_label')}</dt><dd>{o.localizacao}</dd>
         <dt>{t('ocorrencias:form.coordenada_label')}</dt><dd>{o.latitude.toFixed(5)}, {o.longitude.toFixed(5)}</dd>

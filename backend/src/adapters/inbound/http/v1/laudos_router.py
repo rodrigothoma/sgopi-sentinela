@@ -14,18 +14,19 @@ from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_gerir_laudos import (
     AnexarLaudoInput,
     InterfaceAnexarLaudo,
+    InterfaceBaixarArquivoLaudo,
     InterfaceListarLaudos,
     InterfaceObterLaudo,
     InterfaceSolicitarLaudo,
     LaudoOutput,
     SolicitarLaudoInput,
 )
-from application.ports.outbound.armazenamento_arquivos import ArmazenamentoArquivos
-from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
+from domain.shared.exceptions import ValorInvalidoError
 from domain.usuario.entity import Papel
+from infrastructure.config.settings import settings
 from infrastructure.di import (
     get_anexar_laudo,
-    get_armazenamento_arquivos,
+    get_baixar_arquivo_laudo,
     get_listar_laudos,
     get_obter_laudo,
     get_solicitar_laudo,
@@ -162,9 +163,14 @@ async def anexar_laudo_concluido(
     uc: InterfaceAnexarLaudo = Depends(get_anexar_laudo),
 ) -> LaudoSchema:
     """Homologa e anexa o arquivo PDF do laudo pericial com cálculo de hash SHA-256."""
-    conteudo = await arquivo.read()
+    limite = settings.evidencias_tamanho_maximo_bytes
+    conteudo = await arquivo.read(limite + 1)
     if not conteudo:
         raise ValorInvalidoError("O arquivo do laudo não pode ser vazio.", chave="laudo.arquivo_vazio")
+    if len(conteudo) > limite:
+        raise ValorInvalidoError(
+            "O arquivo do laudo excede o tamanho máximo permitido.", chave="laudo.arquivo_grande", limite_bytes=limite
+        )
 
     resultado = await uc.executar(
         ator,
@@ -182,34 +188,17 @@ async def anexar_laudo_concluido(
 async def download_arquivo_laudo(
     laudo_id: UUID,
     ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
-    uc: InterfaceObterLaudo = Depends(get_obter_laudo),
-    armazenamento: ArmazenamentoArquivos = Depends(get_armazenamento_arquivos),
+    uc: InterfaceBaixarArquivoLaudo = Depends(get_baixar_arquivo_laudo),
 ) -> Response:
-    """Download do PDF assinado do laudo pericial com integridade garantida."""
-    laudo = await uc.executar(ator, laudo_id)
-    if not laudo.arquivo_nome or not laudo.hash_sha256:
-        raise EntidadeNaoEncontradaError(
-            "Este laudo ainda não possui arquivo homologado anexado.",
-            chave="laudo.sem_arquivo",
-        )
-
-    # Chave é buscada no use-case ou repo
-    from infrastructure.di import get_repositorio_laudo
-    # Usando o repo para pegar a chave do arquivo interno
-    # Em arquitetura limpa, o laudo possui o arquivo no armazenamento
-    conteudo = await armazenamento.ler(f"{laudo.hash_sha256}.pdf")
-    if not conteudo:
-        # Tenta carregar pelo nome ou direto
-        pass
-
-    nome_codificado = quote(laudo.arquivo_nome, safe="")
-    # Se o storage tem a chave guardada na entidade, vamos recuperar diretamente
+    """Download do PDF homologado do laudo; o conteúdo é conferido contra o SHA-256 antes da entrega."""
+    arquivo = await uc.executar(ator, laudo_id)
+    nome_codificado = quote(arquivo.nome_arquivo, safe="")
     return Response(
-        content=conteudo or b"%PDF-1.4 demo laudo",
+        content=arquivo.conteudo,
         media_type="application/pdf",
         headers={
             "Content-Disposition": f"inline; filename*=UTF-8''{nome_codificado}",
-            "X-Sha256": laudo.hash_sha256,
+            "X-Sha256": arquivo.hash_sha256,
             "X-Content-Type-Options": "nosniff",
         },
     )

@@ -6,7 +6,6 @@ from uuid import UUID
 
 from application.ports.inbound.ator import Ator
 
-
 LIMITE_PADRAO_CONSULTA: int = 100
 LIMITE_MAXIMO_CONSULTA: int = 500
 

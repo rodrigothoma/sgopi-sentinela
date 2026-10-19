@@ -11,8 +11,7 @@ const PROTOCOLO = /SGOPI-\d{4}-\d{6}/;
 function preencherFormularioValido() {
   cy.contains('label', 'Natureza da ocorrência').find('input').type('Furto de veículo');
   cy.get('#localizacao').type('Av. Brasil, 500 — Alegrete/RS');
-  cy.contains('summary', 'Informar coordenadas manualmente').click();
-  cy.get('input[type="number"]').eq(0).type('-29.7833');
+    cy.get('input[type="number"]').eq(0).type('-29.7833');
   cy.get('input[type="number"]').eq(1).type('-55.7919');
   cy.get('form.form textarea').first().type('Furto de veículo estacionado em via pública, sem violência.');
   cy.get('fieldset input[type="text"]').first().type('Maria da Silva');
@@ -71,8 +70,7 @@ describe('Issue #21 — Fluxo de registro', () => {
     cy.login('agente', '/registrar');
     cy.contains('label', 'Natureza da ocorrência').find('input').type('Furto de veículo');
     cy.get('#localizacao').type('Av. Brasil, 500');
-    cy.contains('summary', 'Informar coordenadas manualmente').click();
-  cy.get('input[type="number"]').eq(0).type('-29.7833');
+    cy.get('input[type="number"]').eq(0).type('-29.7833');
     cy.get('input[type="number"]').eq(1).type('-55.7919');
     cy.get('form.form textarea').first().type('Furto de veículo estacionado em via pública.');
 

@@ -88,11 +88,11 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
 
   it('delegado rejeita a ocorrência (terminal)', () => {
     cy.criarOcorrenciaApi().then((o) => {
-      cy.on('window:confirm', () => true);
       cy.login('delegado', '/fila');
       abrirNaFila(o.numero_protocolo);
       cy.get('#justificativa-revisao').type('Fato atípico, sem materialidade delitiva.');
       cy.contains('button', 'Rejeitar').click();
+      cy.get('[role="alertdialog"]').contains('button', 'Confirmar').click();
       cy.get('.detalhe').should('contain.text', 'Rejeitada');
       cy.contains('.tabs .tab', 'Rejeitadas').click();
       cy.contains('.lista.clicavel li', o.numero_protocolo).should('be.visible');

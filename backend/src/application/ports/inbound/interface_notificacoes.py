@@ -15,6 +15,7 @@ class InterfaceListarNotificacoes(ABC):
         ator: Ator,
         apenas_nao_lidas: bool = False,
         limite: int = 50,
+        offset: int = 0,
     ) -> tuple[list[Notificacao], int]:
         """Retorna lista de notificações do usuário/papel e o total de não lidas."""
 

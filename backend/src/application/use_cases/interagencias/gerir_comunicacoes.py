@@ -22,10 +22,10 @@ from application.ports.outbound.repositorio_notificacao import RepositorioNotifi
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
-from domain.interagencias.entity import ComunicacaoInteragencias, NivelSigilo, PrioridadeComunicacao
+from domain.interagencias.entity import ComunicacaoInteragencias
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.shared.eventos import EventoDominio
-from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
+from domain.shared.exceptions import EntidadeNaoEncontradaError
 
 
 class EnviarComunicacaoInteragenciasUseCase(InterfaceEnviarComunicacaoInteragencias):

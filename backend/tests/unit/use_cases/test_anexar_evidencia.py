@@ -8,7 +8,6 @@ from application.ports.outbound.armazenamento_arquivos import ArmazenamentoArqui
 from application.use_cases.ocorrencia.anexar_evidencia import AnexarEvidencia
 from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from tests.fakes.atores import AGENTE, DELEGADO, OUTRO_AGENTE
-from tests.unit.use_cases.conftest import AGORA
 
 PDF = b"%PDF-1.7\nconteudo de teste"
 

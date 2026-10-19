@@ -100,7 +100,9 @@ class DespacharViatura(InterfaceDespacharViatura):
             if not viatura.despachavel:
                 raise ConflitoError(f"Viatura {viatura.prefixo} não está DISPONIVEL.", chave="despacho.viatura_indisponivel", situacao=viatura.situacao.value)
             apoio = ocorrencia.status == StatusOcorrencia.EM_ATENDIMENTO
-            if not apoio:
+            if apoio:
+                ocorrencia.registrar_apoio(ator.id, agora)  # só versão: protege contra encerramento concorrente
+            else:
                 ocorrencia.despachar(ator.id, agora)  # VALIDADA → EM_ATENDIMENTO (ou TransicaoInvalidaError)
             viatura.despachar(agora)              # DISPONIVEL → EM_DESLOCAMENTO
             numero = await self._gerador.proximo(agora.year)
@@ -110,8 +112,7 @@ class DespacharViatura(InterfaceDespacharViatura):
             )
             await self._viaturas.salvar(viatura)
             await self._ordens.salvar(ordem)
-            if not apoio:
-                await self._ocorrencias.salvar(ocorrencia)
+            await self._ocorrencias.salvar(ocorrencia)
             await self._auditoria.registrar(
                 RegistroAuditoria(
                     quem=ator.id, quando=agora, operacao="despacho.criar", entidade="OrdemDeDespacho", entidade_id=str(ordem.id),

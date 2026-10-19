@@ -1,6 +1,7 @@
 """Testes unitários da entidade Inquerito (RF06 / UC06)."""
 from datetime import datetime, timezone
 from uuid import uuid4
+
 import pytest
 
 from domain.inquerito.entity import Inquerito, StatusInquerito
@@ -85,3 +86,39 @@ def test_concluir_e_arquivar_inquerito():
     # Não permite vincular ocorrências após conclusão
     with pytest.raises(ConflitoError):
         inq.vincular_ocorrencia(uuid4(), agora)
+
+
+def _em_andamento() -> Inquerito:
+    return Inquerito.instaurar(
+        numero="IP-2026-000099", ementa="Ementa suficientemente longa", delegado_id=uuid4(), instante=datetime.now(timezone.utc)
+    )
+
+
+def test_arquivar_exige_motivo_e_status_em_andamento():
+    agora = datetime.now(timezone.utc)
+    i = _em_andamento()
+    with pytest.raises(ValorInvalidoError):
+        i.arquivar("curto", agora)
+    i.arquivar("Ausência de justa causa para prosseguir.", agora)
+    assert i.status == StatusInquerito.ARQUIVADO and i.concluido_em == agora
+    with pytest.raises(ConflitoError):
+        i.arquivar("Ausência de justa causa para prosseguir.", agora)
+    with pytest.raises(ConflitoError):
+        i.concluir("Relatório final detalhado.", agora)
+
+
+def test_finalizado_nao_aceita_alterar_vinculos():
+    agora = datetime.now(timezone.utc)
+    i = _em_andamento()
+    i.concluir("Relatório final detalhado do caso.", agora)
+    with pytest.raises(ConflitoError):
+        i.vincular_ocorrencia(uuid4(), agora)
+    with pytest.raises(ConflitoError):
+        i.desvincular_ocorrencia(uuid4(), agora)
+    with pytest.raises(ValorInvalidoError):
+        _em_andamento().concluir("curto", agora)
+
+
+def test_reidratacao_sem_atualizado_em_usa_abertura():
+    agora = datetime.now(timezone.utc)
+    assert Inquerito(numero="IP-1", ementa="Ementa longa", delegado_id=uuid4(), data_abertura=agora).atualizado_em == agora

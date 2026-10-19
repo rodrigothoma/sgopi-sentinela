@@ -42,7 +42,11 @@ class RepositorioOcorrenciaFake(RepositorioOcorrencia):
             itens = [o for o in itens if o.status in filtro.status]
         if filtro.agente_policial_id:
             itens = [o for o in itens if o.agente_policial_id == filtro.agente_policial_id]
-        return sorted(itens, key=lambda o: o.criada_em, reverse=filtro.mais_recentes_primeiro)
+        itens = [o for o in itens if _atende_busca(o, filtro)]
+        itens = sorted(itens, key=lambda o: o.criada_em, reverse=filtro.mais_recentes_primeiro)
+        if filtro.ordenar_por_prioridade:
+            itens = sorted(itens, key=lambda o: o.prioridade.peso, reverse=True)  # estável: mantém a data como desempate
+        return itens
 
     async def listar(self, filtro: FiltroOcorrencias) -> list[Ocorrencia]:
         itens = self._filtrar(filtro)[filtro.offset : filtro.offset + filtro.limit]
@@ -53,3 +57,18 @@ class RepositorioOcorrenciaFake(RepositorioOcorrencia):
 
     async def lacre_em_uso(self, numero_lacre: str) -> bool:
         return any(i.numero_lacre == numero_lacre for o in self._store.values() for i in o.itens_apreendidos)
+
+
+def _contem(campo: str, termo: str | None) -> bool:
+    return termo is None or termo.casefold() in campo.casefold()
+
+
+def _atende_busca(o: Ocorrencia, filtro: FiltroOcorrencias) -> bool:
+    return (
+        _contem(o.natureza, filtro.natureza)
+        and _contem(o.numero_protocolo, filtro.protocolo)
+        and (_contem(o.descricao, filtro.texto) or _contem(o.localizacao, filtro.texto))
+        and (filtro.origem is None or o.origem == filtro.origem)
+        and (filtro.data_fato_de is None or o.data_hora_fato >= filtro.data_fato_de)
+        and (filtro.data_fato_ate is None or o.data_hora_fato <= filtro.data_fato_ate)
+    )

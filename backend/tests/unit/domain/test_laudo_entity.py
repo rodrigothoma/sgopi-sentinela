@@ -1,10 +1,11 @@
 """Testes unitários da entidade LaudoPericial (RF07 / UC07)."""
 from datetime import datetime, timezone
 from uuid import uuid4
+
 import pytest
 
 from domain.laudo.entity import LaudoPericial, StatusLaudo, TipoPericia
-from domain.shared.exceptions import CampoObrigatorioError, ConflitoError, ValorInvalidoError
+from domain.shared.exceptions import CampoObrigatorioError, ConflitoError
 
 
 def test_solicitar_laudo_sucesso():

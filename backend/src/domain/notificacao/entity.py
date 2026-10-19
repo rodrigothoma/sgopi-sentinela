@@ -7,11 +7,11 @@ Trata de notificações e alertas em tempo real no sistema policial.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from domain.shared.exceptions import CampoObrigatorioError, ValorInvalidoError
+from domain.shared.exceptions import CampoObrigatorioError
 
 
 class TipoNotificacao(str, Enum):
@@ -22,6 +22,7 @@ class TipoNotificacao(str, Enum):
     COMUNICACAO_INTERAGENCIAS = "COMUNICACAO_INTERAGENCIAS"
     DESPACHO = "DESPACHO"
     NOVA_OCORRENCIA = "NOVA_OCORRENCIA"
+    REVISAO_OCORRENCIA = "REVISAO_OCORRENCIA"
     SISTEMA = "SISTEMA"
 
 
@@ -30,6 +31,13 @@ class PrioridadeNotificacao(str, Enum):
 
     BAIXA = "BAIXA"
     MEDIA = "MEDIA"
+    ALTA = "ALTA"
+    CRITICA = "CRITICA"
+
+
+class NivelCriticidadeAlerta(str, Enum):
+    """Nível do alerta tático de criticidade (UC11): define a prioridade da notificação."""
+
     ALTA = "ALTA"
     CRITICA = "CRITICA"
 
@@ -50,7 +58,7 @@ class Notificacao:
     lida: bool = False
     lida_em: datetime | None = None
     metadados: dict | None = None
-    criada_em: datetime = field(default_factory=lambda: datetime.now())
+    criada_em: datetime = field(default_factory=lambda: datetime.now(UTC))
     ativo: bool = True
 
     @classmethod
@@ -66,7 +74,7 @@ class Notificacao:
         departamento_destinatario: str | None = None,
         link: str | None = None,
         metadados: dict | None = None,
-        instante: datetime | None = None,
+        instante: datetime,
     ) -> Notificacao:
         tit = titulo.strip() if titulo else ""
         if len(tit) < 3:
@@ -87,7 +95,7 @@ class Notificacao:
             except ValueError:
                 prioridade = PrioridadeNotificacao.MEDIA
 
-        agora = instante or datetime.now()
+        agora = instante  # vem do Relogio do caso de uso (aware); o domínio não lê o relógio
 
         return cls(
             titulo=tit,
@@ -108,3 +116,11 @@ class Notificacao:
     def marcar_lida(self, instante: datetime) -> None:
         self.lida = True
         self.lida_em = instante
+
+    def destinada_a(self, usuario_id: UUID, papel: str) -> bool:
+        """Pessoal → só o usuário; por papel → só quem tem o papel; sem alvo → todos (difusão)."""
+        if self.usuario_id is not None:
+            return self.usuario_id == usuario_id
+        if self.papel_destinatario is not None:
+            return self.papel_destinatario == papel
+        return True

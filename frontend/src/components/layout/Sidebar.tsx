@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
@@ -7,6 +7,9 @@ import { ThemeToggle } from '../common/ThemeToggle';
 import { GlideSelect, GlideSelectOption } from '../common/GlideSelect';
 import { trocarIdiomaGlobal } from '../../i18n';
 import { NotificationBell } from './NotificationBell';
+import { BuscaGlobal } from './BuscaGlobal';
+import { EscutaFilaTempoReal } from './EscutaFilaTempoReal';
+import { ocorrenciasService } from '../../services/ocorrenciasService';
 import './Sidebar.css';
 
 /* ─── Ícones Táticos SVG (Vetor inline, nítido e responsivo) ──────────── */
@@ -110,6 +113,24 @@ const IconChevronLeft = () => (
   </svg>
 );
 
+const IconIndicadores = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="4" y1="20" x2="20" y2="20" />
+    <rect x="6" y="11" width="3" height="7" rx="1" />
+    <rect x="11" y="6" width="3" height="12" rx="1" />
+    <rect x="16" y="14" width="3" height="4" rx="1" />
+  </svg>
+);
+
+const IconEfetivo = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+);
+
 const IconChevronRight = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="9 18 15 12 9 6" />
@@ -180,6 +201,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
     });
   };
 
+  // Contador de pendências na fila: o menu não dava nenhuma noção de carga de trabalho.
+  const [aguardandoRevisao, setAguardandoRevisao] = useState<number | null>(null);
+  const veFila = tem('DELEGADO', 'SUPERVISOR');
+
+  const recarregarContador = useCallback(() => {
+    if (!veFila) return;
+    ocorrenciasService
+      .listar(['AGUARDANDO_REVISAO'], 1)
+      .then((p) => setAguardandoRevisao(p.total))
+      .catch(() => undefined); // contador é acessório: falha não polui a navegação
+  }, [veFila]);
+
+  // Rede de segurança: o registro de ocorrência não emite evento de domínio,
+  // então só o WebSocket não bastaria para um protocolo recém-criado.
+  useEffect(() => {
+    if (!veFila) return;
+    recarregarContador();
+    const id = window.setInterval(recarregarContador, 30_000);
+    return () => window.clearInterval(id);
+  }, [veFila, recarregarContador]);
+
   const idiomaAtual = i18n.language ? i18n.language.slice(0, 2) : 'pt';
   const proximoIdioma = idiomaAtual === 'pt' ? 'en' : 'pt';
 
@@ -187,7 +229,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
     { to: '/inicio', label: t('nav.inicio'), icon: <IconDashboard />, visivel: true },
     { to: '/registrar', label: t('nav.registrar'), icon: <IconRegistrar />, visivel: tem('AGENTE') },
     { to: '/minhas', label: t('nav.minhas'), icon: <IconMinhas />, visivel: tem('AGENTE') },
-    { to: '/fila', label: t('nav.fila'), icon: <IconFila />, visivel: tem('DELEGADO', 'SUPERVISOR') },
+    { to: '/fila', label: t('nav.fila'), icon: <IconFila />, visivel: veFila, badge: aguardandoRevisao ?? undefined },
     { to: '/inqueritos', label: t('nav.inqueritos'), icon: <IconInqueritos />, visivel: tem('DELEGADO', 'SUPERVISOR') },
     { to: '/laudos', label: t('nav.laudos'), icon: <IconLaudos />, visivel: tem('DELEGADO', 'PERITO', 'SUPERVISOR') },
     { to: '/medidas', label: t('nav.medidas'), icon: <IconMedidas />, visivel: tem('DELEGADO', 'SUPERVISOR', 'AGENTE') },
@@ -195,6 +237,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
     { to: '/interagencias', label: t('nav.interagencias', 'Interagências'), icon: <IconInteragencias />, visivel: tem('DELEGADO', 'SUPERVISOR', 'AGENTE', 'OPERADOR_CENTRAL', 'PERITO') },
     { to: '/frota', label: t('nav.frota'), icon: <IconFrota />, visivel: tem('OPERADOR_CENTRAL', 'SUPERVISOR') },
     { to: '/auditoria', label: t('nav.auditoria'), icon: <IconAuditoria />, visivel: tem('DELEGADO', 'SUPERVISOR') },
+    { to: '/indicadores', label: t('nav.indicadores'), icon: <IconIndicadores />, visivel: tem('DELEGADO', 'SUPERVISOR', 'OPERADOR_CENTRAL') },
+    { to: '/efetivo', label: t('nav.efetivo'), icon: <IconEfetivo />, visivel: tem('SUPERVISOR', 'OPERADOR_CENTRAL') },
   ];
 
   const handleLinkClick = () => {
@@ -205,6 +249,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
 
   return (
     <>
+      {veFila && <EscutaFilaTempoReal onMudou={recarregarContador} />}
       {mobileAberta && <div className="sidebar-backdrop" onClick={onFecharMobile} />}
       <aside className={`sidebar ${colapsada ? 'colapsada' : ''} ${mobileAberta ? 'mobile-aberta' : ''}`}>
         {/* Topo: Logo & Botão de Recolher/Expandir */}
@@ -224,6 +269,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
           </button>
         </div>
 
+        {!colapsada && <BuscaGlobal onNavegar={handleLinkClick} />}
+
         {/* Navegação Central: Lista de Módulos (com nav e a para compatibilidade E2E) */}
         <nav className="sidebar-nav">
           {itensNav.filter((item) => item.visivel).map((item) => (
@@ -236,6 +283,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileAberta = false, onFechar
             >
               <span className="sidebar-icon">{item.icon}</span>
               {!colapsada && <span className="sidebar-label">{item.label}</span>}
+              {item.badge != null && item.badge > 0 && (
+                <span className="sidebar-badge" title={item.label}>{item.badge > 99 ? '99+' : item.badge}</span>
+              )}
             </NavLink>
           ))}
         </nav>

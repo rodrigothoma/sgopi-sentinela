@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from adapters.outbound.persistence.notificacao_repositorio_sqlalchemy import NotificacaoRepositorioSQLAlchemy
@@ -8,7 +8,6 @@ from tests.integration.helpers import auth
 
 async def test_fluxo_notificacoes_in_app(client, session_factory):
     h_agente = await auth(client, "agente")
-    h_supervisor = await auth(client, "supervisor")
 
     # Obter id do agente logado a partir do token
     res_me = await client.get("/v1/usuarios", headers=h_agente)
@@ -71,3 +70,40 @@ async def test_fluxo_notificacoes_in_app(client, session_factory):
     res_resumo2 = await client.get("/v1/notificacoes/resumo", headers=h_agente)
     assert res_resumo2.status_code == 200
     assert res_resumo2.json()["nao_lidas"] == 0
+
+
+async def _semear(session_factory, **destino) -> UUID:
+    async with session_factory() as s:
+        n = Notificacao.criar(titulo="Aviso geral", mensagem="Mensagem de teste para o efetivo", instante=datetime.now(UTC), **destino)
+        await NotificacaoRepositorioSQLAlchemy(s).salvar(n)
+        await s.commit()
+    return n.id
+
+
+async def test_leitura_de_notificacao_de_papel_e_individual(client, session_factory):
+    """Um AGENTE marcar como lida não apaga a pendência dos demais membros do papel."""
+    nid = await _semear(session_factory, papel_destinatario="AGENTE")
+    h1, h2 = await auth(client, "agente"), await auth(client, "agente2")
+    assert (await client.patch(f"/v1/notificacoes/{nid}/lida", headers=h1)).status_code == 200
+    assert (await client.get("/v1/notificacoes/resumo", headers=h1)).json()["nao_lidas"] == 0
+    assert (await client.get("/v1/notificacoes/resumo", headers=h2)).json()["nao_lidas"] == 1
+    itens = (await client.get("/v1/notificacoes", headers=h2)).json()["itens"]
+    assert [i["lida"] for i in itens] == [False]
+
+
+async def test_nao_marca_notificacao_de_outro_destinatario(client, session_factory, usuarios):
+    pessoal = await _semear(session_factory, usuario_id=usuarios["agente"])
+    do_papel = await _semear(session_factory, papel_destinatario="DELEGADO")
+    h = await auth(client, "agente2")
+    assert (await client.patch(f"/v1/notificacoes/{pessoal}/lida", headers=h)).status_code == 404
+    assert (await client.patch(f"/v1/notificacoes/{do_papel}/lida", headers=h)).status_code == 404
+    dono = await auth(client, "agente")
+    assert (await client.get("/v1/notificacoes/resumo", headers=dono)).json()["nao_lidas"] == 1
+
+
+async def test_listagem_respeita_offset(client, session_factory):
+    for _ in range(3):
+        await _semear(session_factory)
+    h = await auth(client, "agente")
+    pagina = (await client.get("/v1/notificacoes?limit=2&offset=2", headers=h)).json()
+    assert len(pagina["itens"]) == 1 and pagina["offset"] == 2

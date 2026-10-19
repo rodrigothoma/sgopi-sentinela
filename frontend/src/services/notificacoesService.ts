@@ -4,6 +4,7 @@ export type TipoNotificacao =
   | 'ALERTA_CRITICIDADE'
   | 'ALERTA_VENCIMENTO_MEDIDA'
   | 'COMUNICACAO_INTERAGENCIAS'
+  | 'REVISAO_OCORRENCIA'
   | 'SISTEMA';
 
 export type PrioridadeNotificacao = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
@@ -18,7 +19,8 @@ export interface Notificacao {
   lida: boolean;
   lida_em?: string | null;
   criada_em: string;
-  link_acao?: string | null;
+  /** Rota interna para onde o clique leva (ex.: ``/minhas?ocorrencia=...``). */
+  link?: string | null;
 }
 
 export interface ResumoNotificacoes {

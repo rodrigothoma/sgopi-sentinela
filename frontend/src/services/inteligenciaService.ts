@@ -1,4 +1,5 @@
 import { api } from './api';
+import type { NivelCriticidade, Papel } from '../types/api';
 
 export interface AreaRisco {
   id: string;
@@ -20,8 +21,8 @@ export interface EmitirAlertaPayload {
   latitude?: number;
   longitude?: number;
   raio_metros?: number;
-  nivel_criticidade?: 'MEDIA' | 'ALTA' | 'CRITICA';
-  papel_destinatario?: string | null;
+  nivel_criticidade?: NivelCriticidade;
+  papel_destinatario?: Papel | null;
 }
 
 export interface AlertaCriticidadeResponse {

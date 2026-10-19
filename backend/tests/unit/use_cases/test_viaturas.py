@@ -8,7 +8,13 @@ from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
 from application.ports.inbound.interface_gerir_viaturas import AlterarSituacaoInput, CadastrarViaturaInput, RegistrarPosicaoInput
 from application.use_cases.viatura.gerir_viaturas import AlterarSituacaoViatura, CadastrarViatura, ListarViaturas
 from application.use_cases.viatura.registrar_posicao_viatura import RegistrarPosicaoViatura
-from domain.shared.exceptions import AcessoNegadoError, ConflitoError, EntidadeNaoEncontradaError, TransicaoInvalidaError, ValorInvalidoError
+from domain.shared.exceptions import (
+    AcessoNegadoError,
+    ConflitoError,
+    EntidadeNaoEncontradaError,
+    TransicaoInvalidaError,
+    ValorInvalidoError,
+)
 from domain.shared.geo import calcular_distancia_km
 from tests.fakes.atores import AGENTE, DELEGADO, OPERADOR
 from tests.fakes.portas_fake import AuditoriaFake, PublicadorEventosFake, RelogioFake, UnidadeDeTrabalhoFake

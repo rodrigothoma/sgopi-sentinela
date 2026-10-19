@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import datetime
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
@@ -53,17 +54,18 @@ class _AcessoEvidencia:
         ocorrencia_id: UUID,
         evidencia: Evidencia,
         operacao: str,
-        estado: str,
+        estado: EstadoIntegridadeEvidencia,
+        quando: datetime,
     ) -> None:
         async with self._uow:
             await self._auditoria.registrar(
                 RegistroAuditoria(
                     quem=ator.id,
-                    quando=self._relogio.agora(),
+                    quando=quando,
                     operacao=operacao,
                     entidade="Evidencia",
                     entidade_id=str(evidencia.id),
-                    dados_depois={"ocorrencia_id": str(ocorrencia_id), "integridade": estado},
+                    dados_depois={"ocorrencia_id": str(ocorrencia_id), "integridade": estado.value},
                     ip=ator.ip,
                 )
             )
@@ -71,41 +73,51 @@ class _AcessoEvidencia:
 
     async def _ler_e_conferir(
         self, ator: Ator, ocorrencia_id: UUID, evidencia_id: UUID, operacao: str
-    ) -> tuple[Evidencia, bytes, EstadoIntegridadeEvidencia]:
+    ) -> tuple[Evidencia, bytes, EstadoIntegridadeEvidencia, str, datetime]:
         evidencia = await self._localizar(ator, ocorrencia_id, evidencia_id)
         conteudo = await self._armazenamento.ler(evidencia.chave_armazenamento)
         if conteudo is None:
-            await self._auditar(ator, ocorrencia_id, evidencia, operacao, "ARQUIVO_AUSENTE")
+            await self._auditar(
+                ator, ocorrencia_id, evidencia, operacao, EstadoIntegridadeEvidencia.ARQUIVO_AUSENTE, self._relogio.agora()
+            )
             raise EntidadeNaoEncontradaError(
                 "Arquivo físico da evidência não encontrado.", chave="evidencia.arquivo_ausente"
             )
+        hash_recalculado = hashlib.sha256(conteudo).hexdigest()
         estado = (
-            "INTEGRA"
-            if hashlib.sha256(conteudo).hexdigest() == evidencia.hash_sha256
-            else "DIVERGENTE"
+            EstadoIntegridadeEvidencia.INTEGRA
+            if hash_recalculado == evidencia.hash_sha256
+            else EstadoIntegridadeEvidencia.DIVERGENTE
         )
-        await self._auditar(ator, ocorrencia_id, evidencia, operacao, estado)
-        return evidencia, conteudo, estado
+        verificado_em = self._relogio.agora()
+        await self._auditar(ator, ocorrencia_id, evidencia, operacao, estado, verificado_em)
+        return evidencia, conteudo, estado, hash_recalculado, verificado_em
 
 
 class VerificarIntegridadeEvidencia(_AcessoEvidencia, InterfaceVerificarIntegridadeEvidencia):
     async def executar(
         self, ator: Ator, ocorrencia_id: UUID, evidencia_id: UUID
     ) -> IntegridadeEvidenciaOutput:
-        evidencia, _, estado = await self._ler_e_conferir(
+        evidencia, _, estado, hash_recalculado, verificado_em = await self._ler_e_conferir(
             ator, ocorrencia_id, evidencia_id, "evidencia.verificar_integridade"
         )
-        return IntegridadeEvidenciaOutput(evidencia_id=evidencia.id, estado=estado)
+        return IntegridadeEvidenciaOutput(
+            evidencia_id=evidencia.id,
+            estado=estado,
+            hash_armazenado=evidencia.hash_sha256,
+            hash_recalculado=hash_recalculado,
+            verificado_em=verificado_em,
+        )
 
 
 class ObterEvidenciaParaDownload(_AcessoEvidencia, InterfaceObterEvidenciaParaDownload):
     async def executar(
         self, ator: Ator, ocorrencia_id: UUID, evidencia_id: UUID
     ) -> DownloadEvidenciaOutput:
-        evidencia, conteudo, estado = await self._ler_e_conferir(
+        evidencia, conteudo, estado, _, _ = await self._ler_e_conferir(
             ator, ocorrencia_id, evidencia_id, "evidencia.download"
         )
-        if estado == "DIVERGENTE":
+        if estado == EstadoIntegridadeEvidencia.DIVERGENTE:
             raise ConflitoError(
                 "A integridade da evidência está divergente.",
                 chave="evidencia.integridade_divergente",

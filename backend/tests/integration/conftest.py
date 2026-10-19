@@ -14,10 +14,15 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from infrastructure.database.connection import Base, get_session
+import infrastructure.database.models as models
 from adapters.outbound.seguranca.limitador_em_memoria import LimitadorTentativasEmMemoria
-from infrastructure.di import get_limitador_login, get_limitador_registro_publico, get_orquestrador_despacho
-import infrastructure.database.models as models  # noqa: F401
+from infrastructure.database.connection import Base, get_session
+from infrastructure.di import (
+    get_limitador_consulta_publica,
+    get_limitador_login,
+    get_limitador_registro_publico,
+    get_orquestrador_despacho,
+)
 
 IDS = {
     "agente": UUID("00000000-0000-0000-0000-000000000001"),
@@ -55,7 +60,7 @@ async def session_factory(engine):
 
 
 @pytest.fixture
-async def session(session_factory) -> AsyncGenerator[AsyncSession, None]:
+async def session(session_factory) -> AsyncGenerator[AsyncSession]:
     async with session_factory() as s:
         yield s
 
@@ -114,10 +119,12 @@ async def app(session_factory, usuarios):
     limitador_publico = LimitadorTentativasEmMemoria(5, 600, 600)
     application.dependency_overrides[get_limitador_login] = lambda: limitador_login
     application.dependency_overrides[get_limitador_registro_publico] = lambda: limitador_publico
+    limitador_consulta = LimitadorTentativasEmMemoria(10, 600, 600)
+    application.dependency_overrides[get_limitador_consulta_publica] = lambda: limitador_consulta
     return application
 
 
 @pytest.fixture
-async def client(app) -> AsyncGenerator[AsyncClient, None]:
+async def client(app) -> AsyncGenerator[AsyncClient]:
     async with AsyncClient(transport=ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test") as c:
         yield c

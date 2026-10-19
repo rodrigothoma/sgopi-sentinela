@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 from uuid import uuid4
+
 import pytest
 
 from application.ports.inbound.ator import Ator
@@ -12,9 +13,7 @@ from application.ports.outbound.repositorio_notificacao import RepositorioNotifi
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.use_cases.medida_protetiva.emitir_alerta_vencimento import EmitirAlertaVencimentoMedidaUseCase
 from domain.medida_protetiva.entity import MedidaProtetiva
-from domain.notificacao.entity import Notificacao
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido
-from domain.ocorrencia.status import StatusOcorrencia
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
 
@@ -108,6 +107,9 @@ class RepoOcorrenciaFake(RepositorioOcorrencia):
 class RepoNotifFake(RepositorioNotificacao):
     def __init__(self) -> None:
         self.itens = []
+
+    async def registrar_leitura(self, notificacao_id, usuario_id, instante):
+        return None
 
     async def salvar(self, notificacao):
         self.itens.append(notificacao)
@@ -249,3 +251,26 @@ async def test_emitir_alerta_vencimento_automatico_lote():
     assert res["sucesso"] is True
     assert res["total_processadas"] == 2
     assert res["alertas_enviados"] == 1
+
+
+def test_corpo_html_escapa_dados_do_cadastro():
+    from types import SimpleNamespace
+
+    from application.use_cases.medida_protetiva.emitir_alerta_vencimento import _corpo_html
+
+    medida = SimpleNamespace(numero_referencia="MP-1", data_vencimento=date(2026, 10, 10), tipos_restricao=["<b>x</b>"])
+    corpo = _corpo_html(medida, '<img src=x onerror="alert(1)">', "<script>", 2)
+    assert "<img" not in corpo and "<script>" not in corpo and "&lt;img" in corpo
+
+
+def test_destinatario_customizado_precisa_estar_cadastrado():
+    from types import SimpleNamespace
+
+    from application.use_cases.medida_protetiva.emitir_alerta_vencimento import _destinatario
+    from domain.shared.exceptions import ValorInvalidoError
+
+    ocorrencia = SimpleNamespace(envolvidos=[SimpleNamespace(email="Vitima@Exemplo.com")])
+    assert _destinatario("vitima@exemplo.com", None, ocorrencia) == "vitima@exemplo.com"
+    assert _destinatario(None, "vitima@exemplo.com", ocorrencia) == "vitima@exemplo.com"
+    with pytest.raises(ValorInvalidoError):
+        _destinatario("terceiro@fora.com", None, ocorrencia)

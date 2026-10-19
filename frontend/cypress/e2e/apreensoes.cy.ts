@@ -12,7 +12,6 @@ const lacreUnico = (sufixo = '') => `LC-${Date.now().toString(36).toUpperCase()}
 function preencherBoletimValido() {
   cy.contains('label', 'Natureza da ocorrência').find('input').type('Porte ilegal de arma');
   cy.get('#localizacao').type('Av. Brasil, 500 — Alegrete/RS');
-  cy.contains('summary', 'Informar coordenadas manualmente').click();
   cy.get('input[type="number"]').eq(0).type('-29.7833');
   cy.get('input[type="number"]').eq(1).type('-55.7919');
   cy.get('form.form textarea').first().type('Abordagem em via pública com apreensão de arma de fogo e entorpecente.');

@@ -8,7 +8,7 @@ espelho de conferência — nunca dados pessoais.
 from fastapi import APIRouter, Depends, Path, Request
 from pydantic import BaseModel
 
-from adapters.inbound.http.deps import ip_do_cliente
+from adapters.inbound.http.deps import ip_do_cliente, limitar_consulta_publica
 from application.ports.inbound.interface_autenticar_documento import (
     AutenticarDocumentoInput,
     InterfaceAutenticarDocumento,
@@ -43,7 +43,7 @@ class DocumentoAutenticadoSchema(BaseModel):
     quantidade_evidencias: int
 
 
-@router.get("/documentos/{codigo}", response_model=DocumentoAutenticadoSchema)
+@router.get("/documentos/{codigo}", response_model=DocumentoAutenticadoSchema, dependencies=[Depends(limitar_consulta_publica)])
 async def autenticar_documento(
     request: Request,
     codigo: str = Path(

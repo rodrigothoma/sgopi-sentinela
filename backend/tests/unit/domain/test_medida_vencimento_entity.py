@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 from uuid import uuid4
 
-from domain.medida_protetiva.entity import MedidaProtetiva, StatusMedida
+from domain.medida_protetiva.entity import MedidaProtetiva
 
 
 def test_esta_proxima_do_vencimento():

@@ -73,11 +73,22 @@
     "integridade_divergente": "File divergent",
     "integridade_indisponivel": "File unavailable",
     "integridade_erro": "Could not verify file integrity",
+    "verificar_novamente": "Check again",
+    "verificando": "Checking…",
+    "hash_armazenado": "Stored SHA-256 hash",
+    "hash_recalculado": "Recalculated SHA-256 hash",
+    "hashes_correspondem": "The hashes match",
+    "hashes_divergem": "The hashes differ",
+    "hash_indisponivel": "Unavailable",
+    "verificado_em": "Checked at",
     "download": "Download",
     "baixando": "Downloading…",
+    "download_integridade_confirmada": "Integrity checked before download.",
     "download_erro": "Could not download evidence",
     "recusados_formato": "File(s) rejected due to format — only PDF, JPG, JPEG or PNG are accepted: {{arquivos}}.",
-    "recusados_tamanho": "File(s) rejected for exceeding 10 MB: {{arquivos}}."
+    "recusados_tamanho": "File(s) rejected for exceeding 10 MB: {{arquivos}}.",
+    "integridade_nao_verificada": "Integrity not checked in this session",
+    "verificar": "Check integrity"
   },
   "erros": {
     "campos_obrigatorios": "Fill in the nature and the address/location",
@@ -131,7 +142,9 @@
     "filtro_1": "Needs correction",
     "filtro_2": "Validated / in progress",
     "filtro_3": "Rejected / closed",
-    "filtro_4": "Archived / deleted"
+    "filtro_4": "Archived / deleted",
+    "espera": "{{tempo}} ago",
+    "espera_titulo": "Time awaiting decision"
   },
   "revisao": {
     "despacho_label": "Authority decision (optional when validating)",
@@ -144,7 +157,8 @@
     "rejeitar": "Reject",
     "ok_validar": "Occurrence validated — available on the tactical panel.",
     "ok_devolver": "Occurrence returned to the agent.",
-    "ok_rejeitar": "Occurrence rejected."
+    "ok_rejeitar": "Occurrence rejected.",
+    "publica_sem_devolucao": "Citizen-filed reports cannot be returned for correction (there is no authoring officer): validate, reject or archive."
   },
   "admin": {
     "titulo": "Chief's administrative acts",
@@ -275,5 +289,56 @@
     "url": "Verification page",
     "hash": "SHA-256 verification hash",
     "lgpd": "Public verification shows only document identification data — never personal data of the people involved (LGPD)."
+  },
+  "filtros": {
+    "texto": "Search report or location",
+    "texto_placeholder": "Search in the report or location…",
+    "buscar": "Search",
+    "limpar": "Clear",
+    "mais": "More filters",
+    "protocolo": "Protocol",
+    "natureza": "Nature",
+    "data_de": "Incident from",
+    "data_ate": "Incident until",
+    "origem": "Origin",
+    "origem_todas": "All",
+    "origem_POLICIAL": "Police report",
+    "origem_PUBLICA": "Citizen report",
+    "nenhum_resultado": "No occurrence matches the search.",
+    "exportar_csv": "Export CSV",
+    "exportar_dica": "Exports the current tab and search. The export is recorded in the audit trail."
+  },
+  "prioridade": {
+    "titulo": "Priority",
+    "campo": "Priority",
+    "ajuda": "optional — if left blank, the system suggests it from the nature and legal classifications",
+    "automatica": "Automatic (suggested by the system)",
+    "atribuida": "priority",
+    "nova": "New priority",
+    "justificativa": "Justification",
+    "salvar": "Change priority",
+    "ok": "Priority changed."
+  },
+  "linha_tempo": {
+    "aba": "Timeline",
+    "vazia": "Nothing recorded yet.",
+    "por": "by {{nome}}",
+    "apoio": "support",
+    "lacre": "seal",
+    "integridade_INTEGRA": "intact",
+    "integridade_DIVERGENTE": "divergent",
+    "integridade_ARQUIVO_AUSENTE": "file missing",
+    "tipos": {
+      "STATUS": "Status change",
+      "DESPACHO": "Vehicle dispatched",
+      "ORDEM_ENCERRADA": "Dispatch order closed",
+      "EVIDENCIA_ANEXADA": "Evidence attached",
+      "INTEGRIDADE_VERIFICADA": "Evidence integrity checked",
+      "ITEM_APREENDIDO": "Item seized",
+      "CUSTODIA_MOVIMENTADA": "Custody moved",
+      "INQUERITO_VINCULADO": "Linked to investigation",
+      "LAUDO_SOLICITADO": "Forensic report requested",
+      "LAUDO_CONCLUIDO": "Forensic report completed"
+    }
   }
 }

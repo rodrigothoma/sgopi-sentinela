@@ -16,7 +16,7 @@ from adapters.outbound.persistence._datas import aware
 from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
 from domain.inquerito.entity import Inquerito, StatusInquerito
 from domain.shared.exceptions import ConflitoError
-from infrastructure.database.models import InqueritoModel, OcorrenciaModel
+from infrastructure.database.models import InqueritoModel
 
 
 class InqueritoRepositorioSQLAlchemy(RepositorioInquerito):

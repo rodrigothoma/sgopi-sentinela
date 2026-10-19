@@ -1,6 +1,5 @@
 """Integração HTTP: arquivar/excluir com autorização do Delegado + motivo (RF20)."""
 from datetime import UTC, datetime
-
 from uuid import UUID
 
 from sqlalchemy import select

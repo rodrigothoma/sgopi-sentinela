@@ -16,7 +16,6 @@ from datetime import datetime
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
-from application.ports.inbound.interface_registrar_ocorrencia_policial import ItemApreendidoInputDTO
 from application.ports.inbound.interface_gerir_apreensoes import (
     AutoApreensaoOutput,
     InterfaceEmitirAutoApreensao,
@@ -26,6 +25,7 @@ from application.ports.inbound.interface_gerir_apreensoes import (
     MovimentarCustodiaInput,
     RegistrarItemApreendidoInput,
 )
+from application.ports.inbound.interface_registrar_ocorrencia_policial import ItemApreendidoInputDTO
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia

@@ -1,4 +1,6 @@
 """Integração HTTP: Inteligência e Áreas de Risco (RF10 / UC13 / UC14)."""
+import pytest
+
 from tests.integration.helpers import auth, registrar
 
 
@@ -59,3 +61,22 @@ async def test_fluxo_inteligencia_areas_risco_e_alertas(client):
     alerta_confirmado = res_ciencia.json()
     assert alerta_confirmado["status"] == "CIENTE"
 
+
+
+@pytest.mark.parametrize(
+    "invalido",
+    [
+        {"papel_destinatario": "OPERADOR"},  # papel inexistente: antes era aceito e o alerta não chegava a ninguém
+        {"papel_destinatario": "CIDADAO"},
+        {"nivel_criticidade": "URGENTE"},
+        {"latitude": 91},
+        {"longitude": -181},
+        {"raio_metros": 0},
+    ],
+)
+async def test_alerta_rejeita_valores_fora_do_dominio(client, invalido):
+    from tests.integration.helpers import auth
+
+    corpo = {"titulo": "Alerta de teste", "mensagem": "Mensagem de teste do alerta tático.", **invalido}
+    r = await client.post("/v1/inteligencia/alertas-criticidade/emitir", json=corpo, headers=await auth(client, "supervisor"))
+    assert r.status_code == 422, r.text

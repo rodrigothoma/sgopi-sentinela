@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { NavbarPublica } from '../components/layout/NavbarPublica';
 import { SeletorCoordenada } from '../components/painel/SeletorCoordenada';
 import { paraInputLocal } from '../components/ocorrencias/OcorrenciaForm';
@@ -31,6 +32,7 @@ const NATUREZA_CHAVES = [
 
 export const RegistroCidadaoPage: React.FC = () => {
   const { t } = useTranslation(['publico', 'common']);
+  const navigate = useNavigate();
 
   const opcoesNatureza: GlideSelectOption[] = useMemo(() => {
     return NATUREZA_CHAVES.map((n) => ({
@@ -60,6 +62,7 @@ export const RegistroCidadaoPage: React.FC = () => {
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [protocoloGerado, setProtocoloGerado] = useState<string | null>(null);
+  const [codigoAcompanhamento, setCodigoAcompanhamento] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -152,6 +155,7 @@ export const RegistroCidadaoPage: React.FC = () => {
         data_hora_fato: new Date(dataHora).toISOString(),
       });
       setProtocoloGerado(res.numero_protocolo);
+      setCodigoAcompanhamento(res.codigo_acompanhamento);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setErro(mensagemDeErro(err, t('publico:registro.erros.falha_registro')));
@@ -162,7 +166,7 @@ export const RegistroCidadaoPage: React.FC = () => {
 
   const copiarProtocolo = () => {
     if (!protocoloGerado) return;
-    navigator.clipboard.writeText(protocoloGerado);
+    navigator.clipboard.writeText(`${protocoloGerado} · ${codigoAcompanhamento ?? ''}`);
     setCopiado(true);
     setTimeout(() => setCopiado(false), 2500);
   };
@@ -197,6 +201,8 @@ export const RegistroCidadaoPage: React.FC = () => {
             <div className="protocolo-banner">
               <span className="small muted">{t('publico:registro.protocolo_label')}</span>
               <span className="protocolo-codigo">{protocoloGerado}</span>
+              <span className="small muted" style={{ marginTop: 8 }}>{t('publico:registro.codigo_label')}</span>
+              <span className="protocolo-codigo" id="codigo-acompanhamento">{codigoAcompanhamento}</span>
               <Button
                 type="button"
                 variant="outline"
@@ -211,7 +217,11 @@ export const RegistroCidadaoPage: React.FC = () => {
             <p className="muted small">{t('publico:registro.guardar_aviso')}</p>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24, flexWrap: 'wrap' }}>
-              <Button to={`/consulta?protocolo=${protocoloGerado}`} variant="primary">
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => navigate(`/consulta?protocolo=${encodeURIComponent(protocoloGerado)}`, { state: { codigo: codigoAcompanhamento } })}
+              >
                 {t('publico:registro.acompanhar_status')}
               </Button>
               <Button
@@ -219,6 +229,7 @@ export const RegistroCidadaoPage: React.FC = () => {
                 variant="ghost"
                 onClick={() => {
                   setProtocoloGerado(null);
+                  setCodigoAcompanhamento(null);
                   setNome('');
                   setCpf('');
                   setPassaporte('');

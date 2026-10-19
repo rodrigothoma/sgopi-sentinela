@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { NavbarPublica } from '../components/layout/NavbarPublica';
 import { StatusBadge } from '../components/StatusBadge';
@@ -20,18 +20,22 @@ const STATUS_ETAPAS = [
 export const ConsultaProtocoloPage: React.FC = () => {
   const { t } = useTranslation(['publico', 'common']);
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  // O código chega só pelo state da navegação (vindo do recibo), nunca pela URL.
+  const codigoInicial = (location.state as { codigo?: string } | null)?.codigo ?? '';
   const [protocoloInput, setProtocoloInput] = useState(searchParams.get('protocolo') ?? '');
+  const [codigoInput, setCodigoInput] = useState(codigoInicial);
   const [resultado, setResultado] = useState<ConsultaPublicaResponse | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const consultar = async (p: string) => {
+  const consultar = async (p: string, codigo: string) => {
     const limpo = p.trim();
-    if (!limpo) return;
+    if (!limpo || !codigo.trim()) return;
     setOcupado(true);
     setErro(null);
     try {
-      const dados = await consultarOcorrenciaPublica(limpo);
+      const dados = await consultarOcorrenciaPublica(limpo, codigo);
       setResultado(dados);
     } catch (err) {
       setResultado(null);
@@ -43,14 +47,14 @@ export const ConsultaProtocoloPage: React.FC = () => {
 
   useEffect(() => {
     const p = searchParams.get('protocolo');
-    if (p) {
-      consultar(p);
+    if (p && codigoInicial) {
+      consultar(p, codigoInicial);
     }
   }, [searchParams]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    consultar(protocoloInput);
+    consultar(protocoloInput, codigoInput);
   };
 
   const getEtapaIndex = (status: string) => {
@@ -70,19 +74,29 @@ export const ConsultaProtocoloPage: React.FC = () => {
           <h2>{t('publico:consulta.titulo')}</h2>
           <p className="muted">{t('publico:consulta.subtitulo')}</p>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
             <input
               type="text"
               maxLength={25}
               placeholder={t('publico:consulta.placeholder')}
               value={protocoloInput}
               onChange={(e) => setProtocoloInput(e.target.value.toUpperCase())}
-              style={{ fontSize: '1.05rem', fontWeight: 600, letterSpacing: '0.04em' }}
+              style={{ fontSize: '1.05rem', fontWeight: 600, letterSpacing: '0.04em', flex: '2 1 220px' }}
+            />
+            <input
+              type="text"
+              maxLength={20}
+              aria-label={t('publico:consulta.codigo_label')}
+              placeholder={t('publico:consulta.codigo_placeholder')}
+              value={codigoInput}
+              onChange={(e) => setCodigoInput(e.target.value.toUpperCase())}
+              autoComplete="off"
+              style={{ fontSize: '1.05rem', fontWeight: 600, letterSpacing: '0.04em', flex: '1 1 160px' }}
             />
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={ocupado || !protocoloInput.trim()}
+              disabled={ocupado || !protocoloInput.trim() || !codigoInput.trim()}
               style={{ padding: '0 24px' }}
             >
               {ocupado ? t('common:actions.loading') : t('publico:consulta.botao_consultar')}

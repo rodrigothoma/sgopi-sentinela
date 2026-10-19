@@ -1,6 +1,7 @@
 """Caso de uso AutenticarDocumento (RF08 / UC08) com fakes — consulta pública, sem ator."""
 import pytest
 
+from application.ports.inbound.interface_arquivar_ocorrencia import AutorizacaoDelegadoInput
 from application.ports.inbound.interface_autenticar_documento import AutenticarDocumentoInput
 from application.ports.inbound.interface_revisar_ocorrencia import ValidarOcorrenciaInput
 from application.use_cases.documento.autenticar_documento import (
@@ -12,7 +13,6 @@ from application.use_cases.documento.autenticar_documento import (
 )
 from application.use_cases.ocorrencia.arquivar_ocorrencia import ExcluirOcorrencia
 from application.use_cases.ocorrencia.revisar_ocorrencia import ValidarOcorrencia
-from application.ports.inbound.interface_arquivar_ocorrencia import AutorizacaoDelegadoInput
 from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
 from tests.fakes.atores import DELEGADO
 

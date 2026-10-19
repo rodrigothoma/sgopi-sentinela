@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
+
 import pytest
 
 from application.ports.inbound.ator import Ator
@@ -14,7 +15,6 @@ from application.use_cases.inteligencia.calcular_areas_risco import (
     EmitirAlertaCriticidadeUseCase,
     calcular_distancia_metros,
 )
-from domain.notificacao.entity import Notificacao
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
@@ -57,6 +57,9 @@ class RepoOcorrenciaFake(RepositorioOcorrencia):
 class RepoNotifFake(RepositorioNotificacao):
     def __init__(self) -> None:
         self.itens = {}
+
+    async def registrar_leitura(self, notificacao_id, usuario_id, instante):
+        return None
 
     async def salvar(self, notificacao):
         self.itens[str(notificacao.id)] = notificacao

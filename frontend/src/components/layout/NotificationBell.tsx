@@ -46,6 +46,15 @@ const IconMensagem = () => (
   </svg>
 );
 
+/** Prancheta com visto: decisão do Delegado sobre a ocorrência do agente (RF04). */
+const IconRevisao = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="5" y="4" width="14" height="17" rx="2" />
+    <path d="M9 4V3h6v1" />
+    <path d="m9 13 2 2 4-4" />
+  </svg>
+);
+
 const IconInfo = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" />
@@ -139,14 +148,16 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ colapsada = 
     setAberto(false);
 
     // Redirecionamento inteligente
-    if (n.link_acao) {
-      navigate(n.link_acao);
+    if (n.link) {
+      navigate(n.link);
     } else if (n.tipo === 'ALERTA_CRITICIDADE') {
       navigate('/painel');
     } else if (n.tipo === 'ALERTA_VENCIMENTO_MEDIDA') {
       navigate('/medidas');
     } else if (n.tipo === 'COMUNICACAO_INTERAGENCIAS') {
       navigate('/interagencias');
+    } else if (n.tipo === 'REVISAO_OCORRENCIA') {
+      navigate('/minhas');
     }
   };
 
@@ -158,6 +169,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ colapsada = 
         return <IconEscudo />;
       case 'COMUNICACAO_INTERAGENCIAS':
         return <IconMensagem />;
+      case 'REVISAO_OCORRENCIA':
+        return <IconRevisao />;
       default:
         return <IconInfo />;
     }

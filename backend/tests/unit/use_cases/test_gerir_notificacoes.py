@@ -1,5 +1,6 @@
 from datetime import datetime
 from uuid import uuid4
+
 import pytest
 
 from application.ports.inbound.ator import Ator
@@ -19,6 +20,7 @@ from domain.usuario.entity import Papel
 class RepositorioNotificacaoEmMemoria(RepositorioNotificacao):
     def __init__(self) -> None:
         self.itens: dict[str, Notificacao] = {}
+        self.leituras: set[tuple[str, str]] = set()
 
     async def salvar(self, notificacao: Notificacao) -> Notificacao:
         self.itens[str(notificacao.id)] = notificacao
@@ -27,7 +29,10 @@ class RepositorioNotificacaoEmMemoria(RepositorioNotificacao):
     async def obter_por_id(self, notificacao_id):
         return self.itens.get(str(notificacao_id))
 
-    async def listar(self, usuario_id=None, papel=None, apenas_nao_lidas=False, limite=50):
+    async def registrar_leitura(self, notificacao_id, usuario_id, instante):
+        self.leituras.add((str(notificacao_id), str(usuario_id)))
+
+    async def listar(self, usuario_id=None, papel=None, apenas_nao_lidas=False, limite=50, offset=0):
         res = list(self.itens.values())
         if apenas_nao_lidas:
             res = [n for n in res if not n.lida]

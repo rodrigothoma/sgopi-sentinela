@@ -44,7 +44,7 @@ class ResolvedorDestinoRepositorios(ResolvedorDestino):
     async def destinos(self, viatura_ids: list[UUID]) -> dict[UUID, Coordenada]:
         try:
             return await self._destinos(viatura_ids)
-        except Exception as exc:  # noqa: BLE001 — telemetria simulada nunca derruba o tick
+        except Exception as exc:
             log.warning("resolvedor de destino indisponível, sem destino neste tick: %s", exc)
             return {}
 
@@ -79,6 +79,6 @@ class ResolvedorDestinoSessao(ResolvedorDestino):
         try:
             async with self._fabrica() as (ordens, ocorrencias):
                 return await ResolvedorDestinoRepositorios(ordens, ocorrencias).destinos(viatura_ids)
-        except Exception as exc:  # noqa: BLE001 — telemetria simulada nunca derruba o tick
+        except Exception as exc:
             log.warning("sessão de destinos indisponível, sem destino neste tick: %s", exc)
             return {}

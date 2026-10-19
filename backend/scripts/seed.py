@@ -27,6 +27,8 @@ USUARIOS = [
     ("Agente Rodrigo", "agente", Papel.AGENTE),
     ("Delegado Fade", "delegado", Papel.DELEGADO),
     ("Operador Matheus", "operador", Papel.OPERADOR_CENTRAL),
+    # Sugestão #13: gestão do efetivo é exclusiva do Supervisor
+    ("Supervisor Demo", "supervisor", Papel.SUPERVISOR),
 ]
 
 

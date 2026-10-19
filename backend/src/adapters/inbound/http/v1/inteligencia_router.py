@@ -6,7 +6,7 @@ Inteligência de Segurança Pública: Manchas Criminais / Áreas de Risco e Aler
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from adapters.inbound.http.deps import ator_atual, exigir_papel
 from application.ports.inbound.ator import Ator
@@ -15,6 +15,7 @@ from application.ports.inbound.interface_inteligencia_areas_risco import (
     InterfaceConfirmarCienciaAlerta,
     InterfaceEmitirAlertaCriticidade,
 )
+from domain.notificacao.entity import NivelCriticidadeAlerta
 from domain.usuario.entity import Papel
 from infrastructure.di import (
     get_calcular_areas_risco,
@@ -41,15 +42,27 @@ class AreaRiscoSchema(BaseModel):
     protocolos: list[str]
 
 
+RAIO_MAXIMO_ALERTA_METROS = 50_000
+
+
 class AlertaCriticidadeRequest(BaseModel):
+    """Tipos de domínio na borda: papel ou nível inexistente vira 422 em vez de alerta que não chega a ninguém."""
+
     titulo: str = Field(min_length=5, max_length=200)
     mensagem: str = Field(min_length=10, max_length=1000)
-    area_risco_id: str | None = None
-    latitude: float | None = None
-    longitude: float | None = None
-    raio_metros: float | None = None
-    nivel_criticidade: str = "CRITICA"
-    papel_destinatario: str | None = None
+    area_risco_id: str | None = Field(default=None, max_length=100)
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    raio_metros: float | None = Field(default=None, gt=0, le=RAIO_MAXIMO_ALERTA_METROS)
+    nivel_criticidade: NivelCriticidadeAlerta = NivelCriticidadeAlerta.CRITICA
+    papel_destinatario: Papel | None = None
+
+    @field_validator("papel_destinatario")
+    @classmethod
+    def _papel_humano(cls, papel: Papel | None) -> Papel | None:
+        if papel == Papel.CIDADAO:
+            raise ValueError("CIDADAO não recebe alertas táticos.")
+        return papel
 
 
 class AlertaCriticidadeResponse(BaseModel):
@@ -87,7 +100,7 @@ async def emitir_alerta_criticidade(
     uc: InterfaceEmitirAlertaCriticidade = Depends(get_emitir_alerta_criticidade),
 ) -> AlertaCriticidadeResponse:
     """Emite um alerta de criticidade operacional com difusão em tempo real e auditoria."""
-    resultado = await uc.executar(ator=ator, dados_alerta=req.model_dump())
+    resultado = await uc.executar(ator=ator, dados_alerta=req.model_dump(mode="json"))
     return AlertaCriticidadeResponse(**resultado)
 
 

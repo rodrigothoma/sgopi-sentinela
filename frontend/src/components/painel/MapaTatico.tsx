@@ -6,6 +6,14 @@ import type { OcorrenciaResumo, OrdemDespacho, Viatura } from '../../types/api';
 import type { PontoCalor } from '../../utils/manchas';
 import type { AreaRisco } from '../../services/inteligenciaService';
 import { CENTRO_PADRAO, corrigirIconesLeaflet, iconeOcorrencia, iconeViatura } from './leaflet';
+import { escaparHtml } from '../../utils/html';
+import i18n from '../../i18n';
+
+/** Rótulo do marcador: protocolo, natureza e, quando houver, a gravidade (sugestão #7). */
+function rotuloOcorrencia(o: OcorrenciaResumo): string {
+  const prioridade = o.prioridade ? ` · ${i18n.t(`common:prioridade.${o.prioridade}`)}` : '';
+  return escaparHtml(`${o.numero_protocolo} · ${o.natureza}${prioridade}`);
+}
 
 /** Campo interno do leaflet.heat: redesenho agendado via requestAnimationFrame. */
 type HeatLayerInterno = L.HeatLayer & { _frame?: number | null };
@@ -33,7 +41,12 @@ interface Props {
   heatAtivo: boolean;
   pontosCalor: PontoCalor[];
   areasRisco?: AreaRisco[];
+  /** RNF04 / UC05 exceção I: avisa a página quando o provedor de tiles falha ou se restabelece. */
+  onDisponibilidadeTiles?: (disponivel: boolean) => void;
 }
+
+/** Falhas de tile toleradas antes de declarar o provedor indisponível (um tile isolado pode falhar). */
+const LIMITE_FALHAS_TILE = 4;
 
 /** Mapa Leaflet/OSM com marcadores atualizados incrementalmente (sem recriar o mapa a cada evento). */
 export const MapaTatico: React.FC<Props> = ({
@@ -45,6 +58,7 @@ export const MapaTatico: React.FC<Props> = ({
   heatAtivo,
   pontosCalor,
   areasRisco = [],
+  onDisponibilidadeTiles,
 }) => {
   const divRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -55,12 +69,30 @@ export const MapaTatico: React.FC<Props> = ({
   const heatRef = useRef<L.HeatLayer | null>(null);
   const selecionarRef = useRef(onSelecionarOcorrencia);
   selecionarRef.current = onSelecionarOcorrencia;
+  const disponibilidadeRef = useRef(onDisponibilidadeTiles);
+  disponibilidadeRef.current = onDisponibilidadeTiles;
+  const falhasTileRef = useRef(0);
 
   useEffect(() => {
     if (!divRef.current || mapRef.current) return;
     corrigirIconesLeaflet();
     const map = L.map(divRef.current).setView(CENTRO_PADRAO, 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+    });
+
+    // RNF04 / UC05 exceção I: o provedor de mapas é externo e pode cair. Acumula as
+    // falhas para não degradar por um tile isolado, e volta ao mapa quando ele responde.
+    tiles.on('tileerror', () => {
+      falhasTileRef.current += 1;
+      if (falhasTileRef.current === LIMITE_FALHAS_TILE) disponibilidadeRef.current?.(false);
+    });
+    tiles.on('tileload', () => {
+      if (falhasTileRef.current >= LIMITE_FALHAS_TILE) disponibilidadeRef.current?.(true);
+      falhasTileRef.current = 0;
+    });
+
+    tiles.addTo(map);
     mapRef.current = map;
     return () => {
       removerHeat(heatRef.current);
@@ -87,7 +119,7 @@ export const MapaTatico: React.FC<Props> = ({
         existente.setLatLng([v.latitude, v.longitude]).setIcon(icone);
       } else {
         const m = L.marker([v.latitude, v.longitude], { icon: icone }).addTo(map);
-        m.bindTooltip(`${v.prefixo} · ${v.placa}`);
+        m.bindTooltip(escaparHtml(`${v.prefixo} · ${v.placa}`));
         viaturasRef.current.set(v.id, m);
       }
     }
@@ -109,10 +141,12 @@ export const MapaTatico: React.FC<Props> = ({
       const existente = ocorrenciasRef.current.get(o.ocorrencia_id);
       if (existente) {
         existente.setLatLng([o.latitude, o.longitude]).setIcon(icone);
-        existente.setZIndexOffset(o.ocorrencia_id === selecionada ? 1000 : 0);
+        existente.setTooltipContent(rotuloOcorrencia(o));
+        existente.setZIndexOffset(o.ocorrencia_id === selecionada ? 1000 : o.prioridade === 'URGENTE' ? 500 : 0);
       } else {
         const m = L.marker([o.latitude, o.longitude], { icon: icone }).addTo(map);
-        m.bindTooltip(`${o.numero_protocolo} · ${o.natureza}`);
+        m.bindTooltip(rotuloOcorrencia(o));
+        if (o.prioridade === 'URGENTE') m.setZIndexOffset(500);
         m.on('click', () => selecionarRef.current(o.ocorrencia_id));
         ocorrenciasRef.current.set(o.ocorrencia_id, m);
       }
@@ -184,10 +218,10 @@ export const MapaTatico: React.FC<Props> = ({
 
       const popupHtml = `
         <div style="font-family: inherit; font-size: 13px; line-height: 1.45; min-width: 190px;">
-          <div style="font-weight: 700; margin-bottom: 4px; color: ${cor};">🚨 ${a.nome}</div>
-          <div><strong>Criticidade:</strong> <span style="color: ${cor}; font-weight: 700;">${a.nivel_risco}</span></div>
-          <div><strong>Ocorrências:</strong> ${a.total_ocorrencias} (${a.total_24h} em 24h)</div>
-          <div><strong>Predominantes:</strong> ${a.naturezas_predominantes.slice(0, 3).join(', ')}</div>
+          <div style="font-weight: 700; margin-bottom: 4px; color: ${cor};">🚨 ${escaparHtml(a.nome)}</div>
+          <div><strong>Criticidade:</strong> <span style="color: ${cor}; font-weight: 700;">${escaparHtml(a.nivel_risco)}</span></div>
+          <div><strong>Ocorrências:</strong> ${Number(a.total_ocorrencias)} (${Number(a.total_24h)} em 24h)</div>
+          <div><strong>Predominantes:</strong> ${escaparHtml(a.naturezas_predominantes.slice(0, 3).join(', '))}</div>
           <div><strong>Raio de Cobertura:</strong> ${Math.round(a.raio_metros)}m</div>
         </div>
       `;
@@ -207,7 +241,7 @@ export const MapaTatico: React.FC<Props> = ({
           weight: 2,
           dashArray: a.nivel_risco === 'CRITICA' ? '4 4' : undefined,
         }).addTo(map);
-        circulo.bindTooltip(`${a.nome} [${a.nivel_risco}]`);
+        circulo.bindTooltip(escaparHtml(`${a.nome} [${a.nivel_risco}]`));
         circulo.bindPopup(popupHtml);
         areasRef.current.set(a.id, circulo);
       }

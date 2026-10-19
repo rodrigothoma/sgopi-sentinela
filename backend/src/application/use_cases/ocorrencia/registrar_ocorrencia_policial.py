@@ -20,10 +20,14 @@ from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorren
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia.apreensoes import auditoria_registro_item, exigir_lacre_inedito, montar_item
 from domain.auditoria.entity import RegistroAuditoria
-from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipificacaoPenal, TipoEnvolvido
+from domain.ocorrencia.entity import Envolvido, Ocorrencia, OrigemOcorrencia, TipificacaoPenal, TipoEnvolvido
+from domain.ocorrencia.prioridade import interpretar_prioridade
 from domain.shared.exceptions import ValorInvalidoError
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
+
+# Registro policial só pelo Agente; comunicação pública só pelo ator de sistema CIDADAO.
+_PAPEL_POR_ORIGEM = {OrigemOcorrencia.POLICIAL: Papel.AGENTE, OrigemOcorrencia.PUBLICA: Papel.CIDADAO}
 
 
 class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
@@ -44,7 +48,7 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, input_dto: RegistrarOcorrenciaInput) -> RegistrarOcorrenciaOutput:
-        ator.exigir_papel(Papel.AGENTE)
+        ator.exigir_papel(_PAPEL_POR_ORIGEM[input_dto.origem])
         agora = self._relogio.agora()
 
         envolvidos = [
@@ -59,6 +63,7 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
         ]
         tipificacoes = [TipificacaoPenal(artigo=t.artigo, descricao=t.descricao) for t in input_dto.tipificacoes]
         itens = [montar_item(i, agora=agora, por_id=ator.id) for i in input_dto.itens_apreendidos]
+        prioridade = interpretar_prioridade(input_dto.prioridade)
 
         async with self._uow:
             for item in itens:
@@ -76,6 +81,9 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
                 envolvidos=envolvidos,
                 tipificacoes=tipificacoes,
                 itens_apreendidos=itens,
+                origem=input_dto.origem,
+                codigo_acompanhamento_hash=input_dto.codigo_acompanhamento_hash,
+                prioridade=prioridade,
             )
             await self._repositorio.salvar(ocorrencia)
             await self._auditoria.registrar(
@@ -88,6 +96,9 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
                     dados_depois={
                         "status": ocorrencia.status.value,
                         "protocolo": numero_protocolo,
+                        "origem": ocorrencia.origem.value,
+                        "prioridade": ocorrencia.prioridade.value,
+                        "prioridade_sugerida": prioridade is None,
                         "itens_apreendidos": len(ocorrencia.itens_apreendidos),
                     },
                     ip=ator.ip,
@@ -102,6 +113,7 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
             numero_protocolo=ocorrencia.numero_protocolo,
             status=ocorrencia.status.value,
             criada_em=ocorrencia.criada_em.isoformat(),
+            prioridade=ocorrencia.prioridade.value,
         )
 
 

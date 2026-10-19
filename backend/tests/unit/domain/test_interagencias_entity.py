@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import uuid4
+
 import pytest
 
 from domain.interagencias.entity import (
     ComunicacaoInteragencias,
-    DepartamentoSeguranca,
     NivelSigilo,
     PrioridadeComunicacao,
     StatusEntrega,
@@ -24,6 +24,7 @@ def test_criar_comunicacao_interagencias_valida():
         protocolo_ocorrencia="2026-000123",
         nivel_sigilo=NivelSigilo.RESERVADO,
         prioridade=PrioridadeComunicacao.ALTA,
+        instante=datetime.now(UTC),
     )
     assert com.numero_oficio == "OFI-2026-000001"
     assert com.departamento_origem == "POLICIA_CIVIL"
@@ -44,6 +45,7 @@ def test_validacao_assunto_curto():
             remetente_id=uuid4(),
             assunto="Aj",
             corpo="Corpo com mais de dez caracteres",
+            instante=datetime.now(UTC),
         )
 
 
@@ -56,4 +58,35 @@ def test_validacao_destinatarios_vazio():
             remetente_id=uuid4(),
             assunto="Assunto válido",
             corpo="Corpo com mais de dez caracteres",
+            instante=datetime.now(UTC),
         )
+
+
+def _criar(**kw):
+    dados = dict(
+        numero_oficio="OFI-1",
+        departamento_origem="POLICIA_CIVIL",
+        departamentos_destinatarios=["policia_militar", "  "],
+        remetente_id=uuid4(),
+        assunto="Assunto válido",
+        corpo="Corpo com mais de dez caracteres",
+        instante=datetime.now(UTC),
+    )
+    dados.update(kw)
+    return ComunicacaoInteragencias.criar(**dados)
+
+
+@pytest.mark.parametrize(
+    "invalido",
+    [{"numero_oficio": " "}, {"departamento_origem": ""}, {"corpo": "curto"}, {"departamentos_destinatarios": ["  "]}],
+)
+def test_campos_obrigatorios(invalido):
+    with pytest.raises(CampoObrigatorioError):
+        _criar(**invalido)
+
+
+def test_normaliza_destinatarios_e_valores_desconhecidos():
+    com = _criar(nivel_sigilo="inexistente", prioridade="urgentissima")
+    assert com.departamentos_destinatarios == ["POLICIA_MILITAR"]
+    assert com.nivel_sigilo == NivelSigilo.PADRAO and com.prioridade == PrioridadeComunicacao.MEDIA
+    assert _criar(nivel_sigilo="reservado", prioridade="alta").nivel_sigilo == NivelSigilo.RESERVADO

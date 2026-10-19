@@ -93,5 +93,45 @@
     "OcorrenciaExcluida": "Incident deleted",
     "desconhecido": "Update received",
     "ultimo": "Last event: {{evento}} at {{hora}}"
+  },
+  "alerta": {
+    "emitir": "Issue Alert",
+    "titulo_modal": "Issue Tactical Criticality Alert",
+    "descricao_modal": "Broadcasts a high-priority notification to operational staff and records a formal audit entry.",
+    "area_vinculada": "Linked Risk Area (Optional)",
+    "nenhuma_area": "General / No specific area",
+    "opcao_area": "{{nome}} [{{nivel}}] — {{total}} incidents",
+    "campo_titulo": "Alert Title",
+    "campo_criticidade": "Criticality Level",
+    "campo_destinatario": "Notified Recipients (Bell and Alert)",
+    "campo_mensagem": "Message / Tactical Recommendations",
+    "criticidade": {
+      "CRITICA": "🔴 CRITICAL (Red Alert)",
+      "ALTA": "🟠 HIGH (Heightened Attention)"
+    },
+    "destinatario_todos": "📢 All roles (broadcast to all staff)",
+    "destinatario_papel": "Only: {{papel}}",
+    "difundir": "Broadcast Alert",
+    "difundindo": "Broadcasting...",
+    "sucesso": "Tactical criticality alert issued successfully!"
+  },
+  "areas_risco": {
+    "mostrar": "Risk Areas",
+    "ocultar": "Hide Risk Areas"
+  },
+  "mapa_indisponivel": {
+    "titulo": "Map provider unavailable",
+    "subtitulo": "Showing the tabular incident report while the map service is unreachable (RNF04).",
+    "tentar_novamente": "Retry the map",
+    "col_protocolo": "Protocol",
+    "col_natureza": "Nature",
+    "col_endereco": "Address / district",
+    "col_status": "Status",
+    "sem_ocorrencias": "No active incidents at the moment."
+  },
+  "alerta_recebido": {
+    "titulo": "Criticality alert received",
+    "recebido_em": "Received at {{hora}}",
+    "dispensar": "Dismiss"
   }
 }

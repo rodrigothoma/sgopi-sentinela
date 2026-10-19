@@ -47,7 +47,7 @@
     "sucesso_titulo": "Comunicação Registrada com Sucesso!",
     "sucesso_mensagem": "Sua comunicação foi encaminhada com sucesso para o SGOPI Sentinela e já se encontra na fila de triagem da autoridade policial.",
     "protocolo_label": "NÚMERO DO SEU PROTOCOLO:",
-    "copiar_protocolo": "Copiar Protocolo",
+    "copiar_protocolo": "Copiar Protocolo e Código",
     "protocolo_copiado": "Protocolo Copiado!",
     "guardar_aviso": "Guarde este número para acompanhar a validação do seu boletim de ocorrência.",
     "acompanhar_status": "Consultar Tramitação",
@@ -77,11 +77,12 @@
       "perturbacao_sossego": "Perturbação do Sossego",
       "dano_patrimonio": "Dano ao Patrimônio",
       "outro": "Outro Fato Circunstanciado"
-    }
+    },
+    "codigo_label": "CÓDIGO DE ACOMPANHAMENTO (sigiloso — exibido só agora):"
   },
   "consulta": {
     "titulo": "Consulta Pública de Ocorrência",
-    "subtitulo": "Digite o número de protocolo oficial (ex: SGOPI-2026-000001) para consultar o status e a tramitação do seu atendimento policial.",
+    "subtitulo": "Informe o número de protocolo (ex: SGOPI-2026-000001) e o código de acompanhamento recebido no registro para consultar o status do seu atendimento.",
     "placeholder": "SGOPI-AAAA-NNNNNN",
     "botao_consultar": "Consultar",
     "protocolo_rotulo": "PROTOCOLO:",
@@ -97,9 +98,11 @@
       "data_abertura": "Comunicação Efetuada em:",
       "voltar_inicio": "Voltar ao Início"
     },
-    "erro_nao_encontrada": "Nenhuma ocorrência encontrada com o protocolo informado. Verifique os dígitos e tente novamente.",
+    "erro_nao_encontrada": "Nenhuma ocorrência encontrada com o protocolo e o código informados. Verifique os dígitos e tente novamente.",
     "aviso_rejeitada": "A comunicação foi analisada pela autoridade policial e não pôde ser registrada por este canal. Para mais informações, compareça à delegacia mais próxima com o número do protocolo.",
-    "aviso_arquivada": "A ocorrência foi arquivada pela autoridade policial. Para mais informações, compareça à delegacia mais próxima com o número do protocolo."
+    "aviso_arquivada": "A ocorrência foi arquivada pela autoridade policial. Para mais informações, compareça à delegacia mais próxima com o número do protocolo.",
+    "codigo_label": "Código de acompanhamento",
+    "codigo_placeholder": "CÓDIGO"
   },
   "autenticar": {
     "titulo": "Autenticação Pública de Documentos",

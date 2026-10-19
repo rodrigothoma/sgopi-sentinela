@@ -1,0 +1,34 @@
+{
+  "titulo": "Inter-Agency Communication",
+  "subtitulo": "Official dispatch and routing between Public Security agencies (Letters OFI-YYYY-XXXXXX)",
+  "btn_novo_oficio": "New Inter-Agency Letter",
+  "busca_protocolo": "Filter by incident protocol...",
+  "vazio": "No inter-agency communication found.",
+  "col_oficio": "Letter",
+  "col_origem": "Origin",
+  "col_destinatarios": "Recipients",
+  "col_assunto": "Subject",
+  "col_prioridade": "Priority",
+  "col_data": "Date/Time",
+  "col_acoes": "Actions",
+  "btn_responder": "Send Reply",
+  "btn_despachar": "Dispatch Letter",
+  "sucesso_envio": "Letter {{numero}} dispatched successfully!",
+  "sucesso_resposta": "Reply {{numero}} attached to the thread!",
+  "validacao": {
+    "selecione_destinatario": "Select at least one recipient department",
+    "assunto_curto": "The subject must have at least 5 characters",
+    "corpo_curto": "The body must have at least 10 characters"
+  },
+  "modal_novo": {
+    "titulo": "New Inter-Agency Letter",
+    "subtitulo": "Formal letter issued with sequential numbering OFI-YYYY-XXXXXX for Public Security integration.",
+    "origem": "Origin Agency",
+    "prioridade": "Priority",
+    "destinatarios": "Recipient Agencies (at least one)",
+    "sigilo": "Confidentiality Level",
+    "protocolo": "Linked Protocol",
+    "assunto": "Letter Subject",
+    "corpo": "Letter Text / Dispatch"
+  }
+}

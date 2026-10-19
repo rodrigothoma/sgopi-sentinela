@@ -10,9 +10,10 @@ Apenas este arquivo pode importar models SQLAlchemy — nunca domain/ nem applic
   instância (uma por request); ao salvar, a linha é travada (``FOR UPDATE`` no
   Postgres) e comparada — divergência → ConflitoError (409).
 """
+from datetime import UTC
 from uuid import UUID
 
-from sqlalchemy import exists, func, select
+from sqlalchemy import case, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -29,10 +30,12 @@ from domain.ocorrencia.entity import (
     Envolvido,
     Evidencia,
     Ocorrencia,
+    OrigemOcorrencia,
     RegistroHistoricoStatus,
     TipificacaoPenal,
     TipoEnvolvido,
 )
+from domain.ocorrencia.prioridade import PrioridadeOcorrencia
 from domain.ocorrencia.status import StatusOcorrencia
 from domain.shared.exceptions import ConflitoError
 from domain.shared.geo import Coordenada
@@ -45,6 +48,17 @@ from infrastructure.database.models import (
     OcorrenciaModel,
     TipificacaoModel,
 )
+
+_ESCAPE = "\\"
+# Ordenação por gravidade (URGENTE primeiro) sem depender da ordem alfabética do texto gravado
+_PESO_PRIORIDADE = case({p.value: p.peso for p in PrioridadeOcorrencia}, value=OcorrenciaModel.prioridade, else_=0)
+
+
+def _contendo(termo: str) -> str:
+    """Padrão LIKE "contém" com os curingas do usuário (% e _) tratados como literais."""
+    literal = termo.replace(_ESCAPE, _ESCAPE * 2).replace("%", _ESCAPE + "%").replace("_", _ESCAPE + "_")
+    return f"%{literal}%"
+
 
 _CARREGAR_FILHOS = (
     selectinload(OcorrenciaModel.envolvidos),
@@ -120,12 +134,36 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             stmt = stmt.where(OcorrenciaModel.status.in_([s.value for s in filtro.status]))
         if filtro.agente_policial_id:
             stmt = stmt.where(OcorrenciaModel.agente_policial_id == filtro.agente_policial_id)
+        return self._aplicar_busca(stmt, filtro)
+
+    @staticmethod
+    def _aplicar_busca(stmt, filtro: FiltroOcorrencias):
+        """Filtros de busca com ILIKE (portável entre PostgreSQL e SQLite); datas comparadas em UTC."""
+        if filtro.natureza:
+            stmt = stmt.where(OcorrenciaModel.natureza.ilike(_contendo(filtro.natureza), escape=_ESCAPE))
+        if filtro.protocolo:
+            stmt = stmt.where(OcorrenciaModel.numero_protocolo.ilike(_contendo(filtro.protocolo), escape=_ESCAPE))
+        if filtro.texto:
+            padrao = _contendo(filtro.texto)
+            stmt = stmt.where(
+                or_(
+                    OcorrenciaModel.descricao.ilike(padrao, escape=_ESCAPE),
+                    OcorrenciaModel.localizacao.ilike(padrao, escape=_ESCAPE),
+                )
+            )
+        if filtro.origem:
+            stmt = stmt.where(OcorrenciaModel.origem == filtro.origem.value)
+        if filtro.data_fato_de:
+            stmt = stmt.where(OcorrenciaModel.data_hora_fato >= aware(filtro.data_fato_de).astimezone(UTC))
+        if filtro.data_fato_ate:
+            stmt = stmt.where(OcorrenciaModel.data_hora_fato <= aware(filtro.data_fato_ate).astimezone(UTC))
         return stmt
 
     async def listar(self, filtro: FiltroOcorrencias) -> list[Ocorrencia]:
         stmt = self._aplicar_filtro(select(OcorrenciaModel), filtro)
         ordem = OcorrenciaModel.criada_em.desc() if filtro.mais_recentes_primeiro else OcorrenciaModel.criada_em.asc()
-        stmt = stmt.options(*_CARREGAR_FILHOS).order_by(ordem).limit(filtro.limit).offset(filtro.offset)
+        criterios = (_PESO_PRIORIDADE.desc(), ordem) if filtro.ordenar_por_prioridade else (ordem,)
+        stmt = stmt.options(*_CARREGAR_FILHOS).order_by(*criterios).limit(filtro.limit).offset(filtro.offset)
         models = (await self._session.execute(stmt)).scalars().all()
         for m in models:
             self._versoes_carregadas[m.id] = m.versao
@@ -159,12 +197,16 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             justificativa_revisao=ocorrencia.justificativa_revisao,
             desfecho=ocorrencia.desfecho,
             hash_narrativa=ocorrencia.hash_narrativa,
+            hash_versao=ocorrencia.hash_versao,
             chave_autenticidade=ocorrencia.chave_autenticidade,
             arquivada_por_id=ocorrencia.arquivada_por_id,
             motivo_arquivamento=ocorrencia.motivo_arquivamento,
             excluida_por_id=ocorrencia.excluida_por_id,
             motivo_exclusao=ocorrencia.motivo_exclusao,
             inquerito_id=ocorrencia.inquerito_id,
+            origem=ocorrencia.origem.value,
+            prioridade=ocorrencia.prioridade.value,
+            codigo_acompanhamento_hash=ocorrencia.codigo_acompanhamento_hash,
         )
 
     def _to_model(self, ocorrencia: Ocorrencia) -> OcorrenciaModel:
@@ -331,12 +373,16 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
             justificativa_revisao=model.justificativa_revisao,
             desfecho=model.desfecho,
             hash_narrativa=model.hash_narrativa,
+            hash_versao=model.hash_versao,
             chave_autenticidade=model.chave_autenticidade,
             arquivada_por_id=model.arquivada_por_id,
             motivo_arquivamento=model.motivo_arquivamento,
             excluida_por_id=model.excluida_por_id,
             motivo_exclusao=model.motivo_exclusao,
             inquerito_id=model.inquerito_id,
+            origem=OrigemOcorrencia(model.origem),
+            codigo_acompanhamento_hash=model.codigo_acompanhamento_hash,
+            prioridade=PrioridadeOcorrencia(model.prioridade),
         )
         ocorrencia.envolvidos = [
             Envolvido(

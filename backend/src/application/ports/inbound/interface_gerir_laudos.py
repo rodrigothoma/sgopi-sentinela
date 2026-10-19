@@ -71,3 +71,17 @@ class InterfaceListarLaudos(ABC):
 class InterfaceObterLaudo(ABC):
     @abstractmethod
     async def executar(self, ator: Ator, laudo_id: UUID) -> LaudoOutput: ...
+
+
+@dataclass(frozen=True)
+class ArquivoLaudoOutput:
+    """PDF homologado, já conferido contra o SHA-256 registrado na anexação."""
+
+    conteudo: bytes
+    nome_arquivo: str
+    hash_sha256: str
+
+
+class InterfaceBaixarArquivoLaudo(ABC):
+    @abstractmethod
+    async def executar(self, ator: Ator, laudo_id: UUID) -> ArquivoLaudoOutput: ...

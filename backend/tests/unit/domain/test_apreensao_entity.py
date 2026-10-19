@@ -1,5 +1,5 @@
 """Testes unitários de ItemApreendido, MovimentacaoCustodia e das operações de apreensão do agregado (RF03 / UC03)."""
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from uuid import uuid4
 
 import pytest

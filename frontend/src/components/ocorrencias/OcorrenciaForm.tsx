@@ -4,7 +4,7 @@ import { EnvolvidoForm } from './EnvolvidoForm';
 import { SeletorCoordenada } from '../painel/SeletorCoordenada';
 import { TipificacaoForm } from './TipificacaoForm';
 import { ItemApreendidoForm } from './ItemApreendidoForm';
-import type { EnvolvidoDTO, ItemApreendidoDTO, RegistrarOcorrenciaRequest, TipificacaoDTO } from '../../types/api';
+import { PRIORIDADES, type EnvolvidoDTO, type ItemApreendidoDTO, type PrioridadeOcorrencia, type RegistrarOcorrenciaRequest, type TipificacaoDTO } from '../../types/api';
 
 export interface ValoresOcorrencia {
   natureza: string; descricao: string; localizacao: string;
@@ -12,6 +12,8 @@ export interface ValoresOcorrencia {
   envolvidos: EnvolvidoDTO[]; tipificacoes: TipificacaoDTO[]; evidencias: File[];
   /** RF03 — apreensão concomitante ao registro (opcional). */
   itensApreendidos: ItemApreendidoDTO[];
+  /** Sugestão #7 — ausente: o backend sugere pela natureza/tipificações. */
+  prioridade?: PrioridadeOcorrencia;
 }
 
 export const valoresVazios = (): ValoresOcorrencia => ({
@@ -31,6 +33,7 @@ export function paraRequest(v: ValoresOcorrencia): RegistrarOcorrenciaRequest {
     data_hora_fato: new Date(v.dataHoraFatoLocal).toISOString(),
     envolvidos: v.envolvidos, tipificacoes: v.tipificacoes,
     ...(v.itensApreendidos.length > 0 ? { itens_apreendidos: v.itensApreendidos } : {}),
+    ...(v.prioridade ? { prioridade: v.prioridade } : {}),
   };
 }
 
@@ -42,6 +45,8 @@ interface Props {
   permitirEvidencias?: boolean;
   /** Exibe a seção opcional de apreensões (só no registro: a correção não altera o inventário). */
   permitirApreensoes?: boolean;
+  /** Ajuste opcional da gravidade (só no registro; depois, quem ajusta é o Delegado). */
+  permitirPrioridade?: boolean;
 }
 
 const FORMATOS_EVIDENCIA = ['application/pdf', 'image/jpeg', 'image/png'];
@@ -49,7 +54,7 @@ const TAMANHO_MAXIMO_EVIDENCIA = 10 * 1024 * 1024;
 const MAXIMO_EVIDENCIAS = 10;
 const MINIMO_DESCRICAO = 20;
 
-export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnviar, ocupado, permitirEvidencias = false, permitirApreensoes = false }) => {
+export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnviar, ocupado, permitirEvidencias = false, permitirApreensoes = false, permitirPrioridade = false }) => {
   const { t } = useTranslation(['ocorrencias', 'common']);
   const [v, setV] = useState<ValoresOcorrencia>(inicial);
   const [erro, setErro] = useState<string | null>(null);
@@ -115,6 +120,15 @@ export const OcorrenciaForm: React.FC<Props> = ({ inicial, onSubmit, rotuloEnvia
             <input id="data-hora-fato" type="datetime-local" value={v.dataHoraFatoLocal} max={paraInputLocal(new Date())} onChange={(e) => set('dataHoraFatoLocal', e.target.value)} />
           </label>
         </div>
+        {permitirPrioridade && (
+          <label htmlFor="prioridade">
+            {t('ocorrencias:prioridade.campo')} <span className="muted">({t('ocorrencias:prioridade.ajuda')})</span>
+            <select id="prioridade" value={v.prioridade ?? ''} onChange={(e) => set('prioridade', (e.target.value || undefined) as PrioridadeOcorrencia | undefined)}>
+              <option value="">{t('ocorrencias:prioridade.automatica')}</option>
+              {PRIORIDADES.map((p) => <option key={p} value={p}>{t(`common:prioridade.${p}`)}</option>)}
+            </select>
+          </label>
+        )}
       </section>
 
       <section className="secao">
