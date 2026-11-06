@@ -76,9 +76,10 @@ backend/src/
   * Portas devem ser coesas e específicas (`PortaAuditoria`, `RepositorioViatura`, `RepositorioOcorrencia`), evitando interfaces "gordas" com métodos desnecessários.
 * **D — Dependency Inversion Principle (DIP):**
   * Módulos de alto nível (`application`) nunca dependem de módulos de baixo nível (`adapters`). Ambos dependem de abstrações (`ports`).
-* **Clean Code:**
+* **Clean Code, Tipagem Estrita e Documentação:**
+  * **Tipagem Estrita (PEP 484):** Obrigatória em **todos os parâmetros e retornos** (incluindo `-> None`, `dict[str, Any]`, `list[T]`, `UUID | None`) em **código novo ou refatorado**. Não omita anotações de tipo.
+  * **Docstrings Úteis (PEP 257) & Sem Óbvio:** Classes, interfaces/portas e métodos públicos devem documentar contexto de negócio, invariantes ou detalhes técnicos relevantes. **Não comente código óbvio:** evite docstrings vazias ou puramente redundantes que apenas repetem o nome ou assinatura do método.
   * Nomenclatura expressiva e semântica (em português para o domínio policial, seguindo o padrão já estabelecido: `numero_protocolo`, `viatura_id`, `relato`, etc.).
-  * Não comente código óbvio. Preserve docstrings informativas e tipagem explícita em todos os parâmetros e retornos.
   * Não use números mágicos nem strings literais espalhadas (use Enums e constantes de domínio).
 
 ---
