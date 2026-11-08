@@ -13,6 +13,7 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from domain.shared.exceptions import CampoObrigatorioError
+from domain.usuario.entity import Papel
 
 
 class DepartamentoSeguranca(str, Enum):
@@ -32,6 +33,22 @@ class NivelSigilo(str, Enum):
     PADRAO = "PADRAO"
     RESERVADO = "RESERVADO"
     CONFIDENCIAL = "CONFIDENCIAL"
+
+
+# Papéis autorizados a ler cada nível de sigilo (o remetente sempre lê os próprios ofícios).
+# PADRAO não tem restrição de papel; os níveis restritos são acumulativos.
+PAPEIS_POR_NIVEL_SIGILO: dict[NivelSigilo, frozenset[Papel]] = {
+    NivelSigilo.RESERVADO: frozenset({Papel.DELEGADO, Papel.SUPERVISOR, Papel.ESCRIVAO, Papel.OPERADOR_CENTRAL}),
+    NivelSigilo.CONFIDENCIAL: frozenset({Papel.DELEGADO, Papel.SUPERVISOR}),
+}
+
+
+def niveis_sigilo_visiveis(papel: Papel) -> frozenset[NivelSigilo]:
+    """Níveis de sigilo que o papel pode ler em qualquer ofício, além dos que ele mesmo enviou."""
+    return frozenset(
+        nivel for nivel in NivelSigilo
+        if nivel not in PAPEIS_POR_NIVEL_SIGILO or papel in PAPEIS_POR_NIVEL_SIGILO[nivel]
+    )
 
 
 class PrioridadeComunicacao(str, Enum):
@@ -133,3 +150,7 @@ class ComunicacaoInteragencias:
             criada_em=agora,
             ativo=True,
         )
+
+    def visivel_para(self, papel: Papel, usuario_id: UUID) -> bool:
+        """Regra de sigilo do RF10: o remetente sempre lê; os demais conforme o papel e o nível."""
+        return usuario_id == self.remetente_id or self.nivel_sigilo in niveis_sigilo_visiveis(papel)

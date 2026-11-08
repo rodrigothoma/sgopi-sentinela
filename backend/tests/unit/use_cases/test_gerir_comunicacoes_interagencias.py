@@ -44,8 +44,12 @@ class RepoComFake(RepositorioComunicacaoInteragencias):
     async def obter_por_id(self, comunicacao_id):
         return self.itens.get(str(comunicacao_id))
 
-    async def listar(self, departamento=None, protocolo=None, remetente_id=None, limite=50):
+    async def listar(
+        self, departamento=None, protocolo=None, remetente_id=None, limite=50, niveis_sigilo=None, visivel_ao_usuario=None
+    ):
         res = list(self.itens.values())
+        if niveis_sigilo is not None:
+            res = [c for c in res if c.nivel_sigilo in niveis_sigilo or c.remetente_id == visivel_ao_usuario]
         if departamento:
             res = [c for c in res if c.departamento_origem == departamento or departamento in c.departamentos_destinatarios]
         if protocolo:

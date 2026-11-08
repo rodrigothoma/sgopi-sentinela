@@ -153,5 +153,8 @@
     "fuso_invalido": "Invalid time zone",
     "periodo_sem_fuso": "Period dates must include a time zone",
     "periodo_invalido": "Invalid period: the start must precede the end and the range cannot exceed 366 days"
+  },
+  "interagencias": {
+    "nao_encontrada": "Interagency communication not found."
   }
 }

@@ -22,7 +22,7 @@ from application.ports.outbound.repositorio_notificacao import RepositorioNotifi
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
-from domain.interagencias.entity import ComunicacaoInteragencias
+from domain.interagencias.entity import ComunicacaoInteragencias, niveis_sigilo_visiveis
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.shared.eventos import EventoDominio
 from domain.shared.exceptions import EntidadeNaoEncontradaError
@@ -158,7 +158,13 @@ class ConsultarComunicacoesInteragenciasUseCase(InterfaceConsultarComunicacoesIn
         departamento: str | None = None,
         protocolo: str | None = None,
     ) -> list[ComunicacaoInteragencias]:
-        return await self._repo.listar(departamento=departamento, protocolo=protocolo)
+        """Lista apenas os ofícios que o ator pode ler pelo nível de sigilo (ou que ele enviou)."""
+        return await self._repo.listar(
+            departamento=departamento,
+            protocolo=protocolo,
+            niveis_sigilo=niveis_sigilo_visiveis(ator.papel),
+            visivel_ao_usuario=ator.id,
+        )
 
 
 class ResponderComunicacaoInteragenciasUseCase(InterfaceResponderComunicacaoInteragencias):
@@ -190,8 +196,13 @@ class ResponderComunicacaoInteragenciasUseCase(InterfaceResponderComunicacaoInte
         prioridade: str = "MEDIA",
     ) -> ComunicacaoInteragencias:
         pai = await self._repo.obter_por_id(mensagem_pai_id)
-        if pai is None:
-            raise EntidadeNaoEncontradaError("Comunicação original não encontrada.")
+        # Ofício que o ator não pode ler responde como inexistente (não revela que existe).
+        if pai is None or not pai.visivel_para(ator.papel, ator.id):
+            raise EntidadeNaoEncontradaError(
+                "Comunicação original não encontrada.",
+                chave="interagencias.nao_encontrada",
+                comunicacao_id=str(mensagem_pai_id),
+            )
 
         agora = self._relogio.agora()
         numero_oficio = await self._gerador.proximo_numero(agora.year)

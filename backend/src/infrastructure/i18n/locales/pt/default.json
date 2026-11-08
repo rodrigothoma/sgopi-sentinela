@@ -153,5 +153,8 @@
     "fuso_invalido": "Fuso horário inválido",
     "periodo_sem_fuso": "As datas do período devem informar o fuso horário",
     "periodo_invalido": "Período inválido: o início deve ser anterior ao fim e o intervalo não pode passar de 366 dias"
+  },
+  "interagencias": {
+    "nao_encontrada": "Comunicação interagências não encontrada."
   }
 }
