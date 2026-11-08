@@ -26,21 +26,24 @@ sgopi-sentinela/
 │   │   │   ├── inquerito/         # Inquérito policial (extra RF06)
 │   │   │   ├── laudo/             # Laudo pericial (extra RF07)
 │   │   │   ├── medida_protetiva/  # Medida protetiva de urgência (extra RF09)
+│   │   │   ├── interagencias/     # Comunicação interagências / ofícios (extra RF10)
+│   │   │   ├── notificacao/       # Notificações in-app (extra)
 │   │   │   └── shared/            # Exceções (com chave i18n), Coordenada, CPF, documentos, eventos
 │   │   ├── application/
 │   │   │   ├── ports/inbound/     # Interface* + DTOs + Ator (um arquivo por caso de uso)
 │   │   │   ├── ports/outbound/    # Repositorio*, UnidadeDeTrabalho, Relogio, GeradorProtocolo,
 │   │   │   │                      # GeradorNumero*, PortaAuditoria, PublicadorEventos, HasherSenha,
-│   │   │   │                      # ProvedorToken, ArmazenamentoArquivos
+│   │   │   │                      # ProvedorToken, ArmazenamentoArquivos, PortaNotificacaoEmail
 │   │   │   └── use_cases/         # auth/, ocorrencia/, viatura/, despacho/, auditoria/, usuario/,
-│   │   │                          # inquerito/, laudo/, medida_protetiva/, documento/ (extras)
+│   │   │                          # inquerito/, laudo/, medida_protetiva/, documento/, interagencias/,
+│   │   │                          # notificacao/, indicadores/, inteligencia/ (extras)
 │   │   ├── adapters/
 │   │   │   ├── inbound/http/      # deps (JWT/RBAC), erros, middleware, v1/*_router.py
 │   │   │   ├── inbound/websocket/ # WS /v1/tempo-real + GerenciadorConexoes
 │   │   │   ├── inbound/simulador/ # SimuladorTelemetria (driving adapter de GPS) + extras opcionais:
 │   │   │   │                      # GeradorOcorrencias (demo) e OrquestradorDespacho
-│   │   │   └── outbound/          # persistence/ (SQLAlchemy), seguranca/ (argon2, jose),
-│   │   │                          # eventos/ (fan-out em memória), relogio/, arquivos/ (disco)
+│   │   │   └── outbound/          # persistence/ (SQLAlchemy + mappers/ modelo↔entidade), seguranca/ (argon2, jose),
+│   │   │                          # eventos/ (fan-out em memória), relogio/, arquivos/ (disco), email/ (SMTP)
 │   │   ├── infrastructure/
 │   │   │   ├── config/            # Settings (pydantic-settings, .env)
 │   │   │   ├── database/          # engine, models, migrations/ (Alembic)
@@ -58,7 +61,7 @@ sgopi-sentinela/
 │   ├── DOCUMENTACAO_DE_ENGENHARIA.md · PLANEJAMENTO_DESENVOLVIMENTO.md
 │   ├── implementacao/             # Registros de etapas e complementos de implementação
 │   └── diagramas/
-├── docker-compose.yml             # PostgreSQL 16 local
+├── docker-compose.yml             # PostgreSQL 16 local (porta do host 5433, configurável via SGOPI_DB_PORTA)
 └── README.md
 ```
 
@@ -78,7 +81,7 @@ sgopi-sentinela/
 ```bash
 cd backend
 
-# 1. Suba o banco local
+# 1. Suba o banco local (exposto em localhost:5433 por padrão — ajuste com SGOPI_DB_PORTA)
 docker compose -f ../docker-compose.yml up -d
 
 # 2. Instale dependências
@@ -94,6 +97,8 @@ uv run python -m scripts.seed   # usuários agente/delegado/operador (senha Senh
 # 5. Rode o servidor (Swagger em http://localhost:8000/docs)
 uv run uvicorn --app-dir src main:app --reload
 ```
+
+> A porta padrão do host é **5433** (e não 5432) para não colidir com um PostgreSQL nativo já instalado na máquina; o `.env.example` já aponta para ela. Detalhes em [`docs/implementacao/CORRECAO_CONEXAO_BANCO_2026-10-05.md`](docs/implementacao/CORRECAO_CONEXAO_BANCO_2026-10-05.md).
 
 > Sem Docker? Aponte `DATABASE_URL=sqlite+aiosqlite:///./sgopi.db` no `.env` — o esquema e os testes são portáveis.
 
@@ -120,7 +125,7 @@ Todas as etapas e fatias verticais do projeto estão mapeadas e organizadas no [
 - **Delegacia Online com cota por IP:** `POST /v1/ocorrencias/publico` aceita até `REGISTRO_PUBLICO_MAX_POR_IP` comunicações (padrão 20) a cada 10 min por IP.
 - **IP de origem confiável:** `X-Forwarded-For` só é considerado quando a conexão vem de `PROXIES_CONFIAVEIS` (padrão: loopback); sem isso, um cliente forjaria o IP para burlar limites e auditoria.
 - **WebSocket sem token na URL:** o painel envia o JWT no cabeçalho `Sec-WebSocket-Protocol` (`["sgopi.bearer", <jwt>]`), e o servidor responde só `sgopi.bearer`. Token em query string é recusado (1008).
-- **Consulta pública mínima (LGPD):** `GET /v1/ocorrencias/publico/{protocolo}` devolve apenas protocolo, status, natureza, localização e data; ocorrência excluída logicamente responde 404.
+- **Consulta pública mínima (LGPD):** `POST /v1/ocorrencias/publico/consulta` exige **protocolo + código de acompanhamento** (entregue uma única vez no registro; só o hash é persistido) no corpo da requisição, fora dos logs de URL, e devolve apenas protocolo, status, natureza, localização e data; ocorrência excluída logicamente responde 404.
 
 Os limites são configuráveis no `.env` (ver `backend/.env.example`). O limitador é em memória — adequado a uma instância da API; com réplicas, troque o adapter da porta `LimitadorTentativas`.
 
@@ -129,8 +134,8 @@ Os limites são configuráveis no `.env` (ver `backend/.env.example`). O limitad
 <!-- Números da suíte: atualize SOMENTE esta tabela (demais documentos apontam para cá). -->
 | Suíte | Situação atual |
 | :--- | :--- |
-| pytest (backend) | **828 testes** coletados — 815 unitários/integração + 13 E2E de API |
-| Cobertura (`domain/` + `application/`) | **≈ 96 %** (meta ≥ 80 % no agregado; piso por arquivo: 85 % em `domain/`, 75 % em `application/`) |
+| pytest (backend) | **844 testes** coletados — 831 unitários/integração + 13 E2E de API (exigem a API em execução; pulados na suíte local) |
+| Cobertura (`domain/` + `application/`) | **≈ 95 %** (meta ≥ 80 % no agregado; piso por arquivo: 85 % em `domain/`, 75 % em `application/`) |
 | Vitest (frontend) | **16 testes** em 5 arquivos (`src/utils/__tests__`) |
 | Cypress (frontend) | **36 testes** em 7 specs |
 
@@ -214,7 +219,7 @@ cd frontend && npm run e2e:db
 - **Must Have (MVP Essencial — escopo canônico):** RF01 (Gestão de Ocorrência Policial), RF04 (Fluxo de Validação pelo Delegado) e RF02 (Monitoramento GPS e Despacho Tático).
 - **Should Have (Alta Prioridade):** RF03 (Inventário de Apreensões), RF05 (Manchas Criminais e Alertas), RF07 (Laudos Periciais) — *implementados como extras*.
 - **Could Have (Média Prioridade):** RF06 (Vinculação a Inquéritos), RF08 (Autenticação Pública de Documentos), RF09 (Medidas Protetivas) — *implementados como extras*.
-- **Won't Have (Próximos Ciclos):** RF10 (Comunicação Interagências).
+- **Won't Have (planejado originalmente):** RF10 (Comunicação Interagências) — *implementado como extra (ofícios internos rastreáveis)*.
 
 ### ➕ Extras implementados (além do MVP)
 Funcionalidades entregues **fora do escopo canônico do MVP** (RF01/RF04/RF02). Não redefinem o MVP:
@@ -224,6 +229,8 @@ Funcionalidades entregues **fora do escopo canônico do MVP** (RF01/RF04/RF02). 
 - **RF07** — Laudos periciais com upload e verificação de integridade SHA-256;
 - **RF08** — Autenticação pública de documentos por chave de segurança ou QR Code (`/autenticar`);
 - **RF09** — Medidas protetivas com controle de vigência, renovação e revogação;
+- **RF10** — Comunicação interagências por ofícios oficiais rastreáveis (OFI-AAAA-NNNNNN), com nível de sigilo e respostas encadeadas;
+- Notificações in-app (sino na barra lateral) e indicadores/áreas de risco dinâmicas;
 - **DEC-03** — Pin vetorial SVG animado nos formulários e no mapa;
 - Arquivamento e exclusão lógica de ocorrência pelo Delegado; gerador de ocorrências fictícias para demonstração; orquestrador de despacho/encerramento automáticos (com viatura de apoio).
 

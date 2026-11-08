@@ -16,13 +16,13 @@ Consulte sempre o arquivo AGENTS.md e docs/DOCUMENTACAO_DE_ENGENHARIA.md.
    - infrastructure/di.py: Único composition root permitido para injeção de dependências.
 
 3. SOLID & CLEAN CODE:
-   - SRP: Cada use case tem uma única responsabilidade e método execute().
+   - SRP: Cada use case tem uma única responsabilidade e método executar().
    - OCP/DIP: Use interfaces das portas para inversão de dependência.
    - Funções curtas (< 35 linhas), tipagem estrita e nomes semânticos em português para o domínio.
    - Proibido DELETE físico em entidades operacionais (exclusão lógica: ocorrência via status ARQUIVADA/EXCLUIDA; viatura via situação INDISPONIVEL); tabelas de auditoria e histórico são estritamente append-only (RNF03).
 
 4. ESCOPO:
-   - MVP canônico: RF01, RF04 e RF02. Os módulos RF03, RF05, RF06, RF07, RF08, RF09 e DEC-03 já implementados são EXTRAS (ver AGENTS.md §1.3); não amplie o escopo sem aprovação.
+   - MVP canônico: RF01, RF04 e RF02. Os módulos RF03, RF05, RF06, RF07, RF08, RF09, RF10, notificações, indicadores e DEC-03 já implementados são EXTRAS (ver AGENTS.md §1); não amplie o escopo sem aprovação.
 
 5. VERIFICAÇÃO OBRIGATÓRIA:
    - Rodar sempre: PYTHONPATH=src uv run lint-imports --config pyproject.toml

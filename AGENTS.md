@@ -9,7 +9,7 @@ Este arquivo estabelece as regras canônicas de engenharia para qualquer **agent
 1. **Documentação Oficial:** Toda implementação deve seguir estritamente o arquivo [`docs/DOCUMENTACAO_DE_ENGENHARIA.md`](docs/DOCUMENTACAO_DE_ENGENHARIA.md).
 2. **Diagramas UML:** Antes de implementar ou alterar casos de uso, consulte obrigatoriamente os diagramas em [`docs/diagramas/`](docs/diagramas/) (especialmente os diagramas de sequência em `docs/diagramas/sequencia/`).
 3. **Escopo Canônico do MVP:** Foco rigoroso nos requisitos **RF01** (Gestão de Ocorrência Policial), **RF04** (Validação pelo Delegado) e **RF02** (Monitoramento GPS e Despacho Tático). Não invente requisitos fora do escopo.
-   * **Extras já implementados (fora do escopo canônico do MVP):** RF03 (Inventário de Apreensões), RF05 (Manchas Criminais / *heatmap* e banner de criticidade), RF06 (Inquéritos), RF07 (Laudos Periciais), RF08 (Autenticação Pública de Documentos — `/autenticar`), RF09 (Medidas Protetivas), DEC-03 (Pin Vetorial SVG), arquivamento/exclusão lógica de ocorrência, gerador de ocorrências de demonstração e orquestrador de despacho automático (com viatura de apoio). Esses itens são **extras** e não redefinem o MVP.
+   * **Extras já implementados (fora do escopo canônico do MVP):** RF03 (Inventário de Apreensões), RF05 (Manchas Criminais / *heatmap* e banner de criticidade), RF06 (Inquéritos), RF07 (Laudos Periciais), RF08 (Autenticação Pública de Documentos — `/autenticar`), RF09 (Medidas Protetivas), RF10 (Comunicação Interagências com ofícios rastreáveis), notificações in-app, indicadores/áreas de risco dinâmicas, DEC-03 (Pin Vetorial SVG), arquivamento/exclusão lógica de ocorrência, gerador de ocorrências de demonstração e orquestrador de despacho automático (com viatura de apoio). Esses itens são **extras** e não redefinem o MVP.
    * Novos trabalhos **não** devem ampliar o escopo além de RF01/RF04/RF02 (nem expandir os extras acima) sem aprovação explícita da equipe.
 
 ---
@@ -66,7 +66,7 @@ backend/src/
 ## 4. 💎 Princípios SOLID & Clean Code Obrigatórios
 
 * **S — Single Responsibility Principle (SRP):**
-  * Cada caso de uso deve ter **uma única responsabilidade** e expor um método principal `execute(...)`.
+  * Cada caso de uso deve ter **uma única responsabilidade** e expor um método principal `executar(...)`.
   * Métodos e funções devem ser curtos (< 35 linhas) e com objetivo claro.
 * **O — Open/Closed Principle (OCP):**
   * Novas regras e comportamentos devem ser adicionados através de novas implementações de portas ou novos casos de uso, sem modificar código estável.
