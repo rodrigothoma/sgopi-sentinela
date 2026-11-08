@@ -32,6 +32,7 @@ from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorren
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia._mapeadores import para_item_apreendido
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia.apreensao import EstadoConservacao, ItemApreendido, TipoItemApreendido, UnidadeMedida
 from domain.ocorrencia.entity import Ocorrencia
@@ -83,8 +84,8 @@ def auditoria_registro_item(ator: Ator, ocorrencia: Ocorrencia, item: ItemApreen
     return RegistroAuditoria(
         quem=ator.id,
         quando=agora,
-        operacao="apreensao.registrar",
-        entidade="ItemApreendido",
+        operacao=OperacaoAuditada.APREENSAO_REGISTRAR,
+        entidade=EntidadeAuditada.ITEM_APREENDIDO,
         entidade_id=str(item.id),
         dados_depois={
             "ocorrencia_id": str(ocorrencia.id),
@@ -150,8 +151,8 @@ class MovimentarCustodia(InterfaceMovimentarCustodia):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="apreensao.movimentar",
-                    entidade="ItemApreendido",
+                    operacao=OperacaoAuditada.APREENSAO_MOVIMENTAR,
+                    entidade=EntidadeAuditada.ITEM_APREENDIDO,
                     entidade_id=str(input_dto.item_id),
                     dados_antes={"localizacao": movimentacao.origem},
                     dados_depois={
@@ -214,8 +215,8 @@ class EmitirAutoApreensao(InterfaceEmitirAutoApreensao):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="apreensao.emitir_auto",
-                    entidade="AutoApreensao",
+                    operacao=OperacaoAuditada.APREENSAO_EMITIR_AUTO,
+                    entidade=EntidadeAuditada.AUTO_APREENSAO,
                     entidade_id=numero,
                     dados_depois={
                         "ocorrencia_id": str(ocorrencia.id),

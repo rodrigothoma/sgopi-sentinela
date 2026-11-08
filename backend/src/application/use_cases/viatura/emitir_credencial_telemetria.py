@@ -17,6 +17,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.viatura.gerir_viaturas import carregar_viatura
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.usuario.permissoes import Permissao
 
@@ -38,8 +39,8 @@ class EmitirCredencialTelemetria(InterfaceEmitirCredencialTelemetria):
         async with self._uow:
             await self._auditoria.registrar(
                 RegistroAuditoria(
-                    quem=ator.id, quando=self._relogio.agora(), operacao="viatura.emitir_credencial_telemetria",
-                    entidade="Viatura", entidade_id=str(viatura.id), dados_depois={"prefixo": viatura.prefixo}, ip=ator.ip,
+                    quem=ator.id, quando=self._relogio.agora(), operacao=OperacaoAuditada.VIATURA_EMITIR_CREDENCIAL_TELEMETRIA,
+                    entidade=EntidadeAuditada.VIATURA, entidade_id=str(viatura.id), dados_depois={"prefixo": viatura.prefixo}, ip=ator.ip,
                 )
             )
             await self._uow.commit()

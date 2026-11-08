@@ -19,6 +19,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_autorizada
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia.entity import Evidencia
 from domain.shared.exceptions import ConflitoError, EntidadeNaoEncontradaError
@@ -53,7 +54,7 @@ class _AcessoEvidencia:
         ator: Ator,
         ocorrencia_id: UUID,
         evidencia: Evidencia,
-        operacao: str,
+        operacao: OperacaoAuditada,
         estado: EstadoIntegridadeEvidencia,
         quando: datetime,
     ) -> None:
@@ -63,7 +64,7 @@ class _AcessoEvidencia:
                     quem=ator.id,
                     quando=quando,
                     operacao=operacao,
-                    entidade="Evidencia",
+                    entidade=EntidadeAuditada.EVIDENCIA,
                     entidade_id=str(evidencia.id),
                     dados_depois={"ocorrencia_id": str(ocorrencia_id), "integridade": estado.value},
                     ip=ator.ip,
@@ -72,7 +73,7 @@ class _AcessoEvidencia:
             await self._uow.commit()
 
     async def _ler_e_conferir(
-        self, ator: Ator, ocorrencia_id: UUID, evidencia_id: UUID, operacao: str
+        self, ator: Ator, ocorrencia_id: UUID, evidencia_id: UUID, operacao: OperacaoAuditada
     ) -> tuple[Evidencia, bytes, EstadoIntegridadeEvidencia, str, datetime]:
         evidencia = await self._localizar(ator, ocorrencia_id, evidencia_id)
         conteudo = await self._armazenamento.ler(evidencia.chave_armazenamento)
@@ -99,7 +100,7 @@ class VerificarIntegridadeEvidencia(_AcessoEvidencia, InterfaceVerificarIntegrid
         self, ator: Ator, ocorrencia_id: UUID, evidencia_id: UUID
     ) -> IntegridadeEvidenciaOutput:
         evidencia, _, estado, hash_recalculado, verificado_em = await self._ler_e_conferir(
-            ator, ocorrencia_id, evidencia_id, "evidencia.verificar_integridade"
+            ator, ocorrencia_id, evidencia_id, OperacaoAuditada.EVIDENCIA_VERIFICAR_INTEGRIDADE
         )
         return IntegridadeEvidenciaOutput(
             evidencia_id=evidencia.id,
@@ -115,7 +116,7 @@ class ObterEvidenciaParaDownload(_AcessoEvidencia, InterfaceObterEvidenciaParaDo
         self, ator: Ator, ocorrencia_id: UUID, evidencia_id: UUID
     ) -> DownloadEvidenciaOutput:
         evidencia, conteudo, estado, _, _ = await self._ler_e_conferir(
-            ator, ocorrencia_id, evidencia_id, "evidencia.download"
+            ator, ocorrencia_id, evidencia_id, OperacaoAuditada.EVIDENCIA_DOWNLOAD
         )
         if estado == EstadoIntegridadeEvidencia.DIVERGENTE:
             raise ConflitoError(

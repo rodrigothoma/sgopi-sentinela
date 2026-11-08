@@ -22,6 +22,7 @@ from application.ports.outbound.repositorio_medida_protetiva import RepositorioM
 from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.medida_protetiva.entity import MedidaProtetiva, StatusMedida
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
@@ -209,8 +210,8 @@ class EmitirAlertaVencimentoMedidaUseCase(InterfaceEmitirAlertaVencimentoMedida)
             RegistroAuditoria(
                 quem=ator.id,
                 quando=agora,
-                operacao="ALERTA_VENCIMENTO_MEDIDA",
-                entidade="medidas_protetivas",
+                operacao=OperacaoAuditada.MEDIDA_PROTETIVA_ALERTAR_VENCIMENTO,
+                entidade=EntidadeAuditada.MEDIDA_PROTETIVA,
                 entidade_id=str(medida.id),
                 dados_depois={
                     "numero_referencia": medida.numero_referencia,

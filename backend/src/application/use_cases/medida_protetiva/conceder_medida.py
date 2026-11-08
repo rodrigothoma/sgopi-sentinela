@@ -13,6 +13,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.medida_protetiva.entity import MedidaProtetiva
 from domain.shared.exceptions import EntidadeNaoEncontradaError
@@ -72,8 +73,8 @@ class ConcederMedida(InterfaceConcederMedida):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="medida_protetiva.conceder",
-                    entidade="medida_protetiva",
+                    operacao=OperacaoAuditada.MEDIDA_PROTETIVA_CONCEDER,
+                    entidade=EntidadeAuditada.MEDIDA_PROTETIVA,
                     entidade_id=str(medida.id),
                     dados_depois={
                         "numero_referencia": medida.numero_referencia,

@@ -15,6 +15,7 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.laudo.entity import LaudoPericial
 from domain.shared.exceptions import ConflitoError, EntidadeNaoEncontradaError
@@ -60,8 +61,8 @@ class BaixarArquivoLaudo(InterfaceBaixarArquivoLaudo):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=self._relogio.agora(),
-                    operacao="laudo.download",
-                    entidade="laudo_pericial",
+                    operacao=OperacaoAuditada.LAUDO_DOWNLOAD,
+                    entidade=EntidadeAuditada.LAUDO_PERICIAL,
                     entidade_id=str(laudo.id),
                     dados_depois={"numero_referencia": laudo.numero_referencia, "integridade": integridade},
                     ip=ator.ip,

@@ -195,7 +195,7 @@ async def test_fluxo_completo_comunicacao_interagencias():
     )
     assert com1.numero_oficio == "OFI-2026-000001"
     assert len(porta_audit.registros) == 1
-    assert porta_audit.registros[0].operacao == "ENVIO_COMUNICACAO_INTERAGENCIAS"
+    assert porta_audit.registros[0].operacao == "interagencias.enviar"
     # RESERVADO: uma notificação por papel autorizado a ler o ofício
     assert sorted(n.papel_destinatario for n in repo_notif.itens) == ["DELEGADO", "ESCRIVAO", "OPERADOR_CENTRAL", "SUPERVISOR"]
     assert {n.departamento_destinatario for n in repo_notif.itens} == {"POLICIA_RODOVIARIA_FEDERAL"}
@@ -217,7 +217,7 @@ async def test_fluxo_completo_comunicacao_interagencias():
     assert resp.mensagem_pai_id == com1.id
     assert "POLICIA_CIVIL" in resp.departamentos_destinatarios
     assert len(porta_audit.registros) == 2
-    assert porta_audit.registros[1].operacao == "RESPOSTA_COMUNICACAO_INTERAGENCIAS"
+    assert porta_audit.registros[1].operacao == "interagencias.responder"
 
 
 @pytest.mark.asyncio

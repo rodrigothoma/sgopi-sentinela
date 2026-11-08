@@ -16,6 +16,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.inquerito.entity import Inquerito
 from domain.ocorrencia.entity import Ocorrencia
@@ -109,8 +110,8 @@ def _auditoria_vinculo(ator: Ator, inquerito: Inquerito, dados: VincularOcorrenc
     return RegistroAuditoria(
         quem=ator.id,
         quando=agora,
-        operacao="inquerito.vincular_ocorrencias",
-        entidade="inquerito",
+        operacao=OperacaoAuditada.INQUERITO_VINCULAR_OCORRENCIAS,
+        entidade=EntidadeAuditada.INQUERITO,
         entidade_id=str(inquerito.id),
         dados_depois={
             "numero": inquerito.numero,

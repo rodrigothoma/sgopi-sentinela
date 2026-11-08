@@ -18,6 +18,7 @@ from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import ConflitoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.permissoes import Permissao
@@ -62,7 +63,7 @@ class CadastrarViatura(InterfaceCadastrarViatura):
                 raise ConflitoError(f"Placa {viatura.placa} já cadastrada.", chave="viatura.placa_duplicada")
             await self._repositorio.salvar(viatura)
             await self._auditoria.registrar(
-                RegistroAuditoria(quem=ator.id, quando=agora, operacao="viatura.cadastrar", entidade="Viatura", entidade_id=str(viatura.id), dados_depois={"prefixo": viatura.prefixo, "placa": viatura.placa}, ip=ator.ip)
+                RegistroAuditoria(quem=ator.id, quando=agora, operacao=OperacaoAuditada.VIATURA_CADASTRAR, entidade=EntidadeAuditada.VIATURA, entidade_id=str(viatura.id), dados_depois={"prefixo": viatura.prefixo, "placa": viatura.placa}, ip=ator.ip)
             )
             await self._uow.commit()
         return para_output(viatura, agora, self._max_idade)
@@ -86,7 +87,7 @@ class AlterarSituacaoViatura(InterfaceAlterarSituacaoViatura):
                 viatura.marcar_disponivel(agora)
             await self._repositorio.salvar(viatura)
             await self._auditoria.registrar(
-                RegistroAuditoria(quem=ator.id, quando=agora, operacao="viatura.alterar_situacao", entidade="Viatura", entidade_id=str(viatura.id), dados_antes={"situacao": antes}, dados_depois={"situacao": viatura.situacao.value}, ip=ator.ip)
+                RegistroAuditoria(quem=ator.id, quando=agora, operacao=OperacaoAuditada.VIATURA_ALTERAR_SITUACAO, entidade=EntidadeAuditada.VIATURA, entidade_id=str(viatura.id), dados_antes={"situacao": antes}, dados_depois={"situacao": viatura.situacao.value}, ip=ator.ip)
             )
             await self._uow.commit()
         await self._publicador.publicar(viatura_situacao_alterada(viatura, agora))

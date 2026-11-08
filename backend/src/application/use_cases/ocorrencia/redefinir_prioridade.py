@@ -9,13 +9,14 @@ from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorren
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia._mapeadores import para_detalhe
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia import eventos
 from domain.ocorrencia.prioridade import interpretar_prioridade
 from domain.shared.exceptions import CampoObrigatorioError
 from domain.usuario.entity import Papel
 
-OPERACAO = "ocorrencia.redefinir_prioridade"
+OPERACAO = OperacaoAuditada.OCORRENCIA_REDEFINIR_PRIORIDADE
 
 
 class RedefinirPrioridade(InterfaceRedefinirPrioridade):
@@ -49,7 +50,7 @@ class RedefinirPrioridade(InterfaceRedefinirPrioridade):
                     quem=ator.id,
                     quando=agora,
                     operacao=OPERACAO,
-                    entidade="Ocorrencia",
+                    entidade=EntidadeAuditada.OCORRENCIA,
                     entidade_id=str(ocorrencia.id),
                     dados_antes={"prioridade": anterior.value, "versao": versao_antes},
                     dados_depois={

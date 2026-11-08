@@ -14,6 +14,7 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.permissoes import Permissao
@@ -75,8 +76,8 @@ class AnexarLaudo(InterfaceAnexarLaudo):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="laudo.anexar",
-                    entidade="laudo_pericial",
+                    operacao=OperacaoAuditada.LAUDO_ANEXAR,
+                    entidade=EntidadeAuditada.LAUDO_PERICIAL,
                     entidade_id=str(laudo.id),
                     dados_depois={
                         "numero_referencia": laudo.numero_referencia,

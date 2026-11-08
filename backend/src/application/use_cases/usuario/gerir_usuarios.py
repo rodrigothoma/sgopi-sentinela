@@ -28,12 +28,13 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import AcessoNegadoError, ConflitoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.entity import TAMANHO_MINIMO_SENHA, Papel, Usuario, interpretar_papel
 from domain.usuario.permissoes import Permissao
 
-ENTIDADE_USUARIO = "Usuario"
+ENTIDADE_USUARIO = EntidadeAuditada.USUARIO
 
 
 def para_gestao(u: Usuario) -> UsuarioGestaoOutput:
@@ -59,7 +60,7 @@ class _GestaoBase:
         self._auditoria = auditoria
 
     async def _registrar(
-        self, ator: Ator, operacao: str, usuario: Usuario, antes: dict[str, Any] | None, depois: dict[str, Any]
+        self, ator: Ator, operacao: OperacaoAuditada, usuario: Usuario, antes: dict[str, Any] | None, depois: dict[str, Any]
     ) -> None:
         await self._auditoria.registrar(
             RegistroAuditoria(
@@ -113,7 +114,7 @@ class CadastrarUsuario(_GestaoBase, InterfaceCadastrarUsuario):
             if await self._repositorio.buscar_por_login(usuario.login) is not None:
                 raise ConflitoError("Login já está em uso.", chave="usuario.login_em_uso")
             await self._repositorio.salvar(usuario)
-            await self._registrar(ator, "usuario.cadastrar", usuario, None, {"nome": usuario.nome, "papel": papel.value, "ativo": True})
+            await self._registrar(ator, OperacaoAuditada.USUARIO_CADASTRAR, usuario, None, {"nome": usuario.nome, "papel": papel.value, "ativo": True})
             await self._uow.commit()
         return para_gestao(usuario)
 
@@ -125,7 +126,7 @@ class AlterarPapelUsuario(_GestaoBase, InterfaceAlterarPapelUsuario):
             usuario = await self._alvo(ator, input_dto.usuario_id)
             anterior = usuario.alterar_papel(novo)
             await self._repositorio.salvar(usuario)
-            await self._registrar(ator, "usuario.alterar_papel", usuario, {"papel": anterior.value}, {"papel": novo.value})
+            await self._registrar(ator, OperacaoAuditada.USUARIO_ALTERAR_PAPEL, usuario, {"papel": anterior.value}, {"papel": novo.value})
             await self._uow.commit()
         return para_gestao(usuario)
 

@@ -14,6 +14,7 @@ from application.ports.outbound.repositorio_inquerito import RepositorioInquerit
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.laudo.entity import LaudoPericial, TipoPericia
 from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
@@ -88,8 +89,8 @@ class SolicitarLaudo(InterfaceSolicitarLaudo):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="laudo.solicitar",
-                    entidade="laudo_pericial",
+                    operacao=OperacaoAuditada.LAUDO_SOLICITAR,
+                    entidade=EntidadeAuditada.LAUDO_PERICIAL,
                     entidade_id=str(laudo.id),
                     dados_depois={
                         "numero_referencia": laudo.numero_referencia,

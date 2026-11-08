@@ -11,6 +11,7 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import EntidadeNaoEncontradaError
 from domain.shared.tempo import data_operacional
@@ -52,8 +53,8 @@ class RevogarMedida(InterfaceRevogarMedida):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="medida_protetiva.revogar",
-                    entidade="medida_protetiva",
+                    operacao=OperacaoAuditada.MEDIDA_PROTETIVA_REVOGAR,
+                    entidade=EntidadeAuditada.MEDIDA_PROTETIVA,
                     entidade_id=str(medida.id),
                     dados_antes={"status": status_anterior},
                     dados_depois={

@@ -23,6 +23,7 @@ from application.ports.outbound.provedor_token import ProvedorToken
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import CredenciaisInvalidasError, MuitasTentativasError
 from domain.usuario.entity import Usuario
@@ -53,7 +54,7 @@ class AutenticarUsuario(InterfaceAutenticarUsuario):
         chave_limite = f"{login}|{input_dto.ip or '-'}"
         bloqueio = self._limitador.bloqueado_ate(chave_limite, agora)
         if bloqueio is not None:
-            await self._auditar_falha("auth.login_bloqueado", login, None, {"bloqueado_ate": bloqueio.isoformat()}, input_dto.ip, agora)
+            await self._auditar_falha(OperacaoAuditada.AUTH_LOGIN_BLOQUEADO, login, None, {"bloqueado_ate": bloqueio.isoformat()}, input_dto.ip, agora)
             segundos = max(1, int((bloqueio - agora).total_seconds()))
             raise MuitasTentativasError(
                 "Muitas tentativas de login.", chave="auth.muitas_tentativas", retry_after_segundos=segundos
@@ -63,7 +64,7 @@ class AutenticarUsuario(InterfaceAutenticarUsuario):
         motivo = self._motivo_falha(usuario, input_dto.senha or "")
         if motivo:
             self._limitador.registrar(chave_limite, agora)
-            await self._auditar_falha("auth.login_negado", login, usuario, {"motivo": motivo}, input_dto.ip, agora)
+            await self._auditar_falha(OperacaoAuditada.AUTH_LOGIN_NEGADO, login, usuario, {"motivo": motivo}, input_dto.ip, agora)
             raise CredenciaisInvalidasError("Credenciais inválidas.", chave="auth.credenciais_invalidas")
         self._limitador.limpar(chave_limite)
 
@@ -74,8 +75,8 @@ class AutenticarUsuario(InterfaceAutenticarUsuario):
                 RegistroAuditoria(
                     quem=usuario.id,
                     quando=agora,
-                    operacao="auth.login",
-                    entidade="Usuario",
+                    operacao=OperacaoAuditada.AUTH_LOGIN,
+                    entidade=EntidadeAuditada.USUARIO,
                     entidade_id=str(usuario.id),
                     dados_depois={"papel": usuario.papel.value},
                     ip=input_dto.ip,
@@ -100,7 +101,7 @@ class AutenticarUsuario(InterfaceAutenticarUsuario):
         return None
 
     async def _auditar_falha(
-        self, operacao: str, login: str, usuario: Usuario | None, dados: dict, ip: str | None, agora: datetime
+        self, operacao: OperacaoAuditada, login: str, usuario: Usuario | None, dados: dict, ip: str | None, agora: datetime
     ) -> None:
         if usuario is not None:
             dados = {**dados, "usuario_alvo_id": str(usuario.id)}
@@ -110,7 +111,7 @@ class AutenticarUsuario(InterfaceAutenticarUsuario):
                     quem=None,
                     quando=agora,
                     operacao=operacao,
-                    entidade="Usuario",
+                    entidade=EntidadeAuditada.USUARIO,
                     entidade_id=login or None,
                     dados_depois=dados,
                     ip=ip,
