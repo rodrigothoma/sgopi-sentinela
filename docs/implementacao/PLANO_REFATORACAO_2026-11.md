@@ -17,7 +17,7 @@ Caminhos do backend são relativos a `backend/src/`; os do frontend, a `frontend
 | Strings soltas de auditoria (`operacao=`/`entidade=`) | 39 pontos | 0 | casos de uso, `deps.py` |
 | Incrementos manuais `versao += 1` | 12 | 0 | entidades |
 | Validações de texto vazio/curto repetidas | 28 | 0 | entidades |
-| Testes do backend | 831 + 13 E2E | 934 + 13 E2E | `backend/tests/` |
+| Testes do backend | 831 + 13 E2E | 939 + 13 E2E | `backend/tests/` |
 | Cobertura (`domain/` + `application/`) | 95,4% | 96,9% | — |
 | Tamanho do composition root | 1164 linhas | 1164 linhas | `infrastructure/di.py` (Onda 3) |
 | Maior página do frontend | 1362 linhas | 1362 linhas | `pages/InqueritosPage.tsx` (Onda 4) |
