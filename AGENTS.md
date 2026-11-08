@@ -80,7 +80,7 @@ backend/src/
   * **Tipagem Estrita (PEP 484):** Obrigatória em **todos os parâmetros e retornos** (incluindo `-> None`, `dict[str, Any]`, `list[T]`, `UUID | None`) em **código novo ou refatorado**. Não omita anotações de tipo.
   * **Docstrings Úteis (PEP 257) & Sem Óbvio:** Classes, interfaces/portas e métodos públicos devem documentar contexto de negócio, invariantes ou detalhes técnicos relevantes. **Não comente código óbvio:** evite docstrings vazias ou puramente redundantes que apenas repetem o nome ou assinatura do método.
   * Nomenclatura expressiva e semântica (em português para o domínio policial, seguindo o padrão já estabelecido: `numero_protocolo`, `viatura_id`, `relato`, etc.).
-  * Não use números mágicos nem strings literais espalhadas (use Enums e constantes de domínio).
+  * Não use números mágicos nem strings literais espalhadas (use Enums e constantes de domínio). Regra fixa do negócio vira constante de módulo junto da entidade; parâmetros de uma heurística ajustados em conjunto (pesos, raios, janelas) vão para uma `@dataclass(frozen=True) Parametros...` no domínio; configuração que varia por ambiente fica no `settings.py` (ver `docs/implementacao/PLANO_REFATORACAO_2026-11.md`).
 * **Blocos de domínio reutilizáveis (use antes de escrever código novo):**
   * **Controle de acesso:** `domain/usuario/permissoes.py` — `ator.exigir(Permissao.X, mensagem, chave)` no caso de uso e `exigir_permissao(Permissao.X)` no router. Não declare tuplas de papéis nem `if ator.papel != ...`.
   * **Auditoria:** `domain/auditoria/catalogo.py` — `RegistroAuditoria(operacao=OperacaoAuditada.X, entidade=EntidadeAuditada.Y, ...)`. Operação nova entra no catálogo no formato `dominio.acao`.

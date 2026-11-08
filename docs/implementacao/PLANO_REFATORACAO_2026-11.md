@@ -23,6 +23,29 @@ Caminhos do backend são relativos a `backend/src/`; os do frontend, a `frontend
 | Maior página do frontend | 1362 linhas | 1362 linhas | `pages/InqueritosPage.tsx` (Onda 4) |
 | Repositórios ainda sem Mapper | 8 | 8 | `adapters/outbound/persistence/` (Onda 3) |
 
+### Padrão para constantes e parâmetros
+
+Nem toda constante vira dataclass. O critério é o tipo de valor:
+
+| Tipo de valor | Exemplo | Onde fica |
+| :--- | :--- | :--- |
+| Regra fixa do negócio (lei, invariante) | `PRAZO_MAXIMO_DIAS = 730`, `TAMANHO_MINIMO_EMENTA` | Constante de módulo ao lado da entidade (padrão atual) |
+| Parâmetros de uma heurística, ajustados em conjunto | Pesos, raios e janelas do motor de conexões e das áreas de risco | `@dataclass(frozen=True) Parametros...` no domínio, com os valores padrão e injetável no caso de uso |
+| Configuração operacional (varia por ambiente) | Intervalos e velocidades do simulador, limites de tentativas | `infrastructure/config/settings.py`, injetado pelo `di.py` (sem repetir o padrão no construtor) |
+| Fator de unidade ou de algoritmo | Metros por km, tamanho do SHA-256, dígitos do CPF | Constante única em `domain/shared` (ou no módulo do algoritmo) |
+
+Levantamento de 08/11 (varredura de constantes e números soltos no backend):
+
+| Arquivo | Situação | Destino |
+| :--- | :--- | :--- |
+| `application/use_cases/inquerito/buscar_conexoes.py` | 29 constantes de pesos, limiares, raios e janelas | `ParametrosMotorConexoes` (Onda 2) |
+| `application/use_cases/inteligencia/calcular_areas_risco.py` | Números soltos: raio 1200 m, mínimo de 2 ocorrências em 24 h ou 3 em 7 dias, raio entre 350 e 1500 m, folga de 150 m, `CRITICA` com 3+, limite de 500 | `ParametrosAreasRisco` (Onda 2) |
+| Motor de conexões, áreas de risco, `simulador/navegacao.py`, `simulador/simulador_telemetria.py` | Fator `1000` (metros por km) repetido | `METROS_POR_KM` e `Coordenada.distancia_metros()` em `domain/shared/geo.py` (Onda 2) |
+| `adapters/inbound/simulador/*` | Já configurado pelo `settings.py`, mas os construtores repetem os padrões e um diverge (passo até o destino: 300 m no construtor, 35 m no settings) | Construtores sem padrão próprio, valores só no settings (Onda 3) |
+| `domain/ocorrencia/entity.py`, `domain/laudo/entity.py` | Tamanho do SHA-256 (`64`) fixo no código | `TAMANHO_HASH_SHA256` em `domain/shared` (Onda 2) |
+| `application/use_cases/medida_protetiva/emitir_alerta_vencimento.py` | `limit=500` na varredura | Constante `LIMITE_VARREDURA` (Onda 2) |
+| `adapters/inbound/http/erros.py`, `main.py`, `domain/shared/documentos.py`, `domain/shared/geo.py` | Códigos HTTP, dígitos do CPF, limites de latitude/longitude | Aceitáveis como estão |
+
 ---
 
 ## 2. Onda 0 — Bugs e segurança ✅
@@ -68,11 +91,13 @@ Caminhos do backend são relativos a `backend/src/`; os do frontend, a `frontend
 - [ ] **Alinhar notificação, interagências, inteligência e alerta ao padrão**: UoW obrigatório (8 `uow | None`), Output DTOs no lugar de `dict`/entidades (12 portas), nomes sem sufixo `UseCase`, `chave` em todas as exceções.
 - [ ] **Motor de conexões** (`inquerito/buscar_conexoes.py`, 421 linhas):
     - [ ] Mover a lógica pura para `domain/inquerito/motor_conexoes.py` com Strategy (`CriterioConexao`: envolvidos, natureza, tipificação, itens, área de risco, proximidade, temporal).
-    - [ ] **Agrupar as 29 constantes** (`PESO_*`, `TAMANHO_MINIMO_*`, raios, janelas, `PONTUACAO_MINIMA`) numa `@dataclass(frozen=True) ParametrosMotorConexoes`, injetável no motor: os pesos ficam num objeto só, documentado e variável nos testes.
+    - [ ] **Agrupar as 29 constantes** (`PESO_*`, `TAMANHO_MINIMO_*`, raios, janelas, `PONTUACAO_MINIMA`) numa `@dataclass(frozen=True) ParametrosMotorConexoes`, injetável no motor: os pesos ficam num objeto só, documentado e variável nos testes (ver *Padrão para constantes e parâmetros*).
     - [ ] **Revisar `FAMILIAS_CRIMINAIS`**: a comparação por substring coloca "DISPARO DE ARMA" em duas famílias; "HOMICIDIO CULPOSO" (ex.: acidente de trânsito) cai no grupo de crimes violentos; entradas como "ROUBO DE VEICULO" são redundantes com "ROUBO".
     - [ ] Trocar `list[dict]` das áreas de risco por um dataclass `AreaRisco`.
     - [ ] Devolver `motivos` estruturados (`{tipo, params}`) para o frontend traduzir (desbloqueia os badges da Onda 4).
     - [ ] Reaproveitar `normalizar_cpf` e `domain/shared/tempo` no lugar de `_limpar_documento` e `_para_utc`.
+- [ ] **Áreas de risco com parâmetros nomeados**: `ParametrosAreasRisco` (raio de agrupamento, mínimos por janela, faixa de raio, folga, limiar de criticidade, limite de varredura) e serviço de domínio de manchas no lugar do agrupamento O(n²) dentro do caso de uso.
+- [ ] **Fatores únicos em `domain/shared`**: `METROS_POR_KM` + `Coordenada.distancia_metros()` (fator repetido em 4 arquivos) e `TAMANHO_HASH_SHA256` (evidência e laudo); `LIMITE_VARREDURA` no alerta de vencimento.
 - [ ] **Decompor as funções longas**: `_processar_alerta_medida` (103 linhas; HTML do e-mail vai para um adapter), `gerir_comunicacoes.executar` (97), `instaurar_inquerito` (86), `calcular_areas_risco.executar` (85), `solicitar_laudo` (80), `anexar_laudo` (77), `conceder_medida` (75).
 - [ ] **Portas**: um único `GeradorNumeroSequencial` com enum de prefixos (hoje 6 portas); remover métodos abstratos sem uso; padronizar `Input`/`dados`/`buscar_por_id`/paginação `limit/offset`; remover o `UsuarioOutput` duplicado.
 
@@ -88,6 +113,7 @@ Caminhos do backend são relativos a `backend/src/`; os do frontend, a `frontend
 - [ ] **Novos contratos no import-linter**: http ↛ simulador, outbound ↛ inbound, routers ↛ routers.
 - [ ] **Performance**: `listar_resumos()` com projeção na exportação de ocorrências; ids de inquérito sem carregar ocorrências inteiras.
 - [ ] **Configuração**: segredos como `SecretStr`.
+- [ ] **Simulador sem padrões duplicados**: construtores de `SimuladorTelemetria`, `OrquestradorDespacho` e `navegacao` recebem os valores do `settings.py` sem padrão próprio (hoje o passo até o destino diverge: 300 m × 35 m).
 - [ ] **Vindo da Onda 1**: enums em `departamento_origem`/`papel_destinatario`; unificar o nome do campo de atualização (`atualizado_em` × `atualizada_em`, exige migração).
 
 ---
