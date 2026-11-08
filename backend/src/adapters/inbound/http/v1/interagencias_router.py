@@ -11,7 +11,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 
-from adapters.inbound.http.deps import ator_atual, exigir_papel
+from adapters.inbound.http.deps import ator_atual, exigir_permissao
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_comunicacoes_interagencias import (
     InterfaceConsultarComunicacoesInteragencias,
@@ -22,7 +22,7 @@ from domain.interagencias.entity import (
     ComunicacaoInteragencias,
     DepartamentoSeguranca,
 )
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.di import (
     get_consultar_comunicacoes_interagencias,
     get_enviar_comunicacao_interagencias,
@@ -31,12 +31,6 @@ from infrastructure.di import (
 
 router = APIRouter(prefix="/v1/interagencias", tags=["interagencias"])
 
-PAPEIS_ENVIO_INTERAGENCIAS = (
-    Papel.DELEGADO,
-    Papel.SUPERVISOR,
-    Papel.ESCRIVAO,
-    Papel.OPERADOR_CENTRAL,
-)
 
 
 class DepartamentoSchema(BaseModel):
@@ -157,7 +151,7 @@ async def listar_comunicacoes(
 @router.post("", response_model=ComunicacaoInteragenciasSchema, status_code=status.HTTP_201_CREATED)
 async def enviar_comunicacao(
     req: EnviarComunicacaoRequest,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_ENVIO_INTERAGENCIAS)),
+    ator: Ator = Depends(exigir_permissao(Permissao.ENVIAR_OFICIO)),
     uc: InterfaceEnviarComunicacaoInteragencias = Depends(get_enviar_comunicacao_interagencias),
 ) -> ComunicacaoInteragenciasSchema:
     """Despacha novo ofício/comunicação para outro departamento com numeração sequencial auditada."""
@@ -178,7 +172,7 @@ async def enviar_comunicacao(
 async def responder_comunicacao(
     comunicacao_id: UUID,
     req: ResponderComunicacaoRequest,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_ENVIO_INTERAGENCIAS)),
+    ator: Ator = Depends(exigir_permissao(Permissao.ENVIAR_OFICIO)),
     uc: InterfaceResponderComunicacaoInteragencias = Depends(get_responder_comunicacao_interagencias),
 ) -> ComunicacaoInteragenciasSchema:
     """Adiciona réplica/despacho em thread oficial de comunicação interagências."""

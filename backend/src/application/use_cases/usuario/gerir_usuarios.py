@@ -31,8 +31,8 @@ from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import AcessoNegadoError, ConflitoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.entity import TAMANHO_MINIMO_SENHA, Papel, Usuario, interpretar_papel
+from domain.usuario.permissoes import Permissao
 
-PAPEIS_GESTORES = (Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL)
 ENTIDADE_USUARIO = "Usuario"
 
 
@@ -45,7 +45,7 @@ class ListarUsuariosGestao(InterfaceListarUsuariosGestao):
         self._repositorio = repositorio
 
     async def executar(self, ator: Ator) -> tuple[UsuarioGestaoOutput, ...]:
-        ator.exigir_papel(*PAPEIS_GESTORES)
+        ator.exigir(Permissao.GERIR_USUARIOS)
         return tuple(para_gestao(u) for u in await self._repositorio.listar() if u.papel != Papel.CIDADAO)
 
 
@@ -76,7 +76,7 @@ class _GestaoBase:
 
     async def _alvo(self, ator: Ator, usuario_id) -> Usuario:
         """Carrega o usuário-alvo; o gestor não age sobre a própria conta."""
-        ator.exigir_papel(*PAPEIS_GESTORES)
+        ator.exigir(Permissao.GERIR_USUARIOS)
         if usuario_id == ator.id:
             raise AcessoNegadoError("Ninguém altera o próprio papel ou situação.", chave="usuario.proprio")
         usuario = await self._repositorio.buscar_por_id(usuario_id)
@@ -98,7 +98,7 @@ class CadastrarUsuario(_GestaoBase, InterfaceCadastrarUsuario):
         self._hasher = hasher
 
     async def executar(self, ator: Ator, input_dto: CadastrarUsuarioInput) -> UsuarioGestaoOutput:
-        ator.exigir_papel(*PAPEIS_GESTORES)
+        ator.exigir(Permissao.GERIR_USUARIOS)
         papel = interpretar_papel(input_dto.papel)
         if len(input_dto.senha or "") < TAMANHO_MINIMO_SENHA:
             raise ValorInvalidoError(

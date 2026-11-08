@@ -5,8 +5,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import Response
 
-from adapters.inbound.http.deps import exigir_papel
-from adapters.inbound.http.v1.ocorrencias_router import PAPEIS_CONSULTA, EvidenciaSchema, IntegridadeEvidenciaSchema
+from adapters.inbound.http.deps import exigir_papel, exigir_permissao
+from adapters.inbound.http.v1.ocorrencias_router import EvidenciaSchema, IntegridadeEvidenciaSchema
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_acessar_evidencia import (
     InterfaceObterEvidenciaParaDownload,
@@ -14,6 +14,7 @@ from application.ports.inbound.interface_acessar_evidencia import (
 )
 from application.ports.inbound.interface_anexar_evidencia import AnexarEvidenciaInput, InterfaceAnexarEvidencia
 from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.config.settings import settings
 from infrastructure.di import get_anexar_evidencia, get_obter_evidencia_para_download, get_verificar_integridade_evidencia
 
@@ -60,7 +61,7 @@ async def anexar_evidencia(
 async def verificar_integridade_evidencia(
     ocorrencia_id: UUID,
     evidencia_id: UUID,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_OCORRENCIAS)),
     use_case: InterfaceVerificarIntegridadeEvidencia = Depends(get_verificar_integridade_evidencia),
 ) -> IntegridadeEvidenciaSchema:
     """Confere o SHA-256 do arquivo armazenado contra o hash registrado (RF22)."""
@@ -72,7 +73,7 @@ async def verificar_integridade_evidencia(
 async def download_evidencia(
     ocorrencia_id: UUID,
     evidencia_id: UUID,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_OCORRENCIAS)),
     use_case: InterfaceObterEvidenciaParaDownload = Depends(get_obter_evidencia_para_download),
 ) -> Response:
     """Download autorizado da evidência; bloqueado (409) se a integridade divergir (RF22)."""

@@ -14,9 +14,8 @@ from application.ports.outbound.consulta_indicadores import ConsultaIndicadores,
 from application.ports.outbound.relogio import Relogio
 from domain.ocorrencia.status import StatusOcorrencia
 from domain.shared.exceptions import ValorInvalidoError
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 
-PAPEIS_INDICADORES = (Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL)
 PERIODO_PADRAO = timedelta(days=30)
 PERIODO_MAXIMO = timedelta(days=366)
 HORAS_DO_DIA = 24
@@ -79,7 +78,7 @@ class CalcularIndicadores(InterfaceCalcularIndicadores):
         self._relogio = relogio
 
     async def executar(self, ator: Ator, input_dto: IndicadoresInput) -> IndicadoresOutput:
-        ator.exigir_papel(*PAPEIS_INDICADORES)
+        ator.exigir(Permissao.CONSULTAR_INDICADORES)
         fuso = _fuso(input_dto.fuso)
         de, ate = _periodo(input_dto, self._relogio.agora())
         c = self._consulta

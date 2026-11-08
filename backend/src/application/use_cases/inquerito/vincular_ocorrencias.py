@@ -20,8 +20,8 @@ from domain.auditoria.entity import RegistroAuditoria
 from domain.inquerito.entity import Inquerito
 from domain.ocorrencia.entity import Ocorrencia
 from domain.ocorrencia.status import StatusOcorrencia
-from domain.shared.exceptions import AcessoNegadoError, ConflitoError, EntidadeNaoEncontradaError
-from domain.usuario.entity import Papel
+from domain.shared.exceptions import ConflitoError, EntidadeNaoEncontradaError
+from domain.usuario.permissoes import Permissao
 
 
 class VincularOcorrenciasInquerito(InterfaceVincularOcorrenciasInquerito):
@@ -40,11 +40,7 @@ class VincularOcorrenciasInquerito(InterfaceVincularOcorrenciasInquerito):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: VincularOcorrenciasInput) -> InqueritoOutput:
-        if ator.papel != Papel.DELEGADO:
-            raise AcessoNegadoError(
-                "Apenas o Delegado de Polícia pode vincular ocorrências a inquérito.",
-                chave="inquerito.apenas_delegado",
-            )
+        ator.exigir(Permissao.GERIR_INQUERITOS, "Apenas o Delegado de Polícia pode vincular ocorrências a inquérito.", chave="inquerito.apenas_delegado")
         inquerito = await self._repo_inquerito.buscar_por_id(dados.inquerito_id)
         if not inquerito:
             raise EntidadeNaoEncontradaError(

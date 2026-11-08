@@ -11,10 +11,8 @@ from application.ports.inbound.interface_gerir_laudos import (
 )
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from domain.laudo.entity import StatusLaudo
-from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError
-from domain.usuario.entity import Papel
-
-PAPEIS_CONSULTA_LAUDOS = (Papel.DELEGADO, Papel.PERITO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL, Papel.AGENTE)
+from domain.shared.exceptions import EntidadeNaoEncontradaError
+from domain.usuario.permissoes import Permissao
 
 
 def _laudo_output(laudo) -> LaudoOutput:
@@ -51,8 +49,7 @@ class ListarLaudos(InterfaceListarLaudos):
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[list[LaudoOutput], int]:
-        if ator.papel not in PAPEIS_CONSULTA_LAUDOS:
-            raise AcessoNegadoError("Acesso não autorizado aos laudos periciais.", chave="laudo.acesso_negado")
+        ator.exigir(Permissao.CONSULTAR_LAUDOS, "Acesso não autorizado aos laudos periciais.", chave="laudo.acesso_negado")
 
         filtro_status = [StatusLaudo(s) for s in status] if status else None
         laudos, total = await self._repo.listar(
@@ -70,8 +67,7 @@ class ObterLaudo(InterfaceObterLaudo):
         self._repo = repositorio_laudo
 
     async def executar(self, ator: Ator, laudo_id: UUID) -> LaudoOutput:
-        if ator.papel not in PAPEIS_CONSULTA_LAUDOS:
-            raise AcessoNegadoError("Acesso não autorizado aos laudos periciais.", chave="laudo.acesso_negado")
+        ator.exigir(Permissao.CONSULTAR_LAUDOS, "Acesso não autorizado aos laudos periciais.", chave="laudo.acesso_negado")
 
         laudo = await self._repo.buscar_por_id(laudo_id)
         if not laudo:

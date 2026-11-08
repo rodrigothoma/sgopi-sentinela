@@ -31,12 +31,13 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia._mapeadores import para_item_apreendido
-from application.use_cases.ocorrencia.consultar_ocorrencias import PAPEIS_CONSULTA, carregar_ou_404
+from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia.apreensao import EstadoConservacao, ItemApreendido, TipoItemApreendido, UnidadeMedida
 from domain.ocorrencia.entity import Ocorrencia
 from domain.shared.exceptions import AcessoNegadoError, ConflitoError, ValorInvalidoError
 from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 
 
 def _enum[T](tipo: type[T], valor: str, chave: str) -> T:
@@ -198,7 +199,7 @@ class EmitirAutoApreensao(InterfaceEmitirAutoApreensao):
         return hashlib.sha256("\n".join(partes).encode("utf-8")).hexdigest()
 
     async def executar(self, ator: Ator, ocorrencia_id: UUID) -> AutoApreensaoOutput:
-        ator.exigir_papel(*PAPEIS_CONSULTA)
+        ator.exigir(Permissao.CONSULTAR_OCORRENCIAS)
         agora = self._relogio.agora()
         async with self._uow:
             ocorrencia = await carregar_ou_404(self._repositorio, ocorrencia_id)

@@ -8,7 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 
-from adapters.inbound.http.deps import exigir_papel
+from adapters.inbound.http.deps import exigir_permissao
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_gerir_inqueritos import (
     ConcluirInqueritoInput,
@@ -22,7 +22,7 @@ from application.ports.inbound.interface_gerir_inqueritos import (
     InterfaceVincularOcorrenciasInquerito,
     VincularOcorrenciasInput,
 )
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.di import (
     get_buscar_conexoes_ocorrencia,
     get_concluir_inquerito,
@@ -34,8 +34,6 @@ from infrastructure.di import (
 
 router = APIRouter(prefix="/v1/inqueritos", tags=["inqueritos"])
 
-# Mesmo conjunto que os casos de uso aceitam (consultar_inqueritos.PAPEIS_CONSULTA_INQUERITO).
-PAPEIS_CONSULTA = (Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL)
 
 
 # ------------------------------------------------------------------ schemas
@@ -121,7 +119,7 @@ def _inquerito_schema(out: InqueritoOutput) -> InqueritoSchema:
 @router.post("", response_model=InqueritoSchema, status_code=status.HTTP_201_CREATED)
 async def instaurar_inquerito(
     req: InstaurarInqueritoRequest,
-    ator: Ator = Depends(exigir_papel(Papel.DELEGADO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_INQUERITOS)),
     uc: InterfaceInstaurarInquerito = Depends(get_instaurar_inquerito),
 ) -> InqueritoSchema:
     """Instaura um novo Inquérito Policial formal (privativo do Delegado de Polícia)."""
@@ -140,7 +138,7 @@ async def listar_inqueritos(
     status_filtro: list[str] | None = Query(None, alias="status"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_INQUERITOS)),
     uc: InterfaceListarInqueritos = Depends(get_listar_inqueritos),
 ) -> PaginaInqueritosSchema:
     """Lista inquéritos com filtro de status e paginação."""
@@ -156,7 +154,7 @@ async def listar_inqueritos(
 @router.get("/conexoes/{ocorrencia_id}", response_model=list[ConexaoSugeridaSchema])
 async def buscar_conexoes_ocorrencia(
     ocorrencia_id: UUID,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_INQUERITOS)),
     uc: InterfaceBuscarConexoesOcorrencia = Depends(get_buscar_conexoes_ocorrencia),
 ) -> list[ConexaoSugeridaSchema]:
     """Motor de sugestão de conexões criminais entre ocorrências (RF06 / sq06)."""
@@ -177,7 +175,7 @@ async def buscar_conexoes_ocorrencia(
 @router.get("/{inquerito_id}", response_model=InqueritoSchema)
 async def obter_inquerito(
     inquerito_id: UUID,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_INQUERITOS)),
     uc: InterfaceObterInquerito = Depends(get_obter_inquerito),
 ) -> InqueritoSchema:
     """Obtém detalhes do inquérito e suas ocorrências vinculadas."""
@@ -189,7 +187,7 @@ async def obter_inquerito(
 async def vincular_ocorrencias(
     inquerito_id: UUID,
     req: VincularOcorrenciasRequest,
-    ator: Ator = Depends(exigir_papel(Papel.DELEGADO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_INQUERITOS)),
     uc: InterfaceVincularOcorrenciasInquerito = Depends(get_vincular_ocorrencias_inquerito),
 ) -> InqueritoSchema:
     """Vincula uma ou mais ocorrências policiais validadas ao inquérito."""
@@ -207,7 +205,7 @@ async def vincular_ocorrencias(
 async def concluir_inquerito(
     inquerito_id: UUID,
     req: ConcluirInqueritoRequest,
-    ator: Ator = Depends(exigir_papel(Papel.DELEGADO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_INQUERITOS)),
     uc: InterfaceConcluirInquerito = Depends(get_concluir_inquerito),
 ) -> InqueritoSchema:
     """Conclui o inquérito policial com relatório final circunstanciado."""

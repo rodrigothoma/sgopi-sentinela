@@ -16,12 +16,12 @@ from application.ports.inbound.interface_gerir_inqueritos import (
 )
 from application.ports.inbound.interface_inteligencia_areas_risco import InterfaceCalcularAreasRisco
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
-from application.use_cases.inquerito.consultar_inqueritos import PAPEIS_CONSULTA_INQUERITO
 from domain.ocorrencia.apreensao import ItemApreendido, TipoItemApreendido
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipificacaoPenal, TipoEnvolvido
 from domain.ocorrencia.status import StatusOcorrencia
 from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.shared.geo import Coordenada
+from domain.usuario.permissoes import Permissao
 
 # Busca
 log = logging.getLogger("sgopi.inqueritos.conexoes")
@@ -376,7 +376,7 @@ class BuscarConexoesOcorrencia(InterfaceBuscarConexoesOcorrencia):
 
     async def executar(self, ator: Ator, ocorrencia_pivo_id: UUID) -> list[ConexaoSugeridaOutput]:
         """Candidatas: ocorrências VALIDADA ainda sem inquérito, ordenadas pela relevância da conexão."""
-        ator.exigir_papel(*PAPEIS_CONSULTA_INQUERITO)
+        ator.exigir(Permissao.CONSULTAR_INQUERITOS)
         pivo = await self._buscar_pivo(ocorrencia_pivo_id)
         candidatas = await self._repo.listar(
             FiltroOcorrencias(status=(StatusOcorrencia.VALIDADA,), limit=LIMITE_CANDIDATAS, offset=0)

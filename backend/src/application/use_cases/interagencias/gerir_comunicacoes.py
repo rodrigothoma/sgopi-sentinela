@@ -32,6 +32,7 @@ from domain.interagencias.entity import (
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.shared.eventos import EventoDominio
 from domain.shared.exceptions import EntidadeNaoEncontradaError
+from domain.usuario.permissoes import Permissao
 
 
 def _notificacoes_de_envio(oficio: ComunicacaoInteragencias, instante: datetime) -> list[Notificacao]:
@@ -97,6 +98,7 @@ class EnviarComunicacaoInteragenciasUseCase(InterfaceEnviarComunicacaoInteragenc
         nivel_sigilo: str = "PADRAO",
         prioridade: str = "MEDIA",
     ) -> ComunicacaoInteragencias:
+        ator.exigir(Permissao.ENVIAR_OFICIO)
         agora = self._relogio.agora()
         ano = agora.year
 
@@ -219,6 +221,7 @@ class ResponderComunicacaoInteragenciasUseCase(InterfaceResponderComunicacaoInte
         corpo: str,
         prioridade: str = "MEDIA",
     ) -> ComunicacaoInteragencias:
+        ator.exigir(Permissao.ENVIAR_OFICIO)
         pai = await self._repo.obter_por_id(mensagem_pai_id)
         # Ofício que o ator não pode ler responde como inexistente (não revela que existe).
         if pai is None or not pai.visivel_para(ator.papel, ator.id):

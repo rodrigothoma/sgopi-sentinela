@@ -16,8 +16,8 @@ from domain.ocorrencia.entity import Ocorrencia, OrigemOcorrencia
 from domain.ocorrencia.status import ESTADOS_VISIVEIS_POR_PADRAO, StatusOcorrencia
 from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 
-PAPEIS_CONSULTA = (Papel.AGENTE, Papel.DELEGADO, Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
 LIMITE_MAXIMO = 200
 
 
@@ -88,7 +88,7 @@ async def carregar_autorizada(
     repositorio: RepositorioOcorrencia, ator: Ator, ocorrencia_id: UUID
 ) -> Ocorrencia:
     """Aplica a política única de consulta usada por detalhe e evidências."""
-    ator.exigir_papel(*PAPEIS_CONSULTA)
+    ator.exigir(Permissao.CONSULTAR_OCORRENCIAS)
     ocorrencia = await carregar_ou_404(repositorio, ocorrencia_id)
     if ator.papel == Papel.AGENTE and ocorrencia.agente_policial_id != ator.id:
         raise AcessoNegadoError(
@@ -103,7 +103,7 @@ class ListarOcorrencias(InterfaceListarOcorrencias):
         self._repositorio = repositorio
 
     async def executar(self, ator: Ator, input_dto: ListarOcorrenciasInput) -> PaginaOcorrenciasOutput:
-        ator.exigir_papel(*PAPEIS_CONSULTA)
+        ator.exigir(Permissao.CONSULTAR_OCORRENCIAS)
         limit = max(1, min(input_dto.limit, LIMITE_MAXIMO))
         offset = max(0, input_dto.offset)
         filtro = montar_filtro(ator, input_dto, limit, offset)

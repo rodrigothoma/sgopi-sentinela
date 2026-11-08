@@ -36,11 +36,9 @@ from domain.despacho.servico_proximidade import sugerir_viaturas_proximas
 from domain.ocorrencia import eventos as ev_ocorrencia
 from domain.ocorrencia.status import StatusOcorrencia
 from domain.shared.exceptions import ConflitoError, TransicaoInvalidaError
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from domain.viatura.entity import SituacaoViatura
 from domain.viatura.eventos import viatura_situacao_alterada
-
-PAPEIS_DESPACHO = (Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
 
 
 def ordem_para_output(o: OrdemDeDespacho) -> OrdemDespachoOutput:
@@ -56,7 +54,7 @@ class SugerirViaturasProximas(InterfaceSugerirViaturasProximas):
         self._ocorrencias, self._viaturas, self._relogio, self._max_idade, self._qtd = ocorrencias, viaturas, relogio, max_idade, quantidade
 
     async def executar(self, ator: Ator, ocorrencia_id: UUID) -> SugestoesOutput:
-        ator.exigir_papel(*PAPEIS_DESPACHO)
+        ator.exigir(Permissao.DESPACHAR_VIATURA)
         agora = self._relogio.agora()
         ocorrencia = await carregar_ou_404(self._ocorrencias, ocorrencia_id)
         if ocorrencia.status not in (StatusOcorrencia.VALIDADA, StatusOcorrencia.EM_ATENDIMENTO):
@@ -92,7 +90,7 @@ class DespacharViatura(InterfaceDespacharViatura):
         self._uow, self._relogio, self._auditoria, self._publicador = uow, relogio, auditoria, publicador
 
     async def executar(self, ator: Ator, input_dto: DespacharInput) -> OrdemDespachoOutput:
-        ator.exigir_papel(*PAPEIS_DESPACHO)
+        ator.exigir(Permissao.DESPACHAR_VIATURA)
         agora = self._relogio.agora()
         async with self._uow:
             ocorrencia = await carregar_ou_404(self._ocorrencias, input_dto.ocorrencia_id)
@@ -133,6 +131,6 @@ class ListarOrdensDespacho(InterfaceListarOrdensDespacho):
         self._ordens = ordens
 
     async def executar(self, ator: Ator, input_dto: ListarOrdensInput) -> tuple[OrdemDespachoOutput, ...]:
-        ator.exigir_papel(Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR, Papel.DELEGADO)
+        ator.exigir(Permissao.ACOMPANHAR_ATENDIMENTO)
         ordens = await self._ordens.listar(input_dto.ocorrencia_id, input_dto.somente_ativas, max(1, min(input_dto.limit, 500)))
         return tuple(ordem_para_output(o) for o in ordens)

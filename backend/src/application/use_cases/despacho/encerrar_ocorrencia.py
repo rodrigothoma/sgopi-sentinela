@@ -14,7 +14,7 @@ from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_4
 from application.use_cases.viatura.gerir_viaturas import carregar_viatura
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia import eventos as ev_ocorrencia
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from domain.viatura.eventos import viatura_situacao_alterada
 
 
@@ -33,7 +33,7 @@ class EncerrarOcorrencia(InterfaceEncerrarOcorrencia):
         self._uow, self._relogio, self._auditoria, self._publicador = uow, relogio, auditoria, publicador
 
     async def executar(self, ator: Ator, input_dto: EncerrarInput) -> OcorrenciaDetalheOutput:
-        ator.exigir_papel(Papel.OPERADOR_CENTRAL, Papel.DELEGADO, Papel.SUPERVISOR)
+        ator.exigir(Permissao.ACOMPANHAR_ATENDIMENTO)
         agora = self._relogio.agora()
         liberadas = []
         async with self._uow:

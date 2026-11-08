@@ -15,10 +15,10 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from application.use_cases.laudo.consultar_laudos import PAPEIS_CONSULTA_LAUDOS
 from domain.auditoria.entity import RegistroAuditoria
 from domain.laudo.entity import LaudoPericial
-from domain.shared.exceptions import AcessoNegadoError, ConflitoError, EntidadeNaoEncontradaError
+from domain.shared.exceptions import ConflitoError, EntidadeNaoEncontradaError
+from domain.usuario.permissoes import Permissao
 
 
 class BaixarArquivoLaudo(InterfaceBaixarArquivoLaudo):
@@ -37,8 +37,7 @@ class BaixarArquivoLaudo(InterfaceBaixarArquivoLaudo):
         self._relogio = relogio
 
     async def executar(self, ator: Ator, laudo_id: UUID) -> ArquivoLaudoOutput:
-        if ator.papel not in PAPEIS_CONSULTA_LAUDOS:
-            raise AcessoNegadoError("Acesso não autorizado aos laudos periciais.", chave="laudo.acesso_negado")
+        ator.exigir(Permissao.CONSULTAR_LAUDOS, "Acesso não autorizado aos laudos periciais.", chave="laudo.acesso_negado")
         laudo = await self._repo.buscar_por_id(laudo_id)
         if laudo is None:
             raise EntidadeNaoEncontradaError("Laudo pericial não encontrado.", chave="laudo.nao_encontrado")

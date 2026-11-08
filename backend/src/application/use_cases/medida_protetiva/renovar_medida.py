@@ -12,9 +12,9 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
-from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError
+from domain.shared.exceptions import EntidadeNaoEncontradaError
 from domain.shared.tempo import data_operacional
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 
 
 class RenovarMedida(InterfaceRenovarMedida):
@@ -31,11 +31,7 @@ class RenovarMedida(InterfaceRenovarMedida):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: RenovarMedidaInput) -> MedidaProtetivaOutput:
-        if ator.papel != Papel.DELEGADO:
-            raise AcessoNegadoError(
-                "Apenas o Delegado de Polícia pode renovar medidas protetivas.",
-                chave="medida.apenas_delegado",
-            )
+        ator.exigir(Permissao.GERIR_MEDIDAS, "Apenas o Delegado de Polícia pode renovar medidas protetivas.", chave="medida.apenas_delegado")
 
         medida = await self._repo_medida.buscar_por_id(dados.medida_id)
         if not medida:

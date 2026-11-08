@@ -16,8 +16,9 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from application.use_cases.viatura.gerir_viaturas import PAPEIS_GESTAO, carregar_viatura
+from application.use_cases.viatura.gerir_viaturas import carregar_viatura
 from domain.auditoria.entity import RegistroAuditoria
+from domain.usuario.permissoes import Permissao
 
 
 class EmitirCredencialTelemetria(InterfaceEmitirCredencialTelemetria):
@@ -32,7 +33,7 @@ class EmitirCredencialTelemetria(InterfaceEmitirCredencialTelemetria):
         self._viaturas, self._credenciais, self._auditoria, self._uow, self._relogio = viaturas, credenciais, auditoria, uow, relogio
 
     async def executar(self, ator: Ator, viatura_id: UUID) -> str:
-        ator.exigir_papel(*PAPEIS_GESTAO)
+        ator.exigir(Permissao.GERIR_FROTA)
         viatura = await carregar_viatura(self._viaturas, viatura_id)
         async with self._uow:
             await self._auditoria.registrar(

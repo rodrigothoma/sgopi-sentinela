@@ -15,9 +15,9 @@ from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorren
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
 from domain.medida_protetiva.entity import MedidaProtetiva
-from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError
+from domain.shared.exceptions import EntidadeNaoEncontradaError
 from domain.shared.tempo import data_operacional
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 
 
 class ConcederMedida(InterfaceConcederMedida):
@@ -38,11 +38,7 @@ class ConcederMedida(InterfaceConcederMedida):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: ConcederMedidaInput) -> MedidaProtetivaOutput:
-        if ator.papel != Papel.DELEGADO:
-            raise AcessoNegadoError(
-                "Apenas o Delegado de Polícia pode formalizar concessão de medidas protetivas.",
-                chave="medida.apenas_delegado",
-            )
+        ator.exigir(Permissao.GERIR_MEDIDAS, "Apenas o Delegado de Polícia pode formalizar concessão de medidas protetivas.", chave="medida.apenas_delegado")
 
         ocorrencia = await self._repo_ocorrencia.buscar_por_id(dados.ocorrencia_id)
         if not ocorrencia:

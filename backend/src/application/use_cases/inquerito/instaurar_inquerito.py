@@ -17,8 +17,8 @@ from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
 from domain.inquerito.entity import Inquerito
 from domain.ocorrencia.status import StatusOcorrencia
-from domain.shared.exceptions import AcessoNegadoError, ConflitoError, EntidadeNaoEncontradaError
-from domain.usuario.entity import Papel
+from domain.shared.exceptions import ConflitoError, EntidadeNaoEncontradaError
+from domain.usuario.permissoes import Permissao
 
 
 class InstaurarInquerito(InterfaceInstaurarInquerito):
@@ -39,11 +39,7 @@ class InstaurarInquerito(InterfaceInstaurarInquerito):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: InstaurarInqueritoInput) -> InqueritoOutput:
-        if ator.papel != Papel.DELEGADO:
-            raise AcessoNegadoError(
-                "Apenas o Delegado de Polícia possui competência para instaurar inquérito policial.",
-                chave="inquerito.apenas_delegado",
-            )
+        ator.exigir(Permissao.GERIR_INQUERITOS, "Apenas o Delegado de Polícia possui competência para instaurar inquérito policial.", chave="inquerito.apenas_delegado")
 
         agora = self._relogio.agora()
         numero = await self._gerador.proximo(agora.year)

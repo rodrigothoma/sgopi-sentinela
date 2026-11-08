@@ -16,8 +16,8 @@ from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorren
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
 from domain.laudo.entity import LaudoPericial, TipoPericia
-from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError, ValorInvalidoError
-from domain.usuario.entity import Papel
+from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
+from domain.usuario.permissoes import Permissao
 
 
 class SolicitarLaudo(InterfaceSolicitarLaudo):
@@ -40,11 +40,7 @@ class SolicitarLaudo(InterfaceSolicitarLaudo):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: SolicitarLaudoInput) -> LaudoOutput:
-        if ator.papel not in (Papel.DELEGADO, Papel.PERITO):
-            raise AcessoNegadoError(
-                "Apenas autoridade policial ou perito pode requisitar/iniciar requisição de perícia.",
-                chave="laudo.apenas_autoridade",
-            )
+        ator.exigir(Permissao.SOLICITAR_LAUDO, "Apenas autoridade policial ou perito pode requisitar/iniciar requisição de perícia.", chave="laudo.apenas_autoridade")
 
         if dados.ocorrencia_id:
             oc = await self._repo_ocorrencia.buscar_por_id(dados.ocorrencia_id)

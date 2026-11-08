@@ -15,8 +15,8 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
-from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError, ValorInvalidoError
-from domain.usuario.entity import Papel
+from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
+from domain.usuario.permissoes import Permissao
 
 
 class AnexarLaudo(InterfaceAnexarLaudo):
@@ -35,11 +35,7 @@ class AnexarLaudo(InterfaceAnexarLaudo):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: AnexarLaudoInput) -> LaudoOutput:
-        if ator.papel not in (Papel.PERITO, Papel.DELEGADO):
-            raise AcessoNegadoError(
-                "Apenas o Perito Criminal responsável ou Delegado pode homologar e anexar laudo pericial.",
-                chave="laudo.apenas_perito",
-            )
+        ator.exigir(Permissao.ANEXAR_LAUDO, "Apenas o Perito Criminal responsável ou Delegado pode homologar e anexar laudo pericial.", chave="laudo.apenas_perito")
 
         laudo = await self._repo.buscar_por_id(dados.laudo_id)
         if not laudo:

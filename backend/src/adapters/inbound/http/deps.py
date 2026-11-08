@@ -23,6 +23,7 @@ from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import AcessoNegadoError, CredenciaisInvalidasError, MuitasTentativasError
 from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao, papeis_com
 from infrastructure.config.settings import settings
 from infrastructure.di import (
     get_auditoria,
@@ -92,6 +93,11 @@ async def ator_opcional(
     if credenciais is None:
         return None
     return await ator_atual(request, credenciais, provedor, relogio, usuarios)
+
+
+def exigir_permissao(permissao: Permissao):
+    """Borda HTTP do catálogo de permissões: mesmos papéis que o caso de uso re-verifica."""
+    return exigir_papel(*papeis_com(permissao))
 
 
 def exigir_papel(*papeis: Papel):

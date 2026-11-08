@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from adapters.inbound.http.deps import exigir_papel
+from adapters.inbound.http.deps import exigir_permissao
 from adapters.inbound.http.exportacao_csv import FormatoExportacao, resposta_csv
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_consultar_auditoria import (
@@ -22,7 +22,7 @@ from application.ports.inbound.interface_registrar_exportacao import (
     RecursoExportavel,
     RegistrarExportacaoInput,
 )
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.di import get_consultar_auditoria, get_registrar_exportacao
 
 router = APIRouter(prefix="/v1/auditoria", tags=["auditoria"])
@@ -64,7 +64,7 @@ async def exportar_auditoria(
     operacao: str | None = Query(default=None),
     quem: UUID | None = Query(default=None),
     limit: int = Query(default=LIMITE_MAXIMO_CONSULTA, ge=1, le=LIMITE_MAXIMO_CONSULTA),
-    ator: Ator = Depends(exigir_papel(Papel.DELEGADO, Papel.SUPERVISOR)),
+    ator: Ator = Depends(exigir_permissao(Permissao.EXPORTAR_REGISTROS)),
     use_case: InterfaceConsultarAuditoria = Depends(get_consultar_auditoria),
     registrar_exportacao: InterfaceRegistrarExportacao = Depends(get_registrar_exportacao),
 ) -> StreamingResponse:
@@ -91,7 +91,7 @@ async def listar_auditoria(
     operacao: str | None = Query(default=None),
     quem: UUID | None = Query(default=None),
     limit: int = Query(default=LIMITE_PADRAO_CONSULTA, ge=1, le=LIMITE_MAXIMO_CONSULTA),
-    ator: Ator = Depends(exigir_papel(Papel.DELEGADO, Papel.SUPERVISOR)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_AUDITORIA)),
     use_case: InterfaceConsultarAuditoria = Depends(get_consultar_auditoria),
 ) -> list[RegistroAuditoriaSchema]:
     """Trilha de auditoria append-only (mais recente primeiro)."""

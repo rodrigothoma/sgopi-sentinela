@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
-from adapters.inbound.http.deps import exigir_papel
+from adapters.inbound.http.deps import exigir_permissao
 from adapters.inbound.http.v1.ocorrencias_router import OcorrenciaDetalheSchema, _detalhe
 from adapters.inbound.http.v1.viaturas_router import ViaturaSchema
 from adapters.inbound.http.v1.viaturas_router import _schema as _viatura_schema
@@ -19,11 +19,10 @@ from application.ports.inbound.interface_despachar_viatura import (
     ListarOrdensInput,
     OrdemDespachoOutput,
 )
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.di import get_despachar_viatura, get_encerrar_ocorrencia, get_listar_ordens, get_sugerir_viaturas
 
 router = APIRouter(tags=["despacho"])
-DESPACHO = (Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
 
 
 class ViaturaSugeridaSchema(BaseModel):
@@ -66,7 +65,7 @@ def _ordem(o: OrdemDespachoOutput) -> OrdemDespachoSchema:
 
 
 @router.get("/v1/ocorrencias/{ocorrencia_id}/sugestoes-viaturas", response_model=SugestoesSchema)
-async def sugerir_viaturas(ocorrencia_id: UUID, ator: Ator = Depends(exigir_papel(*DESPACHO)), uc: InterfaceSugerirViaturasProximas = Depends(get_sugerir_viaturas)):
+async def sugerir_viaturas(ocorrencia_id: UUID, ator: Ator = Depends(exigir_permissao(Permissao.DESPACHAR_VIATURA)), uc: InterfaceSugerirViaturasProximas = Depends(get_sugerir_viaturas)):
     """As N viaturas DISPONIVEL com posição válida mais próximas (Haversine) da ocorrência VALIDADA/EM_ATENDIMENTO (RF02, #64)."""
     out = await uc.executar(ator, ocorrencia_id)
     return SugestoesSchema(
@@ -78,7 +77,7 @@ async def sugerir_viaturas(ocorrencia_id: UUID, ator: Ator = Depends(exigir_pape
 
 
 @router.post("/v1/despachos", response_model=OrdemDespachoSchema, status_code=201)
-async def despachar(body: DespacharRequest, ator: Ator = Depends(exigir_papel(*DESPACHO)), uc: InterfaceDespacharViatura = Depends(get_despachar_viatura)):
+async def despachar(body: DespacharRequest, ator: Ator = Depends(exigir_permissao(Permissao.DESPACHAR_VIATURA)), uc: InterfaceDespacharViatura = Depends(get_despachar_viatura)):
     """Cria a ordem atômica: ocorrência VALIDADA → EM_ATENDIMENTO (principal) ou segunda ordem de apoio em EM_ATENDIMENTO (RF02, RNF03)."""
     return _ordem(await uc.executar(ator, DespacharInput(ocorrencia_id=body.ocorrencia_id, viatura_id=body.viatura_id, observacoes=body.observacoes)))
 
@@ -88,13 +87,13 @@ async def listar_despachos(
     ocorrencia_id: UUID | None = Query(default=None),
     somente_ativas: bool = Query(default=False),
     limit: int = Query(default=100, ge=1, le=500),
-    ator: Ator = Depends(exigir_papel(Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR, Papel.DELEGADO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.ACOMPANHAR_ATENDIMENTO)),
     uc: InterfaceListarOrdensDespacho = Depends(get_listar_ordens),
 ):
     return [_ordem(o) for o in await uc.executar(ator, ListarOrdensInput(ocorrencia_id=ocorrencia_id, somente_ativas=somente_ativas, limit=limit))]
 
 
 @router.post("/v1/ocorrencias/{ocorrencia_id}/encerrar", response_model=OcorrenciaDetalheSchema)
-async def encerrar(ocorrencia_id: UUID, body: EncerrarRequest, ator: Ator = Depends(exigir_papel(Papel.OPERADOR_CENTRAL, Papel.DELEGADO, Papel.SUPERVISOR)), uc: InterfaceEncerrarOcorrencia = Depends(get_encerrar_ocorrencia)):
+async def encerrar(ocorrencia_id: UUID, body: EncerrarRequest, ator: Ator = Depends(exigir_permissao(Permissao.ACOMPANHAR_ATENDIMENTO)), uc: InterfaceEncerrarOcorrencia = Depends(get_encerrar_ocorrencia)):
     """EM_ATENDIMENTO → ENCERRADA; viaturas das ordens ativas voltam a DISPONIVEL (RF02)."""
     return _detalhe(await uc.executar(ator, EncerrarInput(ocorrencia_id=ocorrencia_id, desfecho=body.desfecho)))

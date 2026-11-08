@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field, field_validator
 
-from adapters.inbound.http.deps import ator_atual, exigir_papel
+from adapters.inbound.http.deps import ator_atual, exigir_permissao
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_inteligencia_areas_risco import (
     InterfaceCalcularAreasRisco,
@@ -17,6 +17,7 @@ from application.ports.inbound.interface_inteligencia_areas_risco import (
 )
 from domain.notificacao.entity import NivelCriticidadeAlerta
 from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.di import (
     get_calcular_areas_risco,
     get_confirmar_ciencia_alerta,
@@ -25,8 +26,6 @@ from infrastructure.di import (
 
 router = APIRouter(prefix="/v1/inteligencia", tags=["inteligencia"])
 
-PAPEIS_EMISSAO_ALERTA = (Papel.SUPERVISOR, Papel.DELEGADO, Papel.OPERADOR_CENTRAL)
-PAPEIS_CIENCIA_ALERTA = (Papel.SUPERVISOR, Papel.DELEGADO)
 
 
 class AreaRiscoSchema(BaseModel):
@@ -96,7 +95,7 @@ async def obter_areas_risco(
 )
 async def emitir_alerta_criticidade(
     req: AlertaCriticidadeRequest,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_EMISSAO_ALERTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.EMITIR_ALERTA_TATICO)),
     uc: InterfaceEmitirAlertaCriticidade = Depends(get_emitir_alerta_criticidade),
 ) -> AlertaCriticidadeResponse:
     """Emite um alerta de criticidade operacional com difusão em tempo real e auditoria."""
@@ -110,7 +109,7 @@ async def emitir_alerta_criticidade(
 )
 async def confirmar_ciencia_alerta(
     alerta_id: str,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CIENCIA_ALERTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.DAR_CIENCIA_ALERTA)),
     uc: InterfaceConfirmarCienciaAlerta = Depends(get_confirmar_ciencia_alerta),
 ) -> ConfirmarCienciaResponse:
     """Registra ciência formal de supervisão sobre alerta de criticidade emitido."""

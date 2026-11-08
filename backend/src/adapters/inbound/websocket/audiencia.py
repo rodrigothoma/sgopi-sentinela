@@ -13,7 +13,7 @@ from collections.abc import Callable
 from application.ports.inbound.ator import Ator
 from domain.interagencias.entity import NivelSigilo, niveis_sigilo_visiveis
 from domain.shared.eventos import EventoDominio
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 
 Regra = Callable[[EventoDominio, Ator], bool]
 
@@ -34,9 +34,6 @@ EVENTOS_OPERACIONAIS = frozenset(
         "ViaturaChegouAoLocal",
     }
 )
-# Mesmos papéis das rotas REST correspondentes (medidas_router / interagencias_router)
-PAPEIS_MEDIDAS = frozenset({Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL, Papel.AGENTE, Papel.ESCRIVAO})
-PAPEIS_INTERAGENCIAS = frozenset({Papel.DELEGADO, Papel.SUPERVISOR, Papel.ESCRIVAO, Papel.OPERADOR_CENTRAL})
 
 
 def _destinatario_da_notificacao(evento: EventoDominio, ator: Ator) -> bool:
@@ -50,7 +47,7 @@ def _destinatario_da_notificacao(evento: EventoDominio, ator: Ator) -> bool:
 
 def _comunicacao_interagencias(evento: EventoDominio, ator: Ator) -> bool:
     """Papéis de interagências, filtrados pelo nível de sigilo do ofício (o remetente sempre recebe)."""
-    if ator.papel not in PAPEIS_INTERAGENCIAS:
+    if not ator.pode(Permissao.ENVIAR_OFICIO):
         return False
     if evento.dados.get("remetente_id") == str(ator.id):
         return True
@@ -66,7 +63,7 @@ def _alerta_criticidade(evento: EventoDominio, ator: Ator) -> bool:
 _REGRAS: dict[str, Regra] = {
     "NOTIFICACAO_EMITIDA": _destinatario_da_notificacao,
     "ALERTA_CRITICIDADE": _alerta_criticidade,
-    "MEDIDA_VENCIMENTO_ALERTA": lambda _e, ator: ator.papel in PAPEIS_MEDIDAS,
+    "MEDIDA_VENCIMENTO_ALERTA": lambda _e, ator: ator.pode(Permissao.CONSULTAR_MEDIDAS),
     "COMUNICACAO_INTERAGENCIAS_CRIADA": _comunicacao_interagencias,
 }
 

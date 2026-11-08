@@ -16,7 +16,7 @@ from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.documentos import mascarar_cpf
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 
 _CPF_REGEX = re.compile(r"\b(\d{3})\.?(\d{3})\.?(\d{3})[-.]?(\d{2})\b")
 _CHAVES_SENSIVEIS = ("documento", "cpf", "doc")
@@ -60,7 +60,7 @@ class ConsultarAuditoria(InterfaceConsultarAuditoria):
     async def executar(
         self, ator: Ator, input_dto: ConsultarAuditoriaInput
     ) -> tuple[RegistroAuditoriaOutput, ...]:
-        ator.exigir_papel(Papel.DELEGADO, Papel.SUPERVISOR)
+        ator.exigir(Permissao.CONSULTAR_AUDITORIA)
         registros = await self._auditoria.listar(
             entidade=input_dto.entidade,
             entidade_id=input_dto.entidade_id,

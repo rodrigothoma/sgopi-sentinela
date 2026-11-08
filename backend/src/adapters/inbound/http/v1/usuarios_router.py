@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from adapters.inbound.http.deps import exigir_papel
+from adapters.inbound.http.deps import exigir_permissao
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_gerir_usuarios import (
     AlterarPapelInput,
@@ -18,7 +18,7 @@ from application.ports.inbound.interface_gerir_usuarios import (
     UsuarioGestaoOutput,
 )
 from application.ports.inbound.interface_listar_usuarios import InterfaceListarUsuarios
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.di import (
     get_alterar_papel_usuario,
     get_cadastrar_usuario,
@@ -29,9 +29,7 @@ from infrastructure.di import (
 )
 
 router = APIRouter(prefix="/v1/usuarios", tags=["usuarios"])
-CONSULTA = (Papel.AGENTE, Papel.DELEGADO, Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
 # Gestão do efetivo: Supervisor e Operador da Central (o caso de uso re-verifica)
-GESTORES = (Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL)
 
 
 class UsuarioResumoSchema(BaseModel):
@@ -66,7 +64,7 @@ def _gestao(u: UsuarioGestaoOutput) -> UsuarioGestaoSchema:
 
 @router.get("", response_model=list[UsuarioResumoSchema])
 async def listar_usuarios(
-    ator: Ator = Depends(exigir_papel(*CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_USUARIOS)),
     uc: InterfaceListarUsuarios = Depends(get_listar_usuarios),
 ) -> list[UsuarioResumoSchema]:
     """Efetivo ativo (nome, login e papel); sem credenciais (RF12)."""
@@ -75,7 +73,7 @@ async def listar_usuarios(
 
 @router.get("/gestao", response_model=list[UsuarioGestaoSchema])
 async def listar_usuarios_gestao(
-    ator: Ator = Depends(exigir_papel(*GESTORES)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_USUARIOS)),
     uc: InterfaceListarUsuariosGestao = Depends(get_listar_usuarios_gestao),
 ) -> list[UsuarioGestaoSchema]:
     """Todos os usuários, inclusive inativos (sem o usuário de sistema do canal público). Somente SUPERVISOR e OPERADOR_CENTRAL."""
@@ -85,7 +83,7 @@ async def listar_usuarios_gestao(
 @router.post("", response_model=UsuarioGestaoSchema, status_code=201)
 async def cadastrar_usuario(
     body: CadastrarUsuarioRequest,
-    ator: Ator = Depends(exigir_papel(*GESTORES)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_USUARIOS)),
     uc: InterfaceCadastrarUsuario = Depends(get_cadastrar_usuario),
 ) -> UsuarioGestaoSchema:
     """Cadastra um usuário ativo com senha inicial informada pelo gestor (auditado)."""
@@ -96,7 +94,7 @@ async def cadastrar_usuario(
 async def alterar_papel(
     usuario_id: UUID,
     body: AlterarPapelRequest,
-    ator: Ator = Depends(exigir_papel(*GESTORES)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_USUARIOS)),
     uc: InterfaceAlterarPapelUsuario = Depends(get_alterar_papel_usuario),
 ) -> UsuarioGestaoSchema:
     """Troca o papel (nunca o próprio); a sessão do usuário afetado deixa de valer."""
@@ -107,7 +105,7 @@ async def alterar_papel(
 async def desativar_usuario(
     usuario_id: UUID,
     body: SituacaoRequest | None = None,
-    ator: Ator = Depends(exigir_papel(*GESTORES)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_USUARIOS)),
     uc: InterfaceDesativarUsuario = Depends(get_desativar_usuario),
 ) -> UsuarioGestaoSchema:
     """Desativação lógica (``ativo = false``, nunca DELETE); a sessão aberta cai na próxima requisição."""
@@ -119,7 +117,7 @@ async def desativar_usuario(
 async def reativar_usuario(
     usuario_id: UUID,
     body: SituacaoRequest | None = None,
-    ator: Ator = Depends(exigir_papel(*GESTORES)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_USUARIOS)),
     uc: InterfaceReativarUsuario = Depends(get_reativar_usuario),
 ) -> UsuarioGestaoSchema:
     """Devolve o usuário ao efetivo ativo."""
