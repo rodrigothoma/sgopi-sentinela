@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from adapters.outbound.persistence.comunicacao_interagencias_repositorio_sqlalchemy import (
     ComunicacaoInteragenciasRepositorioSQLAlchemy,
+    GeradorNumeroOficioSQLAlchemy,
 )
 from domain.interagencias.entity import ComunicacaoInteragencias, NivelSigilo
 
@@ -56,3 +57,11 @@ async def test_filtro_de_sigilo_preserva_os_do_remetente(session, usuarios):
     assert sorted(i.numero_oficio for i in itens) == ["OFI-2026-000001", "OFI-2026-000003"]
     outro = await repo.listar(niveis_sigilo={NivelSigilo.PADRAO}, visivel_ao_usuario=uuid4())
     assert [i.numero_oficio for i in outro] == ["OFI-2026-000001"]
+
+
+async def test_gerador_de_oficio_sequencial_por_ano(session):
+    gerador = GeradorNumeroOficioSQLAlchemy(session)
+
+    assert await gerador.proximo_numero(2026) == "OFI-2026-000001"
+    assert await gerador.proximo_numero(2026) == "OFI-2026-000002"
+    assert await gerador.proximo_numero(2027) == "OFI-2027-000001"

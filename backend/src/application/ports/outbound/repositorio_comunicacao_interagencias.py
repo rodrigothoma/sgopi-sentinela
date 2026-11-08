@@ -14,6 +14,10 @@ class GeradorNumeroOficio(ABC):
         """Gera o próximo número de ofício no formato OFI-AAAA-NNNNNN."""
 
 
+def formatar_numero_oficio(ano: int, sequencial: int) -> str:
+    return f"OFI-{ano:04d}-{sequencial:06d}"
+
+
 class RepositorioComunicacaoInteragencias(ABC):
     @abstractmethod
     async def salvar(self, comunicacao: ComunicacaoInteragencias) -> ComunicacaoInteragencias:

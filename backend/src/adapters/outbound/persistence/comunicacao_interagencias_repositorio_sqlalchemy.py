@@ -6,13 +6,14 @@ from __future__ import annotations
 from collections.abc import Collection
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, String, cast, func, or_, select
+from sqlalchemy import ColumnElement, String, cast, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from adapters.outbound.persistence._datas import aware
 from application.ports.outbound.repositorio_comunicacao_interagencias import (
     GeradorNumeroOficio,
     RepositorioComunicacaoInteragencias,
+    formatar_numero_oficio,
 )
 from domain.interagencias.entity import (
     ComunicacaoInteragencias,
@@ -20,7 +21,7 @@ from domain.interagencias.entity import (
     PrioridadeComunicacao,
     StatusEntrega,
 )
-from infrastructure.database.models import ComunicacaoInteragenciasModel, SequenciaOficioModel
+from infrastructure.database.models import ComunicacaoInteragenciasModel
 
 _ESCAPE_LIKE = "\\"
 
@@ -40,24 +41,21 @@ def _pertence_ao_departamento(departamento: str) -> ColumnElement[bool]:
     )
 
 
+_UPSERT_OFICIO = text(
+    "INSERT INTO sequencias_oficio (ano, ultimo) VALUES (:ano, 1) "
+    "ON CONFLICT (ano) DO UPDATE SET ultimo = sequencias_oficio.ultimo + 1 "
+    "RETURNING ultimo"
+)
+
+
 class GeradorNumeroOficioSQLAlchemy(GeradorNumeroOficio):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
     async def proximo_numero(self, ano: int) -> str:
-        stmt = (
-            select(SequenciaOficioModel)
-            .where(SequenciaOficioModel.ano == ano)
-            .with_for_update()
-        )
-        seq = (await self._session.execute(stmt)).scalar_one_or_none()
-        if seq is None:
-            seq = SequenciaOficioModel(ano=ano, ultimo=0)
-            self._session.add(seq)
-
-        seq.ultimo += 1
-        await self._session.flush()
-        return f"OFI-{ano}-{seq.ultimo:06d}"
+        """Incremento atômico por ano: o UPSERT evita a corrida do primeiro ofício do ano."""
+        sequencial = (await self._session.execute(_UPSERT_OFICIO, {"ano": ano})).scalar_one()
+        return formatar_numero_oficio(ano, int(sequencial))
 
 
 class ComunicacaoInteragenciasRepositorioSQLAlchemy(RepositorioComunicacaoInteragencias):
