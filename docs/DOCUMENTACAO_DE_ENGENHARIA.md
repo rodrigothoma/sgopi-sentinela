@@ -897,6 +897,19 @@ A validação do software ocorre em níveis complementares para isolar regras de
 - **Testes de Unidade e Integração (Backend):** O foco central da cobertura de testes (meta superior a 80%) é a camada de Casos de Uso e Entidades de Domínio. Com **pytest** e *fakes* de todas as portas de saída, a máquina de estados das ocorrências e a geração do número de protocolo são validadas de forma isolada, sem subir o servidor web nem conectar a um banco real; os testes de integração exercitam adaptadores, API HTTP e WebSocket contra SQLite em memória.
 
 - **Testes Automatizados (E2E):** Os fluxos críticos são automatizados em dois níveis: **Cypress** no frontend (navegador real, *black-box*), cobrindo o registro circunstanciado (UC01), a validação pelo Delegado (UC04) e o despacho tático (UC02), além dos extras; e **pytest E2E de API** (HTTP e WebSocket) contra o servidor real em execução. *(O planejamento inicial previa Selenium WebDriver; a equipe adotou o Cypress na implementação.)*
+
+### 7.1.1 Padrões de Código: Tipagem Estrita (Typehints) e Documentação (Docstrings)
+
+Para assegurar manutenibilidade, compreensibilidade e segurança arquitetural em todas as camadas, as seguintes diretrizes são adotadas formalmente para **código novo e módulos refatorados** (os módulos preexistentes são adequados gradualmente a cada ciclo de refatoração):
+
+1. **Tipagem Estrita (PEP 484 / PEP 604):**
+   * Funções, métodos e construtores devem conter anotações explícitas para **todos os parâmetros e retornos** (incluindo `-> None`).
+   * Utilização da sintaxe nativa do Python 3.10+ para uniões (`T | None` em vez de `Optional[T]`) e coleções genéricas embutidas (`list[T]`, `dict[K, V]`, `tuple[T, ...]`).
+
+2. **Docstrings Contextualizadas (PEP 257) & Regra do Código Óbvio:**
+   * Módulos, classes, portas e métodos públicos devem documentar seu propósito, regras de negócio associadas (ex.: referências a RFs/UCs) e casos excepcionais (`Raises:`).
+   * **Não comente código óbvio:** evite docstrings prolixas que meramente repetem a assinatura ou o nome do método; priorize clareza e contexto que não estejam explícitos na tipagem.
+
 ### 7.2 Versionamento e Fluxo de Trabalho (Git Workflow)
 
 Para orquestrar o desenvolvimento em equipe e proteger a estabilidade do código principal, o repositório adotará uma estratégia estruturada de ramificação:

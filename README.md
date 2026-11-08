@@ -55,7 +55,7 @@ sgopi-sentinela/
 │   ├── src/ {components, pages, services, hooks, types, utils, locales}
 │   └── cypress/e2e/               # Testes E2E de interface (Cypress)
 ├── docs/
-│   ├── DOCUMENTACAO_DE_ENGENHARIA.md · PLANEJAMENTO_DESENVOLVIMENTO.md · ROTEIRO_DEMONSTRACAO.md
+│   ├── DOCUMENTACAO_DE_ENGENHARIA.md · PLANEJAMENTO_DESENVOLVIMENTO.md
 │   ├── implementacao/             # Registros de etapas e complementos de implementação
 │   └── diagramas/
 ├── docker-compose.yml             # PostgreSQL 16 local
@@ -194,7 +194,6 @@ cd frontend && npm run e2e:db
 | :--- | :--- | :--- |
 | 📋 **Quadro Kanban Oficial** | [**GitHub Projects #2**](https://github.com/users/rodrigothoma/projects/2) | Backlog e esteira de desenvolvimento do projeto do início ao fim (49 itens rastreáveis). |
 | 📄 **Especificação Completa de Engenharia** | [**docs/DOCUMENTACAO_DE_ENGENHARIA.md**](docs/DOCUMENTACAO_DE_ENGENHARIA.md) | Requisitos canônicos (RF01–RF10, RNF01–RNF05), matriz MoSCoW, proposta de MVP e casos de uso com diagramas de sequência. |
-| 🎭 **Roteiro de Demonstração** | [**docs/ROTEIRO_DEMONSTRACAO.md**](docs/ROTEIRO_DEMONSTRACAO.md) | Roteiro da apresentação final, setup pré-banca e dados semeados. |
 | 🗓️ **Planejamento de Desenvolvimento** | [**docs/PLANEJAMENTO_DESENVOLVIMENTO.md**](docs/PLANEJAMENTO_DESENVOLVIMENTO.md) | Cronograma de desenvolvimento e fatias verticais semanais da equipe (Sprints 2 a 5). |
 | 🌐 **Wiki Oficial do Projeto** | [**GitHub Wiki**](https://github.com/rodrigothoma/sgopi-sentinela/wiki) | Base de conhecimento da equipe com guias, modelagem UML navegável e detalhamento arquitetural. |
 | 📊 **Artefatos e Diagramas** | [**docs/diagramas/**](docs/diagramas/) | Todos os diagramas UML em alta definição. |
