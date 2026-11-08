@@ -22,7 +22,6 @@ from domain.interagencias.entity import (
 )
 from infrastructure.database.models import ComunicacaoInteragenciasModel, SequenciaOficioModel
 
-
 _ESCAPE_LIKE = "\\"
 
 
