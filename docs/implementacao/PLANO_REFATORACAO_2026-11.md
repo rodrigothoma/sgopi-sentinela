@@ -87,7 +87,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 
 - [ ] **`application/use_cases/_base.py` com `ComandoAuditado[E](ABC)`** (Template Method: papel → carregar → aplicar → salvar → auditar → commit → saída). Promover `_DecisaoBase` (`revisar_ocorrencia.py`) e `_GestaoBase` (`gerir_usuarios.py`); aplicar em renovar/revogar medida, laudos e inquéritos.
 - [ ] **`obter_ou_falhar(busca, id, chave)` genérico** no lugar de `carregar_ou_404` (8 importadores) e `carregar_viatura`; `_comum.py` por pacote, acabando com os imports cruzados entre casos de uso.
-- [ ] **`_mapeadores.py` por pacote**: `MedidaProtetivaOutput` é montado 4 vezes, `LaudoOutput` 3, `InqueritoOutput` 3, `OcorrenciaResumoInqueritoOutput` 5.
+- [~] **`_mapeadores.py` por pacote**: `LaudoOutput` centralizado e coberto por testes de caracterização — `99e248d`. **Pendentes:** `MedidaProtetivaOutput` (4 montagens), `InqueritoOutput` (3) e `OcorrenciaResumoInqueritoOutput` (5).
 - [ ] **Alinhar notificação, interagências, inteligência e alerta ao padrão**: UoW obrigatório (8 `uow | None`), Output DTOs no lugar de `dict`/entidades (12 portas), nomes sem sufixo `UseCase`, `chave` em todas as exceções.
 - [ ] **Motor de conexões** (`inquerito/buscar_conexoes.py`, 421 linhas):
     - [ ] Mover a lógica pura para `domain/inquerito/motor_conexoes.py` com Strategy (`CriterioConexao`: envolvidos, natureza, tipificação, itens, área de risco, proximidade, temporal).
