@@ -6,7 +6,9 @@
 set -euo pipefail
 
 raiz="$(git rev-parse --show-toplevel)"
-mapfile -t arquivos < <(git diff --cached --name-only --diff-filter=ACMR)
+# Laços com read (e não mapfile) para funcionar também no bash 3.2 do macOS.
+arquivos=()
+while IFS= read -r f; do arquivos+=("$f"); done < <(git diff --cached --name-only --diff-filter=ACMR)
 [ "${#arquivos[@]}" -eq 0 ] && exit 0
 
 py_backend=()
@@ -23,7 +25,8 @@ etapa() { printf '\n\033[1m[pre-commit] %s\033[0m\n' "$1"; }
 
 # Mesmas pastas da checagem do CI; o padrão é montado em partes para o hook não acusar a si mesmo.
 marcador="content""Reference"
-mapfile -t vigiados < <(printf '%s\n' "${arquivos[@]}" | grep -E '^(docs|backend/src|frontend/src)/' || true)
+vigiados=()
+while IFS= read -r f; do vigiados+=("$f"); done < <(printf '%s\n' "${arquivos[@]}" | grep -E '^(docs|backend/src|frontend/src)/' || true)
 if [ "${#vigiados[@]}" -gt 0 ] && grep -n "$marcador" -- "${vigiados[@]}" 2>/dev/null; then
   echo "[pre-commit] Artefato de chat de IA ($marcador) nos arquivos acima." >&2
   falhou=1
