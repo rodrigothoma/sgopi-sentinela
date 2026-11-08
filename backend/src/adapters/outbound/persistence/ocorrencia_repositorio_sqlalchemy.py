@@ -20,12 +20,12 @@ from sqlalchemy import Select, case, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from adapters.outbound.persistence._concorrencia import ControleVersaoMixin
 from adapters.outbound.persistence._datas import aware
 from adapters.outbound.persistence.mappers import OcorrenciaMapper
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
 from domain.ocorrencia.entity import Ocorrencia
 from domain.ocorrencia.prioridade import PrioridadeOcorrencia
-from domain.shared.exceptions import ConflitoError
 from infrastructure.database.models import ItemApreendidoModel, OcorrenciaModel
 
 _ESCAPE: str = "\\"
@@ -48,27 +48,16 @@ _CARREGAR_FILHOS = (
 )
 
 
-class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
+class OcorrenciaRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioOcorrencia):
     """Repositório de ocorrências com persistência relacional via SQLAlchemy async."""
 
     def __init__(self, session: AsyncSession) -> None:
         self._session: AsyncSession = session
-        self._versoes_carregadas: dict[UUID, int] = {}
+        super().__init__()
 
     async def _carregar_model(self, ocorrencia_id: UUID) -> OcorrenciaModel | None:
         stmt = select(OcorrenciaModel).where(OcorrenciaModel.id == ocorrencia_id).options(*_CARREGAR_FILHOS)
         return (await self._session.execute(stmt)).scalar_one_or_none()
-
-    async def _verificar_versao(self, ocorrencia: Ocorrencia) -> None:
-        stmt = select(OcorrenciaModel.versao).where(OcorrenciaModel.id == ocorrencia.id).with_for_update()
-        versao_banco = (await self._session.execute(stmt)).scalar_one()
-        versao_esperada = self._versoes_carregadas.get(ocorrencia.id, versao_banco)
-        if versao_banco != versao_esperada or ocorrencia.versao < versao_banco:
-            raise ConflitoError(
-                "A ocorrência foi alterada por outro usuário; recarregue e tente novamente.",
-                chave="generic.versao_desatualizada",
-                versao_atual=versao_banco,
-            )
 
     async def salvar(self, ocorrencia: Ocorrencia) -> None:
         """Persiste ocorrência com verificação de concorrência otimista (RNF03).
@@ -80,24 +69,29 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
         if existente is None:
             self._session.add(OcorrenciaMapper.to_model(ocorrencia))
         else:
-            await self._verificar_versao(ocorrencia)
+            await self._verificar_versao(
+                OcorrenciaModel,
+                ocorrencia.id,
+                ocorrencia.versao,
+                "A ocorrência foi alterada por outro usuário; recarregue e tente novamente.",
+            )
             OcorrenciaMapper.atualizar_model(existente, ocorrencia)
         await self._session.flush()
-        self._versoes_carregadas[ocorrencia.id] = ocorrencia.versao
+        self._registrar_versao(ocorrencia.id, ocorrencia.versao)
 
     async def buscar_por_id(self, ocorrencia_id: UUID) -> Ocorrencia | None:
         """Localiza ocorrência pelo identificador primário com coleções filhas pré-carregadas."""
         model = await self._carregar_model(ocorrencia_id)
         if model is None:
             return None
-        self._versoes_carregadas[model.id] = model.versao
+        self._registrar_versao(model.id, model.versao)
         return OcorrenciaMapper.to_domain(model)
 
     async def _buscar_primeira(self, stmt: Select[Any]) -> Ocorrencia | None:
         model = (await self._session.execute(stmt.options(*_CARREGAR_FILHOS))).scalars().first()
         if model is None:
             return None
-        self._versoes_carregadas[model.id] = model.versao
+        self._registrar_versao(model.id, model.versao)
         return OcorrenciaMapper.to_domain(model)
 
     async def buscar_por_protocolo(self, numero_protocolo: str) -> Ocorrencia | None:
@@ -155,7 +149,7 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
         stmt = stmt.options(*_CARREGAR_FILHOS).order_by(*criterios).limit(filtro.limit).offset(filtro.offset)
         models = (await self._session.execute(stmt)).scalars().all()
         for m in models:
-            self._versoes_carregadas[m.id] = m.versao
+            self._registrar_versao(m.id, m.versao)
         return [OcorrenciaMapper.to_domain(m) for m in models]
 
     async def contar(self, filtro: FiltroOcorrencias) -> int:
