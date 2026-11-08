@@ -30,6 +30,10 @@ class StatusMedida(str, Enum):
     EXPIRADA = "EXPIRADA"
 
 
+# UC12: alerta quando faltam até 3 dias (72 h) para o vencimento, sem repetir em menos de 48 h.
+DIAS_ANTECEDENCIA_ALERTA = 3
+INTERVALO_MINIMO_ENTRE_ALERTAS = timedelta(hours=48)
+
 # Medida em vigor: pode ser renovada, revogada e gera alerta de vencimento.
 ESTADOS_VIGENTES = frozenset({StatusMedida.ATIVA, StatusMedida.RENOVADA})
 
@@ -168,11 +172,18 @@ class MedidaProtetiva(Versionado):
     def dias_restantes(self, hoje: date) -> int:
         return (self.data_vencimento - hoje).days
 
-    def esta_proxima_do_vencimento(self, hoje: date, dias_antecedencia: int = 3) -> bool:
+    def esta_proxima_do_vencimento(self, hoje: date, dias_antecedencia: int = DIAS_ANTECEDENCIA_ALERTA) -> bool:
         """Indica se a medida está ativa e vence em até N dias (72h por padrão - UC12) ou já venceu."""
         if self.status not in ESTADOS_VIGENTES:
             return False
         return self.dias_restantes(hoje) <= dias_antecedencia
+
+    def precisa_alerta(self, hoje: date, agora: datetime) -> bool:
+        """Varredura do UC12: vigente, perto do vencimento e sem alerta enviado nas últimas 48 h."""
+        if not self.esta_proxima_do_vencimento(hoje):
+            return False
+        ultimo = self.alerta_vencimento_enviado_em
+        return ultimo is None or agora - ultimo >= INTERVALO_MINIMO_ENTRE_ALERTAS
 
     def marcar_alerta_vencimento_enviado(self, instante: datetime) -> None:
         self.alerta_vencimento_enviado_em = instante

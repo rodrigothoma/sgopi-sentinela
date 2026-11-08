@@ -36,7 +36,7 @@ from domain.despacho.eventos import ordem_de_despacho_criada
 from domain.despacho.servico_proximidade import sugerir_viaturas_proximas
 from domain.ocorrencia import eventos as ev_ocorrencia
 from domain.ocorrencia.status import StatusOcorrencia
-from domain.shared.exceptions import ConflitoError, TransicaoInvalidaError
+from domain.shared.exceptions import ConflitoError
 from domain.usuario.permissoes import Permissao
 from domain.viatura.entity import SituacaoViatura
 from domain.viatura.eventos import viatura_situacao_alterada
@@ -58,12 +58,7 @@ class SugerirViaturasProximas(InterfaceSugerirViaturasProximas):
         ator.exigir(Permissao.DESPACHAR_VIATURA)
         agora = self._relogio.agora()
         ocorrencia = await carregar_ou_404(self._ocorrencias, ocorrencia_id)
-        if ocorrencia.status not in (StatusOcorrencia.VALIDADA, StatusOcorrencia.EM_ATENDIMENTO):
-            raise TransicaoInvalidaError(
-                "Só ocorrências VALIDADA ou EM_ATENDIMENTO recebem despacho.",
-                operacao="despachar",
-                status_atual=ocorrencia.status.value,
-            )
+        ocorrencia.exigir_despachavel()
         frota = await self._viaturas.listar((SituacaoViatura.DISPONIVEL,))
         sugeridas = sugerir_viaturas_proximas(ocorrencia.coordenada, frota, agora, self._max_idade, self._qtd)
         sem_posicao = [v for v in frota if not v.posicao_valida(agora, self._max_idade)]

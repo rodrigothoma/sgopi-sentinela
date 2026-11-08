@@ -48,6 +48,8 @@ TRANSICOES: dict[tuple[StatusOcorrencia, OperacaoOcorrencia], StatusOcorrencia] 
 }
 
 ESTADOS_TERMINAIS = frozenset({StatusOcorrencia.REJEITADA, StatusOcorrencia.ENCERRADA})
+# UC02: despacho (VALIDADA) ou viatura de apoio (EM_ATENDIMENTO).
+ESTADOS_DESPACHAVEIS = frozenset({StatusOcorrencia.VALIDADA, StatusOcorrencia.EM_ATENDIMENTO})
 ESTADOS_EDITAVEIS = frozenset({StatusOcorrencia.EM_CORRECAO})
 
 # RF03 / UC03 pré-condição: "ocorrência registrada ou em andamento" aceita novos itens apreendidos.

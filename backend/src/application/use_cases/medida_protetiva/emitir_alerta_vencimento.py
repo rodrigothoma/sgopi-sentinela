@@ -94,25 +94,19 @@ class EmitirAlertaVencimentoMedidaUseCase(InterfaceEmitirAlertaVencimentoMedida)
         resultados = []
         enviados = 0
         for m in medidas_ativas:
-            # Emite apenas se estiver a <= 3 dias (72h) do vencimento e ainda não tiver alerta recente enviado
-            if m.esta_proxima_do_vencimento(hoje, dias_antecedencia=3):
-                # Se já enviou alerta há menos de 48h, evita disparos repetidos no mesmo ciclo
-                if m.alerta_vencimento_enviado_em is not None:
-                    dias_desde_ultimo = (agora - m.alerta_vencimento_enviado_em).total_seconds() / 86400.0
-                    if dias_desde_ultimo < 2.0:
-                        continue
-
-                res = await self._processar_alerta_medida(
-                    medida=m,
-                    ator=ator,
-                    agora=agora,
-                    hoje=hoje,
-                    email_customizado=None,
-                    manual=False,
-                )
-                resultados.append(res)
-                if res["email_enviado"] or res["notificacao_gerada"]:
-                    enviados += 1
+            if not m.precisa_alerta(hoje, agora):
+                continue
+            res = await self._processar_alerta_medida(
+                medida=m,
+                ator=ator,
+                agora=agora,
+                hoje=hoje,
+                email_customizado=None,
+                manual=False,
+            )
+            resultados.append(res)
+            if res["email_enviado"] or res["notificacao_gerada"]:
+                enviados += 1
 
         return {
             "sucesso": True,

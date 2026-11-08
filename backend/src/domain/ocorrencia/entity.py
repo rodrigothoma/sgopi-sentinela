@@ -26,6 +26,7 @@ from domain.ocorrencia.autenticidade import SituacaoDocumento, gerar_chave_auten
 from domain.ocorrencia.prioridade import PRIORIDADE_PADRAO, PrioridadeOcorrencia, sugerir_prioridade
 from domain.ocorrencia.status import (
     ESTADOS_ACEITAM_APREENSAO,
+    ESTADOS_DESPACHAVEIS,
     ESTADOS_EDITAVEIS,
     ESTADOS_PRIORIZAVEIS,
     OperacaoOcorrencia,
@@ -488,6 +489,15 @@ class Ocorrencia(Versionado):
         """EM_CORRECAO → AGUARDANDO_REVISAO pelo Agente autor (RF04)."""
         self._exigir_autor(agente_id)
         self._transicionar(OperacaoOcorrencia.REENVIAR, agente_id, em)
+
+    def exigir_despachavel(self) -> None:
+        """UC02 regra 1: recebe viatura a ocorrência VALIDADA (despacho) ou EM_ATENDIMENTO (apoio)."""
+        if self.status not in ESTADOS_DESPACHAVEIS:
+            raise TransicaoInvalidaError(
+                "Só ocorrências VALIDADA ou EM_ATENDIMENTO recebem despacho.",
+                operacao=OperacaoOcorrencia.DESPACHAR.value,
+                status_atual=self.status.value,
+            )
 
     def despachar(self, operador_id: UUID, em: datetime) -> None:
         """VALIDADA → EM_ATENDIMENTO (RF02)."""
