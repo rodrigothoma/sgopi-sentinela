@@ -27,6 +27,14 @@ class SituacaoViatura(str, Enum):
     INDISPONIVEL = "INDISPONIVEL"
 
 
+class SinalViatura(str, Enum):
+    """Qualidade do rastreamento GPS exibida no painel tático."""
+
+    OK = "OK"
+    SEM_SINAL = "SEM_SINAL"
+    SEM_POSICAO = "SEM_POSICAO"
+
+
 class OperacaoViatura(str, Enum):
     MARCAR_INDISPONIVEL = "marcar_indisponivel"
     MARCAR_DISPONIVEL = "marcar_disponivel"
@@ -100,8 +108,8 @@ class Viatura(Versionado):
 
     def sinal(self, agora: datetime, max_idade_segundos: int) -> str:
         if self.ultima_posicao is None:
-            return "SEM_POSICAO"
-        return "OK" if self.posicao_valida(agora, max_idade_segundos) else "SEM_SINAL"
+            return SinalViatura.SEM_POSICAO
+        return SinalViatura.OK if self.posicao_valida(agora, max_idade_segundos) else SinalViatura.SEM_SINAL
 
     # -------------------------------------------------------------- situação
     def _mudar(self, operacao: OperacaoViatura, agora: datetime) -> None:

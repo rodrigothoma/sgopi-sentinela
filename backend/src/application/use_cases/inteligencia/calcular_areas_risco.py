@@ -3,7 +3,6 @@ Casos de uso para Inteligência Criminal, Manchas Criminais e Alertas de Critici
 """
 from __future__ import annotations
 
-import math
 from datetime import timedelta
 from uuid import UUID
 
@@ -24,22 +23,14 @@ from domain.auditoria.entity import RegistroAuditoria
 from domain.notificacao.entity import NivelCriticidadeAlerta, Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.shared.eventos import EventoDominio
 from domain.shared.exceptions import EntidadeNaoEncontradaError
+from domain.shared.geo import Coordenada, calcular_distancia_km
+
+METROS_POR_KM = 1000.0
 
 
 def calcular_distancia_metros(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Fórmula de Haversine para distância geodésica em metros."""
-    raio_terra = 6371000.0  # metros
-    phi1 = math.radians(lat1)
-    phi2 = math.radians(lat2)
-    delta_phi = math.radians(lat2 - lat1)
-    delta_lambda = math.radians(lon2 - lon1)
-
-    a = (
-        math.sin(delta_phi / 2.0) ** 2
-        + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2.0) ** 2
-    )
-    c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
-    return raio_terra * c
+    """Distância geodésica em metros, pelo mesmo Haversine de ``domain.shared.geo``."""
+    return calcular_distancia_km(Coordenada(lat1, lon1), Coordenada(lat2, lon2)) * METROS_POR_KM
 
 
 class CalcularAreasRiscoUseCase(InterfaceCalcularAreasRisco):

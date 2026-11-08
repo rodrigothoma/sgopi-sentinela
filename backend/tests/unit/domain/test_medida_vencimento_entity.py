@@ -76,3 +76,23 @@ def test_precisa_alerta_falso_longe_do_vencimento_ou_revogada():
     revogada = _medida_vencendo_em(1, hoje)
     revogada.revogar("Revogada por decisão judicial superveniente.", agora)
     assert not revogada.precisa_alerta(hoje, agora)
+
+
+def test_tipo_de_restricao_desconhecido_e_recusado():
+    import pytest
+
+    from domain.shared.exceptions import ValorInvalidoError
+
+    with pytest.raises(ValorInvalidoError) as erro:
+        MedidaProtetiva.conceder(
+            numero_referencia="MP-2026-000002",
+            ocorrencia_id=uuid4(),
+            delegado_id=uuid4(),
+            vitima_id=uuid4(),
+            agressor_id=uuid4(),
+            tipos_restricao=["PROIBICAO_DE_CONTATO", "QUALQUER_COISA"],
+            data_inicio=date(2026, 11, 9),
+            prazo_dias=30,
+            instante=datetime(2026, 11, 9, 12, 0),
+        )
+    assert erro.value.chave == "medida.tipo_restricao_invalido"

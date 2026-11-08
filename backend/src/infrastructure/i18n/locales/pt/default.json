@@ -138,6 +138,7 @@
     "codigo_invalido": "Código de verificação inválido: informe a chave de 24 caracteres ou o hash SHA-256 impresso no documento."
   },
   "medida": {
+    "tipo_restricao_invalido": "Tipo de restrição inválido.",
     "destinatario_nao_cadastrado": "O destinatário precisa ser um e-mail cadastrado para um envolvido da ocorrência."
   },
   "laudo": {

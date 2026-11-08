@@ -10,29 +10,12 @@ from __future__ import annotations
 
 import unicodedata
 from collections.abc import Iterable
-from enum import Enum
 
 from domain.shared.enums import interpretar_enum
+from domain.shared.prioridade import Prioridade
 
-
-class PrioridadeOcorrencia(str, Enum):
-    BAIXA = "BAIXA"
-    MEDIA = "MEDIA"
-    ALTA = "ALTA"
-    URGENTE = "URGENTE"
-
-    @property
-    def peso(self) -> int:
-        """Ordem de atendimento: quanto maior, mais cedo (URGENTE=4 … BAIXA=1)."""
-        return _PESOS[self]
-
-
-_PESOS = {
-    PrioridadeOcorrencia.BAIXA: 1,
-    PrioridadeOcorrencia.MEDIA: 2,
-    PrioridadeOcorrencia.ALTA: 3,
-    PrioridadeOcorrencia.URGENTE: 4,
-}
+# Mesma escala dos ofícios interagências (domain/shared/prioridade.py).
+PrioridadeOcorrencia = Prioridade
 
 PRIORIDADE_PADRAO = PrioridadeOcorrencia.MEDIA
 

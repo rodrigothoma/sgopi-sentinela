@@ -12,6 +12,7 @@ from datetime import date, datetime, timedelta
 from enum import Enum
 from uuid import UUID, uuid4
 
+from domain.shared.enums import interpretar_enum
 from domain.shared.exceptions import CampoObrigatorioError, ConflitoError, ValorInvalidoError
 from domain.shared.maquina_estados import MaquinaEstados
 from domain.shared.validacao import exigir_texto
@@ -29,6 +30,9 @@ class StatusMedida(str, Enum):
     REVOGADA = "REVOGADA"
     EXPIRADA = "EXPIRADA"
 
+
+PRAZO_MAXIMO_DIAS = 730  # 2 anos
+PRORROGACAO_MAXIMA_DIAS = 365
 
 # UC12: alerta quando faltam até 3 dias (72 h) para o vencimento, sem repetir em menos de 48 h.
 DIAS_ANTECEDENCIA_ALERTA = 3
@@ -114,9 +118,13 @@ class MedidaProtetiva(Versionado):
                 "Informe ao menos um tipo de restrição para a medida protetiva.",
                 chave="medida.restricao_obrigatoria",
             )
-        if prazo_dias < 1 or prazo_dias > 730:
+        restricoes = [
+            interpretar_enum(TipoRestricao, t, "medida.tipo_restricao_invalido", "Tipo de restrição inválido: {valor}").value
+            for t in tipos_restricao
+        ]
+        if prazo_dias < 1 or prazo_dias > PRAZO_MAXIMO_DIAS:
             raise ValorInvalidoError(
-                "O prazo da medida protetiva deve ser entre 1 e 730 dias (2 anos).",
+                f"O prazo da medida protetiva deve ser entre 1 e {PRAZO_MAXIMO_DIAS} dias (2 anos).",
                 chave="medida.prazo_invalido",
             )
         data_venc = data_inicio + timedelta(days=prazo_dias)
@@ -127,7 +135,7 @@ class MedidaProtetiva(Versionado):
             delegado_id=delegado_id,
             vitima_id=vitima_id,
             agressor_id=agressor_id,
-            tipos_restricao=list(tipos_restricao),
+            tipos_restricao=restricoes,
             data_inicio=data_inicio,
             prazo_dias=prazo_dias,
             data_vencimento=data_venc,
@@ -144,9 +152,9 @@ class MedidaProtetiva(Versionado):
                 f"Apenas medidas ativas podem ser renovadas (status: {self.status.value}).",
                 chave="medida.status_invalido_renovacao",
             )
-        if dias_adicionais < 1 or dias_adicionais > 365:
+        if dias_adicionais < 1 or dias_adicionais > PRORROGACAO_MAXIMA_DIAS:
             raise ValorInvalidoError(
-                "O prazo adicional de prorrogação deve ser entre 1 e 365 dias.",
+                f"O prazo adicional de prorrogação deve ser entre 1 e {PRORROGACAO_MAXIMA_DIAS} dias.",
                 chave="medida.prazo_adicional_invalido",
             )
         just = exigir_texto(justificativa, f"A justificativa técnica para prorrogação deve ter no mínimo {TAMANHO_MINIMO_JUSTIFICATIVA} caracteres.", chave="medida.justificativa_curta", minimo=TAMANHO_MINIMO_JUSTIFICATIVA)

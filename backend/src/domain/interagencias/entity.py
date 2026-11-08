@@ -14,6 +14,7 @@ from uuid import UUID, uuid4
 
 from domain.shared.enums import interpretar_enum
 from domain.shared.exceptions import CampoObrigatorioError
+from domain.shared.prioridade import Prioridade
 from domain.shared.validacao import exigir_texto
 from domain.usuario.entity import Papel
 
@@ -56,13 +57,8 @@ def niveis_sigilo_visiveis(papel: Papel) -> frozenset[NivelSigilo]:
     )
 
 
-class PrioridadeComunicacao(str, Enum):
-    """Grau de urgência do despacho interdepartamental."""
-
-    BAIXA = "BAIXA"
-    MEDIA = "MEDIA"
-    ALTA = "ALTA"
-    URGENTE = "URGENTE"
+# Mesma escala de prioridade das ocorrências (domain/shared/prioridade.py).
+PrioridadeComunicacao = Prioridade
 
 
 class StatusEntrega(str, Enum):

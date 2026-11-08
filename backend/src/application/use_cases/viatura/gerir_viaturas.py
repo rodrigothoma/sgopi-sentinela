@@ -36,7 +36,7 @@ def para_output(v: Viatura, agora: datetime, max_idade: int) -> ViaturaOutput:
         latitude=p.coordenada.latitude if p else None,
         longitude=p.coordenada.longitude if p else None,
         posicao_registrada_em=p.registrada_em.isoformat() if p else None,
-        sinal=v.sinal(agora, max_idade),
+        sinal=v.sinal(agora, max_idade).value,
         versao=v.versao,
     )
 
