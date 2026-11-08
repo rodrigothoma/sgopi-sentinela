@@ -117,9 +117,33 @@ uv run pytest --cov
 cd ../frontend && npx tsc --noEmit && npm run build
 ```
 
+Atalho que repete o CI inteiro localmente (inclui ruff, migrações, testes E2E, piso de cobertura por arquivo, Vitest e `npm audit`):
+
+```bash
+./scripts/verificar.sh            # completo
+./scripts/verificar.sh --rapido   # arquitetura, ruff, testes sem E2E e tsc
+```
+
+Ative uma vez por clone o pre-commit versionado (`./scripts/instalar-hooks.sh`): ele roda ruff e import-linter quando o commit tem Python do backend e `tsc` quando tem TypeScript do frontend. Não o contorne com `--no-verify`.
+
 ---
 
-## 7. 🚫 Higiene de Saída de IA
+## 7. 🧰 Skills de Agentes
+
+Roteiros reutilizáveis em `.claude/skills/<nome>/SKILL.md`. O Claude Code os carrega automaticamente (este arquivo é importado pelo `CLAUDE.md`); agentes de outras ferramentas devem ler o `SKILL.md` correspondente antes da tarefa:
+
+| Skill | Quando usar |
+| :--- | :--- |
+| [`backend-tdd`](.claude/skills/backend-tdd/SKILL.md) | Implementar, alterar ou refatorar o backend com TDD (testes por camada, fakes, padrões do projeto) |
+| [`frontend-tdd`](.claude/skills/frontend-tdd/SKILL.md) | Implementar, alterar ou refatorar o frontend com TDD (Vitest para lógica, Cypress para fluxos) |
+| [`verificar`](.claude/skills/verificar/SKILL.md) | Antes de commitar, abrir PR ou concluir uma tarefa: roda `scripts/verificar.sh` e corrige as falhas |
+| [`handoff`](.claude/skills/handoff/SKILL.md) | Passar o trabalho para outra sessão de agente (documento de passagem em diretório temporário) |
+
+A arquitetura e as regras ficam neste arquivo; as skills só trazem o roteiro de trabalho e apontam para cá.
+
+---
+
+## 8. 🚫 Higiene de Saída de IA
 
 * **NUNCA** inclua artefatos de chat de LLM (`contentReference`, notas de prompt, etc.) em arquivos de código ou documentação.
 * Commits devem seguir rigorosamente o padrão **Conventional Commits** (`feat(escopo): ...`, `fix(escopo): ...`, `docs(escopo): ...`).

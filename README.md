@@ -112,6 +112,15 @@ cp .env.example .env
 npm run dev                     # http://localhost:3000 (proxy /v1 e WebSocket para o backend)
 ```
 
+### Antes de commitar
+
+```bash
+./scripts/instalar-hooks.sh       # uma vez por clone: ativa o pre-commit (ruff, import-linter e tsc)
+./scripts/verificar.sh            # repete o CI localmente (use --rapido durante o desenvolvimento)
+```
+
+Agentes de IA seguem o [`AGENTS.md`](AGENTS.md) e as skills em [`.claude/skills/`](.claude/skills/) (`backend-tdd`, `frontend-tdd`, `verificar`, `handoff`).
+
 ### 📋 Quadro de Desenvolvimento (Kanban GitHub Projects)
 Todas as etapas e fatias verticais do projeto estão mapeadas e organizadas no [**Quadro Oficial de Desenvolvimento no GitHub Projects**](https://github.com/users/rodrigothoma/projects/2).
 
