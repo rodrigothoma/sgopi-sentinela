@@ -14,26 +14,7 @@ from domain.laudo.entity import StatusLaudo
 from domain.shared.exceptions import EntidadeNaoEncontradaError
 from domain.usuario.permissoes import Permissao
 
-
-def _laudo_output(laudo) -> LaudoOutput:
-    return LaudoOutput(
-        id=laudo.id,
-        numero_referencia=laudo.numero_referencia,
-        tipo_pericia=laudo.tipo_pericia.value,
-        descricao_solicitacao=laudo.descricao_solicitacao,
-        solicitante_id=laudo.solicitante_id,
-        status=laudo.status.value,
-        solicitado_em=laudo.solicitado_em.isoformat(),
-        atualizado_em=laudo.atualizado_em.isoformat() if laudo.atualizado_em else laudo.solicitado_em.isoformat(),
-        perito_id=laudo.perito_id,
-        ocorrencia_id=laudo.ocorrencia_id,
-        inquerito_id=laudo.inquerito_id,
-        item_apreendido_id=laudo.item_apreendido_id,
-        conclusoes_tecnicas=laudo.conclusoes_tecnicas,
-        arquivo_nome=laudo.arquivo_nome,
-        hash_sha256=laudo.hash_sha256,
-        concluido_em=laudo.concluido_em.isoformat() if laudo.concluido_em else None,
-    )
+from ._mapeadores import para_laudo_output
 
 
 class ListarLaudos(InterfaceListarLaudos):
@@ -59,7 +40,7 @@ class ListarLaudos(InterfaceListarLaudos):
             limit=limit,
             offset=offset,
         )
-        return [_laudo_output(laudo) for laudo in laudos], total
+        return [para_laudo_output(laudo) for laudo in laudos], total
 
 
 class ObterLaudo(InterfaceObterLaudo):
@@ -76,4 +57,4 @@ class ObterLaudo(InterfaceObterLaudo):
                 chave="laudo.nao_encontrado",
                 laudo_id=str(laudo_id),
             )
-        return _laudo_output(laudo)
+        return para_laudo_output(laudo)

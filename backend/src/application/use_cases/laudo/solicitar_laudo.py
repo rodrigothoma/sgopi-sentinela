@@ -21,6 +21,8 @@ from domain.shared.enums import interpretar_enum
 from domain.shared.exceptions import EntidadeNaoEncontradaError
 from domain.usuario.permissoes import Permissao
 
+from ._mapeadores import para_laudo_output
+
 
 class SolicitarLaudo(InterfaceSolicitarLaudo):
     def __init__(
@@ -98,16 +100,4 @@ class SolicitarLaudo(InterfaceSolicitarLaudo):
             )
             await self._uow.commit()
 
-        return LaudoOutput(
-            id=laudo.id,
-            numero_referencia=laudo.numero_referencia,
-            tipo_pericia=laudo.tipo_pericia.value,
-            descricao_solicitacao=laudo.descricao_solicitacao,
-            solicitante_id=laudo.solicitante_id,
-            status=laudo.status.value,
-            solicitado_em=laudo.solicitado_em.isoformat(),
-            atualizado_em=laudo.atualizado_em.isoformat() if laudo.atualizado_em else laudo.solicitado_em.isoformat(),
-            ocorrencia_id=laudo.ocorrencia_id,
-            inquerito_id=laudo.inquerito_id,
-            item_apreendido_id=laudo.item_apreendido_id,
-        )
+        return para_laudo_output(laudo)
