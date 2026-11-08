@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Pre-commit do SGOPI Sentinela: barra no commit o que reprovaria no CI.
+# Só roda as checagens das áreas com arquivos no commit (backend e/ou frontend).
+# Instalação (uma vez por clone): ./scripts/instalar-hooks.sh
+# Emergência: git commit --no-verify (o CI continua checando tudo).
+set -euo pipefail
+
+raiz="$(git rev-parse --show-toplevel)"
+mapfile -t arquivos < <(git diff --cached --name-only --diff-filter=ACMR)
+[ "${#arquivos[@]}" -eq 0 ] && exit 0
+
+py_backend=()
+ts_frontend=0
+for f in "${arquivos[@]}"; do
+  case "$f" in
+    backend/*.py) py_backend+=("${f#backend/}") ;;
+    frontend/*.ts|frontend/*.tsx) ts_frontend=1 ;;
+  esac
+done
+
+falhou=0
+etapa() { printf '\n\033[1m[pre-commit] %s\033[0m\n' "$1"; }
+
+# Mesmas pastas da checagem do CI; o padrão é montado em partes para o hook não acusar a si mesmo.
+marcador="content""Reference"
+mapfile -t vigiados < <(printf '%s\n' "${arquivos[@]}" | grep -E '^(docs|backend/src|frontend/src)/' || true)
+if [ "${#vigiados[@]}" -gt 0 ] && grep -n "$marcador" -- "${vigiados[@]}" 2>/dev/null; then
+  echo "[pre-commit] Artefato de chat de IA ($marcador) nos arquivos acima." >&2
+  falhou=1
+fi
+
+if [ "${#py_backend[@]}" -gt 0 ]; then
+  cd "$raiz/backend"
+  etapa "ruff (${#py_backend[@]} arquivo(s) do backend)"
+  uv tool run ruff check "${py_backend[@]}" || falhou=1
+  etapa "import-linter (contratos da arquitetura hexagonal)"
+  PYTHONPATH=src uv run lint-imports --config pyproject.toml >/dev/null || {
+    PYTHONPATH=src uv run lint-imports --config pyproject.toml | tail -20
+    falhou=1
+  }
+fi
+
+if [ "$ts_frontend" -eq 1 ]; then
+  cd "$raiz/frontend"
+  etapa "tsc --noEmit (frontend)"
+  npx --no-install tsc --noEmit || falhou=1
+fi
+
+if [ "$falhou" -ne 0 ]; then
+  printf '\n\033[31m[pre-commit] Commit bloqueado: corrija os erros acima (ruff: uv tool run ruff check --fix).\033[0m\n' >&2
+  exit 1
+fi
