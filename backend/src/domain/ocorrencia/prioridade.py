@@ -12,7 +12,7 @@ import unicodedata
 from collections.abc import Iterable
 from enum import Enum
 
-from domain.shared.exceptions import ValorInvalidoError
+from domain.shared.enums import interpretar_enum
 
 
 class PrioridadeOcorrencia(str, Enum):
@@ -85,7 +85,6 @@ def interpretar_prioridade(valor: str | None) -> PrioridadeOcorrencia | None:
     """Texto da borda → enum; vazio significa "deixar o sistema sugerir"."""
     if valor is None or not valor.strip():
         return None
-    try:
-        return PrioridadeOcorrencia(valor.strip().upper())
-    except ValueError as exc:
-        raise ValorInvalidoError(f"Prioridade inválida: {valor}", chave="ocorrencia.prioridade_invalida") from exc
+    return interpretar_enum(
+        PrioridadeOcorrencia, valor, "ocorrencia.prioridade_invalida", "Prioridade inválida: {valor}", normalizar=True
+    )

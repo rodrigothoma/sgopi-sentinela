@@ -13,11 +13,13 @@ from enum import Enum
 from typing import ClassVar
 from uuid import UUID, uuid4
 
-from domain.shared.exceptions import CampoObrigatorioError, ConflitoError, ValorInvalidoError
+from domain.shared.exceptions import ConflitoError, ValorInvalidoError
 from domain.shared.maquina_estados import MaquinaEstados
+from domain.shared.validacao import exigir_texto
 from domain.shared.versionado import Versionado
 
 TAMANHO_MINIMO_EMENTA = 10
+TAMANHO_MINIMO_TEXTO = 10  # relatório final e motivo de arquivamento
 
 
 class StatusInquerito(str, Enum):
@@ -80,14 +82,13 @@ class Inquerito(Versionado):
         instante: datetime,
         ocorrencias_iniciais_ids: list[UUID] | None = None,
     ) -> Inquerito:
-        ementa_limpa = ementa.strip() if ementa else ""
-        if len(ementa_limpa) < TAMANHO_MINIMO_EMENTA:
-            raise CampoObrigatorioError(
-                f"A ementa do inquérito deve conter no mínimo {TAMANHO_MINIMO_EMENTA} caracteres.",
-                chave="inquerito.ementa_curta",
-            )
-        if not numero or not numero.strip():
-            raise CampoObrigatorioError("Número do inquérito é obrigatório.", chave="inquerito.numero_obrigatorio")
+        ementa_limpa = exigir_texto(
+            ementa,
+            f"A ementa do inquérito deve conter no mínimo {TAMANHO_MINIMO_EMENTA} caracteres.",
+            chave="inquerito.ementa_curta",
+            minimo=TAMANHO_MINIMO_EMENTA,
+        )
+        exigir_texto(numero, "Número do inquérito é obrigatório.", chave="inquerito.numero_obrigatorio")
 
         return cls(
             numero=numero.strip(),
@@ -126,12 +127,7 @@ class Inquerito(Versionado):
                 f"Apenas inquéritos em andamento podem ser concluídos (status: {self.status.value}).",
                 chave="inquerito.ja_finalizado",
             )
-        relatorio = relatorio_final.strip() if relatorio_final else ""
-        if len(relatorio) < TAMANHO_MINIMO_EMENTA:
-            raise ValorInvalidoError(
-                "O relatório final de conclusão deve conter no mínimo 10 caracteres.",
-                chave="inquerito.relatorio_curto",
-            )
+        relatorio = exigir_texto(relatorio_final, f"O relatório final de conclusão deve conter no mínimo {TAMANHO_MINIMO_TEXTO} caracteres.", chave="inquerito.relatorio_curto", minimo=TAMANHO_MINIMO_TEXTO, erro=ValorInvalidoError)
         self.status = destino
         self.relatorio_final = relatorio
         self.concluido_em = instante
@@ -144,12 +140,7 @@ class Inquerito(Versionado):
                 f"Apenas inquéritos em andamento podem ser arquivados (status: {self.status.value}).",
                 chave="inquerito.ja_finalizado",
             )
-        motivo_limpo = motivo.strip() if motivo else ""
-        if len(motivo_limpo) < TAMANHO_MINIMO_EMENTA:
-            raise ValorInvalidoError(
-                "O motivo do arquivamento deve conter no mínimo 10 caracteres.",
-                chave="inquerito.motivo_curto",
-            )
+        motivo_limpo = exigir_texto(motivo, f"O motivo do arquivamento deve conter no mínimo {TAMANHO_MINIMO_TEXTO} caracteres.", chave="inquerito.motivo_curto", minimo=TAMANHO_MINIMO_TEXTO, erro=ValorInvalidoError)
         self.status = destino
         self.motivo_arquivamento = motivo_limpo
         self.concluido_em = instante

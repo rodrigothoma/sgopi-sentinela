@@ -36,16 +36,10 @@ from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia.apreensao import EstadoConservacao, ItemApreendido, TipoItemApreendido, UnidadeMedida
 from domain.ocorrencia.entity import Ocorrencia
+from domain.shared.enums import interpretar_enum
 from domain.shared.exceptions import AcessoNegadoError, ConflitoError, ValorInvalidoError
 from domain.usuario.entity import Papel
 from domain.usuario.permissoes import Permissao
-
-
-def _enum[T](tipo: type[T], valor: str, chave: str) -> T:
-    try:
-        return tipo(valor)  # type: ignore[call-arg]
-    except ValueError as exc:
-        raise ValorInvalidoError(f"Valor inválido: {valor}", chave=chave, valor=valor) from exc
 
 
 def _exigir_acesso_a_ocorrencia(ator: Ator, ocorrencia: Ocorrencia) -> None:
@@ -57,11 +51,11 @@ def _exigir_acesso_a_ocorrencia(ator: Ator, ocorrencia: Ocorrencia) -> None:
 def montar_item(dto: RegistrarItemApreendidoInput | ItemApreendidoInputDTO, *, agora: datetime, por_id: UUID) -> ItemApreendido:
     """DTO → entidade (valida enums e regras do item); compartilhado com o registro concomitante (RF01*)."""
     return ItemApreendido(
-        tipo=_enum(TipoItemApreendido, dto.tipo, "apreensao.tipo_invalido"),
+        tipo=interpretar_enum(TipoItemApreendido, dto.tipo, "apreensao.tipo_invalido"),
         descricao=dto.descricao,
         quantidade=dto.quantidade,
-        unidade=_enum(UnidadeMedida, dto.unidade, "apreensao.unidade_invalida"),
-        estado_conservacao=_enum(EstadoConservacao, dto.estado_conservacao, "apreensao.estado_invalido"),
+        unidade=interpretar_enum(UnidadeMedida, dto.unidade, "apreensao.unidade_invalida"),
+        estado_conservacao=interpretar_enum(EstadoConservacao, dto.estado_conservacao, "apreensao.estado_invalido"),
         numero_lacre=dto.numero_lacre,
         numero_serie=dto.numero_serie,
         marca=dto.marca,

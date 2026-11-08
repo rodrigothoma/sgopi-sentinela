@@ -14,7 +14,11 @@ from uuid import UUID, uuid4
 
 from domain.shared.exceptions import CampoObrigatorioError, ConflitoError, ValorInvalidoError
 from domain.shared.maquina_estados import MaquinaEstados
+from domain.shared.validacao import exigir_texto
 from domain.shared.versionado import Versionado
+
+TAMANHO_MINIMO_JUSTIFICATIVA = 10
+TAMANHO_MINIMO_MOTIVO = 10
 
 
 class StatusMedida(str, Enum):
@@ -141,12 +145,7 @@ class MedidaProtetiva(Versionado):
                 "O prazo adicional de prorrogação deve ser entre 1 e 365 dias.",
                 chave="medida.prazo_adicional_invalido",
             )
-        just = justificativa.strip() if justificativa else ""
-        if len(just) < 10:
-            raise CampoObrigatorioError(
-                "A justificativa técnica para prorrogação deve ter no mínimo 10 caracteres.",
-                chave="medida.justificativa_curta",
-            )
+        just = exigir_texto(justificativa, f"A justificativa técnica para prorrogação deve ter no mínimo {TAMANHO_MINIMO_JUSTIFICATIVA} caracteres.", chave="medida.justificativa_curta", minimo=TAMANHO_MINIMO_JUSTIFICATIVA)
 
         self.prazo_dias += dias_adicionais
         self.data_vencimento = self.data_vencimento + timedelta(days=dias_adicionais)
@@ -161,12 +160,7 @@ class MedidaProtetiva(Versionado):
                 f"Apenas medidas ativas podem ser revogadas (status: {self.status.value}).",
                 chave="medida.status_invalido_revogacao",
             )
-        motivo_limpo = motivo.strip() if motivo else ""
-        if len(motivo_limpo) < 10:
-            raise CampoObrigatorioError(
-                "O motivo da revogação deve ter no mínimo 10 caracteres.",
-                chave="medida.motivo_curto",
-            )
+        motivo_limpo = exigir_texto(motivo, f"O motivo da revogação deve ter no mínimo {TAMANHO_MINIMO_MOTIVO} caracteres.", chave="medida.motivo_curto", minimo=TAMANHO_MINIMO_MOTIVO)
         self.status = destino
         self.motivo_revogacao = motivo_limpo
         self._tocar(instante)

@@ -13,9 +13,10 @@ from datetime import datetime, timedelta
 from enum import Enum
 from uuid import UUID, uuid4
 
-from domain.shared.exceptions import CampoObrigatorioError, TransicaoInvalidaError, ValorInvalidoError
+from domain.shared.exceptions import TransicaoInvalidaError, ValorInvalidoError
 from domain.shared.geo import Coordenada
 from domain.shared.maquina_estados import MaquinaEstados
+from domain.shared.validacao import exigir_texto
 from domain.shared.versionado import Versionado
 
 
@@ -72,10 +73,8 @@ class Viatura(Versionado):
     atualizada_em: datetime | None = None
 
     def __post_init__(self) -> None:
-        if not self.prefixo or not self.prefixo.strip():
-            raise CampoObrigatorioError("Prefixo da viatura é obrigatório.", chave="viatura.prefixo_vazio")
-        if not self.placa or not self.placa.strip():
-            raise CampoObrigatorioError("Placa da viatura é obrigatória.", chave="viatura.placa_vazia")
+        exigir_texto(self.prefixo, "Prefixo da viatura é obrigatório.", chave="viatura.prefixo_vazio")
+        exigir_texto(self.placa, "Placa da viatura é obrigatória.", chave="viatura.placa_vazia")
         self.prefixo = self.prefixo.strip().upper()
         self.placa = self.placa.strip().upper().replace(" ", "")
 

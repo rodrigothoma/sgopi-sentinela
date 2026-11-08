@@ -23,7 +23,7 @@ from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, OrigemOcorrencia, TipificacaoPenal, TipoEnvolvido
 from domain.ocorrencia.prioridade import interpretar_prioridade
-from domain.shared.exceptions import ValorInvalidoError
+from domain.shared.enums import interpretar_enum
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
 
@@ -119,7 +119,4 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
 
 
 def _tipo_envolvido(valor: str) -> TipoEnvolvido:
-    try:
-        return TipoEnvolvido(valor)
-    except ValueError as exc:
-        raise ValorInvalidoError(f"Tipo de envolvido inválido: {valor}", chave="envolvido.tipo_invalido") from exc
+    return interpretar_enum(TipoEnvolvido, valor, "envolvido.tipo_invalido", "Tipo de envolvido inválido: {valor}")

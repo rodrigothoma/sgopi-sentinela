@@ -13,7 +13,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 from uuid import UUID, uuid4
 
+from domain.shared.enums import interpretar_enum
 from domain.shared.exceptions import CampoObrigatorioError, ConflitoError, ValorInvalidoError
+from domain.shared.validacao import exigir_texto
 
 
 class Papel(str, Enum):
@@ -48,10 +50,8 @@ class Usuario:
     id: UUID = field(default_factory=uuid4)
 
     def __post_init__(self) -> None:
-        if not self.nome or not self.nome.strip():
-            raise CampoObrigatorioError("Nome do usuário é obrigatório.", chave="usuario.nome_vazio")
-        if not self.login or not self.login.strip():
-            raise CampoObrigatorioError("Login é obrigatório.", chave="usuario.login_vazio")
+        exigir_texto(self.nome, "Nome do usuário é obrigatório.", chave="usuario.nome_vazio")
+        exigir_texto(self.login, "Login é obrigatório.", chave="usuario.login_vazio")
         if not self.senha_hash:
             raise CampoObrigatorioError("Hash de senha é obrigatório.", chave="usuario.senha_vazia")
         self.login = self.login.strip().lower()
@@ -113,9 +113,6 @@ def _exigir_papel_atribuivel(papel: Papel) -> None:
 
 def interpretar_papel(valor: str) -> Papel:
     """Texto da borda → ``Papel`` atribuível."""
-    try:
-        papel = Papel((valor or "").strip().upper())
-    except ValueError as exc:
-        raise ValorInvalidoError(f"Papel inválido: {valor}", chave="usuario.papel_invalido") from exc
+    papel = interpretar_enum(Papel, valor, "usuario.papel_invalido", "Papel inválido: {valor}", normalizar=True)
     _exigir_papel_atribuivel(papel)
     return papel

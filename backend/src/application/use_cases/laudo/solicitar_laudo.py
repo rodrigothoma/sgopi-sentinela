@@ -17,7 +17,8 @@ from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.laudo.entity import LaudoPericial, TipoPericia
-from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
+from domain.shared.enums import interpretar_enum
+from domain.shared.exceptions import EntidadeNaoEncontradaError
 from domain.usuario.permissoes import Permissao
 
 
@@ -61,13 +62,7 @@ class SolicitarLaudo(InterfaceSolicitarLaudo):
                     inquerito_id=str(dados.inquerito_id),
                 )
 
-        try:
-            tipo_enum = TipoPericia(dados.tipo_pericia)
-        except ValueError as exc:
-            raise ValorInvalidoError(
-                f"Tipo de perícia inválido: {dados.tipo_pericia}",
-                chave="laudo.tipo_invalido",
-            ) from exc
+        tipo_enum = interpretar_enum(TipoPericia, dados.tipo_pericia, "laudo.tipo_invalido", "Tipo de perícia inválido: {valor}")
 
         agora = self._relogio.agora()
         numero_ref = await self._gerador.proximo(agora.year)

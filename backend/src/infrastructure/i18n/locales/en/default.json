@@ -155,6 +155,8 @@
     "periodo_invalido": "Invalid period: the start must precede the end and the range cannot exceed 366 days"
   },
   "interagencias": {
+    "prioridade_invalida": "Invalid priority.",
+    "sigilo_invalido": "Invalid secrecy level.",
     "nao_encontrada": "Interagency communication not found."
   }
 }

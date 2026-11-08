@@ -155,6 +155,8 @@
     "periodo_invalido": "Período inválido: o início deve ser anterior ao fim e o intervalo não pode passar de 366 dias"
   },
   "interagencias": {
+    "prioridade_invalida": "Prioridade inválida.",
+    "sigilo_invalido": "Nível de sigilo inválido.",
     "nao_encontrada": "Comunicação interagências não encontrada."
   }
 }

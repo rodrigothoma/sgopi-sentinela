@@ -12,8 +12,13 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
+from domain.shared.enums import interpretar_enum
 from domain.shared.exceptions import CampoObrigatorioError
+from domain.shared.validacao import exigir_texto
 from domain.usuario.entity import Papel
+
+TAMANHO_MINIMO_ASSUNTO = 5
+TAMANHO_MINIMO_CORPO = 10
 
 
 class DepartamentoSeguranca(str, Enum):
@@ -102,31 +107,21 @@ class ComunicacaoInteragencias:
         mensagem_pai_id: UUID | None = None,
         instante: datetime,
     ) -> ComunicacaoInteragencias:
-        if not numero_oficio or not numero_oficio.strip():
-            raise CampoObrigatorioError("O número de ofício é obrigatório.")
-        if not departamento_origem or not departamento_origem.strip():
-            raise CampoObrigatorioError("O departamento de origem é obrigatório.")
+        exigir_texto(numero_oficio, "O número de ofício é obrigatório.")
+        exigir_texto(departamento_origem, "O departamento de origem é obrigatório.")
         if not departamentos_destinatarios:
             raise CampoObrigatorioError("Informe ao menos um departamento destinatário.")
 
-        ass = assunto.strip() if assunto else ""
-        if len(ass) < 5:
-            raise CampoObrigatorioError("O assunto da comunicação deve ter ao menos 5 caracteres.")
-        corp = corpo.strip() if corpo else ""
-        if len(corp) < 10:
-            raise CampoObrigatorioError("O conteúdo da comunicação deve ter ao menos 10 caracteres.")
+        ass = exigir_texto(assunto, f"O assunto da comunicação deve ter ao menos {TAMANHO_MINIMO_ASSUNTO} caracteres.", minimo=TAMANHO_MINIMO_ASSUNTO)
+        corp = exigir_texto(corpo, f"O conteúdo da comunicação deve ter ao menos {TAMANHO_MINIMO_CORPO} caracteres.", minimo=TAMANHO_MINIMO_CORPO)
 
-        if isinstance(nivel_sigilo, str):
-            try:
-                nivel_sigilo = NivelSigilo(nivel_sigilo.strip().upper())
-            except ValueError:
-                nivel_sigilo = NivelSigilo.PADRAO
-
-        if isinstance(prioridade, str):
-            try:
-                prioridade = PrioridadeComunicacao(prioridade.strip().upper())
-            except ValueError:
-                prioridade = PrioridadeComunicacao.MEDIA
+        # Sigilo inválido é recusado: tratá-lo como PADRAO tornaria público um ofício que se quis restrito.
+        nivel_sigilo = interpretar_enum(
+            NivelSigilo, nivel_sigilo, "interagencias.sigilo_invalido", "Nível de sigilo inválido: {valor}", normalizar=True
+        )
+        prioridade = interpretar_enum(
+            PrioridadeComunicacao, prioridade, "interagencias.prioridade_invalida", "Prioridade inválida: {valor}", normalizar=True
+        )
 
         agora = instante  # vem do Relogio do caso de uso (aware); o domínio não lê o relógio
 

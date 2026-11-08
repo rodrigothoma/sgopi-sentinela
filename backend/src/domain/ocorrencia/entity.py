@@ -42,6 +42,7 @@ from domain.shared.exceptions import (
     ValorInvalidoError,
 )
 from domain.shared.geo import Coordenada
+from domain.shared.validacao import exigir_texto
 from domain.shared.versionado import Versionado
 
 TAMANHO_MINIMO_DESCRICAO = 20
@@ -89,8 +90,7 @@ class Envolvido:
     telefone: str | None = None
 
     def __post_init__(self) -> None:
-        if not self.nome or not self.nome.strip():
-            raise CampoObrigatorioError("Nome do envolvido é obrigatório.", chave="envolvido.nome_vazio")
+        exigir_texto(self.nome, "Nome do envolvido é obrigatório.", chave="envolvido.nome_vazio")
         if any(c.isdigit() for c in self.nome):
             raise ValorInvalidoError("Nome do envolvido não pode conter números.", chave="envolvido.nome_invalido")
         self.nome = self.nome.strip()
@@ -109,12 +109,8 @@ class TipificacaoPenal:
     descricao: str
 
     def __post_init__(self) -> None:
-        if not self.artigo or not self.artigo.strip():
-            raise CampoObrigatorioError("Artigo da tipificação é obrigatório.", chave="tipificacao.artigo_vazio")
-        if not self.descricao or not self.descricao.strip():
-            raise CampoObrigatorioError(
-                "Descrição da tipificação é obrigatória.", chave="tipificacao.descricao_vazia"
-            )
+        exigir_texto(self.artigo, "Artigo da tipificação é obrigatório.", chave="tipificacao.artigo_vazio")
+        exigir_texto(self.descricao, "Descrição da tipificação é obrigatória.", chave="tipificacao.descricao_vazia")
 
 
 @dataclass(frozen=True)
@@ -294,18 +290,15 @@ class Ocorrencia(Versionado):
     def _validar_campos(
         natureza: str, descricao: str, localizacao: str, data_hora_fato: datetime, agora: datetime
     ) -> None:
-        if not natureza or not natureza.strip():
-            raise CampoObrigatorioError("A natureza da ocorrência é obrigatória.", chave="ocorrencia.natureza_vazia")
-        if not descricao or not descricao.strip():
-            raise CampoObrigatorioError("A descrição da ocorrência não pode ser vazia.", chave="ocorrencia.descricao_vazia")
+        exigir_texto(natureza, "A natureza da ocorrência é obrigatória.", chave="ocorrencia.natureza_vazia")
+        exigir_texto(descricao, "A descrição da ocorrência não pode ser vazia.", chave="ocorrencia.descricao_vazia")
         if len(descricao.strip()) < TAMANHO_MINIMO_DESCRICAO:
             raise ValorInvalidoError(
                 f"A descrição deve ter ao menos {TAMANHO_MINIMO_DESCRICAO} caracteres.",
                 chave="ocorrencia.descricao_curta",
                 minimo=TAMANHO_MINIMO_DESCRICAO,
             )
-        if not localizacao or not localizacao.strip():
-            raise CampoObrigatorioError("A localização da ocorrência é obrigatória.", chave="ocorrencia.localizacao_vazia")
+        exigir_texto(localizacao, "A localização da ocorrência é obrigatória.", chave="ocorrencia.localizacao_vazia")
         if data_hora_fato.tzinfo is None or agora.tzinfo is None:
             raise ValorInvalidoError("Datas devem ter fuso horário.", chave="ocorrencia.data_sem_fuso")
         if data_hora_fato > agora:
@@ -513,8 +506,7 @@ class Ocorrencia(Versionado):
 
     def encerrar(self, ator_id: UUID, desfecho: str, em: datetime) -> None:
         """EM_ATENDIMENTO → ENCERRADA com desfecho textual obrigatório (RF02)."""
-        if not desfecho or not desfecho.strip():
-            raise CampoObrigatorioError("O desfecho do atendimento é obrigatório.", chave="ocorrencia.desfecho_vazio")
+        exigir_texto(desfecho, "O desfecho do atendimento é obrigatório.", chave="ocorrencia.desfecho_vazio")
         self._transicionar(OperacaoOcorrencia.ENCERRAR, ator_id, em, desfecho.strip())
         self.desfecho = desfecho.strip()
 
