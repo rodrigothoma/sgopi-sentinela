@@ -8,7 +8,7 @@ e prorrogações auditadas para proteção de vítimas qualificadas em ocorrênc
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -47,13 +47,13 @@ class MedidaProtetiva:
     data_inicio: date
     prazo_dias: int
     data_vencimento: date
+    criada_em: datetime  # instante do Relogio do caso de uso: o domínio não lê o relógio
     id: UUID = field(default_factory=uuid4)
     distancia_minima_metros: int | None = None
     condicoes_especificas: str | None = None
     motivo_revogacao: str | None = None
     justificativa_renovacao: str | None = None
     status: StatusMedida = StatusMedida.ATIVA
-    criada_em: datetime = field(default_factory=lambda: datetime.now(UTC))
     atualizada_em: datetime | None = None
     ativo: bool = True
     versao: int = 1

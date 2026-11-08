@@ -1,6 +1,7 @@
 """Caso de uso: Motor avançado de sugestão de conexões criminais entre ocorrências (RF06 / UC06 / sq06)."""
 from __future__ import annotations
 
+import logging
 import re
 import unicodedata
 from dataclasses import dataclass, field
@@ -23,6 +24,8 @@ from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoEr
 from domain.shared.geo import Coordenada
 
 # Busca
+log = logging.getLogger("sgopi.inqueritos.conexoes")
+
 LIMITE_CANDIDATAS = 150
 DIAS_JANELA_AREAS_RISCO = 30
 
@@ -414,4 +417,5 @@ class BuscarConexoesOcorrencia(InterfaceBuscarConexoesOcorrencia):
         try:
             return await self._areas_risco_uc.executar(dias=DIAS_JANELA_AREAS_RISCO)
         except Exception:
+            log.exception("Falha ao calcular áreas de risco; conexões seguem sem esse critério.")
             return []

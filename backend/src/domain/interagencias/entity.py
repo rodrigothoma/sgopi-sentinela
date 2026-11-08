@@ -8,7 +8,7 @@ e documentos operacionais entre diferentes forças e departamentos de segurança
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -77,13 +77,13 @@ class ComunicacaoInteragencias:
     remetente_id: UUID
     assunto: str
     corpo: str
+    criada_em: datetime  # instante do Relogio do caso de uso: o domínio não lê o relógio
     id: UUID = field(default_factory=uuid4)
     protocolo_ocorrencia: str | None = None
     nivel_sigilo: NivelSigilo = NivelSigilo.PADRAO
     prioridade: PrioridadeComunicacao = PrioridadeComunicacao.MEDIA
     status_entrega: StatusEntrega = StatusEntrega.ENTREGUE
     mensagem_pai_id: UUID | None = None
-    criada_em: datetime = field(default_factory=lambda: datetime.now(UTC))
     ativo: bool = True
 
     @classmethod

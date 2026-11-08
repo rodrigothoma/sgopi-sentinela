@@ -7,7 +7,7 @@ Trata de notificações e alertas em tempo real no sistema policial.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -48,6 +48,7 @@ class Notificacao:
 
     titulo: str
     mensagem: str
+    criada_em: datetime  # instante do Relogio do caso de uso: o domínio não lê o relógio
     tipo: TipoNotificacao = TipoNotificacao.SISTEMA
     prioridade: PrioridadeNotificacao = PrioridadeNotificacao.MEDIA
     id: UUID = field(default_factory=uuid4)
@@ -58,7 +59,6 @@ class Notificacao:
     lida: bool = False
     lida_em: datetime | None = None
     metadados: dict | None = None
-    criada_em: datetime = field(default_factory=lambda: datetime.now(UTC))
     ativo: bool = True
 
     @classmethod
