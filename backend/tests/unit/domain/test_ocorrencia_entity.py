@@ -461,3 +461,9 @@ def test_exigir_despachavel_so_em_validada_ou_em_atendimento():
         oc.exigir_despachavel()
     assert erro.value.detalhes["operacao"] == "despachar"
     _validada().exigir_despachavel()
+
+
+def test_versao_de_hash_desconhecida_e_recusada():
+    with pytest.raises(ValorInvalidoError) as erro:
+        _validada().calcular_hash_narrativa(99)
+    assert erro.value.chave == "documento.versao_hash_desconhecida"

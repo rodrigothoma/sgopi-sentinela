@@ -14,8 +14,6 @@ pública de autenticidade emitida na validação — ver ``domain/ocorrencia/aut
 """
 from __future__ import annotations
 
-import hashlib
-import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -23,6 +21,7 @@ from uuid import UUID, uuid4
 
 from domain.ocorrencia.apreensao import ItemApreendido, MovimentacaoCustodia
 from domain.ocorrencia.autenticidade import SituacaoDocumento, gerar_chave_autenticidade
+from domain.ocorrencia.hash_narrativa import VERSAO_HASH_ATUAL, VERSAO_HASH_LEGADA, calcular_hash
 from domain.ocorrencia.prioridade import PRIORIDADE_PADRAO, PrioridadeOcorrencia, sugerir_prioridade
 from domain.ocorrencia.status import (
     ESTADOS_ACEITAM_APREENSAO,
@@ -50,9 +49,6 @@ TAMANHO_MINIMO_DESCRICAO = 20
 TAMANHO_MINIMO_JUSTIFICATIVA = 10
 TAMANHO_MINIMO_MOTIVO = 10
 MAXIMO_EVIDENCIAS_POR_OCORRENCIA = 10
-# Algoritmo do hash_narrativa: v1 (legado, junção por "\n"/"|", ambígua) e v2 (JSON canônico + evidências)
-VERSAO_HASH_LEGADA = 1
-VERSAO_HASH_ATUAL = 2
 
 
 class OrigemOcorrencia(str, Enum):
@@ -585,33 +581,7 @@ class Ocorrencia(Versionado):
         uma ocorrência ainda não validada usa a versão atual.
         """
         versao = versao or self.hash_versao or (VERSAO_HASH_LEGADA if self.hash_narrativa else VERSAO_HASH_ATUAL)
-        conteudo = self._conteudo_hash_v1() if versao == VERSAO_HASH_LEGADA else self._conteudo_hash_v2()
-        return hashlib.sha256(conteudo.encode("utf-8")).hexdigest()
-
-    def _conteudo_hash_v1(self) -> str:
-        """Legado: separadores sem escape permitiam colisão deslocando texto entre campos (N5)."""
-        partes = [self.natureza, self.descricao, self.localizacao, self.data_hora_fato.isoformat()]
-        partes += sorted(f"{e.tipo.value}|{e.nome}|{e.documento or ''}" for e in self.envolvidos)
-        partes += sorted(f"{t.artigo}|{t.descricao}" for t in self.tipificacoes)
-        return "\n".join(partes)
-
-    def _conteudo_hash_v2(self) -> str:
-        """JSON canônico (campos nomeados, chaves ordenadas): sem ambiguidade entre campos.
-
-        Inclui o SHA-256 das evidências, que não mudam após a validação. Itens apreendidos ficam
-        de fora: a custódia continua sendo movimentada depois da emissão do documento.
-        """
-        documento = {
-            "versao": VERSAO_HASH_ATUAL,
-            "natureza": self.natureza,
-            "descricao": self.descricao,
-            "localizacao": self.localizacao,
-            "data_hora_fato": self.data_hora_fato.isoformat(),
-            "envolvidos": sorted([e.tipo.value, e.nome, e.documento or ""] for e in self.envolvidos),
-            "tipificacoes": sorted([t.artigo, t.descricao] for t in self.tipificacoes),
-            "evidencias": sorted(e.hash_sha256 for e in self.evidencias),
-        }
-        return json.dumps(documento, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+        return calcular_hash(self, versao)
 
     def narrativa_integra(self) -> bool | None:
         """None se ainda não foi validada; True/False se o hash confere (na versão com que foi emitido)."""

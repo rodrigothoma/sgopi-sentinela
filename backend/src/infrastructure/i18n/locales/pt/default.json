@@ -134,6 +134,7 @@
     "sem_itens": "A ocorrência não possui itens apreendidos para emitir o auto"
   },
   "documento": {
+    "versao_hash_desconhecida": "Versão do algoritmo de integridade desconhecida.",
     "not_found": "Documento não localizado. Confira a chave impressa ou procure a delegacia emissora.",
     "codigo_invalido": "Código de verificação inválido: informe a chave de 24 caracteres ou o hash SHA-256 impresso no documento."
   },
