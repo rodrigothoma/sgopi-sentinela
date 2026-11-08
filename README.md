@@ -21,14 +21,15 @@ sgopi-sentinela/
 │   │   │   │                      # apreensão/custódia (extra RF03), autenticidade (extra RF08)
 │   │   │   ├── viatura/           # Viatura, SituacaoViatura, Posicao
 │   │   │   ├── despacho/          # OrdemDeDespacho, serviço de proximidade (Haversine)
-│   │   │   ├── usuario/           # Usuario, Papel
-│   │   │   ├── auditoria/         # RegistroAuditoria
+│   │   │   ├── usuario/           # Usuario, Papel, permissoes.py (catálogo RBAC: Permissao → papéis)
+│   │   │   ├── auditoria/         # RegistroAuditoria, catalogo.py (OperacaoAuditada, EntidadeAuditada)
 │   │   │   ├── inquerito/         # Inquérito policial (extra RF06)
 │   │   │   ├── laudo/             # Laudo pericial (extra RF07)
 │   │   │   ├── medida_protetiva/  # Medida protetiva de urgência (extra RF09)
 │   │   │   ├── interagencias/     # Comunicação interagências / ofícios (extra RF10)
 │   │   │   ├── notificacao/       # Notificações in-app (extra)
-│   │   │   └── shared/            # Exceções (com chave i18n), Coordenada, CPF, documentos, eventos
+│   │   │   └── shared/            # Exceções (chave i18n), Coordenada, CPF, eventos, MaquinaEstados,
+│   │   │                          # mixin Versionado, exigir_texto, interpretar_enum, Prioridade
 │   │   ├── application/
 │   │   │   ├── ports/inbound/     # Interface* + DTOs + Ator (um arquivo por caso de uso)
 │   │   │   ├── ports/outbound/    # Repositorio*, UnidadeDeTrabalho, Relogio, GeradorProtocolo,

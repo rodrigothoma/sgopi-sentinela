@@ -665,7 +665,7 @@ O ciclo de vida operacional da entidade de domínio `Viatura` (`backend/src/doma
 
 * **Identificação:** UC06 — Vincular Ocorrências a Inquéritos
 * **Resumo:** Descreve o agrupamento de uma ou mais ocorrências policiais em um inquérito policial (IP), permitindo a consolidação de investigações complexas.
-* **Ator Principal:** Delegado de Polícia *(a consulta de inquéritos e das sugestões de conexão também é liberada aos perfis de consulta; instaurar, vincular e concluir são atos privativos do Delegado)*
+* **Ator Principal:** Delegado de Polícia *(Supervisor e Operador Central também consultam inquéritos e sugestões de conexão; instaurar, vincular e concluir são atos privativos do Delegado)*
 * **Atores Secundários:** —
 * **Pré-condições:** 
   1. As ocorrências devem estar com status `Validada`.
@@ -852,14 +852,22 @@ Implementado em `backend/src/application/use_cases/inquerito/buscar_conexoes.py`
 | 9 | | Registrar o evento de envio no log de auditoria com assinatura digital do remetente. |
 
 #### Regras de Negócio e Validações
-1. Toda comunicação interagências deve obrigatoriamente estar vinculada a um protocolo oficial existente.
-2. Mensagens com nível `Confidencial` só podem ser lidas por usuários com credencial compatível da agência destinatária.
+1. O vínculo a um protocolo de ocorrência é opcional; quando informado, o protocolo deve existir.
+2. **Sigilo por papel:** como os usuários não têm departamento cadastrado, a credencial compatível é o papel. O remetente sempre lê os próprios ofícios. A regra está em `domain/interagencias/entity.py` (`PAPEIS_POR_NIVEL_SIGILO`) e vale para a listagem, a resposta, as notificações e o evento de tempo real:
+
+   | Nível | Quem lê |
+   | :--- | :--- |
+   | `PADRAO` | Qualquer usuário autenticado |
+   | `RESERVADO` | Delegado, Supervisor, Escrivão e Operador Central |
+   | `CONFIDENCIAL` | Delegado e Supervisor |
+
+   Ofício restrito gera uma notificação por papel autorizado (não por departamento), e responder a um ofício sem acesso responde como inexistente (404). Nível de sigilo ou prioridade desconhecidos são recusados (422), em vez de assumir `PADRAO`.
 3. Não é permitida a exclusão de mensagens após o envio (imutabilidade do RNF03).
 
 #### Cenários Alternativos e de Exceção
 * **Cenário Alternativo I — Resposta / Despacho da Agência Destinatária:** O operador do departamento de destino abre a thread e envia a resposta com o relatório solicitado.
 * **Cenário de Exceção I — Protocolo Inexistente:** O sistema valida o protocolo e recusa o envio até que um protocolo válido seja inserido.
-* **Cenário de Exceção II — Falha de Conexão na Entrega:** O sistema registra a mensagem localmente, define o status da entrega como `Pendente` e agenda retentativas automáticas via mensageria assíncrona (RNF04).
+* **Cenário de Exceção II — Falha de Conexão na Entrega:** O sistema registra a mensagem localmente, define o status da entrega como `Pendente` e agenda retentativas automáticas via mensageria assíncrona (RNF04). *(Não implementado: o módulo é interno ao SGOPI e todo ofício é gravado como `ENTREGUE`.)*
 
 #### Diagrama de Sequência — UC10
 ![Diagrama de Sequência UC10](diagramas/sequencia/sq10-comunicacoes-interagencias.png)
