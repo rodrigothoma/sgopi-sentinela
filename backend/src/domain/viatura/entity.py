@@ -15,6 +15,8 @@ from uuid import UUID, uuid4
 
 from domain.shared.exceptions import CampoObrigatorioError, TransicaoInvalidaError, ValorInvalidoError
 from domain.shared.geo import Coordenada
+from domain.shared.maquina_estados import MaquinaEstados
+from domain.shared.versionado import Versionado
 
 
 class SituacaoViatura(str, Enum):
@@ -22,6 +24,32 @@ class SituacaoViatura(str, Enum):
     EM_DESLOCAMENTO = "EM_DESLOCAMENTO"
     OPERANDO = "OPERANDO"
     INDISPONIVEL = "INDISPONIVEL"
+
+
+class OperacaoViatura(str, Enum):
+    MARCAR_INDISPONIVEL = "marcar_indisponivel"
+    MARCAR_DISPONIVEL = "marcar_disponivel"
+    DESPACHAR = "despachar"
+    CHEGAR_AO_LOCAL = "chegar_ao_local"
+    LIBERAR = "liberar"
+
+
+_D, _I, _E, _O = (
+    SituacaoViatura.DISPONIVEL,
+    SituacaoViatura.INDISPONIVEL,
+    SituacaoViatura.EM_DESLOCAMENTO,
+    SituacaoViatura.OPERANDO,
+)
+MAQUINA_VIATURA: MaquinaEstados[SituacaoViatura, OperacaoViatura] = MaquinaEstados(
+    {
+        (_D, OperacaoViatura.MARCAR_INDISPONIVEL): _I,  # manual; despachada não pode ser retirada (RF02 aceite 2)
+        (_I, OperacaoViatura.MARCAR_DISPONIVEL): _D,
+        (_D, OperacaoViatura.DESPACHAR): _E,
+        (_E, OperacaoViatura.CHEGAR_AO_LOCAL): _O,
+        (_E, OperacaoViatura.LIBERAR): _D,  # fim do atendimento (RF02)
+        (_O, OperacaoViatura.LIBERAR): _D,
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -34,7 +62,7 @@ class Posicao:
 
 
 @dataclass
-class Viatura:
+class Viatura(Versionado):
     prefixo: str
     placa: str
     id: UUID = field(default_factory=uuid4)
@@ -77,34 +105,35 @@ class Viatura:
         return "OK" if self.posicao_valida(agora, max_idade_segundos) else "SEM_SINAL"
 
     # -------------------------------------------------------------- situação
-    def _mudar(self, destino: SituacaoViatura, agora: datetime, permitidas: tuple[SituacaoViatura, ...]) -> None:
-        if self.situacao not in permitidas:
+    def _mudar(self, operacao: OperacaoViatura, agora: datetime) -> None:
+        destino = MAQUINA_VIATURA.proximo(self.situacao, operacao)
+        if destino is None:
+            (alvo,) = MAQUINA_VIATURA.destinos(operacao)
             raise TransicaoInvalidaError(
-                f"Viatura {self.prefixo} em {self.situacao.value} não pode ir para {destino.value}.",
+                f"Viatura {self.prefixo} em {self.situacao.value} não pode ir para {alvo.value}.",
                 chave="viatura.transicao_invalida",
                 situacao_atual=self.situacao.value,
-                destino=destino.value,
+                destino=alvo.value,
             )
         self.situacao = destino
-        self.versao += 1
-        self.atualizada_em = agora
+        self._tocar(agora)
 
     def marcar_indisponivel(self, agora: datetime) -> None:
         """Manual, pelo Operador. Viatura despachada não pode ser retirada (RF02 aceite 2)."""
-        self._mudar(SituacaoViatura.INDISPONIVEL, agora, (SituacaoViatura.DISPONIVEL,))
+        self._mudar(OperacaoViatura.MARCAR_INDISPONIVEL, agora)
 
     def marcar_disponivel(self, agora: datetime) -> None:
-        self._mudar(SituacaoViatura.DISPONIVEL, agora, (SituacaoViatura.INDISPONIVEL,))
+        self._mudar(OperacaoViatura.MARCAR_DISPONIVEL, agora)
 
     def despachar(self, agora: datetime) -> None:
-        self._mudar(SituacaoViatura.EM_DESLOCAMENTO, agora, (SituacaoViatura.DISPONIVEL,))
+        self._mudar(OperacaoViatura.DESPACHAR, agora)
 
     def chegar_ao_local(self, agora: datetime) -> None:
-        self._mudar(SituacaoViatura.OPERANDO, agora, (SituacaoViatura.EM_DESLOCAMENTO,))
+        self._mudar(OperacaoViatura.CHEGAR_AO_LOCAL, agora)
 
     def liberar(self, agora: datetime) -> None:
         """Fim do atendimento (RF02): volta a DISPONIVEL."""
-        self._mudar(SituacaoViatura.DISPONIVEL, agora, (SituacaoViatura.EM_DESLOCAMENTO, SituacaoViatura.OPERANDO))
+        self._mudar(OperacaoViatura.LIBERAR, agora)
 
     @property
     def despachavel(self) -> bool:

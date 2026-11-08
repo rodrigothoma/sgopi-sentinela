@@ -13,6 +13,8 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from domain.shared.exceptions import CampoObrigatorioError, ConflitoError, ValorInvalidoError
+from domain.shared.maquina_estados import MaquinaEstados
+from domain.shared.versionado import Versionado
 
 
 class StatusMedida(str, Enum):
@@ -22,6 +24,21 @@ class StatusMedida(str, Enum):
     RENOVADA = "RENOVADA"
     REVOGADA = "REVOGADA"
     EXPIRADA = "EXPIRADA"
+
+
+# Medida em vigor: pode ser renovada, revogada e gera alerta de vencimento.
+ESTADOS_VIGENTES = frozenset({StatusMedida.ATIVA, StatusMedida.RENOVADA})
+
+
+class OperacaoMedida(str, Enum):
+    RENOVAR = "renovar"
+    REVOGAR = "revogar"
+
+
+MAQUINA_MEDIDA: MaquinaEstados[StatusMedida, OperacaoMedida] = MaquinaEstados(
+    {(origem, OperacaoMedida.RENOVAR): StatusMedida.RENOVADA for origem in ESTADOS_VIGENTES}
+    | {(origem, OperacaoMedida.REVOGAR): StatusMedida.REVOGADA for origem in ESTADOS_VIGENTES}
+)
 
 
 class TipoRestricao(str, Enum):
@@ -35,7 +52,7 @@ class TipoRestricao(str, Enum):
 
 
 @dataclass
-class MedidaProtetiva:
+class MedidaProtetiva(Versionado):
     """Medida restritiva protetiva com prazo temporal e vigilância ativa."""
 
     numero_referencia: str  # Padrão: MP-AAAA-NNNNNN
@@ -113,7 +130,8 @@ class MedidaProtetiva:
         )
 
     def renovar(self, dias_adicionais: int, justificativa: str, instante: datetime) -> None:
-        if self.status not in (StatusMedida.ATIVA, StatusMedida.RENOVADA):
+        destino = MAQUINA_MEDIDA.proximo(self.status, OperacaoMedida.RENOVAR)
+        if destino is None:
             raise ConflitoError(
                 f"Apenas medidas ativas podem ser renovadas (status: {self.status.value}).",
                 chave="medida.status_invalido_renovacao",
@@ -133,12 +151,12 @@ class MedidaProtetiva:
         self.prazo_dias += dias_adicionais
         self.data_vencimento = self.data_vencimento + timedelta(days=dias_adicionais)
         self.justificativa_renovacao = just
-        self.status = StatusMedida.RENOVADA
-        self.atualizada_em = instante
-        self.versao += 1
+        self.status = destino
+        self._tocar(instante)
 
     def revogar(self, motivo: str, instante: datetime) -> None:
-        if self.status not in (StatusMedida.ATIVA, StatusMedida.RENOVADA):
+        destino = MAQUINA_MEDIDA.proximo(self.status, OperacaoMedida.REVOGAR)
+        if destino is None:
             raise ConflitoError(
                 f"Apenas medidas ativas podem ser revogadas (status: {self.status.value}).",
                 chave="medida.status_invalido_revogacao",
@@ -149,17 +167,16 @@ class MedidaProtetiva:
                 "O motivo da revogação deve ter no mínimo 10 caracteres.",
                 chave="medida.motivo_curto",
             )
-        self.status = StatusMedida.REVOGADA
+        self.status = destino
         self.motivo_revogacao = motivo_limpo
-        self.atualizada_em = instante
-        self.versao += 1
+        self._tocar(instante)
 
     def dias_restantes(self, hoje: date) -> int:
         return (self.data_vencimento - hoje).days
 
     def esta_proxima_do_vencimento(self, hoje: date, dias_antecedencia: int = 3) -> bool:
         """Indica se a medida está ativa e vence em até N dias (72h por padrão - UC12) ou já venceu."""
-        if self.status not in (StatusMedida.ATIVA, StatusMedida.RENOVADA):
+        if self.status not in ESTADOS_VIGENTES:
             return False
         return self.dias_restantes(hoje) <= dias_antecedencia
 

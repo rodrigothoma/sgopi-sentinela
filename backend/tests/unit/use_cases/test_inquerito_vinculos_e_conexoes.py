@@ -137,7 +137,7 @@ async def test_conexoes_ignoram_ocorrencias_ja_em_inquerito(registrar, validar, 
     pivo = await validar((await registrar()).ocorrencia_id)
     vinculada = await validar((await registrar()).ocorrencia_id)
     o = await repositorio.buscar_por_id(vinculada)
-    o.vincular_inquerito(uuid4())
+    o.vincular_inquerito(uuid4(), o.atualizada_em)
     await repositorio.salvar(o)
     assert await BuscarConexoesOcorrencia(repositorio).executar(DELEGADO, pivo) == []
 

@@ -24,7 +24,7 @@ from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorren
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
-from domain.medida_protetiva.entity import MedidaProtetiva, StatusMedida
+from domain.medida_protetiva.entity import ESTADOS_VIGENTES, MedidaProtetiva, StatusMedida
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.ocorrencia.entity import Ocorrencia
 from domain.shared.eventos import EventoDominio
@@ -87,7 +87,7 @@ class EmitirAlertaVencimentoMedidaUseCase(InterfaceEmitirAlertaVencimentoMedida)
 
         # Modo automático / Varredura em lote (UC12): todas as medidas ativas próximas do vencimento (<= 3 dias)
         medidas_ativas, _ = await self._repo_medida.listar(
-            status=[StatusMedida.ATIVA, StatusMedida.RENOVADA],
+            status=[s for s in StatusMedida if s in ESTADOS_VIGENTES],
             limit=500,
         )
 

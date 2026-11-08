@@ -10,9 +10,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from domain.shared.exceptions import CampoObrigatorioError, ConflitoError, ValorInvalidoError
+from domain.shared.versionado import Versionado
 
 
 class TipoPericia(str, Enum):
@@ -38,8 +40,10 @@ class StatusLaudo(str, Enum):
 
 
 @dataclass
-class LaudoPericial:
+class LaudoPericial(Versionado):
     """Documento técnico-pericial com integridade garantida por hash criptográfico."""
+
+    CAMPO_ATUALIZACAO: ClassVar[str] = "atualizado_em"
 
     numero_referencia: str  # Padrão: LP-AAAA-NNNNNN
     tipo_pericia: TipoPericia
@@ -110,8 +114,7 @@ class LaudoPericial:
             )
         self.perito_id = perito_id
         self.status = StatusLaudo.EM_ANALISE
-        self.atualizado_em = instante
-        self.versao += 1
+        self._tocar(instante)
 
     def anexar_laudo_concluido(
         self,
@@ -144,5 +147,4 @@ class LaudoPericial:
         self.hash_sha256 = hash_sha256
         self.status = StatusLaudo.CONCLUIDO
         self.concluido_em = instante
-        self.atualizado_em = instante
-        self.versao += 1
+        self._tocar(instante)

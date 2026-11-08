@@ -28,6 +28,7 @@ from domain.ocorrencia.status import (
     ESTADOS_ACEITAM_APREENSAO,
     ESTADOS_EDITAVEIS,
     ESTADOS_PRIORIZAVEIS,
+    OperacaoOcorrencia,
     StatusOcorrencia,
     proximo_estado,
 )
@@ -41,6 +42,7 @@ from domain.shared.exceptions import (
     ValorInvalidoError,
 )
 from domain.shared.geo import Coordenada
+from domain.shared.versionado import Versionado
 
 TAMANHO_MINIMO_DESCRICAO = 20
 TAMANHO_MINIMO_JUSTIFICATIVA = 10
@@ -157,7 +159,7 @@ class RegistroHistoricoStatus:
 
 
 @dataclass
-class Ocorrencia:
+class Ocorrencia(Versionado):
     """
     Agregado raiz. ``__init__`` é reservado à re-hidratação pelo repositório;
     a criação de negócio passa por ``Ocorrencia.registrar(...)``.
@@ -201,23 +203,31 @@ class Ocorrencia:
         if self.atualizada_em is None:
             self.atualizada_em = self.criada_em
 
-    def vincular_inquerito(self, inquerito_id: UUID) -> None:
+    def exigir_vinculavel(self, inquerito_id: UUID | None = None) -> None:
+        """UC06 regras 1 e 3: só VALIDADA entra em inquérito, e em um único inquérito.
+
+        ``inquerito_id`` é o inquérito de destino; ``None`` representa um inquérito ainda
+        não instaurado, com o qual qualquer vínculo existente conflita.
+        """
         if self.status != StatusOcorrencia.VALIDADA:
             raise ConflitoError(
-                f"Apenas ocorrências com status VALIDADA podem ser vinculadas a inquéritos (status atual: {self.status.value}).",
-                chave="ocorrencia.status_invalido_para_inquerito",
+                f"Apenas ocorrências validadas podem ser vinculadas (protocolo {self.numero_protocolo} está {self.status.value}).",
+                chave="inquerito.ocorrencia_nao_validada",
             )
         if self.inquerito_id is not None and self.inquerito_id != inquerito_id:
             raise ConflitoError(
-                "A ocorrência já se encontra vinculada a outro inquérito policial.",
-                chave="ocorrencia.ja_vinculada_a_inquerito",
+                f"A ocorrência {self.numero_protocolo} já se encontra vinculada a outro inquérito policial.",
+                chave="inquerito.ocorrencia_ja_vinculada",
             )
-        self.inquerito_id = inquerito_id
-        self.versao += 1
 
-    def desvincular_inquerito(self) -> None:
+    def vincular_inquerito(self, inquerito_id: UUID, instante: datetime) -> None:
+        self.exigir_vinculavel(inquerito_id)
+        self.inquerito_id = inquerito_id
+        self._tocar(instante)
+
+    def desvincular_inquerito(self, instante: datetime) -> None:
         self.inquerito_id = None
-        self.versao += 1
+        self._tocar(instante)
 
 
     # ------------------------------------------------------------------ factory
@@ -383,12 +393,14 @@ class Ocorrencia:
         return movimentacao
 
     # --------------------------------------------------------------- transições
-    def _transicionar(self, operacao: str, por_id: UUID, em: datetime, justificativa: str | None = None) -> None:
+    def _transicionar(
+        self, operacao: OperacaoOcorrencia, por_id: UUID, em: datetime, justificativa: str | None = None
+    ) -> None:
         destino = proximo_estado(self.status, operacao)
         if destino is None:
             raise TransicaoInvalidaError(
-                f"Operação '{operacao}' não permitida no status {self.status.value}.",
-                operacao=operacao,
+                f"Operação '{operacao.value}' não permitida no status {self.status.value}.",
+                operacao=operacao.value,
                 status_atual=self.status.value,
             )
         self.historico_status.append(
@@ -397,17 +409,13 @@ class Ocorrencia:
         self.status = destino
         self._tocar(em)
 
-    def _tocar(self, em: datetime) -> None:
-        self.versao += 1
-        self.atualizada_em = em
-
     def validar(self, delegado_id: UUID, em: datetime, despacho: str | None = None) -> None:
         """
         AGUARDANDO_REVISAO → VALIDADA; congela a narrativa por hash (DEC-09) e emite o
         documento oficial com sua chave pública de autenticidade (RF08).
         """
         despacho_normalizado = despacho.strip() if despacho and despacho.strip() else None
-        self._transicionar("validar", delegado_id, em, despacho_normalizado)
+        self._transicionar(OperacaoOcorrencia.VALIDAR, delegado_id, em, despacho_normalizado)
         self.validada_por_id = delegado_id
         self.justificativa_revisao = despacho_normalizado
         self.hash_versao = VERSAO_HASH_ATUAL
@@ -428,14 +436,14 @@ class Ocorrencia:
                 status_atual=self.status.value,
             )
         self._exigir_justificativa(justificativa)
-        self._transicionar("devolver_para_correcao", delegado_id, em, justificativa.strip())
+        self._transicionar(OperacaoOcorrencia.DEVOLVER_PARA_CORRECAO, delegado_id, em, justificativa.strip())
         self.validada_por_id = delegado_id
         self.justificativa_revisao = justificativa.strip()
 
     def rejeitar(self, delegado_id: UUID, justificativa: str, em: datetime) -> None:
         """AGUARDANDO_REVISAO → REJEITADA (terminal; justificativa obrigatória)."""
         self._exigir_justificativa(justificativa)
-        self._transicionar("rejeitar", delegado_id, em, justificativa.strip())
+        self._transicionar(OperacaoOcorrencia.REJEITAR, delegado_id, em, justificativa.strip())
         self.validada_por_id = delegado_id
         self.justificativa_revisao = justificativa.strip()
 
@@ -486,11 +494,11 @@ class Ocorrencia:
     def reenviar(self, agente_id: UUID, em: datetime) -> None:
         """EM_CORRECAO → AGUARDANDO_REVISAO pelo Agente autor (RF04)."""
         self._exigir_autor(agente_id)
-        self._transicionar("reenviar", agente_id, em)
+        self._transicionar(OperacaoOcorrencia.REENVIAR, agente_id, em)
 
     def despachar(self, operador_id: UUID, em: datetime) -> None:
         """VALIDADA → EM_ATENDIMENTO (RF02)."""
-        self._transicionar("despachar", operador_id, em)
+        self._transicionar(OperacaoOcorrencia.DESPACHAR, operador_id, em)
 
     def registrar_apoio(self, operador_id: UUID, em: datetime) -> None:
         """Viatura de apoio em ocorrência EM_ATENDIMENTO: não muda o status, mas incrementa a
@@ -507,21 +515,21 @@ class Ocorrencia:
         """EM_ATENDIMENTO → ENCERRADA com desfecho textual obrigatório (RF02)."""
         if not desfecho or not desfecho.strip():
             raise CampoObrigatorioError("O desfecho do atendimento é obrigatório.", chave="ocorrencia.desfecho_vazio")
-        self._transicionar("encerrar", ator_id, em, desfecho.strip())
+        self._transicionar(OperacaoOcorrencia.ENCERRAR, ator_id, em, desfecho.strip())
         self.desfecho = desfecho.strip()
 
     # ------------------------------------------- atos administrativos do Delegado
     def arquivar(self, delegado_id: UUID, motivo: str, em: datetime) -> None:
         """→ ARQUIVADA com motivo obrigatório (RF20). Não permitido em EM_ATENDIMENTO."""
         self._exigir_motivo(motivo)
-        self._transicionar("arquivar", delegado_id, em, motivo.strip())
+        self._transicionar(OperacaoOcorrencia.ARQUIVAR, delegado_id, em, motivo.strip())
         self.arquivada_por_id = delegado_id
         self.motivo_arquivamento = motivo.strip()
 
     def excluir(self, delegado_id: UUID, motivo: str, em: datetime) -> None:
         """→ EXCLUIDA (exclusão lógica, terminal) com motivo obrigatório (RF20, RNF03*)."""
         self._exigir_motivo(motivo)
-        self._transicionar("excluir", delegado_id, em, motivo.strip())
+        self._transicionar(OperacaoOcorrencia.EXCLUIR, delegado_id, em, motivo.strip())
         self.excluida_por_id = delegado_id
         self.motivo_exclusao = motivo.strip()
 
