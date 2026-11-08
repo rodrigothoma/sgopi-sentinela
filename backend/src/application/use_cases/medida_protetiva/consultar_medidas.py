@@ -12,6 +12,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
 from domain.medida_protetiva.entity import MedidaProtetiva, StatusMedida
 from domain.shared.exceptions import AcessoNegadoError
+from domain.shared.tempo import data_operacional
 from domain.usuario.entity import Papel
 
 
@@ -56,7 +57,7 @@ class ConsultarMedidas(InterfaceListarMedidas):
             offset=offset,
         )
 
-        hoje = self._relogio.agora().date()
+        hoje = data_operacional(self._relogio.agora())
         outputs = [self._para_output(m, hoje) for m in medidas]
         return outputs, total
 

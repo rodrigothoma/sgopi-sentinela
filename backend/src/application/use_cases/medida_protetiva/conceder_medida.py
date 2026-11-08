@@ -16,6 +16,7 @@ from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
 from domain.medida_protetiva.entity import MedidaProtetiva
 from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError
+from domain.shared.tempo import data_operacional
 from domain.usuario.entity import Papel
 
 
@@ -52,7 +53,7 @@ class ConcederMedida(InterfaceConcederMedida):
             )
 
         agora = self._relogio.agora()
-        data_inicio = dados.data_inicio or agora.date()
+        data_inicio = dados.data_inicio or data_operacional(agora)
         numero_ref = await self._gerador.proximo(agora.year)
 
         medida = MedidaProtetiva.conceder(
@@ -104,7 +105,7 @@ class ConcederMedida(InterfaceConcederMedida):
             data_inicio=medida.data_inicio.isoformat(),
             prazo_dias=medida.prazo_dias,
             data_vencimento=medida.data_vencimento.isoformat(),
-            dias_restantes=medida.dias_restantes(agora.date()),
+            dias_restantes=medida.dias_restantes(data_operacional(agora)),
             status=medida.status.value,
             condicoes_especificas=medida.condicoes_especificas,
             motivo_revogacao=medida.motivo_revogacao,
