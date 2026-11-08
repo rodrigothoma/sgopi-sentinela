@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from application.ports.inbound.ator import Ator
+from domain.interagencias.entity import NivelSigilo, niveis_sigilo_visiveis
 from domain.shared.eventos import EventoDominio
 from domain.usuario.entity import Papel
 
@@ -47,6 +48,16 @@ def _destinatario_da_notificacao(evento: EventoDominio, ator: Ator) -> bool:
     return not papel or papel == ator.papel.value
 
 
+def _comunicacao_interagencias(evento: EventoDominio, ator: Ator) -> bool:
+    """Papéis de interagências, filtrados pelo nível de sigilo do ofício (o remetente sempre recebe)."""
+    if ator.papel not in PAPEIS_INTERAGENCIAS:
+        return False
+    if evento.dados.get("remetente_id") == str(ator.id):
+        return True
+    nivel = evento.dados.get("nivel_sigilo", NivelSigilo.PADRAO.value)
+    return nivel in {n.value for n in niveis_sigilo_visiveis(ator.papel)}
+
+
 def _alerta_criticidade(evento: EventoDominio, ator: Ator) -> bool:
     papel = (evento.dados.get("dados") or {}).get("papel_destinatario")
     return not papel or papel == ator.papel.value
@@ -56,7 +67,7 @@ _REGRAS: dict[str, Regra] = {
     "NOTIFICACAO_EMITIDA": _destinatario_da_notificacao,
     "ALERTA_CRITICIDADE": _alerta_criticidade,
     "MEDIDA_VENCIMENTO_ALERTA": lambda _e, ator: ator.papel in PAPEIS_MEDIDAS,
-    "COMUNICACAO_INTERAGENCIAS_CRIADA": lambda _e, ator: ator.papel in PAPEIS_INTERAGENCIAS,
+    "COMUNICACAO_INTERAGENCIAS_CRIADA": _comunicacao_interagencias,
 }
 
 

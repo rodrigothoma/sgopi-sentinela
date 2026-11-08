@@ -3,6 +3,7 @@ Casos de uso para Comunicação Interagências (RF10 / UC10).
 """
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
@@ -22,10 +23,46 @@ from application.ports.outbound.repositorio_notificacao import RepositorioNotifi
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from domain.auditoria.entity import RegistroAuditoria
-from domain.interagencias.entity import ComunicacaoInteragencias, niveis_sigilo_visiveis
+from domain.interagencias.entity import (
+    PAPEIS_POR_NIVEL_SIGILO,
+    ComunicacaoInteragencias,
+    PrioridadeComunicacao,
+    niveis_sigilo_visiveis,
+)
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.shared.eventos import EventoDominio
 from domain.shared.exceptions import EntidadeNaoEncontradaError
+
+
+def _notificacoes_de_envio(oficio: ComunicacaoInteragencias, instante: datetime) -> list[Notificacao]:
+    """Uma notificação por departamento destinatário; ofício restrito notifica só os papéis que podem lê-lo.
+
+    Sem papel de destino a notificação é difundida a todos (usuários não têm departamento),
+    então ofícios RESERVADO/CONFIDENCIAL recebem uma notificação por papel autorizado.
+    """
+    papeis = PAPEIS_POR_NIVEL_SIGILO.get(oficio.nivel_sigilo)
+    alvos: list[str | None] = [None] if papeis is None else sorted(p.value for p in papeis)
+    urgente = oficio.prioridade in (PrioridadeComunicacao.ALTA, PrioridadeComunicacao.URGENTE)
+    return [
+        Notificacao.criar(
+            titulo=f"Novo Ofício Interagências: {oficio.numero_oficio}",
+            mensagem=f"Ofício recebido de {oficio.departamento_origem}: '{oficio.assunto}'",
+            tipo=TipoNotificacao.COMUNICACAO_INTERAGENCIAS,
+            prioridade=PrioridadeNotificacao.ALTA if urgente else PrioridadeNotificacao.MEDIA,
+            departamento_destinatario=departamento,
+            papel_destinatario=papel,
+            link=f"/interagencias?oficio={oficio.numero_oficio}",
+            metadados={
+                "comunicacao_id": str(oficio.id),
+                "numero_oficio": oficio.numero_oficio,
+                "departamento_origem": oficio.departamento_origem,
+                "nivel_sigilo": oficio.nivel_sigilo.value,
+            },
+            instante=instante,
+        )
+        for departamento in oficio.departamentos_destinatarios
+        for papel in alvos
+    ]
 
 
 class EnviarComunicacaoInteragenciasUseCase(InterfaceEnviarComunicacaoInteragencias):
@@ -87,22 +124,7 @@ class EnviarComunicacaoInteragenciasUseCase(InterfaceEnviarComunicacaoInteragenc
 
         async def _salvar_tudo():
             salva_obj = await self._repo.salvar(comunicacao)
-            for dep in salva_obj.departamentos_destinatarios:
-                notif = Notificacao.criar(
-                    titulo=f"Novo Ofício Interagências: {salva_obj.numero_oficio}",
-                    mensagem=f"Ofício recebido de {salva_obj.departamento_origem}: '{salva_obj.assunto}'",
-                    tipo=TipoNotificacao.COMUNICACAO_INTERAGENCIAS,
-                    prioridade=PrioridadeNotificacao.ALTA if salva_obj.prioridade in ("ALTA", "URGENTE") else PrioridadeNotificacao.MEDIA,
-                    departamento_destinatario=dep,
-                    link=f"/interagencias?oficio={salva_obj.numero_oficio}",
-                    metadados={
-                        "comunicacao_id": str(salva_obj.id),
-                        "numero_oficio": salva_obj.numero_oficio,
-                        "departamento_origem": salva_obj.departamento_origem,
-                        "nivel_sigilo": salva_obj.nivel_sigilo.value if hasattr(salva_obj.nivel_sigilo, "value") else str(salva_obj.nivel_sigilo),
-                    },
-                    instante=agora,
-                )
+            for notif in _notificacoes_de_envio(salva_obj, agora):
                 await self._repo_notif.salvar(notif)
 
             await self._porta_auditoria.registrar(
@@ -141,6 +163,8 @@ class EnviarComunicacaoInteragenciasUseCase(InterfaceEnviarComunicacaoInteragenc
                     "origem": salva.departamento_origem,
                     "destinatarios": salva.departamentos_destinatarios,
                     "assunto": salva.assunto,
+                    "nivel_sigilo": salva.nivel_sigilo.value,
+                    "remetente_id": str(salva.remetente_id),
                 },
             )
         )
