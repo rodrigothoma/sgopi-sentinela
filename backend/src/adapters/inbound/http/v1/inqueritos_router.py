@@ -34,7 +34,8 @@ from infrastructure.di import (
 
 router = APIRouter(prefix="/v1/inqueritos", tags=["inqueritos"])
 
-PAPEIS_CONSULTA = (Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL, Papel.AGENTE, Papel.ESCRIVAO)
+# Mesmo conjunto que os casos de uso aceitam (consultar_inqueritos.PAPEIS_CONSULTA_INQUERITO).
+PAPEIS_CONSULTA = (Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL)
 
 
 # ------------------------------------------------------------------ schemas

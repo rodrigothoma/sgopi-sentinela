@@ -1,11 +1,11 @@
 """Caso de uso: Motor avançado de sugestão de conexões criminais entre ocorrências (RF06 / UC06 / sq06)."""
 from __future__ import annotations
 
+import re
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum, auto
-import re
-import unicodedata
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
@@ -15,6 +15,7 @@ from application.ports.inbound.interface_gerir_inqueritos import (
 )
 from application.ports.inbound.interface_inteligencia_areas_risco import InterfaceCalcularAreasRisco
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
+from application.use_cases.inquerito.consultar_inqueritos import PAPEIS_CONSULTA_INQUERITO
 from domain.ocorrencia.apreensao import ItemApreendido, TipoItemApreendido
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipificacaoPenal, TipoEnvolvido
 from domain.ocorrencia.status import StatusOcorrencia
@@ -372,6 +373,7 @@ class BuscarConexoesOcorrencia(InterfaceBuscarConexoesOcorrencia):
 
     async def executar(self, ator: Ator, ocorrencia_pivo_id: UUID) -> list[ConexaoSugeridaOutput]:
         """Candidatas: ocorrências VALIDADA ainda sem inquérito, ordenadas pela relevância da conexão."""
+        ator.exigir_papel(*PAPEIS_CONSULTA_INQUERITO)
         pivo = await self._buscar_pivo(ocorrencia_pivo_id)
         candidatas = await self._repo.listar(
             FiltroOcorrencias(status=(StatusOcorrencia.VALIDADA,), limit=LIMITE_CANDIDATAS, offset=0)

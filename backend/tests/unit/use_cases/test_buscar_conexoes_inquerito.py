@@ -1,6 +1,7 @@
 """Testes unitários: Motor avançado de busca e sugestão de conexões criminais para inquéritos policiais."""
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
+
 import pytest
 
 from application.ports.inbound.ator import Ator
@@ -8,8 +9,8 @@ from application.ports.inbound.interface_inteligencia_areas_risco import Interfa
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.use_cases.inquerito.buscar_conexoes import BuscarConexoesOcorrencia
 from domain.ocorrencia.apreensao import EstadoConservacao, ItemApreendido, TipoItemApreendido
-from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido, TipificacaoPenal
-from domain.ocorrencia.status import StatusOcorrencia
+from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipificacaoPenal, TipoEnvolvido
+from domain.shared.exceptions import AcessoNegadoError
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
 
@@ -406,3 +407,11 @@ async def test_correlacao_temporal_com_datas_sem_fuso(ator_delegado):
 
     assert len(conexoes) == 1
     assert "mesmo intervalo de 24h (5h de diferença)" in conexoes[0].motivo_conexao
+
+
+@pytest.mark.parametrize("papel", [Papel.AGENTE, Papel.ESCRIVAO, Papel.PERITO])
+async def test_conexoes_exigem_papel_de_consulta_de_inquerito(papel):
+    uc = BuscarConexoesOcorrencia(FakeRepoOcorrencia())
+
+    with pytest.raises(AcessoNegadoError):
+        await uc.executar(Ator(id=uuid4(), papel=papel, login="sem.acesso"), uuid4())
