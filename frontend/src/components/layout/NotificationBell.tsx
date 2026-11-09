@@ -1,14 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useTempoRealListener } from '../../hooks/useTempoReal';
-import {
-  notificacoesService,
-  Notificacao,
-  PrioridadeNotificacao,
-  TipoNotificacao,
-} from '../../services/notificacoesService';
-import type { EventoTempoReal } from '../../types/api';
+import { useNotificacoes } from '../../hooks/useNotificacoes';
+import type { Notificacao, TipoNotificacao } from '../../services/notificacoesService';
 import './NotificationBell.css';
 
 interface NotificationBellProps {
@@ -79,74 +73,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ colapsada = 
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [aberto, setAberto] = useState(false);
-  const [naoLidas, setNaoLidas] = useState(0);
-  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
-  const [carregando, setCarregando] = useState(false);
+  const { naoLidas, notificacoes, carregando, marcarTodasLidas, marcarComoLida } = useNotificacoes(aberto);
   const containerRef = useRef<HTMLDivElement>(null);
-  const abertoRef = useRef(false);
-  abertoRef.current = aberto;
-
-  const carregarResumo = async () => {
-    try {
-      const res = await notificacoesService.obterResumo();
-      setNaoLidas(res.nao_lidas);
-    } catch {
-      // Falha silenciosa em polling de background
-    }
-  };
-
-  const carregarLista = async () => {
-    try {
-      setCarregando(true);
-      const res = await notificacoesService.listar({ limite: 15 });
-      setNotificacoes(res.itens);
-      setNaoLidas(res.nao_lidas);
-    } catch {
-      // Ignora erro
-    } finally {
-      setCarregando(false);
-    }
-  };
-
-  // Badge e lista sobem por evento (o WS entrega só o que é deste usuário);
-  // o polling de 15 s abaixo permanece como fallback caso a conexão caia (RNF04).
-  useTempoRealListener({
-    onEvento: (e: EventoTempoReal) => {
-      if (e.tipo !== 'NOTIFICACAO_EMITIDA') return;
-      const d = e.dados as Record<string, unknown>;
-      setNaoLidas((prev) => prev + 1);
-      setNotificacoes((prev) => [
-        {
-          id: String(d.id ?? ''),
-          usuario_id: (d.usuario_id as string) ?? '',
-          titulo: String(d.titulo ?? ''),
-          mensagem: String(d.mensagem ?? ''),
-          tipo: (d.tipo as TipoNotificacao) ?? 'SISTEMA',
-          prioridade: (d.prioridade as PrioridadeNotificacao) ?? 'MEDIA',
-          lida: false,
-          criada_em: String(d.criada_em ?? new Date().toISOString()),
-          link: (d.link as string) ?? null,
-        },
-        ...prev,
-      ].slice(0, 15));
-    },
-    onReconectar: () => {
-      carregarResumo();
-      if (abertoRef.current) carregarLista();
-    },
-  });
-
-  useEffect(() => {
-    carregarResumo();
-    const interval = setInterval(carregarResumo, 15000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (aberto) {
-      carregarLista();
-    }
-  }, [aberto]);
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
@@ -165,27 +93,11 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ colapsada = 
 
   const handleMarcarTodasLidas = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      await notificacoesService.marcarTodasComoLidas();
-      setNaoLidas(0);
-      setNotificacoes((prev) => prev.map((n) => ({ ...n, lida: true })));
-    } catch (err) {
-      console.error('Erro ao marcar todas como lidas:', err);
-    }
+    await marcarTodasLidas();
   };
 
   const handleClicarNotificacao = async (n: Notificacao) => {
-    if (!n.lida) {
-      try {
-        await notificacoesService.marcarComoLida(n.id);
-        setNaoLidas((prev) => Math.max(0, prev - 1));
-        setNotificacoes((prev) =>
-          prev.map((item) => (item.id === n.id ? { ...item, lida: true } : item))
-        );
-      } catch (err) {
-        console.error('Erro ao marcar notificação como lida:', err);
-      }
-    }
+    await marcarComoLida(n);
 
     setAberto(false);
 
