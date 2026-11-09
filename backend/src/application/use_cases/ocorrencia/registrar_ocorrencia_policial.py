@@ -22,13 +22,13 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from application.use_cases.ocorrencia._mensagens_registro import montar_evento_registro, montar_notificacao_registro
 from application.use_cases.ocorrencia.apreensoes import auditoria_registro_item, exigir_lacre_inedito, montar_item
 from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
-from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
+from domain.notificacao.entity import Notificacao, TipoNotificacao
 from domain.notificacao.eventos import notificacao_emitida
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, OrigemOcorrencia, TipificacaoPenal, TipoEnvolvido
-from domain.ocorrencia.eventos import ocorrencia_criada
 from domain.ocorrencia.prioridade import interpretar_prioridade
 from domain.shared.enums import interpretar_enum
 from domain.shared.geo import Coordenada
@@ -36,9 +36,6 @@ from domain.usuario.entity import Papel
 
 # Registro policial só pelo Agente; comunicação pública só pelo ator de sistema CIDADAO.
 _PAPEL_POR_ORIGEM = {OrigemOcorrencia.POLICIAL: Papel.AGENTE, OrigemOcorrencia.PUBLICA: Papel.CIDADAO}
-
-ROTA_FILA_DELEGADO = "/fila"
-TITULO_NOVA_OCORRENCIA = "Nova ocorrência {protocolo} aguardando revisão"
 
 
 class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
@@ -125,21 +122,7 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
             await self._uow.commit()
 
         if self._publicador is not None:
-            await self._publicador.publicar(
-                ocorrencia_criada(
-                    ocorrencia.id,
-                    agora,
-                    numero_protocolo=ocorrencia.numero_protocolo,
-                    natureza=ocorrencia.natureza,
-                    localizacao=ocorrencia.localizacao,
-                    latitude=ocorrencia.coordenada.latitude,
-                    longitude=ocorrencia.coordenada.longitude,
-                    prioridade=ocorrencia.prioridade.value,
-                    criada_em=ocorrencia.criada_em.isoformat(),
-                    agente_policial_id=str(ocorrencia.agente_policial_id),
-                    origem=ocorrencia.origem.value,
-                )
-            )
+            await self._publicador.publicar(montar_evento_registro(ocorrencia, agora))
             if notificacao is not None:
                 await self._publicador.publicar(notificacao_emitida(notificacao))
 
@@ -161,21 +144,7 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
         )
         if duplicada is not None:
             return None
-        notificacao = Notificacao.criar(
-            titulo=TITULO_NOVA_OCORRENCIA.format(protocolo=protocolo),
-            mensagem=f"{ocorrencia.natureza} — {ocorrencia.localizacao}",
-            tipo=TipoNotificacao.NOVA_OCORRENCIA,
-            prioridade=PrioridadeNotificacao.MEDIA,
-            papel_destinatario=Papel.DELEGADO.value,
-            link=f"{ROTA_FILA_DELEGADO}?ocorrencia={ocorrencia.id}",
-            metadados={
-                "ocorrencia_id": str(ocorrencia.id),
-                "numero_protocolo": protocolo,
-                "natureza": ocorrencia.natureza,
-                "status": ocorrencia.status.value,
-            },
-            instante=agora,
-        )
+        notificacao = montar_notificacao_registro(ocorrencia, agora)
         return await self._notificacoes.salvar(notificacao)
 
 
