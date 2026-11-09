@@ -31,4 +31,3 @@ export function resumoDaNotificacao(d: Record<string, unknown>): OcorrenciaResum
     prioridade: (d.prioridade as PrioridadeOcorrencia) ?? 'MEDIA',
   };
 }
-
