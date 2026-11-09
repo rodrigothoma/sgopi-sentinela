@@ -15,6 +15,7 @@ from application.use_cases.inteligencia.calcular_areas_risco import (
     EmitirAlertaCriticidadeUseCase,
     calcular_distancia_metros,
 )
+from domain.notificacao.entity import Notificacao
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
@@ -76,6 +77,16 @@ class RepoNotifFake(RepositorioNotificacao):
 
     async def marcar_todas_lidas(self, usuario_id, papel, instante):
         return len(self.itens)
+
+    async def buscar_por_metadado(self, chave: str, valor: str, tipo: str | None = None) -> Notificacao | None:
+        return next(
+            (
+                n
+                for n in self.itens.values()
+                if (tipo is None or n.tipo.value == tipo) and (n.metadados or {}).get(chave) == valor
+            ),
+            None,
+        )
 
 
 class AuditoriaFake(PortaAuditoria):

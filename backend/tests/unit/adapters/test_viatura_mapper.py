@@ -106,4 +106,3 @@ def test_atualizar_model_viatura() -> None:
     assert model.latitude == -29.75
     assert model.longitude == -55.70
     assert model.posicao_registrada_em == AGORA
-

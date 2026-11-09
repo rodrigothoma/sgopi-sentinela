@@ -13,6 +13,7 @@ from application.ports.outbound.repositorio_notificacao import RepositorioNotifi
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.use_cases.medida_protetiva.emitir_alerta_vencimento import EmitirAlertaVencimentoMedidaUseCase
 from domain.medida_protetiva.entity import MedidaProtetiva
+from domain.notificacao.entity import Notificacao
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
@@ -126,6 +127,16 @@ class RepoNotifFake(RepositorioNotificacao):
 
     async def marcar_todas_lidas(self, usuario_id, papel, instante):
         return len(self.itens)
+
+    async def buscar_por_metadado(self, chave: str, valor: str, tipo: str | None = None) -> Notificacao | None:
+        return next(
+            (
+                n
+                for n in self.itens
+                if (tipo is None or n.tipo.value == tipo) and (n.metadados or {}).get(chave) == valor
+            ),
+            None,
+        )
 
 
 @pytest.mark.asyncio

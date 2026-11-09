@@ -102,11 +102,43 @@ def test_painel_recebe_eventos_de_validacao_e_posicao(client_ws):
         msg = ws.receive_json()
         assert msg["tipo"] == "OcorrenciaValidada" and msg["dados"]["ocorrencia_id"] == o["ocorrencia_id"]
         assert msg["dados"]["latitude"] == -29.78
+        assert msg["dados"]["agente_policial_id"] is not None
 
         r = c.post("/v1/telemetria/posicoes", json={"viatura_id": v["id"], "latitude": -29.70, "longitude": -55.70, "registrada_em": datetime.now(UTC).isoformat()}, headers=ho)
         assert r.status_code == 200
         msg = ws.receive_json()
         assert msg["tipo"] == "PosicaoAtualizada" and msg["dados"]["prefixo"] == "VTR-01" and msg["dados"]["longitude"] == -55.70
+
+
+def test_delegado_recebe_nova_ocorrencia_e_notificacao_sem_reload(client_ws):
+    """Issue #68: o registro publica OcorrenciaCriada e notifica a fila do Delegado em tempo real."""
+    c = client_ws
+    td, ta = _token(c, "delegado"), _token(c, "agente")
+    ha = {"Authorization": f"Bearer {ta}"}
+
+    with c.websocket_connect("/v1/tempo-real", subprotocols=_subprotocolos(td)) as ws:
+        o = c.post(
+            "/v1/ocorrencias",
+            json={
+                "natureza": "Furto", "descricao": "Furto de bicicleta em via pública.", "localizacao": "Centro",
+                "latitude": -29.78, "longitude": -55.79, "data_hora_fato": (datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+                "envolvidos": [{"nome": "V", "tipo": "VITIMA"}],
+            },
+            headers=ha,
+        ).json()
+        assert o["status"] == "AGUARDANDO_REVISAO"
+
+        msg = ws.receive_json()
+        assert msg["tipo"] == "OcorrenciaCriada"
+        assert msg["dados"]["ocorrencia_id"] == o["ocorrencia_id"]
+        assert msg["dados"]["numero_protocolo"] == o["numero_protocolo"]
+        assert msg["dados"]["status"] == "AGUARDANDO_REVISAO"
+
+        msg = ws.receive_json()
+        assert msg["tipo"] == "NOTIFICACAO_EMITIDA"
+        assert msg["dados"]["papel_destinatario"] == "DELEGADO"
+        assert msg["dados"]["tipo"] == "NOVA_OCORRENCIA"
+        assert msg["dados"]["link"] == f"/fila?ocorrencia={o['ocorrencia_id']}"
 
 
 def test_origin_fora_do_cors_e_recusado(client_ws):

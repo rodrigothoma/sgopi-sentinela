@@ -13,6 +13,7 @@ from collections.abc import Callable
 from application.ports.inbound.ator import Ator
 from domain.interagencias.entity import NivelSigilo, niveis_sigilo_visiveis
 from domain.shared.eventos import EventoDominio
+from domain.usuario.entity import Papel
 from domain.usuario.permissoes import Permissao
 
 Regra = Callable[[EventoDominio, Ator], bool]
@@ -34,6 +35,9 @@ EVENTOS_OPERACIONAIS = frozenset(
         "ViaturaChegouAoLocal",
     }
 )
+
+# Novo registro entra na fila de triagem (RF04): revisão e supervisão tomam ciência.
+PAPEIS_NOVA_OCORRENCIA = frozenset({Papel.DELEGADO, Papel.SUPERVISOR})
 
 
 def _destinatario_da_notificacao(evento: EventoDominio, ator: Ator) -> bool:
@@ -63,6 +67,7 @@ def _alerta_criticidade(evento: EventoDominio, ator: Ator) -> bool:
 _REGRAS: dict[str, Regra] = {
     "NOTIFICACAO_EMITIDA": _destinatario_da_notificacao,
     "ALERTA_CRITICIDADE": _alerta_criticidade,
+    "OcorrenciaCriada": lambda _e, ator: ator.papel in PAPEIS_NOVA_OCORRENCIA,
     "MEDIDA_VENCIMENTO_ALERTA": lambda _e, ator: ator.pode(Permissao.CONSULTAR_MEDIDAS),
     "COMUNICACAO_INTERAGENCIAS_CRIADA": _comunicacao_interagencias,
 }

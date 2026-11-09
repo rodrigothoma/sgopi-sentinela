@@ -1945,6 +1945,13 @@ dl.grid2 dd { margin: 0 0 8px; }
 [data-theme="light"] .badge-prioridade-URGENTE { color: #dc2626; }
 [data-theme="light"] .badge-prioridade-ALTA { color: #c2410c; }
 .lista-badges { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.badge-nova {
+  display: inline-block; padding: 1px 8px; border-radius: 999px;
+  background: rgba(37, 99, 235, 0.15); color: #2563eb;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  animation: pulso-nova 1.6s ease-in-out infinite;
+}
+@keyframes pulso-nova { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 .painel-prioridade { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
 .painel-prioridade h4 { display: flex; gap: 10px; align-items: center; margin: 0 0 4px; }
 .painel-prioridade-linha { display: grid; grid-template-columns: minmax(120px, 1fr) 2fr; gap: 0 12px; margin-bottom: 10px; }

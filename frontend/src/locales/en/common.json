@@ -383,5 +383,9 @@
     "rotulo": "Global incident search",
     "buscando": "Searching…",
     "vazio": "Nothing found"
+  },
+  "tempo_real": {
+    "nova_ocorrencia": "New occurrence {{protocolo}} ({{natureza}}) awaiting review.",
+    "validada": "Occurrence {{protocolo}} validated by the Delegate."
   }
 }
