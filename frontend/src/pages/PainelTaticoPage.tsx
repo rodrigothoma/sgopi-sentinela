@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapaTatico } from '../components/painel/MapaTatico';
+import { ControleSimulador } from '../components/painel/ControleSimulador';
 import { PrioridadeBadge } from '../components/PrioridadeBadge';
 import { StatusBadge } from '../components/StatusBadge';
 import { useAuth } from '../hooks/useAuth';
@@ -302,16 +303,7 @@ export const PainelTaticoPage: React.FC = () => {
         <span className={`conexao conexao-${conexao}`}>● {t(`painel:conexao.${conexao}`)}</span>
         <span className="muted small">{ultimoEvento}</span>
         <span className="espaco" />
-        {podeDespachar && simulador && (
-          <button className={`btn ${simulador.ligado ? 'btn-warn' : 'btn-primary'}`} onClick={alternarSimulador}>
-            {simulador.ligado ? t('painel:simulador.desligar') : t('painel:simulador.ligar')} ({simulador.ticks})
-          </button>
-        )}
-        {podeDespachar && simulador?.orquestrador?.ligado && (
-          <span className="badge badge-OK">
-            {t('painel:simulador.despacho_auto')} · {t('painel:simulador.despacho_contador', { despachados: simulador.orquestrador.despachados, encerrados: simulador.orquestrador.encerrados })}
-          </span>
-        )}
+        <ControleSimulador podeDespachar={podeDespachar} simulador={simulador} onAlternar={alternarSimulador} />
         <button
           type="button"
           className={`btn ${areasRiscoAtivo ? 'btn-warn' : 'btn-ghost'}`}

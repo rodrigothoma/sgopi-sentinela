@@ -14,7 +14,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from adapters.inbound.simulador.gerador_ocorrencias import GeradorOcorrencias
-from adapters.inbound.simulador.orquestrador_despacho import OrquestradorDespacho
+from adapters.inbound.simulador.orquestrador_despacho import ContextoDespacho, OrquestradorDespacho
 from adapters.inbound.simulador.resolvedor_destino import ResolvedorDestinoSessao
 from adapters.inbound.simulador.roteador import RoteadorLinhaReta, RoteadorOSRM
 from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
@@ -726,14 +726,14 @@ def montar_orquestrador_despacho(
     relogio_efetivo = relogio or relogio_sistema
 
     @asynccontextmanager
-    async def contexto() -> AsyncIterator[tuple]:
+    async def contexto() -> AsyncIterator[ContextoDespacho]:
         async with session_factory() as session:
             usuarios = UsuarioRepositorioSQLAlchemy(session)
-            yield (
-                ViaturaRepositorioSQLAlchemy(session),
-                OcorrenciaRepositorioSQLAlchemy(session),
-                OrdemDespachoRepositorioSQLAlchemy(session),
-                DespacharViatura(
+            yield ContextoDespacho(
+                viaturas=ViaturaRepositorioSQLAlchemy(session),
+                ocorrencias=OcorrenciaRepositorioSQLAlchemy(session),
+                ordens=OrdemDespachoRepositorioSQLAlchemy(session),
+                despachar=DespacharViatura(
                     OcorrenciaRepositorioSQLAlchemy(session),
                     ViaturaRepositorioSQLAlchemy(session),
                     OrdemDespachoRepositorioSQLAlchemy(session),
@@ -743,7 +743,7 @@ def montar_orquestrador_despacho(
                     AuditoriaSQLAlchemy(session),
                     publicador_eventos,
                 ),
-                EncerrarOcorrencia(
+                encerrar=EncerrarOcorrencia(
                     OcorrenciaRepositorioSQLAlchemy(session),
                     ViaturaRepositorioSQLAlchemy(session),
                     OrdemDespachoRepositorioSQLAlchemy(session),
@@ -752,8 +752,8 @@ def montar_orquestrador_despacho(
                     AuditoriaSQLAlchemy(session),
                     publicador_eventos,
                 ),
-                await _resolver_ator(usuarios, "simulador-operador"),
-                await _resolver_ator(usuarios, "simulador-delegado"),
+                ator_operador=await _resolver_ator(usuarios, "simulador-operador"),
+                ator_delegado=await _resolver_ator(usuarios, "simulador-delegado"),
             )
 
     return OrquestradorDespacho(

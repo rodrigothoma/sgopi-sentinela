@@ -1,5 +1,6 @@
 """Testes do driving adapter OrquestradorDespacho (Issues #62/#63)."""
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
@@ -8,6 +9,7 @@ import pytest
 
 from adapters.inbound.simulador.orquestrador_despacho import (
     OBSERVACOES_DESPACHO,
+    ContextoDespacho,
     OrquestradorDespacho,
 )
 from application.ports.inbound.ator import Ator
@@ -53,8 +55,16 @@ class _Ambiente:
         )
 
     @asynccontextmanager
-    async def contexto(self):
-        yield (self.viaturas, self.ocorrencias, self.ordens, self._despachar, self._encerrar, self.operador, self.delegado)
+    async def contexto(self) -> AsyncIterator[ContextoDespacho]:
+        yield ContextoDespacho(
+            viaturas=self.viaturas,
+            ocorrencias=self.ocorrencias,
+            ordens=self.ordens,
+            despachar=self._despachar,
+            encerrar=self._encerrar,
+            ator_operador=self.operador,
+            ator_delegado=self.delegado,
+        )
 
     def orquestrador(self, **kw) -> OrquestradorDespacho:
         defaults = dict(

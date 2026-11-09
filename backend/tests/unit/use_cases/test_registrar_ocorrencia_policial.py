@@ -13,7 +13,8 @@ from application.ports.inbound.interface_registrar_ocorrencia_policial import (
 )
 from application.ports.outbound.gerador_protocolo import GeradorProtocolo
 from application.use_cases.ocorrencia.registrar_ocorrencia_policial import RegistrarOcorrenciaPolicial
-from domain.notificacao.entity import TipoNotificacao
+from domain.notificacao.entity import Notificacao, TipoNotificacao
+from domain.shared.eventos import EventoDominio
 from domain.shared.exceptions import AcessoNegadoError, CampoObrigatorioError, ValorInvalidoError
 from tests.fakes.atores import AGENTE, DELEGADO
 from tests.fakes.portas_fake import AuditoriaFake, GeradorProtocoloFake, PublicadorEventosFake, RelogioFake, UnidadeDeTrabalhoFake
@@ -155,6 +156,9 @@ async def test_registrar_publica_evento_e_notifica_delegado(use_case_rt, notific
     [n] = notificacoes.itens
     assert n.tipo == TipoNotificacao.NOVA_OCORRENCIA
     assert n.papel_destinatario == "DELEGADO"
+    assert n.titulo == f"Nova ocorrência {out.numero_protocolo} aguardando revisão"
+    assert n.mensagem == "Furto — Av. Brasil, 500"
+    assert n.prioridade.value == "MEDIA"
     assert n.metadados["numero_protocolo"] == out.numero_protocolo
     assert n.link == f"/fila?ocorrencia={out.ocorrencia_id}"
     assert publicador.tipos() == ["OcorrenciaCriada", "NOTIFICACAO_EMITIDA"]
@@ -195,3 +199,31 @@ async def test_sem_portas_opcionais_mantem_comportamento_atual(use_case, notific
     out = await use_case.executar(AGENTE, _input_valido())
     assert out.status == "AGUARDANDO_REVISAO"
     assert notificacoes.itens == []
+
+
+async def test_registro_preserva_ordem_transacional_das_notificacoes(
+    use_case_rt: RegistrarOcorrenciaPolicial,
+    uow: UnidadeDeTrabalhoFake,
+    publicador: PublicadorEventosFake,
+    notificacoes: RepositorioNotificacaoFake,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A persistência do aviso precede o commit; os dois eventos só saem após confirmá-lo."""
+    salvar_original = notificacoes.salvar
+    publicar_original = publicador.publicar
+    etapas: list[str] = []
+
+    async def salvar(notificacao: Notificacao) -> Notificacao:
+        assert uow.commits == 0
+        etapas.append("salvar_aviso")
+        return await salvar_original(notificacao)
+
+    async def publicar(evento: EventoDominio) -> None:
+        assert uow.commits == 1
+        etapas.append(evento.tipo)
+        await publicar_original(evento)
+
+    monkeypatch.setattr(notificacoes, "salvar", salvar)
+    monkeypatch.setattr(publicador, "publicar", publicar)
+    await use_case_rt.executar(AGENTE, _input_valido())
+    assert etapas == ["salvar_aviso", "OcorrenciaCriada", "NOTIFICACAO_EMITIDA"]
