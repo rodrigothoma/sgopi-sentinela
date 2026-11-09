@@ -4,7 +4,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from adapters.inbound.http.deps import exigir_papel
+from adapters.inbound.http.deps import exigir_permissao
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_indicadores import (
     FUSO_PADRAO,
@@ -13,7 +13,7 @@ from application.ports.inbound.interface_indicadores import (
     IndicadoresInput,
     InterfaceCalcularIndicadores,
 )
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.di import get_calcular_indicadores
 
 router = APIRouter(prefix="/v1/indicadores", tags=["indicadores"])
@@ -60,7 +60,7 @@ async def obter_indicadores(
     de: datetime | None = Query(default=None),
     ate: datetime | None = Query(default=None),
     fuso: str = Query(default=FUSO_PADRAO, max_length=64),
-    ator: Ator = Depends(exigir_papel(Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_INDICADORES)),
     use_case: InterfaceCalcularIndicadores = Depends(get_calcular_indicadores),
 ) -> IndicadoresSchema:
     """KPIs de RF01 (volume), RF04 (triagem) e RF02 (despacho) no período (padrão: últimos 30 dias)."""

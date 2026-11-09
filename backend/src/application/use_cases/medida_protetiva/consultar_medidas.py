@@ -11,8 +11,8 @@ from application.ports.inbound.interface_gerir_medidas_protetivas import (
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
 from domain.medida_protetiva.entity import MedidaProtetiva, StatusMedida
-from domain.shared.exceptions import AcessoNegadoError
-from domain.usuario.entity import Papel
+from domain.shared.tempo import data_operacional
+from domain.usuario.permissoes import Permissao
 
 
 class ConsultarMedidas(InterfaceListarMedidas):
@@ -32,18 +32,7 @@ class ConsultarMedidas(InterfaceListarMedidas):
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[list[MedidaProtetivaOutput], int]:
-        papeis_permitidos = {
-            Papel.SUPERVISOR,
-            Papel.DELEGADO,
-            Papel.AGENTE,
-            Papel.OPERADOR_CENTRAL,
-            Papel.ESCRIVAO,
-        }
-        if ator.papel not in papeis_permitidos:
-            raise AcessoNegadoError(
-                "Usuário sem permissão para consultar medidas protetivas.",
-                chave="medida.consulta_negada",
-            )
+        ator.exigir(Permissao.CONSULTAR_MEDIDAS, "Usuário sem permissão para consultar medidas protetivas.", chave="medida.consulta_negada")
 
         status_enums: list[StatusMedida] | None = None
         if status:
@@ -56,7 +45,7 @@ class ConsultarMedidas(InterfaceListarMedidas):
             offset=offset,
         )
 
-        hoje = self._relogio.agora().date()
+        hoje = data_operacional(self._relogio.agora())
         outputs = [self._para_output(m, hoje) for m in medidas]
         return outputs, total
 

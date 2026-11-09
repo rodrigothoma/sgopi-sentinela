@@ -58,7 +58,8 @@ class AuditoriaFake(PortaAuditoria):
         quem: UUID | None = None,
         limit: int = 100,
     ) -> list[RegistroAuditoria]:
-        itens = self.registros
+        # Mesma ordem do adapter SQL: mais recentes primeiro (``quando`` desc).
+        itens = sorted(self.registros, key=lambda r: r.quando, reverse=True)
         if entidade:
             itens = [r for r in itens if r.entidade == entidade]
         if entidade_id:

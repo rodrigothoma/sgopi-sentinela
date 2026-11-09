@@ -14,6 +14,7 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from domain.shared.exceptions import CampoObrigatorioError, ValorInvalidoError
+from domain.shared.validacao import exigir_texto
 
 
 class TipoItemApreendido(str, Enum):
@@ -52,8 +53,7 @@ class MovimentacaoCustodia:
     observacao: str | None = None
 
     def __post_init__(self) -> None:
-        if not self.destino or not self.destino.strip():
-            raise CampoObrigatorioError("O destino da custódia é obrigatório.", chave="apreensao.destino_vazio")
+        exigir_texto(self.destino, "O destino da custódia é obrigatório.", chave="apreensao.destino_vazio")
         if self.em.tzinfo is None:
             raise ValorInvalidoError("Data da movimentação deve ter fuso horário.", chave="apreensao.data_sem_fuso")
         object.__setattr__(self, "destino", self.destino.strip())
@@ -81,16 +81,11 @@ class ItemApreendido:
     movimentacoes: list[MovimentacaoCustodia] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        if not self.descricao or not self.descricao.strip():
-            raise CampoObrigatorioError("A descrição do item é obrigatória.", chave="apreensao.descricao_vazia")
+        exigir_texto(self.descricao, "A descrição do item é obrigatória.", chave="apreensao.descricao_vazia")
         if self.quantidade <= 0:
             raise ValorInvalidoError("A quantidade deve ser maior que zero.", chave="apreensao.quantidade_invalida")
-        if not self.numero_lacre or not self.numero_lacre.strip():
-            raise CampoObrigatorioError("O número do lacre é obrigatório.", chave="apreensao.lacre_vazio")
-        if not self.localizacao_deposito or not self.localizacao_deposito.strip():
-            raise CampoObrigatorioError(
-                "A localização no depósito/cofre é obrigatória.", chave="apreensao.localizacao_vazia"
-            )
+        exigir_texto(self.numero_lacre, "O número do lacre é obrigatório.", chave="apreensao.lacre_vazio")
+        exigir_texto(self.localizacao_deposito, "A localização no depósito/cofre é obrigatória.", chave="apreensao.localizacao_vazia")
         if self.registrado_em.tzinfo is None:
             raise ValorInvalidoError("Data do registro deve ter fuso horário.", chave="apreensao.data_sem_fuso")
         self.descricao = self.descricao.strip()

@@ -17,12 +17,11 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.inquerito.entity import StatusInquerito
-from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError
-from domain.usuario.entity import Papel
-
-PAPEIS_CONSULTA_INQUERITO = (Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL)
+from domain.shared.exceptions import EntidadeNaoEncontradaError
+from domain.usuario.permissoes import Permissao
 
 
 def _inquerito_output(inquerito, ocorrencias: list[OcorrenciaResumoInqueritoOutput]) -> InqueritoOutput:
@@ -57,11 +56,7 @@ class ListarInqueritos(InterfaceListarInqueritos):
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[list[InqueritoOutput], int]:
-        if ator.papel not in PAPEIS_CONSULTA_INQUERITO:
-            raise AcessoNegadoError(
-                "Acesso restrito à autoridade policial ou supervisão.",
-                chave="inquerito.acesso_negado",
-            )
+        ator.exigir(Permissao.CONSULTAR_INQUERITOS, "Acesso restrito à autoridade policial ou supervisão.", chave="inquerito.acesso_negado")
 
         filtro_status = [StatusInquerito(s) for s in status] if status else None
         inqueritos, total = await self._repo_inquerito.listar(filtro_status, limit=limit, offset=offset)
@@ -97,11 +92,7 @@ class ObterInquerito(InterfaceObterInquerito):
         self._repo_ocorrencia = repositorio_ocorrencia
 
     async def executar(self, ator: Ator, inquerito_id: UUID) -> InqueritoOutput:
-        if ator.papel not in PAPEIS_CONSULTA_INQUERITO:
-            raise AcessoNegadoError(
-                "Acesso restrito à autoridade policial ou supervisão.",
-                chave="inquerito.acesso_negado",
-            )
+        ator.exigir(Permissao.CONSULTAR_INQUERITOS, "Acesso restrito à autoridade policial ou supervisão.", chave="inquerito.acesso_negado")
 
         inquerito = await self._repo_inquerito.buscar_por_id(inquerito_id)
         if not inquerito:
@@ -145,11 +136,7 @@ class ConcluirInquerito(InterfaceConcluirInquerito):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: ConcluirInqueritoInput) -> InqueritoOutput:
-        if ator.papel != Papel.DELEGADO:
-            raise AcessoNegadoError(
-                "Apenas o Delegado de Polícia pode concluir inquérito policial.",
-                chave="inquerito.apenas_delegado",
-            )
+        ator.exigir(Permissao.GERIR_INQUERITOS, "Apenas o Delegado de Polícia pode concluir inquérito policial.", chave="inquerito.apenas_delegado")
 
         inquerito = await self._repo_inquerito.buscar_por_id(dados.inquerito_id)
         if not inquerito:
@@ -168,8 +155,8 @@ class ConcluirInquerito(InterfaceConcluirInquerito):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="inquerito.concluir",
-                    entidade="inquerito",
+                    operacao=OperacaoAuditada.INQUERITO_CONCLUIR,
+                    entidade=EntidadeAuditada.INQUERITO,
                     entidade_id=str(inquerito.id),
                     dados_depois={"numero": inquerito.numero, "status": inquerito.status.value},
                     ip=ator.ip,

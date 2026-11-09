@@ -743,7 +743,7 @@ export const ComunicacaoInteragenciasPage: React.FC = () => {
                     style={{ width: '100%', padding: '0.6rem', marginTop: '4px' }}
                   >
                     <option value="PADRAO">Padrão / Ostensivo</option>
-                    <option value="RESTRITO">Restrito</option>
+                    <option value="RESERVADO">Reservado</option>
                     <option value="CONFIDENCIAL">🔒 Confidencial</option>
                   </select>
                 </label>

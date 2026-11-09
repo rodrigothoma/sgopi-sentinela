@@ -125,9 +125,11 @@ async def test_conexoes_pontuam_suspeito_natureza_e_proximidade(registrar, valid
     sugestoes = await BuscarConexoesOcorrencia(repositorio).executar(DELEGADO, pivo)
 
     assert [s.ocorrencia_id for s in sugestoes] == [mesmo_doc, so_nome]
-    assert sugestoes[0].pontuacao_relevancia == 100 + 30 + 40
-    assert "documento" in sugestoes[0].motivo_conexao and "Proximidade" in sugestoes[0].motivo_conexao
-    assert sugestoes[1].pontuacao_relevancia == 70 and "João Silva" in sugestoes[1].motivo_conexao
+    # suspeito por documento (120) + mesma natureza (35) + local imediato (25) + mesmas 24h (25)
+    assert sugestoes[0].pontuacao_relevancia == 120 + 35 + 25 + 25
+    assert "Doc: 111.222.333-44" in sugestoes[0].motivo_conexao and "Local imediato" in sugestoes[0].motivo_conexao
+    # suspeito só por nome normalizado (85) + mesmas 24h (25)
+    assert sugestoes[1].pontuacao_relevancia == 85 + 25 and "João Silva" in sugestoes[1].motivo_conexao
     assert sem_relacao not in [s.ocorrencia_id for s in sugestoes]
 
 
@@ -135,7 +137,7 @@ async def test_conexoes_ignoram_ocorrencias_ja_em_inquerito(registrar, validar, 
     pivo = await validar((await registrar()).ocorrencia_id)
     vinculada = await validar((await registrar()).ocorrencia_id)
     o = await repositorio.buscar_por_id(vinculada)
-    o.vincular_inquerito(uuid4())
+    o.vincular_inquerito(uuid4(), o.atualizada_em)
     await repositorio.salvar(o)
     assert await BuscarConexoesOcorrencia(repositorio).executar(DELEGADO, pivo) == []
 

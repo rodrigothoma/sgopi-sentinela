@@ -9,7 +9,7 @@ Este arquivo estabelece as regras canônicas de engenharia para qualquer **agent
 1. **Documentação Oficial:** Toda implementação deve seguir estritamente o arquivo [`docs/DOCUMENTACAO_DE_ENGENHARIA.md`](docs/DOCUMENTACAO_DE_ENGENHARIA.md).
 2. **Diagramas UML:** Antes de implementar ou alterar casos de uso, consulte obrigatoriamente os diagramas em [`docs/diagramas/`](docs/diagramas/) (especialmente os diagramas de sequência em `docs/diagramas/sequencia/`).
 3. **Escopo Canônico do MVP:** Foco rigoroso nos requisitos **RF01** (Gestão de Ocorrência Policial), **RF04** (Validação pelo Delegado) e **RF02** (Monitoramento GPS e Despacho Tático). Não invente requisitos fora do escopo.
-   * **Extras já implementados (fora do escopo canônico do MVP):** RF03 (Inventário de Apreensões), RF05 (Manchas Criminais / *heatmap* e banner de criticidade), RF06 (Inquéritos), RF07 (Laudos Periciais), RF08 (Autenticação Pública de Documentos — `/autenticar`), RF09 (Medidas Protetivas), DEC-03 (Pin Vetorial SVG), arquivamento/exclusão lógica de ocorrência, gerador de ocorrências de demonstração e orquestrador de despacho automático (com viatura de apoio). Esses itens são **extras** e não redefinem o MVP.
+   * **Extras já implementados (fora do escopo canônico do MVP):** RF03 (Inventário de Apreensões), RF05 (Manchas Criminais / *heatmap* e banner de criticidade), RF06 (Inquéritos), RF07 (Laudos Periciais), RF08 (Autenticação Pública de Documentos — `/autenticar`), RF09 (Medidas Protetivas), RF10 (Comunicação Interagências com ofícios rastreáveis), notificações in-app, indicadores/áreas de risco dinâmicas, DEC-03 (Pin Vetorial SVG), arquivamento/exclusão lógica de ocorrência, gerador de ocorrências de demonstração e orquestrador de despacho automático (com viatura de apoio). Esses itens são **extras** e não redefinem o MVP.
    * Novos trabalhos **não** devem ampliar o escopo além de RF01/RF04/RF02 (nem expandir os extras acima) sem aprovação explícita da equipe.
 
 ---
@@ -66,7 +66,7 @@ backend/src/
 ## 4. 💎 Princípios SOLID & Clean Code Obrigatórios
 
 * **S — Single Responsibility Principle (SRP):**
-  * Cada caso de uso deve ter **uma única responsabilidade** e expor um método principal `execute(...)`.
+  * Cada caso de uso deve ter **uma única responsabilidade** e expor um método principal `executar(...)`.
   * Métodos e funções devem ser curtos (< 35 linhas) e com objetivo claro.
 * **O — Open/Closed Principle (OCP):**
   * Novas regras e comportamentos devem ser adicionados através de novas implementações de portas ou novos casos de uso, sem modificar código estável.
@@ -76,10 +76,17 @@ backend/src/
   * Portas devem ser coesas e específicas (`PortaAuditoria`, `RepositorioViatura`, `RepositorioOcorrencia`), evitando interfaces "gordas" com métodos desnecessários.
 * **D — Dependency Inversion Principle (DIP):**
   * Módulos de alto nível (`application`) nunca dependem de módulos de baixo nível (`adapters`). Ambos dependem de abstrações (`ports`).
-* **Clean Code:**
+* **Clean Code, Tipagem Estrita e Documentação:**
+  * **Tipagem Estrita (PEP 484):** Obrigatória em **todos os parâmetros e retornos** (incluindo `-> None`, `dict[str, Any]`, `list[T]`, `UUID | None`) em **código novo ou refatorado**. Não omita anotações de tipo.
+  * **Docstrings Úteis (PEP 257) & Sem Óbvio:** Classes, interfaces/portas e métodos públicos devem documentar contexto de negócio, invariantes ou detalhes técnicos relevantes. **Não comente código óbvio:** evite docstrings vazias ou puramente redundantes que apenas repetem o nome ou assinatura do método.
   * Nomenclatura expressiva e semântica (em português para o domínio policial, seguindo o padrão já estabelecido: `numero_protocolo`, `viatura_id`, `relato`, etc.).
-  * Não comente código óbvio. Preserve docstrings informativas e tipagem explícita em todos os parâmetros e retornos.
-  * Não use números mágicos nem strings literais espalhadas (use Enums e constantes de domínio).
+  * Não use números mágicos nem strings literais espalhadas (use Enums e constantes de domínio). Regra fixa do negócio vira constante de módulo junto da entidade; parâmetros de uma heurística ajustados em conjunto (pesos, raios, janelas) vão para uma `@dataclass(frozen=True) Parametros...` no domínio; configuração que varia por ambiente fica no `settings.py` (ver `docs/implementacao/PLANO_REFATORACAO_2026-11.md`).
+* **Blocos de domínio reutilizáveis (use antes de escrever código novo):**
+  * **Controle de acesso:** `domain/usuario/permissoes.py` — `ator.exigir(Permissao.X, mensagem, chave)` no caso de uso e `exigir_permissao(Permissao.X)` no router. Não declare tuplas de papéis nem `if ator.papel != ...`.
+  * **Auditoria:** `domain/auditoria/catalogo.py` — `RegistroAuditoria(operacao=OperacaoAuditada.X, entidade=EntidadeAuditada.Y, ...)`. Operação nova entra no catálogo no formato `dominio.acao`.
+  * **Estados:** `domain/shared/maquina_estados.py` — transições declaradas numa tabela `(estado, operação) -> estado` por agregado.
+  * **Versão otimista:** mixin `domain/shared/versionado.py` — toda mutação chama `self._tocar(instante)`.
+  * **Validação:** `domain/shared/validacao.exigir_texto` e `domain/shared/enums.interpretar_enum` para textos obrigatórios e conversão de enums vindos da borda.
 
 ---
 
@@ -110,9 +117,33 @@ uv run pytest --cov
 cd ../frontend && npx tsc --noEmit && npm run build
 ```
 
+Atalho que repete o CI inteiro localmente (inclui ruff, migrações, testes E2E, piso de cobertura por arquivo, Vitest e `npm audit`):
+
+```bash
+./scripts/verificar.sh            # completo
+./scripts/verificar.sh --rapido   # arquitetura, ruff, testes sem E2E e tsc
+```
+
+Ative uma vez por clone o pre-commit versionado (`./scripts/instalar-hooks.sh`): ele roda ruff e import-linter quando o commit tem Python do backend e `tsc` quando tem TypeScript do frontend. Não o contorne com `--no-verify`.
+
 ---
 
-## 7. 🚫 Higiene de Saída de IA
+## 7. 🧰 Skills de Agentes
+
+Roteiros reutilizáveis em `.claude/skills/<nome>/SKILL.md`. O Claude Code os carrega automaticamente (este arquivo é importado pelo `CLAUDE.md`); agentes de outras ferramentas devem ler o `SKILL.md` correspondente antes da tarefa:
+
+| Skill | Quando usar |
+| :--- | :--- |
+| [`backend-tdd`](.claude/skills/backend-tdd/SKILL.md) | Implementar, alterar ou refatorar o backend com TDD (testes por camada, fakes, padrões do projeto) |
+| [`frontend-tdd`](.claude/skills/frontend-tdd/SKILL.md) | Implementar, alterar ou refatorar o frontend com TDD (Vitest para lógica, Cypress para fluxos) |
+| [`verificar`](.claude/skills/verificar/SKILL.md) | Antes de commitar, abrir PR ou concluir uma tarefa: roda `scripts/verificar.sh` e corrige as falhas |
+| [`handoff`](.claude/skills/handoff/SKILL.md) | Passar o trabalho para outra sessão de agente (documento de passagem em diretório temporário) |
+
+A arquitetura e as regras ficam neste arquivo; as skills só trazem o roteiro de trabalho e apontam para cá.
+
+---
+
+## 8. 🚫 Higiene de Saída de IA
 
 * **NUNCA** inclua artefatos de chat de LLM (`contentReference`, notas de prompt, etc.) em arquivos de código ou documentação.
 * Commits devem seguir rigorosamente o padrão **Conventional Commits** (`feat(escopo): ...`, `fix(escopo): ...`, `docs(escopo): ...`).

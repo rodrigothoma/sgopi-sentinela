@@ -13,6 +13,9 @@ dependencies = [
     "argon2-cffi>=23.1",
     "python-multipart>=0.0.9",
     "pyjwt>=2.10",
+    # Base IANA de fusos horários: o Windows não a fornece, e sem ela o
+    # ZoneInfo("America/Sao_Paulo") de domain/shared/tempo.py impede a app de subir.
+    "tzdata>=2025.1",
 ]
 
 [dependency-groups]
@@ -90,7 +93,7 @@ ignore = [
 
 [tool.ruff.lint.flake8-bugbear]
 # Depends()/Query()/File() em default de parâmetro é o idioma do FastAPI, não um bug (B008)
-extend-immutable-calls = ["adapters.inbound.http.deps.exigir_papel", "fastapi.Depends", "fastapi.Query", "fastapi.File", "fastapi.Form", "fastapi.Header", "fastapi.Path", "fastapi.Body"]
+extend-immutable-calls = ["adapters.inbound.http.deps.exigir_papel", "adapters.inbound.http.deps.exigir_permissao", "fastapi.Depends", "fastapi.Query", "fastapi.File", "fastapi.Form", "fastapi.Header", "fastapi.Path", "fastapi.Body"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["domain", "application", "adapters", "infrastructure", "main", "tests", "scripts"]

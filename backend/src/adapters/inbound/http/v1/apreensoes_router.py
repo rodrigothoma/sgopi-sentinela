@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from adapters.inbound.http.deps import exigir_papel
+from adapters.inbound.http.deps import exigir_papel, exigir_permissao
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_gerir_apreensoes import (
     AutoApreensaoOutput,
@@ -22,11 +22,11 @@ from application.ports.inbound.interface_gerir_apreensoes import (
     RegistrarItemApreendidoInput,
 )
 from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.di import get_emitir_auto_apreensao, get_movimentar_custodia, get_registrar_item_apreendido
 
 router = APIRouter(prefix="/v1/ocorrencias", tags=["apreensoes"])
 
-PAPEIS_CONSULTA = (Papel.AGENTE, Papel.DELEGADO, Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
 
 
 # ------------------------------------------------------------------ schemas
@@ -131,7 +131,7 @@ async def movimentar_custodia(
 @router.get("/{ocorrencia_id}/auto-apreensao", response_model=AutoApreensaoSchema)
 async def emitir_auto_apreensao(
     ocorrencia_id: UUID,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_OCORRENCIAS)),
     use_case: InterfaceEmitirAutoApreensao = Depends(get_emitir_auto_apreensao),
 ) -> AutoApreensaoSchema:
     """Emite o Auto de Apreensão (identificador único + hash SHA-256 do conteúdo); a emissão é auditada."""

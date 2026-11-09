@@ -23,6 +23,7 @@ from application.ports.outbound.repositorio_ordem_despacho import RepositorioOrd
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.viatura.gerir_viaturas import carregar_viatura, para_output
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.eventos import EventoDominio
 from domain.shared.geo import Coordenada
@@ -84,7 +85,7 @@ class RegistrarPosicaoViatura(InterfaceRegistrarPosicaoViatura):
         if self._auditoria is not None:
             await self._auditoria.registrar(
                 RegistroAuditoria(
-                    quem=input_dto.por_id, quando=agora, operacao="viatura.chegada_ao_local", entidade="Viatura", entidade_id=str(viatura.id),
+                    quem=input_dto.por_id, quando=agora, operacao=OperacaoAuditada.VIATURA_CHEGADA_AO_LOCAL, entidade=EntidadeAuditada.VIATURA, entidade_id=str(viatura.id),
                     dados_antes={"situacao": SituacaoViatura.EM_DESLOCAMENTO.value},
                     dados_depois={
                         "situacao": viatura.situacao.value, "ocorrencia_id": str(ocorrencia.id), "numero_ordem": ordem.numero,

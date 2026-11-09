@@ -26,6 +26,7 @@ from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorren
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia._mapeadores import para_detalhe
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.notificacao.eventos import notificacao_emitida
@@ -38,7 +39,7 @@ ROTA_MINHAS_OCORRENCIAS = "/minhas"
 
 
 class _DecisaoBase:
-    operacao: str
+    operacao: OperacaoAuditada
     campo_texto_auditoria = "justificativa"
     papeis: tuple[Papel, ...] = (Papel.DELEGADO,)
     # Decisões que avisam o agente autor definem o título (com {protocolo}) e a prioridade
@@ -99,7 +100,7 @@ class _DecisaoBase:
             quem=ator.id,
             quando=agora,
             operacao=self.operacao,
-            entidade="Ocorrencia",
+            entidade=EntidadeAuditada.OCORRENCIA,
             entidade_id=str(ocorrencia.id),
             dados_antes=antes,
             dados_depois={
@@ -130,7 +131,7 @@ class _DecisaoBase:
 
 
 class ValidarOcorrencia(_DecisaoBase, InterfaceValidarOcorrencia):
-    operacao = "ocorrencia.validar"
+    operacao = OperacaoAuditada.OCORRENCIA_VALIDAR
     campo_texto_auditoria = "despacho"
     titulo_notificacao = "Ocorrência {protocolo} validada pelo Delegado"
     prioridade_notificacao = PrioridadeNotificacao.BAIXA
@@ -150,7 +151,7 @@ class ValidarOcorrencia(_DecisaoBase, InterfaceValidarOcorrencia):
 
 
 class DevolverParaCorrecao(_DecisaoBase, InterfaceDevolverParaCorrecao):
-    operacao = "ocorrencia.devolver_para_correcao"
+    operacao = OperacaoAuditada.OCORRENCIA_DEVOLVER_PARA_CORRECAO
     titulo_notificacao = "Ocorrência {protocolo} devolvida para correção"
     prioridade_notificacao = PrioridadeNotificacao.ALTA
 
@@ -165,7 +166,7 @@ class DevolverParaCorrecao(_DecisaoBase, InterfaceDevolverParaCorrecao):
 
 
 class RejeitarOcorrencia(_DecisaoBase, InterfaceRejeitarOcorrencia):
-    operacao = "ocorrencia.rejeitar"
+    operacao = OperacaoAuditada.OCORRENCIA_REJEITAR
     titulo_notificacao = "Ocorrência {protocolo} rejeitada pelo Delegado"
 
     def _aplicar(self, ocorrencia, ator, justificativa, agora):

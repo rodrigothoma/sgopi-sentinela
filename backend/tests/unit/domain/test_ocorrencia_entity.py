@@ -453,3 +453,17 @@ def test_hash_v2_cobre_as_evidencias():
         Evidencia(nome_original="foto.jpg", formato="jpg", tamanho=10, hash_sha256="a" * 64, chave_armazenamento="k", enviada_em=AGORA)
     )
     assert o.calcular_hash_narrativa() != sem
+
+
+def test_exigir_despachavel_so_em_validada_ou_em_atendimento():
+    oc = _registrar()
+    with pytest.raises(TransicaoInvalidaError) as erro:
+        oc.exigir_despachavel()
+    assert erro.value.detalhes["operacao"] == "despachar"
+    _validada().exigir_despachavel()
+
+
+def test_versao_de_hash_desconhecida_e_recusada():
+    with pytest.raises(ValorInvalidoError) as erro:
+        _validada().calcular_hash_narrativa(99)
+    assert erro.value.chave == "documento.versao_hash_desconhecida"

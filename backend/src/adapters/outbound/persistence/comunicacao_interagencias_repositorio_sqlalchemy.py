@@ -3,15 +3,17 @@ Adapter de saída: Repositório e Gerador de Número de Ofício para Comunicaç�
 """
 from __future__ import annotations
 
+from collections.abc import Collection
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import ColumnElement, String, cast, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from adapters.outbound.persistence._datas import aware
 from application.ports.outbound.repositorio_comunicacao_interagencias import (
     GeradorNumeroOficio,
     RepositorioComunicacaoInteragencias,
+    formatar_numero_oficio,
 )
 from domain.interagencias.entity import (
     ComunicacaoInteragencias,
@@ -19,7 +21,31 @@ from domain.interagencias.entity import (
     PrioridadeComunicacao,
     StatusEntrega,
 )
-from infrastructure.database.models import ComunicacaoInteragenciasModel, SequenciaOficioModel
+from infrastructure.database.models import ComunicacaoInteragenciasModel
+
+_ESCAPE_LIKE = "\\"
+
+
+def _pertence_ao_departamento(departamento: str) -> ColumnElement[bool]:
+    """Origem igual ao departamento ou departamento presente na lista JSON de destinatários.
+
+    A lista é comparada pelo texto serializado (``["POLICIA_CIVIL", ...]``), o que funciona
+    igual no PostgreSQL e no SQLite; ``_`` e ``%`` do código são escapados para o LIKE.
+    """
+    codigo = departamento.strip().upper()
+    literal = codigo.replace(_ESCAPE_LIKE, _ESCAPE_LIKE * 2).replace("%", "\\%").replace("_", "\\_")
+    modelo = ComunicacaoInteragenciasModel
+    return or_(
+        func.upper(modelo.departamento_origem) == codigo,
+        cast(modelo.departamentos_destinatarios, String).like(f'%"{literal}"%', escape=_ESCAPE_LIKE),
+    )
+
+
+_UPSERT_OFICIO = text(
+    "INSERT INTO sequencias_oficio (ano, ultimo) VALUES (:ano, 1) "
+    "ON CONFLICT (ano) DO UPDATE SET ultimo = sequencias_oficio.ultimo + 1 "
+    "RETURNING ultimo"
+)
 
 
 class GeradorNumeroOficioSQLAlchemy(GeradorNumeroOficio):
@@ -27,19 +53,9 @@ class GeradorNumeroOficioSQLAlchemy(GeradorNumeroOficio):
         self._session = session
 
     async def proximo_numero(self, ano: int) -> str:
-        stmt = (
-            select(SequenciaOficioModel)
-            .where(SequenciaOficioModel.ano == ano)
-            .with_for_update()
-        )
-        seq = (await self._session.execute(stmt)).scalar_one_or_none()
-        if seq is None:
-            seq = SequenciaOficioModel(ano=ano, ultimo=0)
-            self._session.add(seq)
-
-        seq.ultimo += 1
-        await self._session.flush()
-        return f"OFI-{ano}-{seq.ultimo:06d}"
+        """Incremento atômico por ano: o UPSERT evita a corrida do primeiro ofício do ano."""
+        sequencial = (await self._session.execute(_UPSERT_OFICIO, {"ano": ano})).scalar_one()
+        return formatar_numero_oficio(ano, int(sequencial))
 
 
 class ComunicacaoInteragenciasRepositorioSQLAlchemy(RepositorioComunicacaoInteragencias):
@@ -93,31 +109,25 @@ class ComunicacaoInteragenciasRepositorioSQLAlchemy(RepositorioComunicacaoIntera
         protocolo: str | None = None,
         remetente_id: UUID | None = None,
         limite: int = 50,
+        niveis_sigilo: Collection[NivelSigilo] | None = None,
+        visivel_ao_usuario: UUID | None = None,
     ) -> list[ComunicacaoInteragencias]:
-        stmt = select(ComunicacaoInteragenciasModel).where(ComunicacaoInteragenciasModel.ativo.is_(True))
-
+        modelo = ComunicacaoInteragenciasModel
+        stmt = select(modelo).where(modelo.ativo.is_(True))
         if protocolo:
-            stmt = stmt.where(ComunicacaoInteragenciasModel.protocolo_ocorrencia == protocolo)
+            stmt = stmt.where(modelo.protocolo_ocorrencia == protocolo)
         if remetente_id:
-            stmt = stmt.where(ComunicacaoInteragenciasModel.remetente_id == remetente_id)
-
-        stmt = stmt.order_by(ComunicacaoInteragenciasModel.criada_em.desc()).limit(limite)
+            stmt = stmt.where(modelo.remetente_id == remetente_id)
+        if departamento:
+            stmt = stmt.where(_pertence_ao_departamento(departamento))
+        if niveis_sigilo is not None:
+            visivel = modelo.nivel_sigilo.in_([n.value for n in niveis_sigilo])
+            if visivel_ao_usuario is not None:
+                visivel = or_(visivel, modelo.remetente_id == visivel_ao_usuario)
+            stmt = stmt.where(visivel)
+        stmt = stmt.order_by(modelo.criada_em.desc()).limit(limite)
         models = (await self._session.execute(stmt)).scalars().all()
-
-        # Filtragem em Python para suportar match em JSON (compatível com SQLite e Postgres)
-        resultado = []
-        for m in models:
-            if departamento:
-                dep_upper = departamento.upper()
-                pertence = (
-                    m.departamento_origem.upper() == dep_upper
-                    or dep_upper in [d.upper() for d in (m.departamentos_destinatarios or [])]
-                )
-                if not pertence:
-                    continue
-            resultado.append(self._to_domain(m))
-
-        return resultado
+        return [self._to_domain(m) for m in models]
 
     async def listar_respostas(self, mensagem_pai_id: UUID) -> list[ComunicacaoInteragencias]:
         stmt = (

@@ -28,12 +28,13 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import AcessoNegadoError, ConflitoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.entity import TAMANHO_MINIMO_SENHA, Papel, Usuario, interpretar_papel
+from domain.usuario.permissoes import Permissao
 
-PAPEIS_GESTORES = (Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL)
-ENTIDADE_USUARIO = "Usuario"
+ENTIDADE_USUARIO = EntidadeAuditada.USUARIO
 
 
 def para_gestao(u: Usuario) -> UsuarioGestaoOutput:
@@ -45,7 +46,7 @@ class ListarUsuariosGestao(InterfaceListarUsuariosGestao):
         self._repositorio = repositorio
 
     async def executar(self, ator: Ator) -> tuple[UsuarioGestaoOutput, ...]:
-        ator.exigir_papel(*PAPEIS_GESTORES)
+        ator.exigir(Permissao.GERIR_USUARIOS)
         return tuple(para_gestao(u) for u in await self._repositorio.listar() if u.papel != Papel.CIDADAO)
 
 
@@ -59,7 +60,7 @@ class _GestaoBase:
         self._auditoria = auditoria
 
     async def _registrar(
-        self, ator: Ator, operacao: str, usuario: Usuario, antes: dict[str, Any] | None, depois: dict[str, Any]
+        self, ator: Ator, operacao: OperacaoAuditada, usuario: Usuario, antes: dict[str, Any] | None, depois: dict[str, Any]
     ) -> None:
         await self._auditoria.registrar(
             RegistroAuditoria(
@@ -76,7 +77,7 @@ class _GestaoBase:
 
     async def _alvo(self, ator: Ator, usuario_id) -> Usuario:
         """Carrega o usuário-alvo; o gestor não age sobre a própria conta."""
-        ator.exigir_papel(*PAPEIS_GESTORES)
+        ator.exigir(Permissao.GERIR_USUARIOS)
         if usuario_id == ator.id:
             raise AcessoNegadoError("Ninguém altera o próprio papel ou situação.", chave="usuario.proprio")
         usuario = await self._repositorio.buscar_por_id(usuario_id)
@@ -98,7 +99,7 @@ class CadastrarUsuario(_GestaoBase, InterfaceCadastrarUsuario):
         self._hasher = hasher
 
     async def executar(self, ator: Ator, input_dto: CadastrarUsuarioInput) -> UsuarioGestaoOutput:
-        ator.exigir_papel(*PAPEIS_GESTORES)
+        ator.exigir(Permissao.GERIR_USUARIOS)
         papel = interpretar_papel(input_dto.papel)
         if len(input_dto.senha or "") < TAMANHO_MINIMO_SENHA:
             raise ValorInvalidoError(
@@ -113,7 +114,7 @@ class CadastrarUsuario(_GestaoBase, InterfaceCadastrarUsuario):
             if await self._repositorio.buscar_por_login(usuario.login) is not None:
                 raise ConflitoError("Login já está em uso.", chave="usuario.login_em_uso")
             await self._repositorio.salvar(usuario)
-            await self._registrar(ator, "usuario.cadastrar", usuario, None, {"nome": usuario.nome, "papel": papel.value, "ativo": True})
+            await self._registrar(ator, OperacaoAuditada.USUARIO_CADASTRAR, usuario, None, {"nome": usuario.nome, "papel": papel.value, "ativo": True})
             await self._uow.commit()
         return para_gestao(usuario)
 
@@ -125,7 +126,7 @@ class AlterarPapelUsuario(_GestaoBase, InterfaceAlterarPapelUsuario):
             usuario = await self._alvo(ator, input_dto.usuario_id)
             anterior = usuario.alterar_papel(novo)
             await self._repositorio.salvar(usuario)
-            await self._registrar(ator, "usuario.alterar_papel", usuario, {"papel": anterior.value}, {"papel": novo.value})
+            await self._registrar(ator, OperacaoAuditada.USUARIO_ALTERAR_PAPEL, usuario, {"papel": anterior.value}, {"papel": novo.value})
             await self._uow.commit()
         return para_gestao(usuario)
 

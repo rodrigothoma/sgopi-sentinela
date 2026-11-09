@@ -14,17 +14,18 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
+from domain.auditoria.catalogo import EntidadeAuditada, grafias
 from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.documentos import mascarar_cpf
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 
 _CPF_REGEX = re.compile(r"\b(\d{3})\.?(\d{3})\.?(\d{3})[-.]?(\d{2})\b")
 _CHAVES_SENSIVEIS = ("documento", "cpf", "doc")
 
-ENTIDADES_OCORRENCIA = ("Ocorrencia", "ocorrencias")
-ENTIDADES_DESPACHO = ("OrdemDeDespacho", "ordens_despacho")
-ENTIDADES_VIATURA = ("Viatura", "viaturas")
-ENTIDADE_USUARIO = "Usuario"
+ENTIDADES_OCORRENCIA = grafias(EntidadeAuditada.OCORRENCIA)
+ENTIDADES_DESPACHO = grafias(EntidadeAuditada.ORDEM_DESPACHO)
+ENTIDADES_VIATURA = grafias(EntidadeAuditada.VIATURA)
+ENTIDADE_USUARIO = EntidadeAuditada.USUARIO
 
 
 def _sanitizar_payload(dados: Any) -> Any:
@@ -60,7 +61,7 @@ class ConsultarAuditoria(InterfaceConsultarAuditoria):
     async def executar(
         self, ator: Ator, input_dto: ConsultarAuditoriaInput
     ) -> tuple[RegistroAuditoriaOutput, ...]:
-        ator.exigir_papel(Papel.DELEGADO, Papel.SUPERVISOR)
+        ator.exigir(Permissao.CONSULTAR_AUDITORIA)
         registros = await self._auditoria.listar(
             entidade=input_dto.entidade,
             entidade_id=input_dto.entidade_id,

@@ -15,6 +15,7 @@ from application.use_cases.inteligencia.calcular_areas_risco import (
     EmitirAlertaCriticidadeUseCase,
     calcular_distancia_metros,
 )
+from domain.notificacao.entity import Notificacao
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
@@ -165,13 +166,13 @@ async def test_emitir_alerta_criticidade_e_confirmar_ciencia():
     alerta_id = res["alerta_id"]
     assert res["status"] == "EMITIDO"
     assert len(porta_audit.registros) == 1
-    assert porta_audit.registros[0].operacao == "EMISSAO_ALERTA_CRITICIDADE"
+    assert porta_audit.registros[0].operacao == "inteligencia.emitir_alerta"
     assert len(pub.eventos) == 1
 
     # Confirma ciência (UC11)
     await uc_confirmar.executar(ator=ator, alerta_id=alerta_id)
     assert len(porta_audit.registros) == 2
-    assert porta_audit.registros[1].operacao == "CIENCIA_ALERTA_CRITICIDADE"
+    assert porta_audit.registros[1].operacao == "inteligencia.registrar_ciencia"
 
     notif = await repo_notif.obter_por_id(alerta_id)
     assert notif.lida is True

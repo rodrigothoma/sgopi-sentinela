@@ -15,9 +15,9 @@ export interface ComunicacaoInteragencias {
   assunto: string;
   corpo: string;
   protocolo_ocorrencia?: string | null;
-  nivel_sigilo: 'PUBLICO' | 'RESTRITO' | 'CONFIDENCIAL';
+  nivel_sigilo: 'PADRAO' | 'RESERVADO' | 'CONFIDENCIAL';
   prioridade: 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
-  status_entrega: 'ENVIADO' | 'ENTREGUE' | 'LIDO' | 'RESPONDIDO' | 'ARQUIVADO';
+  status_entrega: 'ENTREGUE' | 'PENDENTE';
   mensagem_pai_id?: string | null;
   criada_em: string;
 }

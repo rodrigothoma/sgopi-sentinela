@@ -378,6 +378,12 @@
     "confirmar_desativar": "Deactivate {{nome}}? They lose access immediately, but the record and history are kept.",
     "confirmar_reativar": "Reactivate {{nome}}?"
   },
+  "busca": {
+    "placeholder": "Search protocol, nature…",
+    "rotulo": "Global incident search",
+    "buscando": "Searching…",
+    "vazio": "Nothing found"
+  },
   "tempo_real": {
     "nova_ocorrencia": "New occurrence {{protocolo}} ({{natureza}}) awaiting review.",
     "validada": "Occurrence {{protocolo}} validated by the Delegate."

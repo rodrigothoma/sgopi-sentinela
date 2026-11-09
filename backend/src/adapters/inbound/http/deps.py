@@ -20,9 +20,11 @@ from application.ports.outbound.provedor_token import ProvedorToken
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import AcessoNegadoError, CredenciaisInvalidasError, MuitasTentativasError
 from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao, papeis_com
 from infrastructure.config.settings import settings
 from infrastructure.di import (
     get_auditoria,
@@ -94,6 +96,11 @@ async def ator_opcional(
     return await ator_atual(request, credenciais, provedor, relogio, usuarios)
 
 
+def exigir_permissao(permissao: Permissao):
+    """Borda HTTP do catálogo de permissões: mesmos papéis que o caso de uso re-verifica."""
+    return exigir_papel(*papeis_com(permissao))
+
+
 def exigir_papel(*papeis: Papel):
     async def _verificar(
         request: Request,
@@ -108,8 +115,8 @@ def exigir_papel(*papeis: Papel):
                     RegistroAuditoria(
                         quem=ator.id,
                         quando=relogio.agora(),
-                        operacao="auth.acesso_negado",
-                        entidade="Rota",
+                        operacao=OperacaoAuditada.AUTH_ACESSO_NEGADO,
+                        entidade=EntidadeAuditada.ROTA,
                         entidade_id=f"{request.method} {request.url.path}",
                         dados_depois={"papel": ator.papel.value, "exigido": [p.value for p in papeis]},
                         ip=ator.ip,

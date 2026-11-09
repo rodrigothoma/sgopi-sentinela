@@ -7,11 +7,15 @@ Trata de notificações e alertas em tempo real no sistema policial.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from domain.shared.exceptions import CampoObrigatorioError
+from domain.shared.enums import interpretar_enum_ou_padrao
+from domain.shared.validacao import exigir_texto
+
+TAMANHO_MINIMO_TITULO = 3
+TAMANHO_MINIMO_MENSAGEM = 5
 
 
 class TipoNotificacao(str, Enum):
@@ -48,6 +52,7 @@ class Notificacao:
 
     titulo: str
     mensagem: str
+    criada_em: datetime  # instante do Relogio do caso de uso: o domínio não lê o relógio
     tipo: TipoNotificacao = TipoNotificacao.SISTEMA
     prioridade: PrioridadeNotificacao = PrioridadeNotificacao.MEDIA
     id: UUID = field(default_factory=uuid4)
@@ -58,7 +63,6 @@ class Notificacao:
     lida: bool = False
     lida_em: datetime | None = None
     metadados: dict | None = None
-    criada_em: datetime = field(default_factory=lambda: datetime.now(UTC))
     ativo: bool = True
 
     @classmethod
@@ -76,24 +80,11 @@ class Notificacao:
         metadados: dict | None = None,
         instante: datetime,
     ) -> Notificacao:
-        tit = titulo.strip() if titulo else ""
-        if len(tit) < 3:
-            raise CampoObrigatorioError("O título da notificação deve ter ao menos 3 caracteres.")
-        msg = mensagem.strip() if mensagem else ""
-        if len(msg) < 5:
-            raise CampoObrigatorioError("A mensagem da notificação deve ter ao menos 5 caracteres.")
+        tit = exigir_texto(titulo, f"O título da notificação deve ter ao menos {TAMANHO_MINIMO_TITULO} caracteres.", minimo=TAMANHO_MINIMO_TITULO)
+        msg = exigir_texto(mensagem, f"A mensagem da notificação deve ter ao menos {TAMANHO_MINIMO_MENSAGEM} caracteres.", minimo=TAMANHO_MINIMO_MENSAGEM)
 
-        if isinstance(tipo, str):
-            try:
-                tipo = TipoNotificacao(tipo.strip().upper())
-            except ValueError:
-                tipo = TipoNotificacao.SISTEMA
-
-        if isinstance(prioridade, str):
-            try:
-                prioridade = PrioridadeNotificacao(prioridade.strip().upper())
-            except ValueError:
-                prioridade = PrioridadeNotificacao.MEDIA
+        tipo = interpretar_enum_ou_padrao(TipoNotificacao, tipo, TipoNotificacao.SISTEMA)
+        prioridade = interpretar_enum_ou_padrao(PrioridadeNotificacao, prioridade, PrioridadeNotificacao.MEDIA)
 
         agora = instante  # vem do Relogio do caso de uso (aware); o domínio não lê o relógio
 

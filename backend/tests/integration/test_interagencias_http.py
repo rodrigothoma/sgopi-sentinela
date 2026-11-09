@@ -66,3 +66,53 @@ async def test_fluxo_comunicacao_interagencias(client):
     assert len(dados_list) >= 1
     assert any(c["id"] == comunicacao_id for c in dados_list)
 
+
+
+async def _enviar(client, headers, nivel: str, assunto: str) -> dict:
+    r = await client.post(
+        "/v1/interagencias",
+        json={
+            "departamento_origem": "POLICIA_CIVIL",
+            "departamentos_destinatarios": ["POLICIA_MILITAR"],
+            "assunto": assunto,
+            "corpo": "Conteúdo operacional do ofício para teste de sigilo.",
+            "nivel_sigilo": nivel,
+        },
+        headers=headers,
+    )
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+async def _assuntos_visiveis(client, login: str) -> set[str]:
+    r = await client.get("/v1/interagencias", headers=await auth(client, login))
+    assert r.status_code == 200, r.text
+    return {c["assunto"] for c in r.json()}
+
+
+async def test_listagem_respeita_nivel_de_sigilo_por_papel(client):
+    """Regressão: qualquer usuário logado lia ofícios RESERVADO e CONFIDENCIAL."""
+    h_delegado = await auth(client, "delegado")
+    await _enviar(client, h_delegado, "PADRAO", "Ofício padrão de teste")
+    await _enviar(client, h_delegado, "RESERVADO", "Ofício reservado de teste")
+    await _enviar(client, h_delegado, "CONFIDENCIAL", "Ofício confidencial de teste")
+
+    todos = {"Ofício padrão de teste", "Ofício reservado de teste", "Ofício confidencial de teste"}
+    assert await _assuntos_visiveis(client, "supervisor") == todos
+    assert await _assuntos_visiveis(client, "operador") == {"Ofício padrão de teste", "Ofício reservado de teste"}
+    assert await _assuntos_visiveis(client, "agente") == {"Ofício padrão de teste"}
+    assert await _assuntos_visiveis(client, "perito") == {"Ofício padrão de teste"}
+
+
+async def test_resposta_a_oficio_sem_acesso_responde_404(client):
+    h_delegado = await auth(client, "delegado")
+    confidencial = await _enviar(client, h_delegado, "CONFIDENCIAL", "Ofício confidencial de teste")
+
+    r = await client.post(
+        f"/v1/interagencias/{confidencial['id']}/responder",
+        json={"departamento_origem": "POLICIA_MILITAR", "assunto": "Resposta", "corpo": "Tentativa de resposta sem acesso."},
+        headers=await auth(client, "operador"),
+    )
+
+    assert r.status_code == 404
+    assert r.json()["code"] == "interagencias.nao_encontrada"

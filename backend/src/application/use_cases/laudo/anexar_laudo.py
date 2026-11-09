@@ -14,9 +14,12 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
-from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError, ValorInvalidoError
-from domain.usuario.entity import Papel
+from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
+from domain.usuario.permissoes import Permissao
+
+from ._mapeadores import para_laudo_output
 
 
 class AnexarLaudo(InterfaceAnexarLaudo):
@@ -35,11 +38,7 @@ class AnexarLaudo(InterfaceAnexarLaudo):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: AnexarLaudoInput) -> LaudoOutput:
-        if ator.papel not in (Papel.PERITO, Papel.DELEGADO):
-            raise AcessoNegadoError(
-                "Apenas o Perito Criminal responsável ou Delegado pode homologar e anexar laudo pericial.",
-                chave="laudo.apenas_perito",
-            )
+        ator.exigir(Permissao.ANEXAR_LAUDO, "Apenas o Perito Criminal responsável ou Delegado pode homologar e anexar laudo pericial.", chave="laudo.apenas_perito")
 
         laudo = await self._repo.buscar_por_id(dados.laudo_id)
         if not laudo:
@@ -79,8 +78,8 @@ class AnexarLaudo(InterfaceAnexarLaudo):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="laudo.anexar",
-                    entidade="laudo_pericial",
+                    operacao=OperacaoAuditada.LAUDO_ANEXAR,
+                    entidade=EntidadeAuditada.LAUDO_PERICIAL,
                     entidade_id=str(laudo.id),
                     dados_depois={
                         "numero_referencia": laudo.numero_referencia,
@@ -93,21 +92,4 @@ class AnexarLaudo(InterfaceAnexarLaudo):
             )
             await self._uow.commit()
 
-        return LaudoOutput(
-            id=laudo.id,
-            numero_referencia=laudo.numero_referencia,
-            tipo_pericia=laudo.tipo_pericia.value,
-            descricao_solicitacao=laudo.descricao_solicitacao,
-            solicitante_id=laudo.solicitante_id,
-            status=laudo.status.value,
-            solicitado_em=laudo.solicitado_em.isoformat(),
-            atualizado_em=laudo.atualizado_em.isoformat() if laudo.atualizado_em else laudo.solicitado_em.isoformat(),
-            perito_id=laudo.perito_id,
-            ocorrencia_id=laudo.ocorrencia_id,
-            inquerito_id=laudo.inquerito_id,
-            item_apreendido_id=laudo.item_apreendido_id,
-            conclusoes_tecnicas=laudo.conclusoes_tecnicas,
-            arquivo_nome=laudo.arquivo_nome,
-            hash_sha256=laudo.hash_sha256,
-            concluido_em=laudo.concluido_em.isoformat() if laudo.concluido_em else None,
-        )
+        return para_laudo_output(laudo)

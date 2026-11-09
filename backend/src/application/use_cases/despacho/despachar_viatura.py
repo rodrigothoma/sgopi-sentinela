@@ -29,18 +29,17 @@ from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
 from application.use_cases.viatura.gerir_viaturas import carregar_viatura, para_output
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.despacho.entity import OrdemDeDespacho
 from domain.despacho.eventos import ordem_de_despacho_criada
 from domain.despacho.servico_proximidade import sugerir_viaturas_proximas
 from domain.ocorrencia import eventos as ev_ocorrencia
 from domain.ocorrencia.status import StatusOcorrencia
-from domain.shared.exceptions import ConflitoError, TransicaoInvalidaError
-from domain.usuario.entity import Papel
+from domain.shared.exceptions import ConflitoError
+from domain.usuario.permissoes import Permissao
 from domain.viatura.entity import SituacaoViatura
 from domain.viatura.eventos import viatura_situacao_alterada
-
-PAPEIS_DESPACHO = (Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
 
 
 def ordem_para_output(o: OrdemDeDespacho) -> OrdemDespachoOutput:
@@ -56,15 +55,10 @@ class SugerirViaturasProximas(InterfaceSugerirViaturasProximas):
         self._ocorrencias, self._viaturas, self._relogio, self._max_idade, self._qtd = ocorrencias, viaturas, relogio, max_idade, quantidade
 
     async def executar(self, ator: Ator, ocorrencia_id: UUID) -> SugestoesOutput:
-        ator.exigir_papel(*PAPEIS_DESPACHO)
+        ator.exigir(Permissao.DESPACHAR_VIATURA)
         agora = self._relogio.agora()
         ocorrencia = await carregar_ou_404(self._ocorrencias, ocorrencia_id)
-        if ocorrencia.status not in (StatusOcorrencia.VALIDADA, StatusOcorrencia.EM_ATENDIMENTO):
-            raise TransicaoInvalidaError(
-                "Só ocorrências VALIDADA ou EM_ATENDIMENTO recebem despacho.",
-                operacao="despachar",
-                status_atual=ocorrencia.status.value,
-            )
+        ocorrencia.exigir_despachavel()
         frota = await self._viaturas.listar((SituacaoViatura.DISPONIVEL,))
         sugeridas = sugerir_viaturas_proximas(ocorrencia.coordenada, frota, agora, self._max_idade, self._qtd)
         sem_posicao = [v for v in frota if not v.posicao_valida(agora, self._max_idade)]
@@ -92,7 +86,7 @@ class DespacharViatura(InterfaceDespacharViatura):
         self._uow, self._relogio, self._auditoria, self._publicador = uow, relogio, auditoria, publicador
 
     async def executar(self, ator: Ator, input_dto: DespacharInput) -> OrdemDespachoOutput:
-        ator.exigir_papel(*PAPEIS_DESPACHO)
+        ator.exigir(Permissao.DESPACHAR_VIATURA)
         agora = self._relogio.agora()
         async with self._uow:
             ocorrencia = await carregar_ou_404(self._ocorrencias, input_dto.ocorrencia_id)
@@ -115,7 +109,7 @@ class DespacharViatura(InterfaceDespacharViatura):
             await self._ocorrencias.salvar(ocorrencia)
             await self._auditoria.registrar(
                 RegistroAuditoria(
-                    quem=ator.id, quando=agora, operacao="despacho.criar", entidade="OrdemDeDespacho", entidade_id=str(ordem.id),
+                    quem=ator.id, quando=agora, operacao=OperacaoAuditada.DESPACHO_CRIAR, entidade=EntidadeAuditada.ORDEM_DESPACHO, entidade_id=str(ordem.id),
                     dados_depois={"numero": numero, "ocorrencia_id": str(ocorrencia.id), "viatura_id": str(viatura.id), "prefixo": viatura.prefixo, "apoio": apoio},
                     ip=ator.ip,
                 )
@@ -133,6 +127,6 @@ class ListarOrdensDespacho(InterfaceListarOrdensDespacho):
         self._ordens = ordens
 
     async def executar(self, ator: Ator, input_dto: ListarOrdensInput) -> tuple[OrdemDespachoOutput, ...]:
-        ator.exigir_papel(Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR, Papel.DELEGADO)
+        ator.exigir(Permissao.ACOMPANHAR_ATENDIMENTO)
         ordens = await self._ordens.listar(input_dto.ocorrencia_id, input_dto.somente_ativas, max(1, min(input_dto.limit, 500)))
         return tuple(ordem_para_output(o) for o in ordens)

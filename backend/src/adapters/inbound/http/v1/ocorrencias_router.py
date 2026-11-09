@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from adapters.inbound.http.deps import exigir_papel
+from adapters.inbound.http.deps import exigir_papel, exigir_permissao
 from adapters.inbound.http.exportacao_csv import FormatoExportacao, resposta_csv
 from adapters.inbound.http.v1.apreensoes_router import ItemApreendidoSchema, RegistrarItemApreendidoRequest, item_schema
 from application.ports.inbound.ator import Ator
@@ -41,6 +41,7 @@ from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     TipificacaoInputDTO,
 )
 from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.di import (
     get_linha_do_tempo,
     get_listar_ocorrencias,
@@ -51,8 +52,6 @@ from infrastructure.di import (
 
 router = APIRouter(prefix="/v1/ocorrencias", tags=["ocorrencias"])
 
-PAPEIS_CONSULTA = (Papel.AGENTE, Papel.DELEGADO, Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
-PAPEIS_EXPORTACAO = (Papel.DELEGADO, Papel.SUPERVISOR)
 TAMANHO_MAXIMO_BUSCA = 200
 TAMANHO_PAGINA_EXPORTACAO = 200
 LIMITE_EXPORTACAO = 5000
@@ -285,7 +284,7 @@ async def listar_ocorrencias(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     filtros: ListarOcorrenciasInput = Depends(filtros_listagem),
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_OCORRENCIAS)),
     use_case: InterfaceListarOcorrencias = Depends(get_listar_ocorrencias),
 ) -> PaginaOcorrenciasSchema:
     """Lista ocorrências por status, da mais antiga para a mais nova (RF01), ou o inverso com
@@ -322,7 +321,7 @@ async def _todas_as_paginas(
 async def exportar_ocorrencias(
     formato: FormatoExportacao = Query(default=FormatoExportacao.CSV),
     filtros: ListarOcorrenciasInput = Depends(filtros_listagem),
-    ator: Ator = Depends(exigir_papel(*PAPEIS_EXPORTACAO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.EXPORTAR_REGISTROS)),
     use_case: InterfaceListarOcorrencias = Depends(get_listar_ocorrencias),
     registrar_exportacao: InterfaceRegistrarExportacao = Depends(get_registrar_exportacao),
 ) -> StreamingResponse:
@@ -345,7 +344,7 @@ async def exportar_ocorrencias(
 @router.get("/{ocorrencia_id}", response_model=OcorrenciaDetalheSchema)
 async def obter_ocorrencia(
     ocorrencia_id: UUID,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_OCORRENCIAS)),
     use_case: InterfaceObterDetalheOcorrencia = Depends(get_obter_detalhe_ocorrencia),
 ) -> OcorrenciaDetalheSchema:
     """Detalhe completo com envolvidos, tipificações e histórico de status (RF01)."""
@@ -359,7 +358,7 @@ def _evento_schema(e: EventoLinhaDoTempoOutput) -> EventoLinhaDoTempoSchema:
 @router.get("/{ocorrencia_id}/linha-do-tempo", response_model=list[EventoLinhaDoTempoSchema])
 async def linha_do_tempo(
     ocorrencia_id: UUID,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_OCORRENCIAS)),
     use_case: InterfaceLinhaDoTempo = Depends(get_linha_do_tempo),
 ) -> list[EventoLinhaDoTempoSchema]:
     """Status, despachos, evidências, apreensões, inquérito e laudos em ordem cronológica (sugestão #12)."""

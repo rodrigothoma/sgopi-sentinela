@@ -11,9 +11,11 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
-from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError
-from domain.usuario.entity import Papel
+from domain.shared.exceptions import EntidadeNaoEncontradaError
+from domain.shared.tempo import data_operacional
+from domain.usuario.permissoes import Permissao
 
 
 class RenovarMedida(InterfaceRenovarMedida):
@@ -30,11 +32,7 @@ class RenovarMedida(InterfaceRenovarMedida):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: RenovarMedidaInput) -> MedidaProtetivaOutput:
-        if ator.papel != Papel.DELEGADO:
-            raise AcessoNegadoError(
-                "Apenas o Delegado de Polícia pode renovar medidas protetivas.",
-                chave="medida.apenas_delegado",
-            )
+        ator.exigir(Permissao.GERIR_MEDIDAS, "Apenas o Delegado de Polícia pode renovar medidas protetivas.", chave="medida.apenas_delegado")
 
         medida = await self._repo_medida.buscar_por_id(dados.medida_id)
         if not medida:
@@ -59,8 +57,8 @@ class RenovarMedida(InterfaceRenovarMedida):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="medida_protetiva.renovar",
-                    entidade="medida_protetiva",
+                    operacao=OperacaoAuditada.MEDIDA_PROTETIVA_RENOVAR,
+                    entidade=EntidadeAuditada.MEDIDA_PROTETIVA,
                     entidade_id=str(medida.id),
                     dados_antes={
                         "data_vencimento": vencimento_anterior.isoformat(),
@@ -89,7 +87,7 @@ class RenovarMedida(InterfaceRenovarMedida):
             data_inicio=medida.data_inicio.isoformat(),
             prazo_dias=medida.prazo_dias,
             data_vencimento=medida.data_vencimento.isoformat(),
-            dias_restantes=medida.dias_restantes(agora.date()),
+            dias_restantes=medida.dias_restantes(data_operacional(agora)),
             status=medida.status.value,
             condicoes_especificas=medida.condicoes_especificas,
             motivo_revogacao=medida.motivo_revogacao,

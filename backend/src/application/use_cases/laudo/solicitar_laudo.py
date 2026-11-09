@@ -14,10 +14,14 @@ from application.ports.outbound.repositorio_inquerito import RepositorioInquerit
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.laudo.entity import LaudoPericial, TipoPericia
-from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError, ValorInvalidoError
-from domain.usuario.entity import Papel
+from domain.shared.enums import interpretar_enum
+from domain.shared.exceptions import EntidadeNaoEncontradaError
+from domain.usuario.permissoes import Permissao
+
+from ._mapeadores import para_laudo_output
 
 
 class SolicitarLaudo(InterfaceSolicitarLaudo):
@@ -40,11 +44,7 @@ class SolicitarLaudo(InterfaceSolicitarLaudo):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: SolicitarLaudoInput) -> LaudoOutput:
-        if ator.papel not in (Papel.DELEGADO, Papel.PERITO):
-            raise AcessoNegadoError(
-                "Apenas autoridade policial ou perito pode requisitar/iniciar requisição de perícia.",
-                chave="laudo.apenas_autoridade",
-            )
+        ator.exigir(Permissao.SOLICITAR_LAUDO, "Apenas autoridade policial ou perito pode requisitar/iniciar requisição de perícia.", chave="laudo.apenas_autoridade")
 
         if dados.ocorrencia_id:
             oc = await self._repo_ocorrencia.buscar_por_id(dados.ocorrencia_id)
@@ -64,13 +64,7 @@ class SolicitarLaudo(InterfaceSolicitarLaudo):
                     inquerito_id=str(dados.inquerito_id),
                 )
 
-        try:
-            tipo_enum = TipoPericia(dados.tipo_pericia)
-        except ValueError as exc:
-            raise ValorInvalidoError(
-                f"Tipo de perícia inválido: {dados.tipo_pericia}",
-                chave="laudo.tipo_invalido",
-            ) from exc
+        tipo_enum = interpretar_enum(TipoPericia, dados.tipo_pericia, "laudo.tipo_invalido", "Tipo de perícia inválido: {valor}")
 
         agora = self._relogio.agora()
         numero_ref = await self._gerador.proximo(agora.year)
@@ -92,8 +86,8 @@ class SolicitarLaudo(InterfaceSolicitarLaudo):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="laudo.solicitar",
-                    entidade="laudo_pericial",
+                    operacao=OperacaoAuditada.LAUDO_SOLICITAR,
+                    entidade=EntidadeAuditada.LAUDO_PERICIAL,
                     entidade_id=str(laudo.id),
                     dados_depois={
                         "numero_referencia": laudo.numero_referencia,
@@ -106,16 +100,4 @@ class SolicitarLaudo(InterfaceSolicitarLaudo):
             )
             await self._uow.commit()
 
-        return LaudoOutput(
-            id=laudo.id,
-            numero_referencia=laudo.numero_referencia,
-            tipo_pericia=laudo.tipo_pericia.value,
-            descricao_solicitacao=laudo.descricao_solicitacao,
-            solicitante_id=laudo.solicitante_id,
-            status=laudo.status.value,
-            solicitado_em=laudo.solicitado_em.isoformat(),
-            atualizado_em=laudo.atualizado_em.isoformat() if laudo.atualizado_em else laudo.solicitado_em.isoformat(),
-            ocorrencia_id=laudo.ocorrencia_id,
-            inquerito_id=laudo.inquerito_id,
-            item_apreendido_id=laudo.item_apreendido_id,
-        )
+        return para_laudo_output(laudo)

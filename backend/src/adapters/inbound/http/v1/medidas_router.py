@@ -9,7 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 
-from adapters.inbound.http.deps import exigir_papel
+from adapters.inbound.http.deps import exigir_permissao
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_alertas_vencimento_medida import (
     InterfaceEmitirAlertaVencimentoMedida,
@@ -24,7 +24,7 @@ from application.ports.inbound.interface_gerir_medidas_protetivas import (
     RenovarMedidaInput,
     RevogarMedidaInput,
 )
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.di import (
     get_conceder_medida,
     get_emitir_alerta_vencimento,
@@ -35,7 +35,6 @@ from infrastructure.di import (
 
 router = APIRouter(prefix="/v1/medidas-protetivas", tags=["medidas-protetivas"])
 
-PAPEIS_CONSULTA = (Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL, Papel.AGENTE, Papel.ESCRIVAO)
 
 
 # ------------------------------------------------------------------ schemas
@@ -126,7 +125,7 @@ def _medida_schema(out: MedidaProtetivaOutput) -> MedidaProtetivaSchema:
 @router.post("", response_model=MedidaProtetivaSchema, status_code=status.HTTP_201_CREATED)
 async def conceder_medida(
     req: ConcederMedidaRequest,
-    ator: Ator = Depends(exigir_papel(Papel.DELEGADO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_MEDIDAS)),
     uc: InterfaceConcederMedida = Depends(get_conceder_medida),
 ) -> MedidaProtetivaSchema:
     """Formaliza a concessão de Medida Protetiva de Urgência (privativo do Delegado de Polícia)."""
@@ -152,7 +151,7 @@ async def listar_medidas(
     ocorrencia_id: UUID | None = Query(None),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_MEDIDAS)),
     uc: InterfaceListarMedidas = Depends(get_listar_medidas),
 ) -> PaginaMedidasSchema:
     """Lista medidas protetivas com filtros e paginação."""
@@ -175,7 +174,7 @@ async def listar_medidas(
 async def renovar_medida(
     medida_id: UUID,
     req: RenovarMedidaRequest,
-    ator: Ator = Depends(exigir_papel(Papel.DELEGADO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_MEDIDAS)),
     uc: InterfaceRenovarMedida = Depends(get_renovar_medida),
 ) -> MedidaProtetivaSchema:
     """Prorroga a vigência da medida protetiva com justificativa técnica registrada."""
@@ -194,7 +193,7 @@ async def renovar_medida(
 async def revogar_medida(
     medida_id: UUID,
     req: RevogarMedidaRequest,
-    ator: Ator = Depends(exigir_papel(Papel.DELEGADO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_MEDIDAS)),
     uc: InterfaceRevogarMedida = Depends(get_revogar_medida),
 ) -> MedidaProtetivaSchema:
     """Revoga formalmente a medida protetiva com fundamentação jurídica."""
@@ -210,7 +209,7 @@ async def revogar_medida(
 
 @router.post("/verificar-vencimentos", response_model=ResultadoAlertaVencimentoSchema)
 async def verificar_vencimentos(
-    ator: Ator = Depends(exigir_papel(Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL)),
+    ator: Ator = Depends(exigir_permissao(Permissao.VERIFICAR_VENCIMENTOS_MEDIDAS)),
     uc: InterfaceEmitirAlertaVencimentoMedida = Depends(get_emitir_alerta_vencimento),
 ) -> ResultadoAlertaVencimentoSchema:
     """Verifica em lote medidas protetivas a expirar (< 72h) e dispara notificações e e-mails de alerta."""
@@ -222,7 +221,7 @@ async def verificar_vencimentos(
 async def enviar_alerta_vencimento_individual(
     medida_id: UUID,
     req: EnviarAlertaVencimentoRequest | None = None,
-    ator: Ator = Depends(exigir_papel(Papel.DELEGADO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL, Papel.AGENTE)),
+    ator: Ator = Depends(exigir_permissao(Permissao.ALERTAR_VENCIMENTO_MEDIDA)),
     uc: InterfaceEmitirAlertaVencimentoMedida = Depends(get_emitir_alerta_vencimento),
 ) -> ResultadoAlertaVencimentoSchema:
     """Envia manual e formalmente alerta de vencimento de uma medida protetiva com notificação e e-mail."""

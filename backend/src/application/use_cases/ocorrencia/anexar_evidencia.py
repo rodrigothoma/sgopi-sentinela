@@ -16,6 +16,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia.entity import Evidencia
 from domain.shared.exceptions import CampoObrigatorioError, ValorInvalidoError
@@ -103,8 +104,8 @@ class AnexarEvidencia(InterfaceAnexarEvidencia):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="evidencia.anexar",
-                    entidade="Evidencia",
+                    operacao=OperacaoAuditada.EVIDENCIA_ANEXAR,
+                    entidade=EntidadeAuditada.EVIDENCIA,
                     entidade_id=str(evidencia.id),
                     dados_depois={
                         "ocorrencia_id": str(ocorrencia.id),

@@ -14,8 +14,6 @@ pública de autenticidade emitida na validação — ver ``domain/ocorrencia/aut
 """
 from __future__ import annotations
 
-import hashlib
-import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -23,11 +21,14 @@ from uuid import UUID, uuid4
 
 from domain.ocorrencia.apreensao import ItemApreendido, MovimentacaoCustodia
 from domain.ocorrencia.autenticidade import SituacaoDocumento, gerar_chave_autenticidade
+from domain.ocorrencia.hash_narrativa import VERSAO_HASH_ATUAL, VERSAO_HASH_LEGADA, calcular_hash
 from domain.ocorrencia.prioridade import PRIORIDADE_PADRAO, PrioridadeOcorrencia, sugerir_prioridade
 from domain.ocorrencia.status import (
     ESTADOS_ACEITAM_APREENSAO,
+    ESTADOS_DESPACHAVEIS,
     ESTADOS_EDITAVEIS,
     ESTADOS_PRIORIZAVEIS,
+    OperacaoOcorrencia,
     StatusOcorrencia,
     proximo_estado,
 )
@@ -41,14 +42,13 @@ from domain.shared.exceptions import (
     ValorInvalidoError,
 )
 from domain.shared.geo import Coordenada
+from domain.shared.validacao import exigir_texto
+from domain.shared.versionado import Versionado
 
 TAMANHO_MINIMO_DESCRICAO = 20
 TAMANHO_MINIMO_JUSTIFICATIVA = 10
 TAMANHO_MINIMO_MOTIVO = 10
 MAXIMO_EVIDENCIAS_POR_OCORRENCIA = 10
-# Algoritmo do hash_narrativa: v1 (legado, junção por "\n"/"|", ambígua) e v2 (JSON canônico + evidências)
-VERSAO_HASH_LEGADA = 1
-VERSAO_HASH_ATUAL = 2
 
 
 class OrigemOcorrencia(str, Enum):
@@ -87,8 +87,7 @@ class Envolvido:
     telefone: str | None = None
 
     def __post_init__(self) -> None:
-        if not self.nome or not self.nome.strip():
-            raise CampoObrigatorioError("Nome do envolvido é obrigatório.", chave="envolvido.nome_vazio")
+        exigir_texto(self.nome, "Nome do envolvido é obrigatório.", chave="envolvido.nome_vazio")
         if any(c.isdigit() for c in self.nome):
             raise ValorInvalidoError("Nome do envolvido não pode conter números.", chave="envolvido.nome_invalido")
         self.nome = self.nome.strip()
@@ -107,12 +106,8 @@ class TipificacaoPenal:
     descricao: str
 
     def __post_init__(self) -> None:
-        if not self.artigo or not self.artigo.strip():
-            raise CampoObrigatorioError("Artigo da tipificação é obrigatório.", chave="tipificacao.artigo_vazio")
-        if not self.descricao or not self.descricao.strip():
-            raise CampoObrigatorioError(
-                "Descrição da tipificação é obrigatória.", chave="tipificacao.descricao_vazia"
-            )
+        exigir_texto(self.artigo, "Artigo da tipificação é obrigatório.", chave="tipificacao.artigo_vazio")
+        exigir_texto(self.descricao, "Descrição da tipificação é obrigatória.", chave="tipificacao.descricao_vazia")
 
 
 @dataclass(frozen=True)
@@ -157,7 +152,7 @@ class RegistroHistoricoStatus:
 
 
 @dataclass
-class Ocorrencia:
+class Ocorrencia(Versionado):
     """
     Agregado raiz. ``__init__`` é reservado à re-hidratação pelo repositório;
     a criação de negócio passa por ``Ocorrencia.registrar(...)``.
@@ -201,23 +196,31 @@ class Ocorrencia:
         if self.atualizada_em is None:
             self.atualizada_em = self.criada_em
 
-    def vincular_inquerito(self, inquerito_id: UUID) -> None:
+    def exigir_vinculavel(self, inquerito_id: UUID | None = None) -> None:
+        """UC06 regras 1 e 3: só VALIDADA entra em inquérito, e em um único inquérito.
+
+        ``inquerito_id`` é o inquérito de destino; ``None`` representa um inquérito ainda
+        não instaurado, com o qual qualquer vínculo existente conflita.
+        """
         if self.status != StatusOcorrencia.VALIDADA:
             raise ConflitoError(
-                f"Apenas ocorrências com status VALIDADA podem ser vinculadas a inquéritos (status atual: {self.status.value}).",
-                chave="ocorrencia.status_invalido_para_inquerito",
+                f"Apenas ocorrências validadas podem ser vinculadas (protocolo {self.numero_protocolo} está {self.status.value}).",
+                chave="inquerito.ocorrencia_nao_validada",
             )
         if self.inquerito_id is not None and self.inquerito_id != inquerito_id:
             raise ConflitoError(
-                "A ocorrência já se encontra vinculada a outro inquérito policial.",
-                chave="ocorrencia.ja_vinculada_a_inquerito",
+                f"A ocorrência {self.numero_protocolo} já se encontra vinculada a outro inquérito policial.",
+                chave="inquerito.ocorrencia_ja_vinculada",
             )
-        self.inquerito_id = inquerito_id
-        self.versao += 1
 
-    def desvincular_inquerito(self) -> None:
+    def vincular_inquerito(self, inquerito_id: UUID, instante: datetime) -> None:
+        self.exigir_vinculavel(inquerito_id)
+        self.inquerito_id = inquerito_id
+        self._tocar(instante)
+
+    def desvincular_inquerito(self, instante: datetime) -> None:
         self.inquerito_id = None
-        self.versao += 1
+        self._tocar(instante)
 
 
     # ------------------------------------------------------------------ factory
@@ -284,18 +287,15 @@ class Ocorrencia:
     def _validar_campos(
         natureza: str, descricao: str, localizacao: str, data_hora_fato: datetime, agora: datetime
     ) -> None:
-        if not natureza or not natureza.strip():
-            raise CampoObrigatorioError("A natureza da ocorrência é obrigatória.", chave="ocorrencia.natureza_vazia")
-        if not descricao or not descricao.strip():
-            raise CampoObrigatorioError("A descrição da ocorrência não pode ser vazia.", chave="ocorrencia.descricao_vazia")
+        exigir_texto(natureza, "A natureza da ocorrência é obrigatória.", chave="ocorrencia.natureza_vazia")
+        exigir_texto(descricao, "A descrição da ocorrência não pode ser vazia.", chave="ocorrencia.descricao_vazia")
         if len(descricao.strip()) < TAMANHO_MINIMO_DESCRICAO:
             raise ValorInvalidoError(
                 f"A descrição deve ter ao menos {TAMANHO_MINIMO_DESCRICAO} caracteres.",
                 chave="ocorrencia.descricao_curta",
                 minimo=TAMANHO_MINIMO_DESCRICAO,
             )
-        if not localizacao or not localizacao.strip():
-            raise CampoObrigatorioError("A localização da ocorrência é obrigatória.", chave="ocorrencia.localizacao_vazia")
+        exigir_texto(localizacao, "A localização da ocorrência é obrigatória.", chave="ocorrencia.localizacao_vazia")
         if data_hora_fato.tzinfo is None or agora.tzinfo is None:
             raise ValorInvalidoError("Datas devem ter fuso horário.", chave="ocorrencia.data_sem_fuso")
         if data_hora_fato > agora:
@@ -383,12 +383,14 @@ class Ocorrencia:
         return movimentacao
 
     # --------------------------------------------------------------- transições
-    def _transicionar(self, operacao: str, por_id: UUID, em: datetime, justificativa: str | None = None) -> None:
+    def _transicionar(
+        self, operacao: OperacaoOcorrencia, por_id: UUID, em: datetime, justificativa: str | None = None
+    ) -> None:
         destino = proximo_estado(self.status, operacao)
         if destino is None:
             raise TransicaoInvalidaError(
-                f"Operação '{operacao}' não permitida no status {self.status.value}.",
-                operacao=operacao,
+                f"Operação '{operacao.value}' não permitida no status {self.status.value}.",
+                operacao=operacao.value,
                 status_atual=self.status.value,
             )
         self.historico_status.append(
@@ -397,17 +399,13 @@ class Ocorrencia:
         self.status = destino
         self._tocar(em)
 
-    def _tocar(self, em: datetime) -> None:
-        self.versao += 1
-        self.atualizada_em = em
-
     def validar(self, delegado_id: UUID, em: datetime, despacho: str | None = None) -> None:
         """
         AGUARDANDO_REVISAO → VALIDADA; congela a narrativa por hash (DEC-09) e emite o
         documento oficial com sua chave pública de autenticidade (RF08).
         """
         despacho_normalizado = despacho.strip() if despacho and despacho.strip() else None
-        self._transicionar("validar", delegado_id, em, despacho_normalizado)
+        self._transicionar(OperacaoOcorrencia.VALIDAR, delegado_id, em, despacho_normalizado)
         self.validada_por_id = delegado_id
         self.justificativa_revisao = despacho_normalizado
         self.hash_versao = VERSAO_HASH_ATUAL
@@ -428,14 +426,14 @@ class Ocorrencia:
                 status_atual=self.status.value,
             )
         self._exigir_justificativa(justificativa)
-        self._transicionar("devolver_para_correcao", delegado_id, em, justificativa.strip())
+        self._transicionar(OperacaoOcorrencia.DEVOLVER_PARA_CORRECAO, delegado_id, em, justificativa.strip())
         self.validada_por_id = delegado_id
         self.justificativa_revisao = justificativa.strip()
 
     def rejeitar(self, delegado_id: UUID, justificativa: str, em: datetime) -> None:
         """AGUARDANDO_REVISAO → REJEITADA (terminal; justificativa obrigatória)."""
         self._exigir_justificativa(justificativa)
-        self._transicionar("rejeitar", delegado_id, em, justificativa.strip())
+        self._transicionar(OperacaoOcorrencia.REJEITAR, delegado_id, em, justificativa.strip())
         self.validada_por_id = delegado_id
         self.justificativa_revisao = justificativa.strip()
 
@@ -486,11 +484,20 @@ class Ocorrencia:
     def reenviar(self, agente_id: UUID, em: datetime) -> None:
         """EM_CORRECAO → AGUARDANDO_REVISAO pelo Agente autor (RF04)."""
         self._exigir_autor(agente_id)
-        self._transicionar("reenviar", agente_id, em)
+        self._transicionar(OperacaoOcorrencia.REENVIAR, agente_id, em)
+
+    def exigir_despachavel(self) -> None:
+        """UC02 regra 1: recebe viatura a ocorrência VALIDADA (despacho) ou EM_ATENDIMENTO (apoio)."""
+        if self.status not in ESTADOS_DESPACHAVEIS:
+            raise TransicaoInvalidaError(
+                "Só ocorrências VALIDADA ou EM_ATENDIMENTO recebem despacho.",
+                operacao=OperacaoOcorrencia.DESPACHAR.value,
+                status_atual=self.status.value,
+            )
 
     def despachar(self, operador_id: UUID, em: datetime) -> None:
         """VALIDADA → EM_ATENDIMENTO (RF02)."""
-        self._transicionar("despachar", operador_id, em)
+        self._transicionar(OperacaoOcorrencia.DESPACHAR, operador_id, em)
 
     def registrar_apoio(self, operador_id: UUID, em: datetime) -> None:
         """Viatura de apoio em ocorrência EM_ATENDIMENTO: não muda o status, mas incrementa a
@@ -505,23 +512,22 @@ class Ocorrencia:
 
     def encerrar(self, ator_id: UUID, desfecho: str, em: datetime) -> None:
         """EM_ATENDIMENTO → ENCERRADA com desfecho textual obrigatório (RF02)."""
-        if not desfecho or not desfecho.strip():
-            raise CampoObrigatorioError("O desfecho do atendimento é obrigatório.", chave="ocorrencia.desfecho_vazio")
-        self._transicionar("encerrar", ator_id, em, desfecho.strip())
+        exigir_texto(desfecho, "O desfecho do atendimento é obrigatório.", chave="ocorrencia.desfecho_vazio")
+        self._transicionar(OperacaoOcorrencia.ENCERRAR, ator_id, em, desfecho.strip())
         self.desfecho = desfecho.strip()
 
     # ------------------------------------------- atos administrativos do Delegado
     def arquivar(self, delegado_id: UUID, motivo: str, em: datetime) -> None:
         """→ ARQUIVADA com motivo obrigatório (RF20). Não permitido em EM_ATENDIMENTO."""
         self._exigir_motivo(motivo)
-        self._transicionar("arquivar", delegado_id, em, motivo.strip())
+        self._transicionar(OperacaoOcorrencia.ARQUIVAR, delegado_id, em, motivo.strip())
         self.arquivada_por_id = delegado_id
         self.motivo_arquivamento = motivo.strip()
 
     def excluir(self, delegado_id: UUID, motivo: str, em: datetime) -> None:
         """→ EXCLUIDA (exclusão lógica, terminal) com motivo obrigatório (RF20, RNF03*)."""
         self._exigir_motivo(motivo)
-        self._transicionar("excluir", delegado_id, em, motivo.strip())
+        self._transicionar(OperacaoOcorrencia.EXCLUIR, delegado_id, em, motivo.strip())
         self.excluida_por_id = delegado_id
         self.motivo_exclusao = motivo.strip()
 
@@ -575,33 +581,7 @@ class Ocorrencia:
         uma ocorrência ainda não validada usa a versão atual.
         """
         versao = versao or self.hash_versao or (VERSAO_HASH_LEGADA if self.hash_narrativa else VERSAO_HASH_ATUAL)
-        conteudo = self._conteudo_hash_v1() if versao == VERSAO_HASH_LEGADA else self._conteudo_hash_v2()
-        return hashlib.sha256(conteudo.encode("utf-8")).hexdigest()
-
-    def _conteudo_hash_v1(self) -> str:
-        """Legado: separadores sem escape permitiam colisão deslocando texto entre campos (N5)."""
-        partes = [self.natureza, self.descricao, self.localizacao, self.data_hora_fato.isoformat()]
-        partes += sorted(f"{e.tipo.value}|{e.nome}|{e.documento or ''}" for e in self.envolvidos)
-        partes += sorted(f"{t.artigo}|{t.descricao}" for t in self.tipificacoes)
-        return "\n".join(partes)
-
-    def _conteudo_hash_v2(self) -> str:
-        """JSON canônico (campos nomeados, chaves ordenadas): sem ambiguidade entre campos.
-
-        Inclui o SHA-256 das evidências, que não mudam após a validação. Itens apreendidos ficam
-        de fora: a custódia continua sendo movimentada depois da emissão do documento.
-        """
-        documento = {
-            "versao": VERSAO_HASH_ATUAL,
-            "natureza": self.natureza,
-            "descricao": self.descricao,
-            "localizacao": self.localizacao,
-            "data_hora_fato": self.data_hora_fato.isoformat(),
-            "envolvidos": sorted([e.tipo.value, e.nome, e.documento or ""] for e in self.envolvidos),
-            "tipificacoes": sorted([t.artigo, t.descricao] for t in self.tipificacoes),
-            "evidencias": sorted(e.hash_sha256 for e in self.evidencias),
-        }
-        return json.dumps(documento, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+        return calcular_hash(self, versao)
 
     def narrativa_integra(self) -> bool | None:
         """None se ainda não foi validada; True/False se o hash confere (na versão com que foi emitido)."""

@@ -14,11 +14,11 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.inquerito.entity import Inquerito
-from domain.ocorrencia.status import StatusOcorrencia
-from domain.shared.exceptions import AcessoNegadoError, ConflitoError, EntidadeNaoEncontradaError
-from domain.usuario.entity import Papel
+from domain.shared.exceptions import EntidadeNaoEncontradaError
+from domain.usuario.permissoes import Permissao
 
 
 class InstaurarInquerito(InterfaceInstaurarInquerito):
@@ -39,11 +39,7 @@ class InstaurarInquerito(InterfaceInstaurarInquerito):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: InstaurarInqueritoInput) -> InqueritoOutput:
-        if ator.papel != Papel.DELEGADO:
-            raise AcessoNegadoError(
-                "Apenas o Delegado de Polícia possui competência para instaurar inquérito policial.",
-                chave="inquerito.apenas_delegado",
-            )
+        ator.exigir(Permissao.GERIR_INQUERITOS, "Apenas o Delegado de Polícia possui competência para instaurar inquérito policial.", chave="inquerito.apenas_delegado")
 
         agora = self._relogio.agora()
         numero = await self._gerador.proximo(agora.year)
@@ -59,16 +55,7 @@ class InstaurarInquerito(InterfaceInstaurarInquerito):
                     chave="ocorrencia.nao_encontrada",
                     ocorrencia_id=str(oc_id),
                 )
-            if oc.status != StatusOcorrencia.VALIDADA:
-                raise ConflitoError(
-                    f"Apenas ocorrências validadas podem ser vinculadas (protocolo {oc.numero_protocolo} está {oc.status.value}).",
-                    chave="inquerito.ocorrencia_nao_validada",
-                )
-            if oc.inquerito_id is not None:
-                raise ConflitoError(
-                    f"A ocorrência {oc.numero_protocolo} já pertence a outro inquérito.",
-                    chave="inquerito.ocorrencia_ja_vinculada",
-                )
+            oc.exigir_vinculavel()
             ocorrencias_carregadas.append(oc)
 
         inquerito = Inquerito.instaurar(
@@ -82,15 +69,15 @@ class InstaurarInquerito(InterfaceInstaurarInquerito):
         async with self._uow:
             await self._repo_inquerito.salvar(inquerito)
             for oc in ocorrencias_carregadas:
-                oc.vincular_inquerito(inquerito.id)
+                oc.vincular_inquerito(inquerito.id, agora)
                 await self._repo_ocorrencia.salvar(oc)
 
             await self._auditoria.registrar(
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="inquerito.instaurar",
-                    entidade="inquerito",
+                    operacao=OperacaoAuditada.INQUERITO_INSTAURAR,
+                    entidade=EntidadeAuditada.INQUERITO,
                     entidade_id=str(inquerito.id),
                     dados_depois={
                         "numero": inquerito.numero,

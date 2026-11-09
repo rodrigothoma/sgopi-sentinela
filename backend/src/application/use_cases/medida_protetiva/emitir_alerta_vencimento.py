@@ -22,8 +22,9 @@ from application.ports.outbound.repositorio_medida_protetiva import RepositorioM
 from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
-from domain.medida_protetiva.entity import MedidaProtetiva, StatusMedida
+from domain.medida_protetiva.entity import ESTADOS_VIGENTES, MedidaProtetiva, StatusMedida
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.ocorrencia.entity import Ocorrencia
 from domain.shared.eventos import EventoDominio
@@ -86,32 +87,26 @@ class EmitirAlertaVencimentoMedidaUseCase(InterfaceEmitirAlertaVencimentoMedida)
 
         # Modo automático / Varredura em lote (UC12): todas as medidas ativas próximas do vencimento (<= 3 dias)
         medidas_ativas, _ = await self._repo_medida.listar(
-            status=[StatusMedida.ATIVA, StatusMedida.RENOVADA],
+            status=[s for s in StatusMedida if s in ESTADOS_VIGENTES],
             limit=500,
         )
 
         resultados = []
         enviados = 0
         for m in medidas_ativas:
-            # Emite apenas se estiver a <= 3 dias (72h) do vencimento e ainda não tiver alerta recente enviado
-            if m.esta_proxima_do_vencimento(hoje, dias_antecedencia=3):
-                # Se já enviou alerta há menos de 48h, evita disparos repetidos no mesmo ciclo
-                if m.alerta_vencimento_enviado_em is not None:
-                    dias_desde_ultimo = (agora - m.alerta_vencimento_enviado_em).total_seconds() / 86400.0
-                    if dias_desde_ultimo < 2.0:
-                        continue
-
-                res = await self._processar_alerta_medida(
-                    medida=m,
-                    ator=ator,
-                    agora=agora,
-                    hoje=hoje,
-                    email_customizado=None,
-                    manual=False,
-                )
-                resultados.append(res)
-                if res["email_enviado"] or res["notificacao_gerada"]:
-                    enviados += 1
+            if not m.precisa_alerta(hoje, agora):
+                continue
+            res = await self._processar_alerta_medida(
+                medida=m,
+                ator=ator,
+                agora=agora,
+                hoje=hoje,
+                email_customizado=None,
+                manual=False,
+            )
+            resultados.append(res)
+            if res["email_enviado"] or res["notificacao_gerada"]:
+                enviados += 1
 
         return {
             "sucesso": True,
@@ -209,8 +204,8 @@ class EmitirAlertaVencimentoMedidaUseCase(InterfaceEmitirAlertaVencimentoMedida)
             RegistroAuditoria(
                 quem=ator.id,
                 quando=agora,
-                operacao="ALERTA_VENCIMENTO_MEDIDA",
-                entidade="medidas_protetivas",
+                operacao=OperacaoAuditada.MEDIDA_PROTETIVA_ALERTAR_VENCIMENTO,
+                entidade=EntidadeAuditada.MEDIDA_PROTETIVA,
                 entidade_id=str(medida.id),
                 dados_depois={
                     "numero_referencia": medida.numero_referencia,

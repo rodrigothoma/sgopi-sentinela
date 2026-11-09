@@ -21,26 +21,30 @@ sgopi-sentinela/
 │   │   │   │                      # apreensão/custódia (extra RF03), autenticidade (extra RF08)
 │   │   │   ├── viatura/           # Viatura, SituacaoViatura, Posicao
 │   │   │   ├── despacho/          # OrdemDeDespacho, serviço de proximidade (Haversine)
-│   │   │   ├── usuario/           # Usuario, Papel
-│   │   │   ├── auditoria/         # RegistroAuditoria
+│   │   │   ├── usuario/           # Usuario, Papel, permissoes.py (catálogo RBAC: Permissao → papéis)
+│   │   │   ├── auditoria/         # RegistroAuditoria, catalogo.py (OperacaoAuditada, EntidadeAuditada)
 │   │   │   ├── inquerito/         # Inquérito policial (extra RF06)
 │   │   │   ├── laudo/             # Laudo pericial (extra RF07)
 │   │   │   ├── medida_protetiva/  # Medida protetiva de urgência (extra RF09)
-│   │   │   └── shared/            # Exceções (com chave i18n), Coordenada, CPF, documentos, eventos
+│   │   │   ├── interagencias/     # Comunicação interagências / ofícios (extra RF10)
+│   │   │   ├── notificacao/       # Notificações in-app (extra)
+│   │   │   └── shared/            # Exceções (chave i18n), Coordenada, CPF, eventos, MaquinaEstados,
+│   │   │                          # mixin Versionado, exigir_texto, interpretar_enum, Prioridade
 │   │   ├── application/
 │   │   │   ├── ports/inbound/     # Interface* + DTOs + Ator (um arquivo por caso de uso)
 │   │   │   ├── ports/outbound/    # Repositorio*, UnidadeDeTrabalho, Relogio, GeradorProtocolo,
 │   │   │   │                      # GeradorNumero*, PortaAuditoria, PublicadorEventos, HasherSenha,
-│   │   │   │                      # ProvedorToken, ArmazenamentoArquivos
+│   │   │   │                      # ProvedorToken, ArmazenamentoArquivos, PortaNotificacaoEmail
 │   │   │   └── use_cases/         # auth/, ocorrencia/, viatura/, despacho/, auditoria/, usuario/,
-│   │   │                          # inquerito/, laudo/, medida_protetiva/, documento/ (extras)
+│   │   │                          # inquerito/, laudo/, medida_protetiva/, documento/, interagencias/,
+│   │   │                          # notificacao/, indicadores/, inteligencia/ (extras)
 │   │   ├── adapters/
 │   │   │   ├── inbound/http/      # deps (JWT/RBAC), erros, middleware, v1/*_router.py
 │   │   │   ├── inbound/websocket/ # WS /v1/tempo-real + GerenciadorConexoes
 │   │   │   ├── inbound/simulador/ # SimuladorTelemetria (driving adapter de GPS) + extras opcionais:
 │   │   │   │                      # GeradorOcorrencias (demo) e OrquestradorDespacho
-│   │   │   └── outbound/          # persistence/ (SQLAlchemy), seguranca/ (argon2, jose),
-│   │   │                          # eventos/ (fan-out em memória), relogio/, arquivos/ (disco)
+│   │   │   └── outbound/          # persistence/ (SQLAlchemy + mappers/ modelo↔entidade), seguranca/ (argon2, jose),
+│   │   │                          # eventos/ (fan-out em memória), relogio/, arquivos/ (disco), email/ (SMTP)
 │   │   ├── infrastructure/
 │   │   │   ├── config/            # Settings (pydantic-settings, .env)
 │   │   │   ├── database/          # engine, models, migrations/ (Alembic)
@@ -55,10 +59,10 @@ sgopi-sentinela/
 │   ├── src/ {components, pages, services, hooks, types, utils, locales}
 │   └── cypress/e2e/               # Testes E2E de interface (Cypress)
 ├── docs/
-│   ├── DOCUMENTACAO_DE_ENGENHARIA.md · PLANEJAMENTO_DESENVOLVIMENTO.md · ROTEIRO_DEMONSTRACAO.md
+│   ├── DOCUMENTACAO_DE_ENGENHARIA.md · PLANEJAMENTO_DESENVOLVIMENTO.md
 │   ├── implementacao/             # Registros de etapas e complementos de implementação
 │   └── diagramas/
-├── docker-compose.yml             # PostgreSQL 16 local
+├── docker-compose.yml             # PostgreSQL 16 local (porta do host 5433, configurável via SGOPI_DB_PORTA)
 └── README.md
 ```
 
@@ -78,7 +82,7 @@ sgopi-sentinela/
 ```bash
 cd backend
 
-# 1. Suba o banco local
+# 1. Suba o banco local (exposto em localhost:5433 por padrão — ajuste com SGOPI_DB_PORTA)
 docker compose -f ../docker-compose.yml up -d
 
 # 2. Instale dependências
@@ -95,6 +99,8 @@ uv run python -m scripts.seed   # usuários agente/delegado/operador (senha Senh
 uv run uvicorn --app-dir src main:app --reload
 ```
 
+> A porta padrão do host é **5433** (e não 5432) para não colidir com um PostgreSQL nativo já instalado na máquina; o `.env.example` já aponta para ela. Detalhes em [`docs/implementacao/CORRECAO_CONEXAO_BANCO_2026-10-05.md`](docs/implementacao/CORRECAO_CONEXAO_BANCO_2026-10-05.md).
+
 > Sem Docker? Aponte `DATABASE_URL=sqlite+aiosqlite:///./sgopi.db` no `.env` — o esquema e os testes são portáveis.
 
 ### Frontend
@@ -105,6 +111,15 @@ npm install
 cp .env.example .env
 npm run dev                     # http://localhost:3000 (proxy /v1 e WebSocket para o backend)
 ```
+
+### Antes de commitar
+
+```bash
+./scripts/instalar-hooks.sh       # uma vez por clone: ativa o pre-commit (ruff, import-linter e tsc)
+./scripts/verificar.sh            # repete o CI localmente (use --rapido durante o desenvolvimento)
+```
+
+Agentes de IA seguem o [`AGENTS.md`](AGENTS.md) e as skills em [`.claude/skills/`](.claude/skills/) (`backend-tdd`, `frontend-tdd`, `verificar`, `handoff`).
 
 ### 📋 Quadro de Desenvolvimento (Kanban GitHub Projects)
 Todas as etapas e fatias verticais do projeto estão mapeadas e organizadas no [**Quadro Oficial de Desenvolvimento no GitHub Projects**](https://github.com/users/rodrigothoma/projects/2).
@@ -120,7 +135,7 @@ Todas as etapas e fatias verticais do projeto estão mapeadas e organizadas no [
 - **Delegacia Online com cota por IP:** `POST /v1/ocorrencias/publico` aceita até `REGISTRO_PUBLICO_MAX_POR_IP` comunicações (padrão 20) a cada 10 min por IP.
 - **IP de origem confiável:** `X-Forwarded-For` só é considerado quando a conexão vem de `PROXIES_CONFIAVEIS` (padrão: loopback); sem isso, um cliente forjaria o IP para burlar limites e auditoria.
 - **WebSocket sem token na URL:** o painel envia o JWT no cabeçalho `Sec-WebSocket-Protocol` (`["sgopi.bearer", <jwt>]`), e o servidor responde só `sgopi.bearer`. Token em query string é recusado (1008).
-- **Consulta pública mínima (LGPD):** `GET /v1/ocorrencias/publico/{protocolo}` devolve apenas protocolo, status, natureza, localização e data; ocorrência excluída logicamente responde 404.
+- **Consulta pública mínima (LGPD):** `POST /v1/ocorrencias/publico/consulta` exige **protocolo + código de acompanhamento** (entregue uma única vez no registro; só o hash é persistido) no corpo da requisição, fora dos logs de URL, e devolve apenas protocolo, status, natureza, localização e data; ocorrência excluída logicamente responde 404.
 
 Os limites são configuráveis no `.env` (ver `backend/.env.example`). O limitador é em memória — adequado a uma instância da API; com réplicas, troque o adapter da porta `LimitadorTentativas`.
 
@@ -129,9 +144,9 @@ Os limites são configuráveis no `.env` (ver `backend/.env.example`). O limitad
 <!-- Números da suíte: atualize SOMENTE esta tabela (demais documentos apontam para cá). -->
 | Suíte | Situação atual |
 | :--- | :--- |
-| pytest (backend) | **744 testes** coletados — 731 unitários/integração + 13 E2E de API |
+| pytest (backend) | **844 testes** coletados — 831 unitários/integração + 13 E2E de API (exigem a API em execução; pulados na suíte local) |
 | Cobertura (`domain/` + `application/`) | **≈ 95 %** (meta ≥ 80 % no agregado; piso por arquivo: 85 % em `domain/`, 75 % em `application/`) |
-| Vitest (frontend) | **7 testes** em 3 arquivos (`src/utils/__tests__`) |
+| Vitest (frontend) | **16 testes** em 5 arquivos (`src/utils/__tests__`) |
 | Cypress (frontend) | **36 testes** em 7 specs |
 
 ```bash
@@ -194,7 +209,7 @@ cd frontend && npm run e2e:db
 | :--- | :--- | :--- |
 | 📋 **Quadro Kanban Oficial** | [**GitHub Projects #2**](https://github.com/users/rodrigothoma/projects/2) | Backlog e esteira de desenvolvimento do projeto do início ao fim (49 itens rastreáveis). |
 | 📄 **Especificação Completa de Engenharia** | [**docs/DOCUMENTACAO_DE_ENGENHARIA.md**](docs/DOCUMENTACAO_DE_ENGENHARIA.md) | Requisitos canônicos (RF01–RF10, RNF01–RNF05), matriz MoSCoW, proposta de MVP e casos de uso com diagramas de sequência. |
-| 🎭 **Roteiro de Demonstração** | [**docs/ROTEIRO_DEMONSTRACAO.md**](docs/ROTEIRO_DEMONSTRACAO.md) | Roteiro da apresentação final, setup pré-banca e dados semeados. |
+| 🛠️ **Plano de Refatoração (nov/2026)** | [**docs/implementacao/PLANO_REFATORACAO_2026-11.md**](docs/implementacao/PLANO_REFATORACAO_2026-11.md) | Ondas de refatoração com o que já foi concluído (commit por item) e o que falta. |
 | 🗓️ **Planejamento de Desenvolvimento** | [**docs/PLANEJAMENTO_DESENVOLVIMENTO.md**](docs/PLANEJAMENTO_DESENVOLVIMENTO.md) | Cronograma de desenvolvimento e fatias verticais semanais da equipe (Sprints 2 a 5). |
 | 🌐 **Wiki Oficial do Projeto** | [**GitHub Wiki**](https://github.com/rodrigothoma/sgopi-sentinela/wiki) | Base de conhecimento da equipe com guias, modelagem UML navegável e detalhamento arquitetural. |
 | 📊 **Artefatos e Diagramas** | [**docs/diagramas/**](docs/diagramas/) | Todos os diagramas UML em alta definição. |
@@ -215,7 +230,7 @@ cd frontend && npm run e2e:db
 - **Must Have (MVP Essencial — escopo canônico):** RF01 (Gestão de Ocorrência Policial), RF04 (Fluxo de Validação pelo Delegado) e RF02 (Monitoramento GPS e Despacho Tático).
 - **Should Have (Alta Prioridade):** RF03 (Inventário de Apreensões), RF05 (Manchas Criminais e Alertas), RF07 (Laudos Periciais) — *implementados como extras*.
 - **Could Have (Média Prioridade):** RF06 (Vinculação a Inquéritos), RF08 (Autenticação Pública de Documentos), RF09 (Medidas Protetivas) — *implementados como extras*.
-- **Won't Have (Próximos Ciclos):** RF10 (Comunicação Interagências).
+- **Won't Have (planejado originalmente):** RF10 (Comunicação Interagências) — *implementado como extra (ofícios internos rastreáveis)*.
 
 ### ➕ Extras implementados (além do MVP)
 Funcionalidades entregues **fora do escopo canônico do MVP** (RF01/RF04/RF02). Não redefinem o MVP:
@@ -225,6 +240,8 @@ Funcionalidades entregues **fora do escopo canônico do MVP** (RF01/RF04/RF02). 
 - **RF07** — Laudos periciais com upload e verificação de integridade SHA-256;
 - **RF08** — Autenticação pública de documentos por chave de segurança ou QR Code (`/autenticar`);
 - **RF09** — Medidas protetivas com controle de vigência, renovação e revogação;
+- **RF10** — Comunicação interagências por ofícios oficiais rastreáveis (OFI-AAAA-NNNNNN), com nível de sigilo e respostas encadeadas;
+- Notificações in-app (sino na barra lateral) e indicadores/áreas de risco dinâmicas;
 - **DEC-03** — Pin vetorial SVG animado nos formulários e no mapa;
 - Arquivamento e exclusão lógica de ocorrência pelo Delegado; gerador de ocorrências fictícias para demonstração; orquestrador de despacho/encerramento automáticos (com viatura de apoio).
 

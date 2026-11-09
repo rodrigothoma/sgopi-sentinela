@@ -9,7 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile, status
 from pydantic import BaseModel, Field
 
-from adapters.inbound.http.deps import exigir_papel
+from adapters.inbound.http.deps import exigir_permissao
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_gerir_laudos import (
     AnexarLaudoInput,
@@ -22,7 +22,7 @@ from application.ports.inbound.interface_gerir_laudos import (
     SolicitarLaudoInput,
 )
 from domain.shared.exceptions import ValorInvalidoError
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.config.settings import settings
 from infrastructure.di import (
     get_anexar_laudo,
@@ -34,9 +34,6 @@ from infrastructure.di import (
 
 router = APIRouter(prefix="/v1/laudos", tags=["laudos"])
 
-PAPEIS_CONSULTA = (Papel.DELEGADO, Papel.PERITO, Papel.SUPERVISOR, Papel.OPERADOR_CENTRAL, Papel.AGENTE, Papel.ESCRIVAO)
-PAPEIS_SOLICITACAO = (Papel.DELEGADO, Papel.PERITO)
-PAPEIS_ANEXACAO = (Papel.PERITO, Papel.DELEGADO)
 
 
 # ------------------------------------------------------------------ schemas
@@ -99,7 +96,7 @@ def _laudo_schema(out: LaudoOutput) -> LaudoSchema:
 @router.post("", response_model=LaudoSchema, status_code=status.HTTP_201_CREATED)
 async def solicitar_laudo(
     req: SolicitarLaudoRequest,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_SOLICITACAO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.SOLICITAR_LAUDO)),
     uc: InterfaceSolicitarLaudo = Depends(get_solicitar_laudo),
 ) -> LaudoSchema:
     """Solicita a realização de perícia técnica à Polícia Científica."""
@@ -123,7 +120,7 @@ async def listar_laudos(
     inquerito_id: UUID | None = Query(None),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_LAUDOS)),
     uc: InterfaceListarLaudos = Depends(get_listar_laudos),
 ) -> PaginaLaudosSchema:
     """Lista laudos periciais com filtros e paginação."""
@@ -146,7 +143,7 @@ async def listar_laudos(
 @router.get("/{laudo_id}", response_model=LaudoSchema)
 async def obter_laudo(
     laudo_id: UUID,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_LAUDOS)),
     uc: InterfaceObterLaudo = Depends(get_obter_laudo),
 ) -> LaudoSchema:
     """Obtém detalhes do laudo pericial."""
@@ -159,7 +156,7 @@ async def anexar_laudo_concluido(
     laudo_id: UUID,
     conclusoes_tecnicas: str = Form(..., min_length=10),
     arquivo: UploadFile = File(...),
-    ator: Ator = Depends(exigir_papel(*PAPEIS_ANEXACAO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.ANEXAR_LAUDO)),
     uc: InterfaceAnexarLaudo = Depends(get_anexar_laudo),
 ) -> LaudoSchema:
     """Homologa e anexa o arquivo PDF do laudo pericial com cálculo de hash SHA-256."""
@@ -187,7 +184,7 @@ async def anexar_laudo_concluido(
 @router.get("/{laudo_id}/download")
 async def download_arquivo_laudo(
     laudo_id: UUID,
-    ator: Ator = Depends(exigir_papel(*PAPEIS_CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_LAUDOS)),
     uc: InterfaceBaixarArquivoLaudo = Depends(get_baixar_arquivo_laudo),
 ) -> Response:
     """Download do PDF homologado do laudo; o conteúdo é conferido contra o SHA-256 antes da entrega."""

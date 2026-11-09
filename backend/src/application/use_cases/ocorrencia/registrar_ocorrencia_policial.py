@@ -23,13 +23,14 @@ from application.ports.outbound.repositorio_notificacao import RepositorioNotifi
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia.apreensoes import auditoria_registro_item, exigir_lacre_inedito, montar_item
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.notificacao.eventos import notificacao_emitida
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, OrigemOcorrencia, TipificacaoPenal, TipoEnvolvido
 from domain.ocorrencia.eventos import ocorrencia_criada
 from domain.ocorrencia.prioridade import interpretar_prioridade
-from domain.shared.exceptions import ValorInvalidoError
+from domain.shared.enums import interpretar_enum
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
 
@@ -104,8 +105,8 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="ocorrencia.registrar",
-                    entidade="Ocorrencia",
+                    operacao=OperacaoAuditada.OCORRENCIA_REGISTRAR,
+                    entidade=EntidadeAuditada.OCORRENCIA,
                     entidade_id=str(ocorrencia.id),
                     dados_depois={
                         "status": ocorrencia.status.value,
@@ -179,7 +180,4 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
 
 
 def _tipo_envolvido(valor: str) -> TipoEnvolvido:
-    try:
-        return TipoEnvolvido(valor)
-    except ValueError as exc:
-        raise ValorInvalidoError(f"Tipo de envolvido inválido: {valor}", chave="envolvido.tipo_invalido") from exc
+    return interpretar_enum(TipoEnvolvido, valor, "envolvido.tipo_invalido", "Tipo de envolvido inválido: {valor}")

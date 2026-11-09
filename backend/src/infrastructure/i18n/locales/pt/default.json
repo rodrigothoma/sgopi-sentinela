@@ -134,10 +134,12 @@
     "sem_itens": "A ocorrência não possui itens apreendidos para emitir o auto"
   },
   "documento": {
+    "versao_hash_desconhecida": "Versão do algoritmo de integridade desconhecida.",
     "not_found": "Documento não localizado. Confira a chave impressa ou procure a delegacia emissora.",
     "codigo_invalido": "Código de verificação inválido: informe a chave de 24 caracteres ou o hash SHA-256 impresso no documento."
   },
   "medida": {
+    "tipo_restricao_invalido": "Tipo de restrição inválido.",
     "destinatario_nao_cadastrado": "O destinatário precisa ser um e-mail cadastrado para um envolvido da ocorrência."
   },
   "laudo": {
@@ -153,5 +155,10 @@
     "fuso_invalido": "Fuso horário inválido",
     "periodo_sem_fuso": "As datas do período devem informar o fuso horário",
     "periodo_invalido": "Período inválido: o início deve ser anterior ao fim e o intervalo não pode passar de 366 dias"
+  },
+  "interagencias": {
+    "prioridade_invalida": "Prioridade inválida.",
+    "sigilo_invalido": "Nível de sigilo inválido.",
+    "nao_encontrada": "Comunicação interagências não encontrada."
   }
 }

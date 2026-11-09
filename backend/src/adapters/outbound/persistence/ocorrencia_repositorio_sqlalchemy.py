@@ -2,126 +2,85 @@
 Adapter de saída: OcorrenciaRepositorioSQLAlchemy
 
 Implementação concreta de RepositorioOcorrencia usando SQLAlchemy async.
-Apenas este arquivo pode importar models SQLAlchemy — nunca domain/ nem application/.
+Models SQLAlchemy são restritos à camada de adaptadores de persistência e seus mappers — nunca domain/ nem application/.
 
 - Não confirma transação (papel da UnidadeDeTrabalho).
-- Nunca apaga filhos: envolvidos/tipificações removidos do agregado ficam ``ativo=False`` (RNF03*).
-- Optimistic locking via ``versao`` (RNF03): a versão carregada é rastreada por
-  instância (uma por request); ao salvar, a linha é travada (``FOR UPDATE`` no
-  Postgres) e comparada — divergência → ConflitoError (409).
+- Mapeamento e reconciliação delegados para OcorrenciaMapper (SRP).
+- Construção de queries e filtros complexos delegados para OcorrenciaQueryBuilder (SRP).
+- Optimistic locking via ControleVersaoMixin (RNF03).
 """
-from datetime import UTC
+from __future__ import annotations
+
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import case, exists, func, or_, select
+from sqlalchemy import Select, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from adapters.outbound.persistence._datas import aware
+from adapters.outbound.persistence._concorrencia import ControleVersaoMixin
+from adapters.outbound.persistence._ocorrencia_queries import CARREGAR_FILHOS, OcorrenciaQueryBuilder
+from adapters.outbound.persistence.mappers import OcorrenciaMapper
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
-from domain.ocorrencia.apreensao import (
-    EstadoConservacao,
-    ItemApreendido,
-    MovimentacaoCustodia,
-    TipoItemApreendido,
-    UnidadeMedida,
-)
-from domain.ocorrencia.entity import (
-    Envolvido,
-    Evidencia,
-    Ocorrencia,
-    OrigemOcorrencia,
-    RegistroHistoricoStatus,
-    TipificacaoPenal,
-    TipoEnvolvido,
-)
-from domain.ocorrencia.prioridade import PrioridadeOcorrencia
-from domain.ocorrencia.status import StatusOcorrencia
-from domain.shared.exceptions import ConflitoError
-from domain.shared.geo import Coordenada
-from infrastructure.database.models import (
-    EnvolvidoModel,
-    EvidenciaModel,
-    HistoricoStatusModel,
-    ItemApreendidoModel,
-    MovimentacaoCustodiaModel,
-    OcorrenciaModel,
-    TipificacaoModel,
-)
-
-_ESCAPE = "\\"
-# Ordenação por gravidade (URGENTE primeiro) sem depender da ordem alfabética do texto gravado
-_PESO_PRIORIDADE = case({p.value: p.peso for p in PrioridadeOcorrencia}, value=OcorrenciaModel.prioridade, else_=0)
+from domain.ocorrencia.entity import Ocorrencia
+from infrastructure.database.models import ItemApreendidoModel, OcorrenciaModel
 
 
-def _contendo(termo: str) -> str:
-    """Padrão LIKE "contém" com os curingas do usuário (% e _) tratados como literais."""
-    literal = termo.replace(_ESCAPE, _ESCAPE * 2).replace("%", _ESCAPE + "%").replace("_", _ESCAPE + "_")
-    return f"%{literal}%"
-
-
-_CARREGAR_FILHOS = (
-    selectinload(OcorrenciaModel.envolvidos),
-    selectinload(OcorrenciaModel.tipificacoes),
-    selectinload(OcorrenciaModel.historico),
-    selectinload(OcorrenciaModel.evidencias),
-    selectinload(OcorrenciaModel.itens_apreendidos).selectinload(ItemApreendidoModel.movimentacoes),
-)
-
-
-class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
-    """Repositório de ocorrências com persistência relacional via SQLAlchemy."""
+class OcorrenciaRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioOcorrencia):
+    """Repositório de ocorrências com persistência relacional via SQLAlchemy async."""
 
     def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-        self._versoes_carregadas: dict[UUID, int] = {}
+        self._session: AsyncSession = session
+        super().__init__()
 
     async def _carregar_model(self, ocorrencia_id: UUID) -> OcorrenciaModel | None:
-        stmt = select(OcorrenciaModel).where(OcorrenciaModel.id == ocorrencia_id).options(*_CARREGAR_FILHOS)
+        stmt = select(OcorrenciaModel).where(OcorrenciaModel.id == ocorrencia_id).options(*CARREGAR_FILHOS)
         return (await self._session.execute(stmt)).scalar_one_or_none()
 
-    async def _verificar_versao(self, ocorrencia: Ocorrencia) -> None:
-        stmt = select(OcorrenciaModel.versao).where(OcorrenciaModel.id == ocorrencia.id).with_for_update()
-        versao_banco = (await self._session.execute(stmt)).scalar_one()
-        versao_esperada = self._versoes_carregadas.get(ocorrencia.id, versao_banco)
-        if versao_banco != versao_esperada or ocorrencia.versao < versao_banco:
-            raise ConflitoError(
-                "A ocorrência foi alterada por outro usuário; recarregue e tente novamente.",
-                chave="generic.versao_desatualizada",
-                versao_atual=versao_banco,
-            )
-
     async def salvar(self, ocorrencia: Ocorrencia) -> None:
+        """Persiste ocorrência com verificação de concorrência otimista (RNF03).
+
+        Raises:
+            ConflitoError: Se a ocorrência foi alterada por outro usuário no banco de dados.
+        """
         existente = await self._carregar_model(ocorrencia.id)
         if existente is None:
-            self._session.add(self._to_model(ocorrencia))
+            self._session.add(OcorrenciaMapper.to_model(ocorrencia))
         else:
-            await self._verificar_versao(ocorrencia)
-            self._atualizar_model(existente, ocorrencia)
+            await self._verificar_versao(
+                OcorrenciaModel,
+                ocorrencia.id,
+                ocorrencia.versao,
+                "A ocorrência foi alterada por outro usuário; recarregue e tente novamente.",
+            )
+            OcorrenciaMapper.atualizar_model(existente, ocorrencia)
         await self._session.flush()
-        self._versoes_carregadas[ocorrencia.id] = ocorrencia.versao
+        self._registrar_versao(ocorrencia.id, ocorrencia.versao)
 
     async def buscar_por_id(self, ocorrencia_id: UUID) -> Ocorrencia | None:
+        """Localiza ocorrência pelo identificador primário com coleções filhas pré-carregadas."""
         model = await self._carregar_model(ocorrencia_id)
         if model is None:
             return None
-        self._versoes_carregadas[model.id] = model.versao
-        return self._to_domain(model)
+        self._registrar_versao(model.id, model.versao)
+        return OcorrenciaMapper.to_domain(model)
 
-    async def _buscar_primeira(self, stmt) -> Ocorrencia | None:
-        model = (await self._session.execute(stmt.options(*_CARREGAR_FILHOS))).scalars().first()
+    async def _buscar_primeira(self, stmt: Select[Any]) -> Ocorrencia | None:
+        model = (await self._session.execute(stmt.options(*CARREGAR_FILHOS))).scalars().first()
         if model is None:
             return None
-        self._versoes_carregadas[model.id] = model.versao
-        return self._to_domain(model)
+        self._registrar_versao(model.id, model.versao)
+        return OcorrenciaMapper.to_domain(model)
 
     async def buscar_por_protocolo(self, numero_protocolo: str) -> Ocorrencia | None:
+        """Localiza a ocorrência pelo número de protocolo público oficial (RF01/UC01)."""
         return await self._buscar_primeira(select(OcorrenciaModel).where(OcorrenciaModel.numero_protocolo == numero_protocolo))
 
     async def buscar_por_chave_autenticidade(self, chave: str) -> Ocorrencia | None:
+        """Localiza o documento emitido pela chave de segurança pública (RF08)."""
         return await self._buscar_primeira(select(OcorrenciaModel).where(OcorrenciaModel.chave_autenticidade == chave))
 
     async def buscar_por_hash_narrativa(self, hash_narrativa: str) -> Ocorrencia | None:
+        """Localiza a ocorrência pelo hash SHA-256 de integridade da narrativa impressa (RF08)."""
         stmt = (
             select(OcorrenciaModel)
             .where(OcorrenciaModel.hash_narrativa == hash_narrativa)
@@ -129,320 +88,20 @@ class OcorrenciaRepositorioSQLAlchemy(RepositorioOcorrencia):
         )
         return await self._buscar_primeira(stmt)
 
-    def _aplicar_filtro(self, stmt, filtro: FiltroOcorrencias):
-        if filtro.status:
-            stmt = stmt.where(OcorrenciaModel.status.in_([s.value for s in filtro.status]))
-        if filtro.agente_policial_id:
-            stmt = stmt.where(OcorrenciaModel.agente_policial_id == filtro.agente_policial_id)
-        return self._aplicar_busca(stmt, filtro)
-
-    @staticmethod
-    def _aplicar_busca(stmt, filtro: FiltroOcorrencias):
-        """Filtros de busca com ILIKE (portável entre PostgreSQL e SQLite); datas comparadas em UTC."""
-        if filtro.natureza:
-            stmt = stmt.where(OcorrenciaModel.natureza.ilike(_contendo(filtro.natureza), escape=_ESCAPE))
-        if filtro.protocolo:
-            stmt = stmt.where(OcorrenciaModel.numero_protocolo.ilike(_contendo(filtro.protocolo), escape=_ESCAPE))
-        if filtro.texto:
-            padrao = _contendo(filtro.texto)
-            stmt = stmt.where(
-                or_(
-                    OcorrenciaModel.descricao.ilike(padrao, escape=_ESCAPE),
-                    OcorrenciaModel.localizacao.ilike(padrao, escape=_ESCAPE),
-                )
-            )
-        if filtro.origem:
-            stmt = stmt.where(OcorrenciaModel.origem == filtro.origem.value)
-        if filtro.data_fato_de:
-            stmt = stmt.where(OcorrenciaModel.data_hora_fato >= aware(filtro.data_fato_de).astimezone(UTC))
-        if filtro.data_fato_ate:
-            stmt = stmt.where(OcorrenciaModel.data_hora_fato <= aware(filtro.data_fato_ate).astimezone(UTC))
-        return stmt
-
     async def listar(self, filtro: FiltroOcorrencias) -> list[Ocorrencia]:
-        stmt = self._aplicar_filtro(select(OcorrenciaModel), filtro)
-        ordem = OcorrenciaModel.criada_em.desc() if filtro.mais_recentes_primeiro else OcorrenciaModel.criada_em.asc()
-        criterios = (_PESO_PRIORIDADE.desc(), ordem) if filtro.ordenar_por_prioridade else (ordem,)
-        stmt = stmt.options(*_CARREGAR_FILHOS).order_by(*criterios).limit(filtro.limit).offset(filtro.offset)
+        """Lista ocorrências paginadas conforme filtros e prioridade de atendimento."""
+        stmt = OcorrenciaQueryBuilder.construir_listagem(filtro)
         models = (await self._session.execute(stmt)).scalars().all()
         for m in models:
-            self._versoes_carregadas[m.id] = m.versao
-        return [self._to_domain(m) for m in models]
+            self._registrar_versao(m.id, m.versao)
+        return [OcorrenciaMapper.to_domain(m) for m in models]
 
     async def contar(self, filtro: FiltroOcorrencias) -> int:
-        stmt = self._aplicar_filtro(select(func.count(OcorrenciaModel.id)), filtro)
+        """Totaliza as ocorrências que atendem aos filtros fornecidos sem limites de paginação."""
+        stmt = OcorrenciaQueryBuilder.construir_contagem(filtro)
         return int((await self._session.execute(stmt)).scalar_one())
 
     async def lacre_em_uso(self, numero_lacre: str) -> bool:
+        """Garante a unicidade global do número de lacre de apreensão em toda a base (RF03/UC03)."""
         stmt = select(exists().where(ItemApreendidoModel.numero_lacre == numero_lacre))
         return bool((await self._session.execute(stmt)).scalar_one())
-
-    # ------------------------------------------------------------- mapeamento
-    @staticmethod
-    def _campos_escalares(ocorrencia: Ocorrencia) -> dict:
-        return dict(
-            agente_policial_id=ocorrencia.agente_policial_id,
-            natureza=ocorrencia.natureza,
-            descricao=ocorrencia.descricao,
-            localizacao=ocorrencia.localizacao,
-            latitude=ocorrencia.coordenada.latitude,
-            longitude=ocorrencia.coordenada.longitude,
-            data_hora_fato=ocorrencia.data_hora_fato,
-            numero_protocolo=ocorrencia.numero_protocolo,
-            status=ocorrencia.status.value,
-            versao=ocorrencia.versao,
-            criada_em=ocorrencia.criada_em,
-            atualizada_em=ocorrencia.atualizada_em,
-            validada_por_id=ocorrencia.validada_por_id,
-            justificativa_revisao=ocorrencia.justificativa_revisao,
-            desfecho=ocorrencia.desfecho,
-            hash_narrativa=ocorrencia.hash_narrativa,
-            hash_versao=ocorrencia.hash_versao,
-            chave_autenticidade=ocorrencia.chave_autenticidade,
-            arquivada_por_id=ocorrencia.arquivada_por_id,
-            motivo_arquivamento=ocorrencia.motivo_arquivamento,
-            excluida_por_id=ocorrencia.excluida_por_id,
-            motivo_exclusao=ocorrencia.motivo_exclusao,
-            inquerito_id=ocorrencia.inquerito_id,
-            origem=ocorrencia.origem.value,
-            prioridade=ocorrencia.prioridade.value,
-            codigo_acompanhamento_hash=ocorrencia.codigo_acompanhamento_hash,
-        )
-
-    def _to_model(self, ocorrencia: Ocorrencia) -> OcorrenciaModel:
-        model = OcorrenciaModel(id=ocorrencia.id, **self._campos_escalares(ocorrencia))
-        model.envolvidos = [
-            EnvolvidoModel(
-                id=e.id,
-                nome=e.nome,
-                tipo=e.tipo.value,
-                documento=e.documento,
-                email=e.email,
-                telefone=e.telefone,
-                ativo=True,
-            )
-            for e in ocorrencia.envolvidos
-        ]
-        model.tipificacoes = [
-            TipificacaoModel(artigo=t.artigo, descricao=t.descricao, ativo=True) for t in ocorrencia.tipificacoes
-        ]
-        model.evidencias = [
-            EvidenciaModel(
-                id=e.id,
-                nome_original=e.nome_original,
-                formato=e.formato,
-                tamanho=e.tamanho,
-                hash_sha256=e.hash_sha256,
-                chave_armazenamento=e.chave_armazenamento,
-                enviada_em=e.enviada_em,
-            )
-            for e in ocorrencia.evidencias
-        ]
-        model.itens_apreendidos = [self._item_model(i) for i in ocorrencia.itens_apreendidos]
-        model.historico = [self._historico_model(ocorrencia.id, i, h) for i, h in enumerate(ocorrencia.historico_status)]
-        return model
-
-    def _atualizar_model(self, model: OcorrenciaModel, ocorrencia: Ocorrencia) -> None:
-        for campo, valor in self._campos_escalares(ocorrencia).items():
-            setattr(model, campo, valor)
-
-        # envolvidos: desativa os removidos, insere os novos, atualiza os mantidos
-        atuais = {e.id: e for e in ocorrencia.envolvidos}
-        for em in model.envolvidos:
-            if em.id in atuais:
-                e = atuais.pop(em.id)
-                em.nome, em.tipo, em.documento, em.email, em.telefone, em.ativo = (
-                    e.nome,
-                    e.tipo.value,
-                    e.documento,
-                    e.email,
-                    e.telefone,
-                    True,
-                )
-            else:
-                em.ativo = False
-        for e in atuais.values():
-            model.envolvidos.append(
-                EnvolvidoModel(
-                    id=e.id,
-                    nome=e.nome,
-                    tipo=e.tipo.value,
-                    documento=e.documento,
-                    email=e.email,
-                    telefone=e.telefone,
-                    ativo=True,
-                )
-            )
-
-        # tipificações: chave natural (artigo, descricao)
-        desejadas = {(t.artigo, t.descricao) for t in ocorrencia.tipificacoes}
-        presentes: set[tuple[str, str]] = set()
-        for tm in model.tipificacoes:
-            chave = (tm.artigo, tm.descricao)
-            tm.ativo = chave in desejadas
-            if tm.ativo:
-                presentes.add(chave)
-        for artigo, descricao in desejadas - presentes:
-            model.tipificacoes.append(TipificacaoModel(artigo=artigo, descricao=descricao, ativo=True))
-
-        # evidências são append-only: nunca removemos nem alteramos registros existentes
-        ids_gravados = {e.id for e in model.evidencias}
-        for e in ocorrencia.evidencias:
-            if e.id not in ids_gravados:
-                model.evidencias.append(
-                    EvidenciaModel(
-                        id=e.id,
-                        nome_original=e.nome_original,
-                        formato=e.formato,
-                        tamanho=e.tamanho,
-                        hash_sha256=e.hash_sha256,
-                        chave_armazenamento=e.chave_armazenamento,
-                        enviada_em=e.enviada_em,
-                    )
-                )
-
-        # itens apreendidos: nunca removidos nem alterados; só a cadeia de custódia cresce (append-only)
-        itens_gravados = {im.id: im for im in model.itens_apreendidos}
-        for item in ocorrencia.itens_apreendidos:
-            gravado = itens_gravados.get(item.id)
-            if gravado is None:
-                model.itens_apreendidos.append(self._item_model(item))
-                continue
-            ja = len(gravado.movimentacoes)
-            for ordem, m in enumerate(item.movimentacoes[ja:], start=ja):
-                gravado.movimentacoes.append(self._movimentacao_model(item.id, ordem, m))
-
-        # histórico: append-only
-        ja_gravados = len(model.historico)
-        for i, h in enumerate(ocorrencia.historico_status[ja_gravados:], start=ja_gravados):
-            model.historico.append(self._historico_model(ocorrencia.id, i, h))
-
-    @classmethod
-    def _item_model(cls, item: ItemApreendido) -> ItemApreendidoModel:
-        model = ItemApreendidoModel(
-            id=item.id,
-            tipo=item.tipo.value,
-            descricao=item.descricao,
-            quantidade=item.quantidade,
-            unidade=item.unidade.value,
-            estado_conservacao=item.estado_conservacao.value,
-            numero_lacre=item.numero_lacre,
-            numero_serie=item.numero_serie,
-            marca=item.marca,
-            calibre=item.calibre,
-            localizacao_deposito=item.localizacao_deposito,
-            registrado_em=item.registrado_em,
-            registrado_por_id=item.registrado_por_id,
-        )
-        model.movimentacoes = [cls._movimentacao_model(item.id, i, m) for i, m in enumerate(item.movimentacoes)]
-        return model
-
-    @staticmethod
-    def _movimentacao_model(item_id: UUID, ordem: int, m: MovimentacaoCustodia) -> MovimentacaoCustodiaModel:
-        return MovimentacaoCustodiaModel(
-            item_id=item_id, ordem=ordem, em=m.em, por_id=m.por_id, origem=m.origem, destino=m.destino, observacao=m.observacao
-        )
-
-    @staticmethod
-    def _historico_model(ocorrencia_id: UUID, ordem: int, h: RegistroHistoricoStatus) -> HistoricoStatusModel:
-        return HistoricoStatusModel(
-            ocorrencia_id=ocorrencia_id,
-            ordem=ordem,
-            de=h.de.value if h.de else None,
-            para=h.para.value,
-            em=h.em,
-            por_id=h.por_id,
-            justificativa=h.justificativa,
-        )
-
-    def _to_domain(self, model: OcorrenciaModel) -> Ocorrencia:
-        ocorrencia = Ocorrencia(
-            id=model.id,
-            agente_policial_id=model.agente_policial_id,
-            natureza=model.natureza,
-            descricao=model.descricao,
-            localizacao=model.localizacao,
-            coordenada=Coordenada(model.latitude, model.longitude),
-            data_hora_fato=aware(model.data_hora_fato),
-            numero_protocolo=model.numero_protocolo,
-            status=StatusOcorrencia(model.status),
-            versao=model.versao,
-            criada_em=aware(model.criada_em),
-            atualizada_em=aware(model.atualizada_em),
-            validada_por_id=model.validada_por_id,
-            justificativa_revisao=model.justificativa_revisao,
-            desfecho=model.desfecho,
-            hash_narrativa=model.hash_narrativa,
-            hash_versao=model.hash_versao,
-            chave_autenticidade=model.chave_autenticidade,
-            arquivada_por_id=model.arquivada_por_id,
-            motivo_arquivamento=model.motivo_arquivamento,
-            excluida_por_id=model.excluida_por_id,
-            motivo_exclusao=model.motivo_exclusao,
-            inquerito_id=model.inquerito_id,
-            origem=OrigemOcorrencia(model.origem),
-            codigo_acompanhamento_hash=model.codigo_acompanhamento_hash,
-            prioridade=PrioridadeOcorrencia(model.prioridade),
-        )
-        ocorrencia.envolvidos = [
-            Envolvido(
-                id=e.id,
-                nome=e.nome,
-                tipo=TipoEnvolvido(e.tipo),
-                documento=e.documento,
-                email=e.email,
-                telefone=e.telefone,
-            )
-            for e in model.envolvidos
-            if e.ativo
-        ]
-        ocorrencia.tipificacoes = [
-            TipificacaoPenal(artigo=t.artigo, descricao=t.descricao) for t in model.tipificacoes if t.ativo
-        ]
-        ocorrencia.evidencias = [
-            Evidencia(
-                id=e.id,
-                nome_original=e.nome_original,
-                formato=e.formato,
-                tamanho=e.tamanho,
-                hash_sha256=e.hash_sha256,
-                chave_armazenamento=e.chave_armazenamento,
-                enviada_em=aware(e.enviada_em),
-            )
-            for e in model.evidencias
-        ]
-        ocorrencia.itens_apreendidos = [
-            ItemApreendido(
-                id=i.id,
-                tipo=TipoItemApreendido(i.tipo),
-                descricao=i.descricao,
-                quantidade=i.quantidade,
-                unidade=UnidadeMedida(i.unidade),
-                estado_conservacao=EstadoConservacao(i.estado_conservacao),
-                numero_lacre=i.numero_lacre,
-                numero_serie=i.numero_serie,
-                marca=i.marca,
-                calibre=i.calibre,
-                localizacao_deposito=i.localizacao_deposito,
-                registrado_em=aware(i.registrado_em),
-                registrado_por_id=i.registrado_por_id,
-                movimentacoes=[
-                    MovimentacaoCustodia(
-                        em=aware(m.em), por_id=m.por_id, origem=m.origem, destino=m.destino, observacao=m.observacao
-                    )
-                    for m in sorted(i.movimentacoes, key=lambda m: m.ordem)
-                ],
-            )
-            for i in model.itens_apreendidos
-        ]
-        ocorrencia.historico_status = [
-            RegistroHistoricoStatus(
-                de=StatusOcorrencia(h.de) if h.de else None,
-                para=StatusOcorrencia(h.para),
-                em=aware(h.em),
-                por_id=h.por_id,
-                justificativa=h.justificativa,
-            )
-            for h in sorted(model.historico, key=lambda h: h.ordem)
-        ]
-        return ocorrencia

@@ -13,10 +13,12 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.medida_protetiva.entity import MedidaProtetiva
-from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError
-from domain.usuario.entity import Papel
+from domain.shared.exceptions import EntidadeNaoEncontradaError
+from domain.shared.tempo import data_operacional
+from domain.usuario.permissoes import Permissao
 
 
 class ConcederMedida(InterfaceConcederMedida):
@@ -37,11 +39,7 @@ class ConcederMedida(InterfaceConcederMedida):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: ConcederMedidaInput) -> MedidaProtetivaOutput:
-        if ator.papel != Papel.DELEGADO:
-            raise AcessoNegadoError(
-                "Apenas o Delegado de Polícia pode formalizar concessão de medidas protetivas.",
-                chave="medida.apenas_delegado",
-            )
+        ator.exigir(Permissao.GERIR_MEDIDAS, "Apenas o Delegado de Polícia pode formalizar concessão de medidas protetivas.", chave="medida.apenas_delegado")
 
         ocorrencia = await self._repo_ocorrencia.buscar_por_id(dados.ocorrencia_id)
         if not ocorrencia:
@@ -52,7 +50,7 @@ class ConcederMedida(InterfaceConcederMedida):
             )
 
         agora = self._relogio.agora()
-        data_inicio = dados.data_inicio or agora.date()
+        data_inicio = dados.data_inicio or data_operacional(agora)
         numero_ref = await self._gerador.proximo(agora.year)
 
         medida = MedidaProtetiva.conceder(
@@ -75,8 +73,8 @@ class ConcederMedida(InterfaceConcederMedida):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="medida_protetiva.conceder",
-                    entidade="medida_protetiva",
+                    operacao=OperacaoAuditada.MEDIDA_PROTETIVA_CONCEDER,
+                    entidade=EntidadeAuditada.MEDIDA_PROTETIVA,
                     entidade_id=str(medida.id),
                     dados_depois={
                         "numero_referencia": medida.numero_referencia,
@@ -104,7 +102,7 @@ class ConcederMedida(InterfaceConcederMedida):
             data_inicio=medida.data_inicio.isoformat(),
             prazo_dias=medida.prazo_dias,
             data_vencimento=medida.data_vencimento.isoformat(),
-            dias_restantes=medida.dias_restantes(agora.date()),
+            dias_restantes=medida.dias_restantes(data_operacional(agora)),
             status=medida.status.value,
             condicoes_especificas=medida.condicoes_especificas,
             motivo_revogacao=medida.motivo_revogacao,

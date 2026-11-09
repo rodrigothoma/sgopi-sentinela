@@ -12,9 +12,10 @@ from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia._mapeadores import para_detalhe
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
 from application.use_cases.viatura.gerir_viaturas import carregar_viatura
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia import eventos as ev_ocorrencia
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from domain.viatura.eventos import viatura_situacao_alterada
 
 
@@ -33,7 +34,7 @@ class EncerrarOcorrencia(InterfaceEncerrarOcorrencia):
         self._uow, self._relogio, self._auditoria, self._publicador = uow, relogio, auditoria, publicador
 
     async def executar(self, ator: Ator, input_dto: EncerrarInput) -> OcorrenciaDetalheOutput:
-        ator.exigir_papel(Papel.OPERADOR_CENTRAL, Papel.DELEGADO, Papel.SUPERVISOR)
+        ator.exigir(Permissao.ACOMPANHAR_ATENDIMENTO)
         agora = self._relogio.agora()
         liberadas = []
         async with self._uow:
@@ -50,7 +51,7 @@ class EncerrarOcorrencia(InterfaceEncerrarOcorrencia):
             await self._ocorrencias.salvar(ocorrencia)
             await self._auditoria.registrar(
                 RegistroAuditoria(
-                    quem=ator.id, quando=agora, operacao="ocorrencia.encerrar", entidade="Ocorrencia", entidade_id=str(ocorrencia.id),
+                    quem=ator.id, quando=agora, operacao=OperacaoAuditada.OCORRENCIA_ENCERRAR, entidade=EntidadeAuditada.OCORRENCIA, entidade_id=str(ocorrencia.id),
                     dados_antes=antes,
                     dados_depois={"status": ocorrencia.status.value, "desfecho": ocorrencia.desfecho, "viaturas_liberadas": [v.prefixo for v in liberadas]},
                     ip=ator.ip,

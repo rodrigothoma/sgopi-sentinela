@@ -16,12 +16,12 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.inquerito.entity import Inquerito
 from domain.ocorrencia.entity import Ocorrencia
-from domain.ocorrencia.status import StatusOcorrencia
-from domain.shared.exceptions import AcessoNegadoError, ConflitoError, EntidadeNaoEncontradaError
-from domain.usuario.entity import Papel
+from domain.shared.exceptions import EntidadeNaoEncontradaError
+from domain.usuario.permissoes import Permissao
 
 
 class VincularOcorrenciasInquerito(InterfaceVincularOcorrenciasInquerito):
@@ -40,11 +40,7 @@ class VincularOcorrenciasInquerito(InterfaceVincularOcorrenciasInquerito):
         self._auditoria = auditoria
 
     async def executar(self, ator: Ator, dados: VincularOcorrenciasInput) -> InqueritoOutput:
-        if ator.papel != Papel.DELEGADO:
-            raise AcessoNegadoError(
-                "Apenas o Delegado de Polícia pode vincular ocorrências a inquérito.",
-                chave="inquerito.apenas_delegado",
-            )
+        ator.exigir(Permissao.GERIR_INQUERITOS, "Apenas o Delegado de Polícia pode vincular ocorrências a inquérito.", chave="inquerito.apenas_delegado")
         inquerito = await self._repo_inquerito.buscar_por_id(dados.inquerito_id)
         if not inquerito:
             raise EntidadeNaoEncontradaError(
@@ -54,7 +50,7 @@ class VincularOcorrenciasInquerito(InterfaceVincularOcorrenciasInquerito):
         ocorrencias = [await self._carregar_vinculavel(oc_id, inquerito) for oc_id in dados.ocorrencias_ids]
         async with self._uow:
             for oc in ocorrencias:
-                oc.vincular_inquerito(inquerito.id)
+                oc.vincular_inquerito(inquerito.id, agora)
                 inquerito.vincular_ocorrencia(oc.id, agora)
                 await self._repo_ocorrencia.salvar(oc)
             await self._repo_inquerito.salvar(inquerito)
@@ -68,16 +64,7 @@ class VincularOcorrenciasInquerito(InterfaceVincularOcorrenciasInquerito):
             raise EntidadeNaoEncontradaError(
                 f"Ocorrência {oc_id} não encontrada.", chave="ocorrencia.nao_encontrada", ocorrencia_id=str(oc_id)
             )
-        if oc.status != StatusOcorrencia.VALIDADA:
-            raise ConflitoError(
-                f"Apenas ocorrências validadas podem ser vinculadas (protocolo {oc.numero_protocolo} está {oc.status.value}).",
-                chave="inquerito.ocorrencia_nao_validada",
-            )
-        if oc.inquerito_id is not None and oc.inquerito_id != inquerito.id:
-            raise ConflitoError(
-                f"A ocorrência {oc.numero_protocolo} já se encontra vinculada a outro inquérito policial.",
-                chave="inquerito.ocorrencia_ja_vinculada",
-            )
+        oc.exigir_vinculavel(inquerito.id)
         return oc
 
     async def _saida(self, inquerito: Inquerito) -> InqueritoOutput:
@@ -113,8 +100,8 @@ def _auditoria_vinculo(ator: Ator, inquerito: Inquerito, dados: VincularOcorrenc
     return RegistroAuditoria(
         quem=ator.id,
         quando=agora,
-        operacao="inquerito.vincular_ocorrencias",
-        entidade="inquerito",
+        operacao=OperacaoAuditada.INQUERITO_VINCULAR_OCORRENCIAS,
+        entidade=EntidadeAuditada.INQUERITO,
         entidade_id=str(inquerito.id),
         dados_depois={
             "numero": inquerito.numero,

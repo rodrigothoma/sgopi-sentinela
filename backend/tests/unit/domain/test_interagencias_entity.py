@@ -9,7 +9,7 @@ from domain.interagencias.entity import (
     PrioridadeComunicacao,
     StatusEntrega,
 )
-from domain.shared.exceptions import CampoObrigatorioError
+from domain.shared.exceptions import CampoObrigatorioError, ValorInvalidoError
 
 
 def test_criar_comunicacao_interagencias_valida():
@@ -85,8 +85,20 @@ def test_campos_obrigatorios(invalido):
         _criar(**invalido)
 
 
-def test_normaliza_destinatarios_e_valores_desconhecidos():
-    com = _criar(nivel_sigilo="inexistente", prioridade="urgentissima")
+def test_normaliza_destinatarios_caixa_e_espacos():
+    com = _criar(nivel_sigilo=" reservado ", prioridade="alta")
     assert com.departamentos_destinatarios == ["POLICIA_MILITAR"]
-    assert com.nivel_sigilo == NivelSigilo.PADRAO and com.prioridade == PrioridadeComunicacao.MEDIA
-    assert _criar(nivel_sigilo="reservado", prioridade="alta").nivel_sigilo == NivelSigilo.RESERVADO
+    assert com.nivel_sigilo == NivelSigilo.RESERVADO and com.prioridade == PrioridadeComunicacao.ALTA
+
+
+def test_sigilo_desconhecido_e_recusado_em_vez_de_virar_padrao():
+    """Regressão: valor inválido virava PADRAO e tornava público um ofício que se quis restrito."""
+    with pytest.raises(ValorInvalidoError) as erro:
+        _criar(nivel_sigilo="secreto")
+    assert erro.value.chave == "interagencias.sigilo_invalido"
+
+
+def test_prioridade_desconhecida_e_recusada():
+    with pytest.raises(ValorInvalidoError) as erro:
+        _criar(prioridade="urgentissima")
+    assert erro.value.chave == "interagencias.prioridade_invalida"

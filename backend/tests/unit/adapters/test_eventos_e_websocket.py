@@ -116,6 +116,15 @@ async def test_sessao_expirada_e_fechada_com_1008_e_nao_recebe():
         (EventoDominio("MEDIDA_VENCIMENTO_ALERTA", AGORA, {}), AGENTE, True),
         (EventoDominio("COMUNICACAO_INTERAGENCIAS_CRIADA", AGORA, {}), AGENTE, False),
         (EventoDominio("COMUNICACAO_INTERAGENCIAS_CRIADA", AGORA, {}), DELEGADO, True),
+        (EventoDominio("COMUNICACAO_INTERAGENCIAS_CRIADA", AGORA, {"nivel_sigilo": "CONFIDENCIAL"}), OPERADOR, False),
+        (EventoDominio("COMUNICACAO_INTERAGENCIAS_CRIADA", AGORA, {"nivel_sigilo": "CONFIDENCIAL"}), DELEGADO, True),
+        (EventoDominio("COMUNICACAO_INTERAGENCIAS_CRIADA", AGORA, {"nivel_sigilo": "RESERVADO"}), OPERADOR, True),
+        (
+            EventoDominio("COMUNICACAO_INTERAGENCIAS_CRIADA", AGORA, {"nivel_sigilo": "CONFIDENCIAL", "remetente_id": str(OPERADOR.id)}),
+            OPERADOR,
+            True,
+        ),
+        (EventoDominio("COMUNICACAO_INTERAGENCIAS_CRIADA", AGORA, {"nivel_sigilo": "DESCONHECIDO"}), OPERADOR, False),
     ],
 )
 def test_audiencia_por_tipo_de_evento(evento, ator, esperado):

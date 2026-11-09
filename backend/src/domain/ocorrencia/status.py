@@ -12,6 +12,8 @@ Nenhum dos dois é permitido em EM_ATENDIMENTO (há viatura empenhada).
 """
 from enum import Enum
 
+from domain.shared.maquina_estados import MaquinaEstados
+
 
 class StatusOcorrencia(str, Enum):
     AGUARDANDO_REVISAO = "AGUARDANDO_REVISAO"
@@ -24,17 +26,30 @@ class StatusOcorrencia(str, Enum):
     EXCLUIDA = "EXCLUIDA"
 
 
+class OperacaoOcorrencia(str, Enum):
+    VALIDAR = "validar"
+    DEVOLVER_PARA_CORRECAO = "devolver_para_correcao"
+    REJEITAR = "rejeitar"
+    REENVIAR = "reenviar"
+    DESPACHAR = "despachar"
+    ENCERRAR = "encerrar"
+    ARQUIVAR = "arquivar"
+    EXCLUIR = "excluir"
+
+
 # (estado_origem, operacao) -> estado_destino
-TRANSICOES: dict[tuple[StatusOcorrencia, str], StatusOcorrencia] = {
-    (StatusOcorrencia.AGUARDANDO_REVISAO, "validar"): StatusOcorrencia.VALIDADA,
-    (StatusOcorrencia.AGUARDANDO_REVISAO, "devolver_para_correcao"): StatusOcorrencia.EM_CORRECAO,
-    (StatusOcorrencia.AGUARDANDO_REVISAO, "rejeitar"): StatusOcorrencia.REJEITADA,
-    (StatusOcorrencia.EM_CORRECAO, "reenviar"): StatusOcorrencia.AGUARDANDO_REVISAO,
-    (StatusOcorrencia.VALIDADA, "despachar"): StatusOcorrencia.EM_ATENDIMENTO,
-    (StatusOcorrencia.EM_ATENDIMENTO, "encerrar"): StatusOcorrencia.ENCERRADA,
+TRANSICOES: dict[tuple[StatusOcorrencia, OperacaoOcorrencia], StatusOcorrencia] = {
+    (StatusOcorrencia.AGUARDANDO_REVISAO, OperacaoOcorrencia.VALIDAR): StatusOcorrencia.VALIDADA,
+    (StatusOcorrencia.AGUARDANDO_REVISAO, OperacaoOcorrencia.DEVOLVER_PARA_CORRECAO): StatusOcorrencia.EM_CORRECAO,
+    (StatusOcorrencia.AGUARDANDO_REVISAO, OperacaoOcorrencia.REJEITAR): StatusOcorrencia.REJEITADA,
+    (StatusOcorrencia.EM_CORRECAO, OperacaoOcorrencia.REENVIAR): StatusOcorrencia.AGUARDANDO_REVISAO,
+    (StatusOcorrencia.VALIDADA, OperacaoOcorrencia.DESPACHAR): StatusOcorrencia.EM_ATENDIMENTO,
+    (StatusOcorrencia.EM_ATENDIMENTO, OperacaoOcorrencia.ENCERRAR): StatusOcorrencia.ENCERRADA,
 }
 
 ESTADOS_TERMINAIS = frozenset({StatusOcorrencia.REJEITADA, StatusOcorrencia.ENCERRADA})
+# UC02: despacho (VALIDADA) ou viatura de apoio (EM_ATENDIMENTO).
+ESTADOS_DESPACHAVEIS = frozenset({StatusOcorrencia.VALIDADA, StatusOcorrencia.EM_ATENDIMENTO})
 ESTADOS_EDITAVEIS = frozenset({StatusOcorrencia.EM_CORRECAO})
 
 # RF03 / UC03 pré-condição: "ocorrência registrada ou em andamento" aceita novos itens apreendidos.
@@ -63,12 +78,14 @@ ESTADOS_ARQUIVAVEIS = frozenset(
 # Excluir: os mesmos + ARQUIVADA. EXCLUIDA é terminal absoluto.
 ESTADOS_EXCLUIVEIS = ESTADOS_ARQUIVAVEIS | {StatusOcorrencia.ARQUIVADA}
 
-TRANSICOES.update({(origem, "arquivar"): StatusOcorrencia.ARQUIVADA for origem in ESTADOS_ARQUIVAVEIS})
-TRANSICOES.update({(origem, "excluir"): StatusOcorrencia.EXCLUIDA for origem in ESTADOS_EXCLUIVEIS})
+TRANSICOES.update({(origem, OperacaoOcorrencia.ARQUIVAR): StatusOcorrencia.ARQUIVADA for origem in ESTADOS_ARQUIVAVEIS})
+TRANSICOES.update({(origem, OperacaoOcorrencia.EXCLUIR): StatusOcorrencia.EXCLUIDA for origem in ESTADOS_EXCLUIVEIS})
+
+MAQUINA_OCORRENCIA: MaquinaEstados[StatusOcorrencia, OperacaoOcorrencia] = MaquinaEstados(TRANSICOES)
 
 # Listagens sem filtro explícito não mostram excluídas (mas o detalhe segue consultável).
 ESTADOS_VISIVEIS_POR_PADRAO = tuple(s for s in StatusOcorrencia if s is not StatusOcorrencia.EXCLUIDA)
 
 
-def proximo_estado(atual: StatusOcorrencia, operacao: str) -> StatusOcorrencia | None:
-    return TRANSICOES.get((atual, operacao))
+def proximo_estado(atual: StatusOcorrencia, operacao: OperacaoOcorrencia) -> StatusOcorrencia | None:
+    return MAQUINA_OCORRENCIA.proximo(atual, operacao)

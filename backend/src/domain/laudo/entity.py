@@ -10,9 +10,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from domain.shared.exceptions import CampoObrigatorioError, ConflitoError, ValorInvalidoError
+from domain.shared.validacao import exigir_texto
+from domain.shared.versionado import Versionado
+
+TAMANHO_MINIMO_DESCRICAO = 10
+TAMANHO_MINIMO_CONCLUSOES = 10
 
 
 class TipoPericia(str, Enum):
@@ -38,8 +44,10 @@ class StatusLaudo(str, Enum):
 
 
 @dataclass
-class LaudoPericial:
+class LaudoPericial(Versionado):
     """Documento técnico-pericial com integridade garantida por hash criptográfico."""
+
+    CAMPO_ATUALIZACAO: ClassVar[str] = "atualizado_em"
 
     numero_referencia: str  # Padrão: LP-AAAA-NNNNNN
     tipo_pericia: TipoPericia
@@ -83,12 +91,7 @@ class LaudoPericial:
                 "A perícia deve estar vinculada a pelo menos uma ocorrência ou inquérito.",
                 chave="laudo.vinculo_obrigatorio",
             )
-        desc = descricao_solicitacao.strip() if descricao_solicitacao else ""
-        if len(desc) < 10:
-            raise CampoObrigatorioError(
-                "A descrição dos quesitos da perícia deve ter no mínimo 10 caracteres.",
-                chave="laudo.descricao_curta",
-            )
+        desc = exigir_texto(descricao_solicitacao, f"A descrição dos quesitos da perícia deve ter no mínimo {TAMANHO_MINIMO_DESCRICAO} caracteres.", chave="laudo.descricao_curta", minimo=TAMANHO_MINIMO_DESCRICAO)
         return cls(
             numero_referencia=numero_referencia.strip(),
             tipo_pericia=tipo_pericia,
@@ -110,8 +113,7 @@ class LaudoPericial:
             )
         self.perito_id = perito_id
         self.status = StatusLaudo.EM_ANALISE
-        self.atualizado_em = instante
-        self.versao += 1
+        self._tocar(instante)
 
     def anexar_laudo_concluido(
         self,
@@ -128,12 +130,7 @@ class LaudoPericial:
                 f"Laudo já homologado ou concluído (status: {self.status.value}). Retificações exigem aditamento.",
                 chave="laudo.ja_concluido",
             )
-        conclusoes = conclusoes_tecnicas.strip() if conclusoes_tecnicas else ""
-        if len(conclusoes) < 10:
-            raise ValorInvalidoError(
-                "As conclusões técnicas devem conter no mínimo 10 caracteres.",
-                chave="laudo.conclusoes_curtas",
-            )
+        conclusoes = exigir_texto(conclusoes_tecnicas, f"As conclusões técnicas devem conter no mínimo {TAMANHO_MINIMO_CONCLUSOES} caracteres.", chave="laudo.conclusoes_curtas", minimo=TAMANHO_MINIMO_CONCLUSOES, erro=ValorInvalidoError)
         if not hash_sha256 or len(hash_sha256) != 64:
             raise ValorInvalidoError("Hash SHA-256 do arquivo inválido.", chave="laudo.hash_invalido")
 
@@ -144,5 +141,4 @@ class LaudoPericial:
         self.hash_sha256 = hash_sha256
         self.status = StatusLaudo.CONCLUIDO
         self.concluido_em = instante
-        self.atualizado_em = instante
-        self.versao += 1
+        self._tocar(instante)

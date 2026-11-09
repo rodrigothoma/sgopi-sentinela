@@ -45,8 +45,12 @@ class RepoComFake(RepositorioComunicacaoInteragencias):
     async def obter_por_id(self, comunicacao_id):
         return self.itens.get(str(comunicacao_id))
 
-    async def listar(self, departamento=None, protocolo=None, remetente_id=None, limite=50):
+    async def listar(
+        self, departamento=None, protocolo=None, remetente_id=None, limite=50, niveis_sigilo=None, visivel_ao_usuario=None
+    ):
         res = list(self.itens.values())
+        if niveis_sigilo is not None:
+            res = [c for c in res if c.nivel_sigilo in niveis_sigilo or c.remetente_id == visivel_ao_usuario]
         if departamento:
             res = [c for c in res if c.departamento_origem == departamento or departamento in c.departamentos_destinatarios]
         if protocolo:
@@ -202,9 +206,10 @@ async def test_fluxo_completo_comunicacao_interagencias():
     )
     assert com1.numero_oficio == "OFI-2026-000001"
     assert len(porta_audit.registros) == 1
-    assert porta_audit.registros[0].operacao == "ENVIO_COMUNICACAO_INTERAGENCIAS"
-    assert len(repo_notif.itens) == 1
-    assert repo_notif.itens[0].departamento_destinatario == "POLICIA_RODOVIARIA_FEDERAL"
+    assert porta_audit.registros[0].operacao == "interagencias.enviar"
+    # RESERVADO: uma notificação por papel autorizado a ler o ofício
+    assert sorted(n.papel_destinatario for n in repo_notif.itens) == ["DELEGADO", "ESCRIVAO", "OPERADOR_CENTRAL", "SUPERVISOR"]
+    assert {n.departamento_destinatario for n in repo_notif.itens} == {"POLICIA_RODOVIARIA_FEDERAL"}
 
     # 2. Consultar recebidas/enviadas
     lista_prf = await uc_consultar.executar(ator=ator, departamento="POLICIA_RODOVIARIA_FEDERAL")
@@ -223,4 +228,58 @@ async def test_fluxo_completo_comunicacao_interagencias():
     assert resp.mensagem_pai_id == com1.id
     assert "POLICIA_CIVIL" in resp.departamentos_destinatarios
     assert len(porta_audit.registros) == 2
-    assert porta_audit.registros[1].operacao == "RESPOSTA_COMUNICACAO_INTERAGENCIAS"
+    assert porta_audit.registros[1].operacao == "interagencias.responder"
+
+
+@pytest.mark.asyncio
+async def test_oficio_confidencial_notifica_apenas_papeis_autorizados():
+    """Regressão: notificação por departamento era difundida a todos, com o assunto do ofício."""
+    repo_notif = RepoNotifFake()
+    uc = EnviarComunicacaoInteragenciasUseCase(
+        repositorio_comunicacao=RepoComFake(),
+        gerador_oficio=GeradorOficioFake(),
+        repositorio_ocorrencia=RepoOcFake(),
+        repositorio_notificacao=repo_notif,
+        porta_auditoria=AuditFake(),
+        publicador_eventos=PubFake(),
+        relogio=RelFixo(),
+    )
+
+    await uc.executar(
+        ator=Ator(id=uuid4(), papel=Papel.DELEGADO, login="delegado"),
+        departamento_origem="POLICIA_CIVIL",
+        departamentos_destinatarios=["POLICIA_MILITAR"],
+        assunto="Operação sigilosa em andamento",
+        corpo="Detalhes operacionais restritos à autoridade policial.",
+        nivel_sigilo="CONFIDENCIAL",
+    )
+
+    assert sorted(n.papel_destinatario for n in repo_notif.itens) == ["DELEGADO", "SUPERVISOR"]
+    assert all(not n.destinada_a(uuid4(), "OPERADOR_CENTRAL") for n in repo_notif.itens)
+
+
+@pytest.mark.asyncio
+async def test_evento_de_oficio_informa_sigilo_e_remetente():
+    pub = PubFake()
+    ator = Ator(id=uuid4(), papel=Papel.DELEGADO, login="delegado")
+    uc = EnviarComunicacaoInteragenciasUseCase(
+        repositorio_comunicacao=RepoComFake(),
+        gerador_oficio=GeradorOficioFake(),
+        repositorio_ocorrencia=RepoOcFake(),
+        repositorio_notificacao=RepoNotifFake(),
+        porta_auditoria=AuditFake(),
+        publicador_eventos=pub,
+        relogio=RelFixo(),
+    )
+
+    await uc.executar(
+        ator=ator,
+        departamento_origem="POLICIA_CIVIL",
+        departamentos_destinatarios=["POLICIA_MILITAR"],
+        assunto="Operação sigilosa em andamento",
+        corpo="Detalhes operacionais restritos à autoridade policial.",
+        nivel_sigilo="RESERVADO",
+    )
+
+    assert pub.eventos[0].dados["nivel_sigilo"] == "RESERVADO"
+    assert pub.eventos[0].dados["remetente_id"] == str(ator.id)

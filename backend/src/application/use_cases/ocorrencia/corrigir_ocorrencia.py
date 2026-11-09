@@ -16,6 +16,7 @@ from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia._mapeadores import para_detalhe
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
 from application.use_cases.ocorrencia.registrar_ocorrencia_policial import _tipo_envolvido
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia import eventos
 from domain.ocorrencia.entity import Envolvido, TipificacaoPenal
@@ -74,7 +75,7 @@ class CorrigirOcorrencia(InterfaceCorrigirOcorrencia):
             await self._repositorio.salvar(ocorrencia)
             await self._auditoria.registrar(
                 RegistroAuditoria(
-                    quem=ator.id, quando=agora, operacao="ocorrencia.corrigir", entidade="Ocorrencia",
+                    quem=ator.id, quando=agora, operacao=OperacaoAuditada.OCORRENCIA_CORRIGIR, entidade=EntidadeAuditada.OCORRENCIA,
                     entidade_id=str(ocorrencia.id), dados_antes=antes,
                     dados_depois={"versao": ocorrencia.versao, "descricao": ocorrencia.descricao}, ip=ator.ip,
                 )
@@ -99,7 +100,7 @@ class ReenviarOcorrencia(InterfaceReenviarOcorrencia):
             await self._repositorio.salvar(ocorrencia)
             await self._auditoria.registrar(
                 RegistroAuditoria(
-                    quem=ator.id, quando=agora, operacao="ocorrencia.reenviar", entidade="Ocorrencia",
+                    quem=ator.id, quando=agora, operacao=OperacaoAuditada.OCORRENCIA_REENVIAR, entidade=EntidadeAuditada.OCORRENCIA,
                     entidade_id=str(ocorrencia.id), dados_antes=antes,
                     dados_depois={"status": ocorrencia.status.value, "versao": ocorrencia.versao}, ip=ator.ip,
                 )

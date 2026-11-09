@@ -24,6 +24,7 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia.autenticidade import (
     CodigoVerificacao,
@@ -34,10 +35,10 @@ from domain.ocorrencia.autenticidade import (
 from domain.ocorrencia.entity import Ocorrencia
 from domain.shared.exceptions import EntidadeNaoEncontradaError
 
-OPERACAO_CONSULTA = "documento.autenticar"
-OPERACAO_SUSPEITA_FRAUDE = "documento.suspeita_fraude"
-OPERACAO_NAO_LOCALIZADO = "documento.nao_localizado"
-ENTIDADE_DOCUMENTO = "DocumentoPolicial"
+OPERACAO_CONSULTA = OperacaoAuditada.DOCUMENTO_AUTENTICAR
+OPERACAO_SUSPEITA_FRAUDE = OperacaoAuditada.DOCUMENTO_SUSPEITA_FRAUDE
+OPERACAO_NAO_LOCALIZADO = OperacaoAuditada.DOCUMENTO_NAO_LOCALIZADO
+ENTIDADE_DOCUMENTO = EntidadeAuditada.DOCUMENTO_POLICIAL
 _TAMANHO_SUFIXO_AUDITADO = 4
 
 
@@ -74,7 +75,7 @@ class AutenticarDocumento(InterfaceAutenticarDocumento):
 
     async def _auditar(
         self,
-        operacao: str,
+        operacao: OperacaoAuditada,
         ocorrencia: Ocorrencia | None,
         codigo: CodigoVerificacao,
         agora: datetime,

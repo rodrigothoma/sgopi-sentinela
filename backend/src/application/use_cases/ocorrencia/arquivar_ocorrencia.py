@@ -13,11 +13,12 @@ from application.ports.inbound.interface_arquivar_ocorrencia import (
 )
 from application.ports.inbound.interface_consultar_ocorrencias import OcorrenciaDetalheOutput
 from application.use_cases.ocorrencia.revisar_ocorrencia import _DecisaoBase
+from domain.auditoria.catalogo import OperacaoAuditada
 from domain.ocorrencia import eventos
 
 
 class ArquivarOcorrencia(_DecisaoBase, InterfaceArquivarOcorrencia):
-    operacao = "ocorrencia.arquivar"
+    operacao = OperacaoAuditada.OCORRENCIA_ARQUIVAR
 
     def _aplicar(self, ocorrencia, ator, justificativa, agora):
         ocorrencia.arquivar(ator.id, justificativa or "", agora)
@@ -30,7 +31,7 @@ class ArquivarOcorrencia(_DecisaoBase, InterfaceArquivarOcorrencia):
 
 
 class ExcluirOcorrencia(_DecisaoBase, InterfaceExcluirOcorrencia):
-    operacao = "ocorrencia.excluir"
+    operacao = OperacaoAuditada.OCORRENCIA_EXCLUIR
 
     def _aplicar(self, ocorrencia, ator, justificativa, agora):
         ocorrencia.excluir(ator.id, justificativa or "", agora)

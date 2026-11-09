@@ -31,19 +31,15 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia._mapeadores import para_item_apreendido
-from application.use_cases.ocorrencia.consultar_ocorrencias import PAPEIS_CONSULTA, carregar_ou_404
+from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
+from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
 from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia.apreensao import EstadoConservacao, ItemApreendido, TipoItemApreendido, UnidadeMedida
 from domain.ocorrencia.entity import Ocorrencia
+from domain.shared.enums import interpretar_enum
 from domain.shared.exceptions import AcessoNegadoError, ConflitoError, ValorInvalidoError
 from domain.usuario.entity import Papel
-
-
-def _enum[T](tipo: type[T], valor: str, chave: str) -> T:
-    try:
-        return tipo(valor)  # type: ignore[call-arg]
-    except ValueError as exc:
-        raise ValorInvalidoError(f"Valor inválido: {valor}", chave=chave, valor=valor) from exc
+from domain.usuario.permissoes import Permissao
 
 
 def _exigir_acesso_a_ocorrencia(ator: Ator, ocorrencia: Ocorrencia) -> None:
@@ -55,11 +51,11 @@ def _exigir_acesso_a_ocorrencia(ator: Ator, ocorrencia: Ocorrencia) -> None:
 def montar_item(dto: RegistrarItemApreendidoInput | ItemApreendidoInputDTO, *, agora: datetime, por_id: UUID) -> ItemApreendido:
     """DTO → entidade (valida enums e regras do item); compartilhado com o registro concomitante (RF01*)."""
     return ItemApreendido(
-        tipo=_enum(TipoItemApreendido, dto.tipo, "apreensao.tipo_invalido"),
+        tipo=interpretar_enum(TipoItemApreendido, dto.tipo, "apreensao.tipo_invalido"),
         descricao=dto.descricao,
         quantidade=dto.quantidade,
-        unidade=_enum(UnidadeMedida, dto.unidade, "apreensao.unidade_invalida"),
-        estado_conservacao=_enum(EstadoConservacao, dto.estado_conservacao, "apreensao.estado_invalido"),
+        unidade=interpretar_enum(UnidadeMedida, dto.unidade, "apreensao.unidade_invalida"),
+        estado_conservacao=interpretar_enum(EstadoConservacao, dto.estado_conservacao, "apreensao.estado_invalido"),
         numero_lacre=dto.numero_lacre,
         numero_serie=dto.numero_serie,
         marca=dto.marca,
@@ -82,8 +78,8 @@ def auditoria_registro_item(ator: Ator, ocorrencia: Ocorrencia, item: ItemApreen
     return RegistroAuditoria(
         quem=ator.id,
         quando=agora,
-        operacao="apreensao.registrar",
-        entidade="ItemApreendido",
+        operacao=OperacaoAuditada.APREENSAO_REGISTRAR,
+        entidade=EntidadeAuditada.ITEM_APREENDIDO,
         entidade_id=str(item.id),
         dados_depois={
             "ocorrencia_id": str(ocorrencia.id),
@@ -149,8 +145,8 @@ class MovimentarCustodia(InterfaceMovimentarCustodia):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="apreensao.movimentar",
-                    entidade="ItemApreendido",
+                    operacao=OperacaoAuditada.APREENSAO_MOVIMENTAR,
+                    entidade=EntidadeAuditada.ITEM_APREENDIDO,
                     entidade_id=str(input_dto.item_id),
                     dados_antes={"localizacao": movimentacao.origem},
                     dados_depois={
@@ -198,7 +194,7 @@ class EmitirAutoApreensao(InterfaceEmitirAutoApreensao):
         return hashlib.sha256("\n".join(partes).encode("utf-8")).hexdigest()
 
     async def executar(self, ator: Ator, ocorrencia_id: UUID) -> AutoApreensaoOutput:
-        ator.exigir_papel(*PAPEIS_CONSULTA)
+        ator.exigir(Permissao.CONSULTAR_OCORRENCIAS)
         agora = self._relogio.agora()
         async with self._uow:
             ocorrencia = await carregar_ou_404(self._repositorio, ocorrencia_id)
@@ -213,8 +209,8 @@ class EmitirAutoApreensao(InterfaceEmitirAutoApreensao):
                 RegistroAuditoria(
                     quem=ator.id,
                     quando=agora,
-                    operacao="apreensao.emitir_auto",
-                    entidade="AutoApreensao",
+                    operacao=OperacaoAuditada.APREENSAO_EMITIR_AUTO,
+                    entidade=EntidadeAuditada.AUTO_APREENSAO,
                     entidade_id=numero,
                     dados_depois={
                         "ocorrencia_id": str(ocorrencia.id),

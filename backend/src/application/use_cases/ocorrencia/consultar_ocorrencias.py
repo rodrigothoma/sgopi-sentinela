@@ -14,10 +14,11 @@ from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias,
 from application.use_cases.ocorrencia._mapeadores import para_detalhe, para_resumo
 from domain.ocorrencia.entity import Ocorrencia, OrigemOcorrencia
 from domain.ocorrencia.status import ESTADOS_VISIVEIS_POR_PADRAO, StatusOcorrencia
+from domain.shared.enums import interpretar_enum
 from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 
-PAPEIS_CONSULTA = (Papel.AGENTE, Papel.DELEGADO, Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
 LIMITE_MAXIMO = 200
 
 
@@ -25,19 +26,13 @@ def _status(valores: tuple[str, ...]) -> tuple[StatusOcorrencia, ...]:
     """Sem filtro explícito, excluídas (exclusão lógica) não aparecem — RNF03*."""
     if not valores:
         return ESTADOS_VISIVEIS_POR_PADRAO
-    try:
-        return tuple(StatusOcorrencia(v) for v in valores)
-    except ValueError as exc:
-        raise ValorInvalidoError(f"Status inválido: {exc}", chave="ocorrencia.status_invalido") from exc
+    return tuple(interpretar_enum(StatusOcorrencia, v, "ocorrencia.status_invalido", "Status inválido: {valor}") for v in valores)
 
 
 def _origem(valor: str | None) -> OrigemOcorrencia | None:
     if not valor:
         return None
-    try:
-        return OrigemOcorrencia(valor.strip().upper())
-    except ValueError as exc:
-        raise ValorInvalidoError(f"Origem inválida: {valor}", chave="ocorrencia.origem_invalida") from exc
+    return interpretar_enum(OrigemOcorrencia, valor, "ocorrencia.origem_invalida", "Origem inválida: {valor}", normalizar=True)
 
 
 def _termo(valor: str | None) -> str | None:
@@ -88,7 +83,7 @@ async def carregar_autorizada(
     repositorio: RepositorioOcorrencia, ator: Ator, ocorrencia_id: UUID
 ) -> Ocorrencia:
     """Aplica a política única de consulta usada por detalhe e evidências."""
-    ator.exigir_papel(*PAPEIS_CONSULTA)
+    ator.exigir(Permissao.CONSULTAR_OCORRENCIAS)
     ocorrencia = await carregar_ou_404(repositorio, ocorrencia_id)
     if ator.papel == Papel.AGENTE and ocorrencia.agente_policial_id != ator.id:
         raise AcessoNegadoError(
@@ -103,7 +98,7 @@ class ListarOcorrencias(InterfaceListarOcorrencias):
         self._repositorio = repositorio
 
     async def executar(self, ator: Ator, input_dto: ListarOcorrenciasInput) -> PaginaOcorrenciasOutput:
-        ator.exigir_papel(*PAPEIS_CONSULTA)
+        ator.exigir(Permissao.CONSULTAR_OCORRENCIAS)
         limit = max(1, min(input_dto.limit, LIMITE_MAXIMO))
         offset = max(0, input_dto.offset)
         filtro = montar_filtro(ator, input_dto, limit, offset)

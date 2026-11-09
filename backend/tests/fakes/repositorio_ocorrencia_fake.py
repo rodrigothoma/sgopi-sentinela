@@ -7,34 +7,38 @@ from uuid import UUID
 
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
 from domain.ocorrencia.entity import Ocorrencia
-from domain.shared.exceptions import ConflitoError
+from tests.fakes.controle_versao import ControleVersaoFake
 
 
 class RepositorioOcorrenciaFake(RepositorioOcorrencia):
-    """Fake em memória — zero I/O; simula verificação otimista de versão."""
+    """Fake em memória — zero I/O; verificação otimista igual à do repositório SQL."""
 
     def __init__(self) -> None:
         self._store: dict[UUID, Ocorrencia] = {}
+        self._versoes = ControleVersaoFake()
+
+    def _copia(self, entidade: Ocorrencia) -> Ocorrencia:
+        """Cópia isolada do armazenamento, registrada como carregada (como o repositório SQL)."""
+        return self._versoes.ao_carregar(copy.deepcopy(entidade))
 
     async def salvar(self, ocorrencia: Ocorrencia) -> None:
-        existente = self._store.get(ocorrencia.id)
-        if existente is not None and ocorrencia.versao <= existente.versao and ocorrencia is not existente:
-            raise ConflitoError("Versão desatualizada.", chave="generic.versao_desatualizada")
+        self._versoes.verificar(ocorrencia, self._store.get(ocorrencia.id))
         self._store[ocorrencia.id] = copy.deepcopy(ocorrencia)
+        self._versoes.ao_salvar(ocorrencia)
 
     async def buscar_por_id(self, ocorrencia_id: UUID) -> Ocorrencia | None:
         o = self._store.get(ocorrencia_id)
-        return copy.deepcopy(o) if o else None
+        return self._copia(o) if o else None
 
     async def buscar_por_protocolo(self, numero_protocolo: str) -> Ocorrencia | None:
-        return next((copy.deepcopy(o) for o in self._store.values() if o.numero_protocolo == numero_protocolo), None)
+        return next((self._copia(o) for o in self._store.values() if o.numero_protocolo == numero_protocolo), None)
 
     async def buscar_por_chave_autenticidade(self, chave: str) -> Ocorrencia | None:
-        return next((copy.deepcopy(o) for o in self._store.values() if o.chave_autenticidade == chave), None)
+        return next((self._copia(o) for o in self._store.values() if o.chave_autenticidade == chave), None)
 
     async def buscar_por_hash_narrativa(self, hash_narrativa: str) -> Ocorrencia | None:
         candidatos = sorted((o for o in self._store.values() if o.hash_narrativa == hash_narrativa), key=lambda o: o.criada_em)
-        return copy.deepcopy(candidatos[0]) if candidatos else None
+        return self._copia(candidatos[0]) if candidatos else None
 
     def _filtrar(self, filtro: FiltroOcorrencias) -> list[Ocorrencia]:
         itens = list(self._store.values())
@@ -50,7 +54,7 @@ class RepositorioOcorrenciaFake(RepositorioOcorrencia):
 
     async def listar(self, filtro: FiltroOcorrencias) -> list[Ocorrencia]:
         itens = self._filtrar(filtro)[filtro.offset : filtro.offset + filtro.limit]
-        return [copy.deepcopy(o) for o in itens]
+        return [self._copia(o) for o in itens]
 
     async def contar(self, filtro: FiltroOcorrencias) -> int:
         return len(self._filtrar(filtro))

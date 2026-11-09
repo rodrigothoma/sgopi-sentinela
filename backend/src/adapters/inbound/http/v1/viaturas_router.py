@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header
 from pydantic import BaseModel, Field
 
-from adapters.inbound.http.deps import ator_opcional, exigir_papel
+from adapters.inbound.http.deps import ator_opcional, exigir_permissao
 from adapters.inbound.simulador.orquestrador_despacho import OrquestradorDespacho
 from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
 from application.ports.inbound.ator import Ator
@@ -22,7 +22,7 @@ from application.ports.inbound.interface_gerir_viaturas import (
 )
 from application.ports.outbound.credencial_dispositivo import CredencialDispositivo
 from domain.shared.exceptions import AcessoNegadoError, CredenciaisInvalidasError
-from domain.usuario.entity import Papel
+from domain.usuario.permissoes import Permissao
 from infrastructure.config.settings import settings
 from infrastructure.di import (
     get_alterar_situacao_viatura,
@@ -36,8 +36,6 @@ from infrastructure.di import (
 )
 
 router = APIRouter(tags=["viaturas"])
-GESTAO = (Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR)
-CONSULTA = (Papel.OPERADOR_CENTRAL, Papel.SUPERVISOR, Papel.DELEGADO, Papel.AGENTE)
 
 
 class ViaturaSchema(BaseModel):
@@ -73,19 +71,19 @@ def _schema(v: ViaturaOutput) -> ViaturaSchema:
 
 
 @router.get("/v1/viaturas", response_model=list[ViaturaSchema])
-async def listar_viaturas(ator: Ator = Depends(exigir_papel(*CONSULTA)), uc: InterfaceListarViaturas = Depends(get_listar_viaturas)):
+async def listar_viaturas(ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_FROTA)), uc: InterfaceListarViaturas = Depends(get_listar_viaturas)):
     """Frota com última posição e indicador de sinal (RF02, RNF04*)."""
     return [_schema(v) for v in await uc.executar(ator)]
 
 
 @router.post("/v1/viaturas", response_model=ViaturaSchema, status_code=201)
-async def cadastrar_viatura(body: CadastrarViaturaRequest, ator: Ator = Depends(exigir_papel(*GESTAO)), uc: InterfaceCadastrarViatura = Depends(get_cadastrar_viatura)):
+async def cadastrar_viatura(body: CadastrarViaturaRequest, ator: Ator = Depends(exigir_permissao(Permissao.GERIR_FROTA)), uc: InterfaceCadastrarViatura = Depends(get_cadastrar_viatura)):
     """Cadastra viatura; prefixo/placa duplicados → 409 (RF02)."""
     return _schema(await uc.executar(ator, CadastrarViaturaInput(prefixo=body.prefixo, placa=body.placa)))
 
 
 @router.patch("/v1/viaturas/{viatura_id}/situacao", response_model=ViaturaSchema)
-async def alterar_situacao(viatura_id: UUID, body: AlterarSituacaoRequest, ator: Ator = Depends(exigir_papel(*GESTAO)), uc: InterfaceAlterarSituacaoViatura = Depends(get_alterar_situacao_viatura)):
+async def alterar_situacao(viatura_id: UUID, body: AlterarSituacaoRequest, ator: Ator = Depends(exigir_permissao(Permissao.GERIR_FROTA)), uc: InterfaceAlterarSituacaoViatura = Depends(get_alterar_situacao_viatura)):
     """DISPONIVEL ⇄ INDISPONIVEL manual (RF02)."""
     return _schema(await uc.executar(ator, AlterarSituacaoInput(viatura_id=viatura_id, situacao=body.situacao)))
 
@@ -113,7 +111,7 @@ def _autoria_da_posicao(
         raise AcessoNegadoError(
             "Em produção a telemetria só é aceita do rastreador da viatura.", chave="telemetria.exige_dispositivo"
         )
-    ator.exigir_papel(*GESTAO)
+    ator.exigir(Permissao.GERIR_FROTA)
     return f"http:{ator.login}", ator.id
 
 
@@ -144,7 +142,7 @@ async def registrar_posicao(
 @router.post("/v1/viaturas/{viatura_id}/credencial-telemetria", response_model=CredencialTelemetriaResponse, tags=["telemetria"])
 async def emitir_credencial_telemetria(
     viatura_id: UUID,
-    ator: Ator = Depends(exigir_papel(*GESTAO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_FROTA)),
     uc: InterfaceEmitirCredencialTelemetria = Depends(get_emitir_credencial_telemetria),
 ) -> CredencialTelemetriaResponse:
     """Credencial a gravar no rastreador GPS da viatura (emissão auditada)."""
@@ -153,7 +151,7 @@ async def emitir_credencial_telemetria(
 
 @router.get("/v1/simulador", tags=["telemetria"])
 async def status_simulador(
-    ator: Ator = Depends(exigir_papel(*CONSULTA)),
+    ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_FROTA)),
     sim: SimuladorTelemetria = Depends(get_simulador),
     orq: OrquestradorDespacho = Depends(get_orquestrador_despacho),
 ) -> dict:
@@ -163,7 +161,7 @@ async def status_simulador(
 
 @router.post("/v1/simulador/ligar", tags=["telemetria"])
 async def ligar_simulador(
-    ator: Ator = Depends(exigir_papel(*GESTAO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_FROTA)),
     sim: SimuladorTelemetria = Depends(get_simulador),
     orq: OrquestradorDespacho = Depends(get_orquestrador_despacho),
 ) -> dict:
@@ -181,7 +179,7 @@ async def ligar_simulador(
 
 @router.post("/v1/simulador/desligar", tags=["telemetria"])
 async def desligar_simulador(
-    ator: Ator = Depends(exigir_papel(*GESTAO)),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_FROTA)),
     sim: SimuladorTelemetria = Depends(get_simulador),
     orq: OrquestradorDespacho = Depends(get_orquestrador_despacho),
 ) -> dict:

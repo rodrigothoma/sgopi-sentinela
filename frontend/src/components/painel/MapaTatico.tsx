@@ -41,7 +41,12 @@ interface Props {
   heatAtivo: boolean;
   pontosCalor: PontoCalor[];
   areasRisco?: AreaRisco[];
+  /** RNF04 / UC05 exceção I: avisa a página quando o provedor de tiles falha ou se restabelece. */
+  onDisponibilidadeTiles?: (disponivel: boolean) => void;
 }
+
+/** Falhas de tile toleradas antes de declarar o provedor indisponível (um tile isolado pode falhar). */
+const LIMITE_FALHAS_TILE = 4;
 
 /** Mapa Leaflet/OSM com marcadores atualizados incrementalmente (sem recriar o mapa a cada evento). */
 export const MapaTatico: React.FC<Props> = ({
@@ -53,6 +58,7 @@ export const MapaTatico: React.FC<Props> = ({
   heatAtivo,
   pontosCalor,
   areasRisco = [],
+  onDisponibilidadeTiles,
 }) => {
   const divRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -63,12 +69,30 @@ export const MapaTatico: React.FC<Props> = ({
   const heatRef = useRef<L.HeatLayer | null>(null);
   const selecionarRef = useRef(onSelecionarOcorrencia);
   selecionarRef.current = onSelecionarOcorrencia;
+  const disponibilidadeRef = useRef(onDisponibilidadeTiles);
+  disponibilidadeRef.current = onDisponibilidadeTiles;
+  const falhasTileRef = useRef(0);
 
   useEffect(() => {
     if (!divRef.current || mapRef.current) return;
     corrigirIconesLeaflet();
     const map = L.map(divRef.current).setView(CENTRO_PADRAO, 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+    });
+
+    // RNF04 / UC05 exceção I: o provedor de mapas é externo e pode cair. Acumula as
+    // falhas para não degradar por um tile isolado, e volta ao mapa quando ele responde.
+    tiles.on('tileerror', () => {
+      falhasTileRef.current += 1;
+      if (falhasTileRef.current === LIMITE_FALHAS_TILE) disponibilidadeRef.current?.(false);
+    });
+    tiles.on('tileload', () => {
+      if (falhasTileRef.current >= LIMITE_FALHAS_TILE) disponibilidadeRef.current?.(true);
+      falhasTileRef.current = 0;
+    });
+
+    tiles.addTo(map);
     mapRef.current = map;
     return () => {
       removerHeat(heatRef.current);

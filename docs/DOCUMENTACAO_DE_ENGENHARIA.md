@@ -118,15 +118,15 @@ A priorização seguiu critérios técnicos de viabilidade, dependência funcion
 | **Extra** *(implementado além do MVP)* | **RF09** | Medidas Protetivas e Restrições | Monitoramento de prazos judiciais, tipos de restrição e gestão de vigência com alertas de vencimento. |
 | **Extra** *(implementado além do MVP)* | **RF05** | Inteligência Criminal e Manchas Criminais | Introduz cálculo georreferenciado e aplicação de inteligência sobre grandes volumes de dados criminais. |
 | **Extra** *(implementado além do MVP)* | **RF08** | Autenticação Pública de Documentos | Portal público de consulta por chave de segurança, sem necessidade de autenticação prévia. |
-| **Won't Have** *(Próximos Ciclos)* | **RF10** | Comunicação Interagências | Canal de mensageria sigilosa entre departamentos, estruturado como módulo de expansão futura. |
+| **Extra** *(implementado além do MVP)* | **RF10** | Comunicação Interagências | Ofícios oficiais rastreáveis (OFI-AAAA-NNNNNN) entre departamentos, com nível de sigilo, respostas encadeadas e notificação in-app aos destinatários. |
 
 > **Observação:** O escopo canônico do MVP permanece **RF01, RF04 e RF02**, integralmente implementado.
 > Os itens marcados como **Extra** foram implementados **além do escopo do MVP** e não alteram sua definição:
 > Gestão de Apreensões (RF03), Manchas Criminais com *heatmap* e banner de criticidade no painel tático (RF05),
 > Inquéritos Policiais com motor de conexões (RF06), Laudos Periciais com integridade SHA-256 (RF07),
-> Autenticação Pública de Documentos em `/autenticar` (RF08), Medidas Protetivas de Urgência (RF09) e Pin Vetorial SVG (DEC-03).
+> Autenticação Pública de Documentos em `/autenticar` (RF08), Medidas Protetivas de Urgência (RF09), Comunicação Interagências por ofícios (RF10) e Pin Vetorial SVG (DEC-03).
 > Também são extras: o arquivamento/exclusão lógica de ocorrência pelo Delegado, o gerador de ocorrências de demonstração
-> e o orquestrador de despacho automático (incluindo viatura de apoio). Apenas o RF10 segue fora do escopo.
+> o orquestrador de despacho automático (incluindo viatura de apoio), as notificações in-app e os indicadores/áreas de risco dinâmicas.
 
 ---
 
@@ -166,13 +166,15 @@ As fatias de desenvolvimento e a rastreabilidade das tarefas estão organizadas 
   - Gestão de Laudos Periciais com upload de relatórios técnicos e validação de hash criptográfico SHA-256 (RF07 / UC07);
   - Autenticação pública de documentos por chave de segurança ou QR Code em `/autenticar` (RF08 / UC08);
   - Gestão de Medidas Protetivas de Urgência com controle temporal de prazos, distâncias mínimas e tipos de restrição (RF09 / UC09);
+  - Comunicação interagências por ofícios oficiais rastreáveis entre departamentos internos, com nível de sigilo e respostas encadeadas (RF10 / UC10);
+  - Notificações in-app (sino na barra lateral) e indicadores/áreas de risco dinâmicas;
   - Arquivamento e exclusão lógica de ocorrência pelo Delegado (status `ARQUIVADA` / `EXCLUIDA`, com motivo obrigatório);
   - Gerador opcional de ocorrências fictícias para demonstração e orquestrador de despacho/encerramento automáticos (com viatura de apoio).
 * **Limites do MVP (O que NÃO entra no primeiro ciclo):**
   - Upload de arquivos multimídia pesados (áudio/vídeo pericial em streaming);
   - Geração de PDF com carimbo de tempo ICP-Brasil emitido por autoridade certificadora externa;
   - Integração com hardware físico de GPS veicular (utiliza-se o simulador de telemetria e WebSockets nativos);
-  - Módulo de comunicação interagências com canais sigilosos externos (RF10).
+  - Integração da comunicação interagências (RF10) com sistemas e canais externos de outros órgãos (o módulo implementado é interno ao SGOPI).
 
 ### 3.3 Fluxo Funcional Ponta a Ponta
 
@@ -329,16 +331,18 @@ O diagrama abaixo representa a **modelagem conceitual relacional** elaborada ori
 
 ![Mapeamento Relacional Conceitual](diagramas/mapeamento-relacional.png)
 
-#### 5.6.1 Esquema Físico do MVP Implementado no PostgreSQL (19 Tabelas)
+#### 5.6.1 Esquema Físico do MVP Implementado no PostgreSQL (23 Tabelas)
 
-Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQLAlchemy 2.0 (async)** e **Alembic** (`backend/src/infrastructure/database/models.py`), com suporte retrocompatível ao SQLite para testes de CI, o esquema físico de dados foi consolidado em **19 tabelas relacionais**:
+Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQLAlchemy 2.0 (async)** e **Alembic** (`backend/src/infrastructure/database/models.py`), com suporte retrocompatível ao SQLite para testes de CI, o esquema físico de dados foi consolidado em **23 tabelas relacionais**:
 
 1. **`usuarios`**: Armazena as credenciais e o controle de acesso dos operadores policiais.
-   - *Colunas:* `id` (UUID PK), `nome` (String 255), `login` (String 100 Unique), `senha_hash` (String 255), `papel` (String 30 — Enum `AGENTE`, `DELEGADO`, `OPERADOR_CENTRAL`, `SUPERVISOR`, `PERITO`, `ESCRIVAO`), `ativo` (Boolean).
+   - *Colunas:* `id` (UUID PK), `nome` (String 255), `login` (String 100 Unique), `senha_hash` (String 255), `papel` (String 30 — Enum `AGENTE`, `DELEGADO`, `OPERADOR_CENTRAL`, `SUPERVISOR`, `PERITO`, `ESCRIVAO`, `CIDADAO`), `ativo` (Boolean).
+   - *Papel `CIDADAO`:* usado pelo usuário técnico do canal público (`sistema.cidadao`), autor das ocorrências registradas pelo portal do cidadão.
    - *Estratégia:* Mapeamento de perfis via coluna discriminadora (`papel`), preservando integridade referencial nas chaves estrangeiras.
 
 2. **`ocorrencias`**: Entidade central de registro de fatos delituosos.
-   - *Colunas:* `id` (UUID PK), `numero_protocolo` (String 50 Unique), `natureza` (String 255), `descricao` (Text), `localizacao` (String 500), `latitude` (Float), `longitude` (Float), `data_hora_fato` (Timestamp com timezone), `status` (String 30 — Enum `AGUARDANDO_REVISAO`, `EM_CORRECAO`, `REJEITADA`, `VALIDADA`, `EM_ATENDIMENTO`, `ENCERRADA`, `ARQUIVADA`, `EXCLUIDA`), `versao` (Integer), `criada_em` (Timestamp com timezone), `atualizada_em` (Timestamp com timezone), `agente_policial_id` (UUID FK `usuarios.id`), `validada_por_id` (UUID FK `usuarios.id` nullable), `inquerito_id` (UUID FK `inqueritos.id` nullable), `justificativa_revisao` (Text nullable), `desfecho` (Text nullable), `hash_narrativa` (String 64 nullable), `chave_autenticidade` (String 24 Unique nullable), `arquivada_por_id` (UUID FK `usuarios.id` nullable), `motivo_arquivamento` (Text nullable), `excluida_por_id` (UUID FK `usuarios.id` nullable), `motivo_exclusao` (Text nullable).
+   - *Colunas:* `id` (UUID PK), `numero_protocolo` (String 50 Unique), `natureza` (String 255), `descricao` (Text), `localizacao` (String 500), `latitude` (Float), `longitude` (Float), `data_hora_fato` (Timestamp com timezone), `status` (String 30 — Enum `AGUARDANDO_REVISAO`, `EM_CORRECAO`, `REJEITADA`, `VALIDADA`, `EM_ATENDIMENTO`, `ENCERRADA`, `ARQUIVADA`, `EXCLUIDA`), `versao` (Integer), `criada_em` (Timestamp com timezone), `atualizada_em` (Timestamp com timezone), `agente_policial_id` (UUID FK `usuarios.id`), `validada_por_id` (UUID FK `usuarios.id` nullable), `inquerito_id` (UUID FK `inqueritos.id` nullable), `justificativa_revisao` (Text nullable), `desfecho` (Text nullable), `hash_narrativa` (String 64 nullable), `chave_autenticidade` (String 24 Unique nullable), `arquivada_por_id` (UUID FK `usuarios.id` nullable), `motivo_arquivamento` (Text nullable), `excluida_por_id` (UUID FK `usuarios.id` nullable), `motivo_exclusao` (Text nullable), `hash_versao` (Integer nullable — versão do algoritmo de canonicalização do hash; `NULL` = v1 legado), `origem` (String 20 — Enum `POLICIAL`, `PUBLICA`; padrão `POLICIAL`), `codigo_acompanhamento_hash` (String 64 nullable — hash do código de acompanhamento entregue ao cidadão), `prioridade` (String 10 — Enum `BAIXA`, `MEDIA`, `ALTA`, `URGENTE`; padrão `MEDIA`, indexada).
+   - *Canal público e prioridade (extras):* `origem = PUBLICA` identifica comunicações feitas pelo portal do cidadão, que acompanha o andamento via `POST /v1/ocorrencias/publico/consulta` informando protocolo e código de acompanhamento (apenas o hash do código é persistido). `prioridade` ordena a fila do Delegado e o despacho.
    - *Integridade:* `numero_protocolo` gerado no padrão oficial `SGOPI-AAAA-NNNNNN`. A coluna `versao` implementa bloqueio otimista (*optimistic locking*) para controle de concorrência.
    - *Autenticidade (extra — RF08):* `chave_autenticidade` é a chave pública do documento emitido na validação, usada na conferência pública em `/autenticar`.
    - *Arquivamento e exclusão lógica (extra):* atos privativos do Delegado que levam o status a `ARQUIVADA` ou `EXCLUIDA`, registrando autor (`arquivada_por_id` / `excluida_por_id`) e motivo obrigatório (`motivo_arquivamento` / `motivo_exclusao`). Nenhuma linha é apagada fisicamente.
@@ -407,9 +411,23 @@ Para a entrega do software funcional implementado em **PostgreSQL 16** via **SQL
 19. **`sequencias_medida`**: Contador anual para emissão sequencial de medidas protetivas.
     - *Colunas:* `ano` (Integer PK), `ultimo` (Integer).
 
+20. **`notificacoes`**: Notificações in-app exibidas no sino da barra lateral (extra).
+    - *Colunas:* `id` (UUID PK), `usuario_id` (UUID FK `usuarios.id` nullable), `papel_destinatario` (String 30 nullable), `departamento_destinatario` (String 50 nullable), `tipo` (String 40), `titulo` (String 255), `mensagem` (Text), `prioridade` (String 20), `link` (String 255 nullable), `lida` (Boolean), `lida_em` (Timestamp com timezone nullable), `metadados` (JSON nullable), `criada_em` (Timestamp com timezone), `ativo` (Boolean).
+    - *Destinatário:* a notificação é endereçada a um usuário específico (`usuario_id`) ou a um grupo (`papel_destinatario` / `departamento_destinatario`).
+
+21. **`notificacoes_leituras`**: Confirmações de leitura por usuário das notificações endereçadas a grupos.
+    - *Colunas:* `notificacao_id` (UUID FK `notificacoes.id`, PK composta), `usuario_id` (UUID FK `usuarios.id`, PK composta), `lida_em` (Timestamp com timezone).
+
+22. **`comunicacoes_interagencias`**: Ofícios oficiais trocados entre departamentos (extra — RF10 / UC10).
+    - *Colunas:* `id` (UUID PK), `numero_oficio` (String 50 Unique), `protocolo_ocorrencia` (String 50 nullable), `departamento_origem` (String 50), `departamentos_destinatarios` (JSON — lista de departamentos), `remetente_id` (UUID FK `usuarios.id`), `assunto` (String 255), `corpo` (Text), `nivel_sigilo` (String 30 — Enum `PADRAO`, `RESERVADO`, `CONFIDENCIAL`), `prioridade` (String 20), `status_entrega` (String 30 — Enum `ENTREGUE`, `PENDENTE`), `mensagem_pai_id` (UUID FK `comunicacoes_interagencias.id` nullable — resposta encadeada), `criada_em` (Timestamp com timezone), `ativo` (Boolean).
+    - *Formato:* `numero_oficio` padronizado como `OFI-AAAA-NNNNNN`.
+
+23. **`sequencias_oficio`**: Contador anual para numeração sequencial de ofícios interagências.
+    - *Colunas:* `ano` (Integer PK), `ultimo` (Integer).
+
 #### 5.6.2 Princípios de Engenharia do Modelo Físico
 - **Identificadores UUIDv4:** Chaves primárias universais e opacas geradas na camada de aplicação/domínio, prevenindo ataques de enumeração na API e garantindo que entidades nasçam identificadas em testes unitários sem dependência prévia de persistência.
-- **Governança e Imutabilidade (RNF03):** Eliminação de exclusões físicas (`DELETE`) na camada de dados operacionais. A retirada de registros é sempre lógica e depende da entidade: ocorrências mudam para o status `ARQUIVADA` ou `EXCLUIDA` (com autor e motivo registrados); viaturas saem de operação pela situação `INDISPONIVEL`; evidências permanecem vinculadas à ocorrência; e as tabelas que possuem a coluna `ativo` (`usuarios`, `envolvidos`, `tipificacoes_ocorrencia`, `inqueritos`, `laudos_periciais`, `medidas_protetivas`) usam `ativo = false`. Auditoria, histórico de status e cadeia de custódia são tabelas estritamente *append-only*.
+- **Governança e Imutabilidade (RNF03):** Eliminação de exclusões físicas (`DELETE`) na camada de dados operacionais. A retirada de registros é sempre lógica e depende da entidade: ocorrências mudam para o status `ARQUIVADA` ou `EXCLUIDA` (com autor e motivo registrados); viaturas saem de operação pela situação `INDISPONIVEL`; evidências permanecem vinculadas à ocorrência; e as tabelas que possuem a coluna `ativo` (`usuarios`, `envolvidos`, `tipificacoes_ocorrencia`, `inqueritos`, `laudos_periciais`, `medidas_protetivas`, `notificacoes`, `comunicacoes_interagencias`) usam `ativo = false`. Auditoria, histórico de status e cadeia de custódia são tabelas estritamente *append-only*.
 - **Rastreabilidade de Ator:** Vínculos relacionais preservados entre operadores (`usuarios`), ocorrências (`agente_policial_id`, `validada_por_id`), inquéritos (`delegado_id`), laudos (`solicitante_id`, `perito_id`), medidas (`delegado_id`) e despachos (`operador_id`).
 
 ---
@@ -647,7 +665,7 @@ O ciclo de vida operacional da entidade de domínio `Viatura` (`backend/src/doma
 
 * **Identificação:** UC06 — Vincular Ocorrências a Inquéritos
 * **Resumo:** Descreve o agrupamento de uma ou mais ocorrências policiais em um inquérito policial (IP), permitindo a consolidação de investigações complexas.
-* **Ator Principal:** Delegado de Polícia / Escrivão
+* **Ator Principal:** Delegado de Polícia *(Supervisor e Operador Central também consultam inquéritos e sugestões de conexão; instaurar, vincular e concluir são atos privativos do Delegado)*
 * **Atores Secundários:** —
 * **Pré-condições:** 
   1. As ocorrências devem estar com status `Validada`.
@@ -660,18 +678,45 @@ O ciclo de vida operacional da entidade de domínio `Viatura` (`backend/src/doma
 | :---: | :--- | :--- |
 | 1 | Acessar o módulo de Gestão de Inquéritos e selecionar o inquérito desejado. | |
 | 2 | Selecionar a opção `Vincular Ocorrências`. | |
-| 3 | | Apresentar mecanismo de busca e sugestões de conexões automáticas (mesmo suspeito, local ou arma). |
+| 3 | | Apresentar mecanismo de busca e sugestões de conexões automáticas calculadas pelo Motor de Conexões (mesma pessoa, causa delituosa, placa/arma, área de risco, proximidade e janela temporal). |
 | 4 | Selecionar as ocorrências a serem vinculadas e confirmar a operação. | |
 | 5 | | Validar se as ocorrências já não se encontram vinculadas a outro inquérito principal ativo. |
 | 6 | | Registrar a vinculação e unificar a linha temporal de evidências e envolvidos no inquérito. |
-| 7 | | Exibir confirmação e atualizar a árvore de conexões do caso. |
+| 7 | | Exibir confirmação e atualizar a lista de ocorrências vinculadas e as sugestões de conexão do inquérito. |
 
 #### Regras de Negócio e Validações
 1. Uma ocorrência só pode estar vinculada como fato principal a um único inquérito policial.
-2. O sistema deve sugerir automaticamente vínculos com base em cruzamento de dados de CPF, apelidos, placas de veículos e geolocalização comum.
+2. O sistema deve sugerir automaticamente vínculos com base no cruzamento de envolvidos (documento ou nome específico), natureza e tipificação penal, placas e números de série de itens apreendidos, áreas de risco, geolocalização e janela temporal (ver *Motor de Conexões* abaixo).
+3. Apenas ocorrências com status `VALIDADA` podem ser vinculadas; a operação é registrada na trilha de auditoria.
+
+#### Motor de Conexões (sugestão automática de vínculos)
+
+Implementado em `backend/src/application/use_cases/inquerito/buscar_conexoes.py` e exposto em `GET /v1/inqueritos/conexoes/{ocorrencia_id}`. A partir de uma ocorrência pivô, o motor avalia até **150 candidatas** (ocorrências `VALIDADA` ainda sem inquérito) e soma pontos por critério, aplicados nesta ordem:
+
+| Critério | Condição | Pontos |
+| :--- | :--- | :---: |
+| Mesmo suspeito | Mesma pessoa como `SUSPEITO` nas duas ocorrências | 120 (documento) / 85 (nome) |
+| Envolvido cruzado | Suspeito em uma e vítima na outra (possível retaliação) | 110 / 80 |
+| Mesma vítima | Mesma pessoa como `VITIMA` nas duas (reiteração) | 95 / 65 |
+| Outro papel | Mesma testemunha/comunicante | 40 / 25 |
+| Mesma natureza | Natureza idêntica | 35 |
+| Natureza afim | Naturezas da mesma família criminal (ex.: roubo/latrocínio, furto/receptação) | 20 |
+| Tipificação comum | Artigo penal coincidente | 25 |
+| Mesma placa | Veículo apreendido com a mesma placa | 80 |
+| Mesmo número de série | Arma/objeto apreendido com o mesmo número de série | 85 |
+| Mesma área de risco | Ambas dentro da mesma área de risco dos últimos 30 dias | 50 |
+| Local imediato | Distância ≤ 300 m | 25 |
+| Proximidade | Distância ≤ 1,5 km *(só com vínculo substantivo)* | 15 |
+| Janela curta | Fatos com até 24 h de diferença *(só com vínculo substantivo)* | 25 |
+| Janela longa | Fatos com até 72 h de diferença *(só com vínculo substantivo)* | 15 |
+
+* **Identificação de pessoas:** por documento (apenas dígitos, mínimo de 5) ou por nome normalizado (sem acentos, mínimo de 6 caracteres e fora da lista de nomes genéricos como "desconhecido" ou "ignorado"). Cada par de pessoas pontua uma única vez.
+* **Filtro antirruído:** a candidata só é sugerida com **pontuação ≥ 40** e com pelo menos um **vínculo substantivo** (pessoa, natureza/tipificação ou área de risco em comum). Proximidade moderada e correlação temporal só pontuam quando já existe vínculo substantivo.
+* **Saída:** as sugestões são ordenadas pela pontuação de relevância e trazem os motivos que a compõem. As áreas de risco são enriquecimento opcional: se o cálculo falhar, a busca segue sem esse critério.
 
 #### Cenários Alternativos e de Exceção
-* **Cenário de Exceção I — Ocorrência Já Vinculada:** O sistema alerta o usuário que a ocorrência já pertence a outro inquérito e permite vincular apenas como referência documental/cruzada.
+* **Cenário de Exceção I — Ocorrência Já Vinculada:** O sistema recusa a operação (conflito) informando que a ocorrência já pertence a outro inquérito policial. *(A vinculação como referência documental/cruzada está prevista na especificação original, mas não foi implementada.)*
+* **Cenário de Exceção II — Ocorrência Não Validada:** O sistema recusa a vinculação de ocorrências com status diferente de `VALIDADA`.
 
 #### Diagrama de Sequência — UC06
 ![Diagrama de Sequência UC06](diagramas/sequencia/sq06-vincular-ocorrencias-inqueritos.png)
@@ -807,14 +852,22 @@ O ciclo de vida operacional da entidade de domínio `Viatura` (`backend/src/doma
 | 9 | | Registrar o evento de envio no log de auditoria com assinatura digital do remetente. |
 
 #### Regras de Negócio e Validações
-1. Toda comunicação interagências deve obrigatoriamente estar vinculada a um protocolo oficial existente.
-2. Mensagens com nível `Confidencial` só podem ser lidas por usuários com credencial compatível da agência destinatária.
+1. O vínculo a um protocolo de ocorrência é opcional; quando informado, o protocolo deve existir.
+2. **Sigilo por papel:** como os usuários não têm departamento cadastrado, a credencial compatível é o papel. O remetente sempre lê os próprios ofícios. A regra está em `domain/interagencias/entity.py` (`PAPEIS_POR_NIVEL_SIGILO`) e vale para a listagem, a resposta, as notificações e o evento de tempo real:
+
+   | Nível | Quem lê |
+   | :--- | :--- |
+   | `PADRAO` | Qualquer usuário autenticado |
+   | `RESERVADO` | Delegado, Supervisor, Escrivão e Operador Central |
+   | `CONFIDENCIAL` | Delegado e Supervisor |
+
+   Ofício restrito gera uma notificação por papel autorizado (não por departamento), e responder a um ofício sem acesso responde como inexistente (404). Nível de sigilo ou prioridade desconhecidos são recusados (422), em vez de assumir `PADRAO`.
 3. Não é permitida a exclusão de mensagens após o envio (imutabilidade do RNF03).
 
 #### Cenários Alternativos e de Exceção
 * **Cenário Alternativo I — Resposta / Despacho da Agência Destinatária:** O operador do departamento de destino abre a thread e envia a resposta com o relatório solicitado.
 * **Cenário de Exceção I — Protocolo Inexistente:** O sistema valida o protocolo e recusa o envio até que um protocolo válido seja inserido.
-* **Cenário de Exceção II — Falha de Conexão na Entrega:** O sistema registra a mensagem localmente, define o status da entrega como `Pendente` e agenda retentativas automáticas via mensageria assíncrona (RNF04).
+* **Cenário de Exceção II — Falha de Conexão na Entrega:** O sistema registra a mensagem localmente, define o status da entrega como `Pendente` e agenda retentativas automáticas via mensageria assíncrona (RNF04). *(Não implementado: o módulo é interno ao SGOPI e todo ofício é gravado como `ENTREGUE`.)*
 
 #### Diagrama de Sequência — UC10
 ![Diagrama de Sequência UC10](diagramas/sequencia/sq10-comunicacoes-interagencias.png)
@@ -897,6 +950,19 @@ A validação do software ocorre em níveis complementares para isolar regras de
 - **Testes de Unidade e Integração (Backend):** O foco central da cobertura de testes (meta superior a 80%) é a camada de Casos de Uso e Entidades de Domínio. Com **pytest** e *fakes* de todas as portas de saída, a máquina de estados das ocorrências e a geração do número de protocolo são validadas de forma isolada, sem subir o servidor web nem conectar a um banco real; os testes de integração exercitam adaptadores, API HTTP e WebSocket contra SQLite em memória.
 
 - **Testes Automatizados (E2E):** Os fluxos críticos são automatizados em dois níveis: **Cypress** no frontend (navegador real, *black-box*), cobrindo o registro circunstanciado (UC01), a validação pelo Delegado (UC04) e o despacho tático (UC02), além dos extras; e **pytest E2E de API** (HTTP e WebSocket) contra o servidor real em execução. *(O planejamento inicial previa Selenium WebDriver; a equipe adotou o Cypress na implementação.)*
+
+### 7.1.1 Padrões de Código: Tipagem Estrita (Typehints) e Documentação (Docstrings)
+
+Para assegurar manutenibilidade, compreensibilidade e segurança arquitetural em todas as camadas, as seguintes diretrizes são adotadas formalmente para **código novo e módulos refatorados** (os módulos preexistentes são adequados gradualmente a cada ciclo de refatoração):
+
+1. **Tipagem Estrita (PEP 484 / PEP 604):**
+   * Funções, métodos e construtores devem conter anotações explícitas para **todos os parâmetros e retornos** (incluindo `-> None`).
+   * Utilização da sintaxe nativa do Python 3.10+ para uniões (`T | None` em vez de `Optional[T]`) e coleções genéricas embutidas (`list[T]`, `dict[K, V]`, `tuple[T, ...]`).
+
+2. **Docstrings Contextualizadas (PEP 257) & Regra do Código Óbvio:**
+   * Módulos, classes, portas e métodos públicos devem documentar seu propósito, regras de negócio associadas (ex.: referências a RFs/UCs) e casos excepcionais (`Raises:`).
+   * **Não comente código óbvio:** evite docstrings prolixas que meramente repetem a assinatura ou o nome do método; priorize clareza e contexto que não estejam explícitos na tipagem.
+
 ### 7.2 Versionamento e Fluxo de Trabalho (Git Workflow)
 
 Para orquestrar o desenvolvimento em equipe e proteger a estabilidade do código principal, o repositório adotará uma estratégia estruturada de ramificação:
