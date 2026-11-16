@@ -18,8 +18,8 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias, RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from application.use_cases.transacao import executar_em_transacao
+from domain.notificacao.auditoria import AlertaCriticidadeEmitido, CienciaAlertaRegistrada
 from domain.notificacao.entity import NivelCriticidadeAlerta, Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.shared.eventos import EventoDominio
 from domain.shared.exceptions import EntidadeNaoEncontradaError
@@ -159,32 +159,13 @@ class EmitirAlertaCriticidadeUseCase(InterfaceEmitirAlertaCriticidade):
             instante=agora,
         )
 
-        if self._uow:
-            async with self._uow:
-                salva = await self._repo_notif.salvar(notif)
-                await self._porta_auditoria.registrar(
-                    RegistroAuditoria(
-                        quem=ator.id,
-                        quando=agora,
-                        operacao=OperacaoAuditada.INTELIGENCIA_EMITIR_ALERTA,
-                        entidade=EntidadeAuditada.INTELIGENCIA_CRIMINAL,
-                        entidade_id=str(salva.id),
-                        dados_depois=dados_alerta,
-                    )
-                )
-                await self._uow.commit()
-        else:
+        async def _gravar() -> Notificacao:
             salva = await self._repo_notif.salvar(notif)
-            await self._porta_auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.INTELIGENCIA_EMITIR_ALERTA,
-                    entidade=EntidadeAuditada.INTELIGENCIA_CRIMINAL,
-                    entidade_id=str(salva.id),
-                    dados_depois=dados_alerta,
-                )
-            )
+            evento = AlertaCriticidadeEmitido(notificacao_id=salva.id, dados_alerta=dados_alerta)
+            await self._porta_auditoria.registrar(evento, ator.contexto_auditoria(agora))
+            return salva
+
+        salva = await executar_em_transacao(self._uow, _gravar)
 
         # UC11 / sq11: Disparo de evento via WebSocket
         await self._publicador.publicar(
@@ -233,31 +214,10 @@ class ConfirmarCienciaAlertaUseCase(InterfaceConfirmarCienciaAlerta):
 
         agora = self._relogio.agora()
         notif.marcar_lida(agora)
-        papel_str = ator.papel.value if hasattr(ator.papel, "value") else str(ator.papel)
+        evento = CienciaAlertaRegistrada(notificacao_id=uid, supervisor=ator.login, papel=ator.papel.value)
 
-        if self._uow:
-            async with self._uow:
-                await self._repo_notif.salvar(notif)
-                await self._porta_auditoria.registrar(
-                    RegistroAuditoria(
-                        quem=ator.id,
-                        quando=agora,
-                        operacao=OperacaoAuditada.INTELIGENCIA_REGISTRAR_CIENCIA,
-                        entidade=EntidadeAuditada.NOTIFICACAO,
-                        entidade_id=str(uid),
-                        dados_depois={"supervisor": ator.login, "papel": papel_str},
-                    )
-                )
-                await self._uow.commit()
-        else:
+        async def _gravar() -> None:
             await self._repo_notif.salvar(notif)
-            await self._porta_auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.INTELIGENCIA_REGISTRAR_CIENCIA,
-                    entidade=EntidadeAuditada.NOTIFICACAO,
-                    entidade_id=str(uid),
-                    dados_depois={"supervisor": ator.login, "papel": papel_str},
-                )
-            )
+            await self._porta_auditoria.registrar(evento, ator.contexto_auditoria(agora))
+
+        await executar_em_transacao(self._uow, _gravar)
