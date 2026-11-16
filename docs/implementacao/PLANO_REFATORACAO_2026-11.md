@@ -122,6 +122,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 
 - [ ] **`<TempoRealProvider>`** com uma única conexão WebSocket (hoje até 3 por delegado) e notificações por push no lugar do polling de 15 s.
 - [ ] **Componentes comuns**: `<Modal>` (9 cópias do backdrop), `<SeletorOcorrencia>` + `usePaginacao`, `SolicitarLaudoForm` e `ConcederMedidaForm`; manter só um entre `GlideSelect` e `SelectField`.
+- [ ] **Seletor de registros nos modais** (`<SeletorOcorrencia>`): hoje Laudos e Medidas paginam o `GlideSelect` com botões fora da lista (é preciso fechá-la para trocar de página) e Inquéritos tem paginação própria, todos sobre as 100 primeiras ocorrências. Trocar por um componente único com busca no servidor (protocolo, tipo, endereço) e "carregar mais" ao rolar, dentro da própria lista. A `Paginacao` numerada fica para tabelas de página inteira (ver `docs/RESUMO_CONTRIBUICOES_2026-11.md`).
 - [ ] **Quebrar páginas gigantes** em hooks e subcomponentes: `InqueritosPage` (1362), `MedidasProtetivasPage` (998), `TrilhaAuditoriaPage` (875), `ComunicacaoInteragenciasPage` (816), `PainelTaticoPage` (780).
 - [ ] **Badges de conexão por `tipo`**, não por `includes('suspeito')` (depende da Onda 2).
 - [ ] **Tipos e serviços** centralizados em `types/` (ou `openapi-typescript`); `ocorrenciasService.listar` com objeto de opções.
