@@ -29,8 +29,7 @@ from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
 from application.use_cases.viatura.gerir_viaturas import carregar_viatura, para_output
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.despacho.auditoria import OrdemDeDespachoCriada
 from domain.despacho.entity import OrdemDeDespacho
 from domain.despacho.eventos import ordem_de_despacho_criada
 from domain.despacho.servico_proximidade import sugerir_viaturas_proximas
@@ -107,13 +106,7 @@ class DespacharViatura(InterfaceDespacharViatura):
             await self._viaturas.salvar(viatura)
             await self._ordens.salvar(ordem)
             await self._ocorrencias.salvar(ocorrencia)
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id, quando=agora, operacao=OperacaoAuditada.DESPACHO_CRIAR, entidade=EntidadeAuditada.ORDEM_DESPACHO, entidade_id=str(ordem.id),
-                    dados_depois={"numero": numero, "ocorrencia_id": str(ocorrencia.id), "viatura_id": str(viatura.id), "prefixo": viatura.prefixo, "apoio": apoio},
-                    ip=ator.ip,
-                )
-            )
+            await self._auditoria.registrar(OrdemDeDespachoCriada.de(ordem, viatura), ator.contexto_auditoria(agora))
             await self._uow.commit()
         if not apoio:
             await self._publicador.publicar(ev_ocorrencia.ocorrencia_despachada(ocorrencia.id, agora, numero_ordem=numero, viatura_id=str(viatura.id), prefixo=viatura.prefixo))
