@@ -138,6 +138,12 @@ export interface StatusSimuladorCompleto extends StatusSimulador { orquestrador:
 
 export interface EventoTempoReal { tipo: string; ocorrido_em: string; dados: Record<string, unknown> }
 
+/** Ação que pode aparecer na trilha de auditoria (gerada das classes de evento do backend). */
+export interface AcaoAuditada {
+  operacao: string;
+  entidade: string;
+}
+
 export interface RegistroAuditoria {
   id: string;
   quando: string;

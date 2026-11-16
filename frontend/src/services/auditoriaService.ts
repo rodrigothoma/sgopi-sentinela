@@ -1,8 +1,12 @@
 import { api } from './api';
-import type { FiltroAuditoria, RegistroAuditoria } from '../types/api';
+import type { AcaoAuditada, FiltroAuditoria, RegistroAuditoria } from '../types/api';
 import { nomeDoArquivo, salvarBlob } from '../utils/download';
 
 export const auditoriaService = {
+  /** Catálogo das ações auditadas, usado nos filtros da trilha. */
+  async catalogo(): Promise<AcaoAuditada[]> {
+    return (await api.get<AcaoAuditada[]>('/v1/auditoria/catalogo')).data;
+  },
   async listar(filtro?: FiltroAuditoria): Promise<RegistroAuditoria[]> {
     return (await api.get<RegistroAuditoria[]>('/v1/auditoria', { params: filtro })).data;
   },

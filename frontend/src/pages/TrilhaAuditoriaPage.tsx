@@ -6,44 +6,9 @@ import { StatusBadge } from '../components/StatusBadge';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { auditoriaService } from '../services/auditoriaService';
-import type { FiltroAuditoria, RegistroAuditoria } from '../types/api';
+import type { AcaoAuditada, FiltroAuditoria, RegistroAuditoria } from '../types/api';
+import { OPCAO_TODAS, entidadesDoCatalogo, opcoesDoCatalogo } from '../utils/catalogoAuditoria';
 import { formatarData, formatarDataHora, formatarHora } from '../utils/datas';
-
-const OPERACOES: string[] = [
-  'ocorrencia.registrar',
-  'ocorrencia.validar',
-  'ocorrencia.rejeitar',
-  'ocorrencia.devolver_para_correcao',
-  'ocorrencia.corrigir',
-  'ocorrencia.reenviar',
-  'ocorrencia.encerrar',
-  'despacho.criar',
-  'viatura.cadastrar',
-  'viatura.alterar_situacao',
-  'auth.login',
-  'auth.login_negado',
-  'auth.login_bloqueado',
-  'auth.acesso_negado',
-  'evidencia.anexar',
-  'evidencia.download',
-  'evidencia.verificar_integridade',
-  'ocorrencias.exportar',
-  'auditoria.exportar',
-  'ocorrencia.redefinir_prioridade',
-  'usuario.cadastrar',
-  'usuario.alterar_papel',
-  'usuario.desativar',
-  'usuario.reativar',
-];
-
-const ENTIDADES: string[] = [
-  'Ocorrencia',
-  'Viatura',
-  'OrdemDeDespacho',
-  'Evidencia',
-  'Usuario',
-  'Exportacao',
-];
 
 /** Tentativa de login falha não tem autor conhecido (quem tentou pode não ser o titular do login). */
 const OPERACOES_SEM_AUTOR_IDENTIFICADO = ['auth.login_negado', 'auth.login_bloqueado'];
@@ -72,6 +37,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
   const { avisar } = useToast();
 
   const [registros, setRegistros] = useState<RegistroAuditoria[]>([]);
+  const [catalogo, setCatalogo] = useState<AcaoAuditada[]>([]);
   const [carregando, setCarregando] = useState<boolean>(false);
   const [exportando, setExportando] = useState<boolean>(false);
   const [busca, setBusca] = useState<string>('');
@@ -116,22 +82,26 @@ export const TrilhaAuditoriaPage: React.FC = () => {
     carregar();
   }, [carregar]);
 
-  const opcoesOperacao: GlideSelectOption[] = useMemo(() => {
-    return [
-      { value: 'TODAS', label: t('auditoria.filtro_todas_operacoes') },
-      ...OPERACOES.map((op) => ({
-        value: op,
-        label: t(`auditoria.operacoes.${op}`, op),
-      })),
-    ];
-  }, [t]);
+  /** Filtros vêm do catálogo do backend (gerado das classes de evento): não ficam desatualizados. */
+  useEffect(() => {
+    auditoriaService
+      .catalogo()
+      .then(setCatalogo)
+      .catch((err) => avisar(mensagemDeErro(err), 'erro'));
+  }, [avisar]);
 
-  const opcoesEntidade: GlideSelectOption[] = useMemo(() => {
-    return [
-      { value: 'TODAS', label: t('auditoria.filtro_todas_entidades') },
-      ...ENTIDADES.map((ent) => ({ value: ent, label: ent })),
-    ];
-  }, [t]);
+  const opcoesOperacao: GlideSelectOption[] = useMemo(
+    () => opcoesDoCatalogo(catalogo, (op) => t(`auditoria.operacoes.${op}`, op), t('auditoria.filtro_todas_operacoes')),
+    [catalogo, t],
+  );
+
+  const opcoesEntidade: GlideSelectOption[] = useMemo(
+    () => [
+      { value: OPCAO_TODAS, label: t('auditoria.filtro_todas_entidades') },
+      ...entidadesDoCatalogo(catalogo).map((ent) => ({ value: ent, label: t(`auditoria.entidades.${ent}`, ent) })),
+    ],
+    [catalogo, t],
+  );
 
   const registrosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
