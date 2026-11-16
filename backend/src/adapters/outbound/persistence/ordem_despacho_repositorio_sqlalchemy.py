@@ -1,30 +1,15 @@
-"""Adapter de saída: OrdemDespachoRepositorioSQLAlchemy + GeradorNumeroOrdemSQLAlchemy (RF02)."""
+"""Adapter de saída: OrdemDespachoRepositorioSQLAlchemy (RF02)."""
 from uuid import UUID
 
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from adapters.outbound.persistence.mappers import OrdemDespachoMapper
-from application.ports.outbound.gerador_numero_ordem import GeradorNumeroOrdem, formatar_numero_ordem
 from application.ports.outbound.repositorio_ordem_despacho import RepositorioOrdemDespacho
 from domain.despacho.entity import OrdemDeDespacho
 from domain.shared.exceptions import ConflitoError
 from infrastructure.database.models import OrdemDespachoModel
-
-_UPSERT = text(
-    "INSERT INTO sequencias_ordem_despacho (ano, ultimo) VALUES (:ano, 1) "
-    "ON CONFLICT (ano) DO UPDATE SET ultimo = sequencias_ordem_despacho.ultimo + 1 RETURNING ultimo"
-)
-
-
-class GeradorNumeroOrdemSQLAlchemy(GeradorNumeroOrdem):
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-
-    async def proximo(self, ano: int) -> str:
-        seq = (await self._session.execute(_UPSERT, {"ano": ano})).scalar_one()
-        return formatar_numero_ordem(ano, int(seq))
 
 
 class OrdemDespachoRepositorioSQLAlchemy(RepositorioOrdemDespacho):

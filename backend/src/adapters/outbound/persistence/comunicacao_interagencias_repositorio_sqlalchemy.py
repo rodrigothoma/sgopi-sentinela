@@ -1,20 +1,16 @@
 """
-Adapter de saída: Repositório e Gerador de Número de Ofício para Comunicação Interagências (RF10 / UC10).
+Adapter de saída: Repositório de Comunicação Interagências (RF10 / UC10).
 """
 from __future__ import annotations
 
 from collections.abc import Collection
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, String, cast, func, or_, select, text
+from sqlalchemy import ColumnElement, String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from adapters.outbound.persistence.mappers import ComunicacaoInteragenciasMapper
-from application.ports.outbound.repositorio_comunicacao_interagencias import (
-    GeradorNumeroOficio,
-    RepositorioComunicacaoInteragencias,
-    formatar_numero_oficio,
-)
+from application.ports.outbound.repositorio_comunicacao_interagencias import RepositorioComunicacaoInteragencias
 from domain.interagencias.entity import ComunicacaoInteragencias, NivelSigilo
 from infrastructure.database.models import ComunicacaoInteragenciasModel
 
@@ -34,23 +30,6 @@ def _pertence_ao_departamento(departamento: str) -> ColumnElement[bool]:
         func.upper(modelo.departamento_origem) == codigo,
         cast(modelo.departamentos_destinatarios, String).like(f'%"{literal}"%', escape=_ESCAPE_LIKE),
     )
-
-
-_UPSERT_OFICIO = text(
-    "INSERT INTO sequencias_oficio (ano, ultimo) VALUES (:ano, 1) "
-    "ON CONFLICT (ano) DO UPDATE SET ultimo = sequencias_oficio.ultimo + 1 "
-    "RETURNING ultimo"
-)
-
-
-class GeradorNumeroOficioSQLAlchemy(GeradorNumeroOficio):
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-
-    async def proximo_numero(self, ano: int) -> str:
-        """Incremento atômico por ano: o UPSERT evita a corrida do primeiro ofício do ano."""
-        sequencial = (await self._session.execute(_UPSERT_OFICIO, {"ano": ano})).scalar_one()
-        return formatar_numero_oficio(ano, int(sequencial))
 
 
 class ComunicacaoInteragenciasRepositorioSQLAlchemy(RepositorioComunicacaoInteragencias):

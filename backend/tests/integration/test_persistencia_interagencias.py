@@ -4,8 +4,8 @@ from uuid import uuid4
 
 from adapters.outbound.persistence.comunicacao_interagencias_repositorio_sqlalchemy import (
     ComunicacaoInteragenciasRepositorioSQLAlchemy,
-    GeradorNumeroOficioSQLAlchemy,
 )
+from adapters.outbound.persistence.geradores_sequenciais_sqlalchemy import GeradorNumeroOficioSQLAlchemy
 from domain.interagencias.entity import ComunicacaoInteragencias, NivelSigilo
 
 AGORA = datetime(2026, 11, 9, 10, 0, tzinfo=UTC)

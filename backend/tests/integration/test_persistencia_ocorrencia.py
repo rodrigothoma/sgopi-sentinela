@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import select
 
 from adapters.outbound.persistence.auditoria_sqlalchemy import AuditoriaSQLAlchemy
-from adapters.outbound.persistence.gerador_protocolo_sqlalchemy import GeradorProtocoloSQLAlchemy
+from adapters.outbound.persistence.geradores_sequenciais_sqlalchemy import GeradorProtocoloSQLAlchemy
 from adapters.outbound.persistence.ocorrencia_repositorio_sqlalchemy import OcorrenciaRepositorioSQLAlchemy
 from adapters.outbound.persistence.unidade_de_trabalho_sqlalchemy import UnidadeDeTrabalhoSQLAlchemy
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias
