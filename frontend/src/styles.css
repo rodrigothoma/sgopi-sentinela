@@ -1333,6 +1333,7 @@ dl.grid2 dd { margin: 0 0 8px; }
 
 .painel-barra {
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   align-items: center;
   margin-bottom: 16px;
@@ -1351,7 +1352,7 @@ dl.grid2 dd { margin: 0 0 8px; }
 
 .painel-grid {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: minmax(0, 1fr) 380px;
   gap: 20px;
   align-items: start;
 }
@@ -2062,3 +2063,19 @@ dl.grid2 dd { margin: 0 0 8px; }
   outline: 2px solid var(--primary);
   outline-offset: 1px;
 }
+
+/* Inspeção de RF02: seleção visual independente da ocorrência em despacho. */
+.inspecao-viatura { border-top: 3px solid var(--primary); }
+.inspecao-viatura-cabecalho { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.inspecao-viatura-cabecalho h3 { margin: 4px 0 0; font-size: 1.3rem; }
+.inspecao-viatura-rotulo { color: var(--muted); font-size: .8rem; }
+.inspecao-viatura-dados { display: grid; gap: 12px; margin: 16px 0; }
+.inspecao-viatura-dados dt { color: var(--muted); font-size: .8rem; margin-bottom: 3px; }
+.inspecao-viatura-dados dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.inspecao-viatura-aviso { color: var(--warn); font-size: .85rem; }
+.marker-viatura-selecionada .marker-viatura-inner { outline: 3px solid var(--primary); outline-offset: 4px; }
+.frota-viatura-selecionada { background: var(--card-hover); }
+.frota-inspecionar { appearance: none; border: 0; background: transparent; color: var(--primary); font: inherit; font-weight: 700; cursor: pointer; padding: 6px 2px; text-decoration: underline; text-underline-offset: 3px; }
+.frota-inspecionar:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 3px; }
+
+.inspecao-viatura > .lista-badges { flex-direction: row; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }

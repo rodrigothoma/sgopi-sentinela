@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapaTatico } from '../components/painel/MapaTatico';
+import { InspecaoViatura } from '../components/painel/InspecaoViatura';
 import { ControleSimulador } from '../components/painel/ControleSimulador';
 import { PrioridadeBadge } from '../components/PrioridadeBadge';
 import { StatusBadge } from '../components/StatusBadge';
@@ -23,7 +24,7 @@ import {
   listarNaturezas,
   resumirPorNatureza,
 } from '../utils/manchas';
-import type { EventoTempoReal, NivelCriticidade, OcorrenciaResumo, OrdemDespacho, Papel, StatusSimuladorCompleto, Sugestoes, Viatura } from '../types/api';
+import type { FocoViatura, EventoTempoReal, NivelCriticidade, OcorrenciaResumo, OrdemDespacho, Papel, StatusSimuladorCompleto, Sugestoes, Viatura } from '../types/api';
 import { NIVEIS_CRITICIDADE, PAPEIS_DESTINATARIOS_ALERTA } from '../types/api';
 import { formatarHora } from '../utils/datas';
 import { inteligenciaService, type AreaRisco } from '../services/inteligenciaService';
@@ -43,6 +44,8 @@ export const PainelTaticoPage: React.FC = () => {
   const [ocorrencias, setOcorrencias] = useState<OcorrenciaResumo[]>([]);
   const [ordens, setOrdens] = useState<OrdemDespacho[]>([]);
   const [selecionada, setSelecionada] = useState<string | null>(null);
+  const [viaturaSelecionadaId, setViaturaSelecionadaId] = useState<string | null>(null);
+  const [focoViatura, setFocoViatura] = useState<FocoViatura | null>(null);
   const [sugestoes, setSugestoes] = useState<Sugestoes | null>(null);
   // RNF04 / UC05 exceção I: o mapa segue montado e oculto, para voltar sozinho quando os tiles responderem.
   const [tilesDisponiveis, setTilesDisponiveis] = useState(true);
@@ -136,6 +139,12 @@ export const PainelTaticoPage: React.FC = () => {
       ? { ...v, situacao: (d.situacao as Viatura['situacao']) ?? v.situacao, latitude: (d.latitude as number) ?? v.latitude, longitude: (d.longitude as number) ?? v.longitude, posicao_registrada_em: (d.registrada_em as string) ?? v.posicao_registrada_em, sinal: d.latitude != null ? 'OK' : v.sinal }
       : v));
     switch (e.tipo) {
+      case 'ViaturaCadastroAlterado':
+        void viaturasService.listar().then(setViaturas).catch((err) => avisar(mensagemDeErro(err), 'erro'));
+        break;
+      case 'ViaturaExcluida':
+        setViaturas((vs) => vs.filter((v) => v.id !== d.viatura_id));
+        break;
       case 'PosicaoAtualizada':
       case 'ViaturaSituacaoAlterada':
         atualizarViatura();
@@ -193,6 +202,16 @@ export const PainelTaticoPage: React.FC = () => {
 
   const ocorrenciaSel = useMemo(() => ocorrencias.find((o) => o.ocorrencia_id === selecionada) ?? null, [ocorrencias, selecionada]);
   const semSinal = viaturas.filter((v) => v.sinal !== 'OK');
+  const viaturaInspecionada = viaturas.find((v) => v.id === viaturaSelecionadaId) ?? null;
+
+  useEffect(() => {
+    if (viaturaSelecionadaId && !viaturaInspecionada) setViaturaSelecionadaId(null);
+  }, [viaturaSelecionadaId, viaturaInspecionada]);
+
+  const centralizarViatura = (): void => {
+    if (!viaturaInspecionada || !tilesDisponiveis) return;
+    setFocoViatura((atual) => ({ viaturaId: viaturaInspecionada.id, sequencia: (atual?.sequencia ?? 0) + 1 }));
+  };
   const naturezas = useMemo(() => listarNaturezas(ocorrencias), [ocorrencias]);
   const pontosCalor = useMemo(
     () => (heatAtivo ? filtrarPontosMancha(ocorrencias, periodoDias, naturezaFiltro) : []),
@@ -482,6 +501,9 @@ export const PainelTaticoPage: React.FC = () => {
               ordens={ordens}
               selecionada={selecionada}
               onSelecionarOcorrencia={selecionar}
+              viaturaSelecionadaId={viaturaSelecionadaId}
+              onSelecionarViatura={setViaturaSelecionadaId}
+              focoViatura={focoViatura}
               heatAtivo={heatAtivo}
               pontosCalor={pontosCalor}
               areasRisco={areasRiscoAtivo ? areasRisco : []}
@@ -508,6 +530,14 @@ export const PainelTaticoPage: React.FC = () => {
         </div>
 
         <aside className="painel-lateral">
+          {viaturaInspecionada && (
+            <InspecaoViatura
+              viatura={viaturaInspecionada}
+              mapaDisponivel={tilesDisponiveis}
+              onCentralizar={centralizarViatura}
+              onFechar={() => setViaturaSelecionadaId(null)}
+            />
+          )}
           {(comunicados.length > 0 || viaturasEmDeslocamento.length > 0) && (
             <section className="card comunicados">
               <h3>{t('painel:chegada.titulo')}</h3>
@@ -616,8 +646,8 @@ export const PainelTaticoPage: React.FC = () => {
             <table className="tabela compacta">
               <tbody>
                 {viaturas.map((v) => (
-                  <tr key={v.id}>
-                    <td><strong>{v.prefixo}</strong></td>
+                  <tr key={v.id} className={v.id === viaturaSelecionadaId ? 'frota-viatura-selecionada' : ''}>
+                    <td><button type="button" className="frota-inspecionar" aria-pressed={v.id === viaturaSelecionadaId} aria-label={t('painel:inspecao.inspecionar', { prefixo: v.prefixo })} data-cy="inspecionar-viatura" onClick={() => setViaturaSelecionadaId(v.id)}>{v.prefixo}</button></td>
                     <td><StatusBadge status={v.situacao} grupo="situacao" /></td>
                     <td><StatusBadge status={v.sinal} grupo="sinal" /></td>
                   </tr>

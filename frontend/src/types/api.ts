@@ -122,6 +122,8 @@ export interface Viatura {
   responsavel?: string | null; ativo?: boolean;
   latitude: number | null; longitude: number | null; posicao_registrada_em: string | null; sinal: Sinal; versao: number;
 }
+/** Cada solicitação representa um clique; a câmera não acompanha automaticamente a telemetria. */
+export interface FocoViatura { viaturaId: string; sequencia: number }
 export interface ViaturaSugerida { viatura: Viatura; distancia_km: number }
 export interface Sugestoes { ocorrencia_id: string; sugestoes: ViaturaSugerida[]; sem_elegiveis: boolean; disponiveis_sem_posicao: Viatura[] }
 export interface OrdemDespacho {
