@@ -103,3 +103,45 @@ async def test_em_producao_token_humano_nao_envia_posicao(client, monkeypatch):
     assert r.status_code == 403 and r.json()["code"] == "telemetria.exige_dispositivo"
     r = await client.post("/v1/simulador/ligar", headers=ho)
     assert r.status_code == 403 and r.json()["code"] == "simulador.desabilitado_em_producao"
+
+
+async def test_crud_responsavel_versao_e_exclusao_logica(client, session) -> None:
+    from uuid import UUID
+
+    from infrastructure.database.models import ViaturaModel
+
+    h = await auth(client, "operador")
+    r = await client.post("/v1/viaturas", json={"prefixo": "VTR-10", "placa": "ABC1D23", "responsavel": " Ana Souza "}, headers=h)
+    assert r.status_code == 201
+    v = r.json()
+    assert v.get("responsavel") == "Ana Souza"
+    url = f"/v1/viaturas/{v['id']}"
+    dados = {"prefixo": "VTR-11", "placa": "DEF4G56", "responsavel": None, "versao": v["versao"]}
+    r = await client.patch(url, json=dados, headers=h)
+    assert r.status_code == 200, r.text
+    novo = r.json()
+    assert novo["prefixo"] == "VTR-11" and novo["responsavel"] is None
+    assert novo["versao"] == v["versao"] + 1
+    assert (await client.patch(url, json=dados, headers=h)).status_code == 409
+    assert (await client.delete(url, params={"versao": v["versao"]}, headers=h)).status_code == 409
+    assert (await client.delete(url, params={"versao": novo["versao"]}, headers=h)).status_code == 204
+    assert (await client.get("/v1/viaturas", headers=h)).json() == []
+    model = await session.get(ViaturaModel, UUID(v["id"]), populate_existing=True)
+    assert model is not None and model.ativo is False
+    assert (await client.patch(url + "/situacao", json={"situacao": "DISPONIVEL"}, headers=h)).status_code == 404
+
+
+async def test_editar_viatura_recusa_duplicidade_e_agente(client) -> None:
+    h = await auth(client, "operador")
+    v = await _cadastrar(client, h)
+    await _cadastrar(client, h, "VTR-02", "ZZZ9999")
+    url = f"/v1/viaturas/{v['id']}"
+    dados = {"prefixo": "VTR-02", "placa": v["placa"], "versao": v["versao"]}
+    assert (await client.patch(url, json=dados, headers=h)).status_code == 409
+    dados["prefixo"] = v["prefixo"]
+    dados["placa"] = "ZZZ9999"
+    assert (await client.patch(url, json=dados, headers=h)).status_code == 409
+    ha = await auth(client, "agente")
+    assert (await client.patch(url, json=dados, headers=ha)).status_code == 403
+    assert (await client.delete(url, params={"versao": v["versao"]}, headers=ha)).status_code == 403
+
