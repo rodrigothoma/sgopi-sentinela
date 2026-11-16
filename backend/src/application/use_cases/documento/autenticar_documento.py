@@ -24,8 +24,8 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.auditoria.contexto import ContextoAuditoria
+from domain.ocorrencia.auditoria import ConsultaDocumento, DocumentoAutenticado, DocumentoNaoLocalizado, SuspeitaDeFraudeDocumento
 from domain.ocorrencia.autenticidade import (
     CodigoVerificacao,
     SituacaoDocumento,
@@ -34,12 +34,6 @@ from domain.ocorrencia.autenticidade import (
 )
 from domain.ocorrencia.entity import Ocorrencia
 from domain.shared.exceptions import EntidadeNaoEncontradaError
-
-OPERACAO_CONSULTA = OperacaoAuditada.DOCUMENTO_AUTENTICAR
-OPERACAO_SUSPEITA_FRAUDE = OperacaoAuditada.DOCUMENTO_SUSPEITA_FRAUDE
-OPERACAO_NAO_LOCALIZADO = OperacaoAuditada.DOCUMENTO_NAO_LOCALIZADO
-ENTIDADE_DOCUMENTO = EntidadeAuditada.DOCUMENTO_POLICIAL
-_TAMANHO_SUFIXO_AUDITADO = 4
 
 
 class AutenticarDocumento(InterfaceAutenticarDocumento):
@@ -61,11 +55,11 @@ class AutenticarDocumento(InterfaceAutenticarDocumento):
         ocorrencia = await self._localizar(codigo)
         situacao = ocorrencia.situacao_documento() if ocorrencia else None
         if ocorrencia is None or situacao is None:
-            await self._auditar(OPERACAO_NAO_LOCALIZADO, None, codigo, agora, input_dto.ip)
+            await self._auditar(DocumentoNaoLocalizado.de(codigo), agora, input_dto.ip)
             raise EntidadeNaoEncontradaError("Documento não localizado.", chave="documento.not_found")
 
-        operacao = OPERACAO_SUSPEITA_FRAUDE if situacao is SituacaoDocumento.ADULTERADO else OPERACAO_CONSULTA
-        await self._auditar(operacao, ocorrencia, codigo, agora, input_dto.ip, situacao)
+        consulta = SuspeitaDeFraudeDocumento if situacao is SituacaoDocumento.ADULTERADO else DocumentoAutenticado
+        await self._auditar(consulta.de(codigo, ocorrencia.id, situacao), agora, input_dto.ip)
         return _para_espelho(ocorrencia, situacao, agora)
 
     async def _localizar(self, codigo: CodigoVerificacao) -> Ocorrencia | None:
@@ -73,31 +67,10 @@ class AutenticarDocumento(InterfaceAutenticarDocumento):
             return await self._repositorio.buscar_por_hash_narrativa(codigo.valor)
         return await self._repositorio.buscar_por_chave_autenticidade(codigo.valor)
 
-    async def _auditar(
-        self,
-        operacao: OperacaoAuditada,
-        ocorrencia: Ocorrencia | None,
-        codigo: CodigoVerificacao,
-        agora: datetime,
-        ip: str | None,
-        situacao: SituacaoDocumento | None = None,
-    ) -> None:
-        """Consulta pública é anônima (``quem=None``); o código nunca é gravado por inteiro."""
-        dados = {"tipo_codigo": codigo.tipo.value, "codigo_sufixo": codigo.valor[-_TAMANHO_SUFIXO_AUDITADO:]}
-        if situacao is not None:
-            dados["situacao"] = situacao.value
+    async def _auditar(self, evento: ConsultaDocumento, agora: datetime, ip: str | None) -> None:
+        """Consulta pública é anônima (``quem=None``); o evento guarda só o sufixo do código."""
         async with self._uow:
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=None,
-                    quando=agora,
-                    operacao=operacao,
-                    entidade=ENTIDADE_DOCUMENTO,
-                    entidade_id=str(ocorrencia.id) if ocorrencia else None,
-                    dados_depois=dados,
-                    ip=ip,
-                )
-            )
+            await self._auditoria.registrar(evento, ContextoAuditoria(quem=None, quando=agora, ip=ip))
             await self._uow.commit()
 
 

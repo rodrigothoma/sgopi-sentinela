@@ -1,5 +1,6 @@
 """Caso de uso: ConsultarAuditoria (RNF02 / RNF03)."""
 import re
+from datetime import timedelta
 from typing import Any
 from uuid import UUID
 
@@ -8,24 +9,31 @@ from application.ports.inbound.interface_consultar_auditoria import (
     LIMITE_MAXIMO_CONSULTA,
     ConsultarAuditoriaInput,
     InterfaceConsultarAuditoria,
+    PaginaAuditoriaOutput,
     RegistroAuditoriaOutput,
 )
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
-from domain.auditoria.catalogo import EntidadeAuditada, grafias
+from domain.auditoria.catalogo_eventos import grafias_da_entidade
 from domain.auditoria.entity import RegistroAuditoria
+from domain.despacho.auditoria import OrdemDeDespachoCriada
+from domain.ocorrencia.auditoria import EventoOcorrencia
 from domain.shared.documentos import mascarar_cpf
+from domain.shared.exceptions import ValorInvalidoError
+from domain.shared.tempo import inicio_do_dia_operacional
+from domain.usuario.auditoria import ENTIDADE_USUARIO
 from domain.usuario.permissoes import Permissao
+from domain.viatura.auditoria import EventoViatura
 
 _CPF_REGEX = re.compile(r"\b(\d{3})\.?(\d{3})\.?(\d{3})[-.]?(\d{2})\b")
 _CHAVES_SENSIVEIS = ("documento", "cpf", "doc")
 
-ENTIDADES_OCORRENCIA = grafias(EntidadeAuditada.OCORRENCIA)
-ENTIDADES_DESPACHO = grafias(EntidadeAuditada.ORDEM_DESPACHO)
-ENTIDADES_VIATURA = grafias(EntidadeAuditada.VIATURA)
-ENTIDADE_USUARIO = EntidadeAuditada.USUARIO
+# Grafia canônica + legadas: registros antigos da trilha (append-only) não são reescritos.
+ENTIDADES_OCORRENCIA = grafias_da_entidade(EventoOcorrencia.ENTIDADE)
+ENTIDADES_DESPACHO = grafias_da_entidade(OrdemDeDespachoCriada.ENTIDADE)
+ENTIDADES_VIATURA = grafias_da_entidade(EventoViatura.ENTIDADE)
 
 
 def _sanitizar_payload(dados: Any) -> Any:
@@ -45,6 +53,20 @@ def _sanitizar_payload(dados: Any) -> Any:
     return dados
 
 
+def _filtros(input_dto: ConsultarAuditoriaInput) -> dict[str, Any]:
+    """Filtros da porta; o período por data vira ``[início de ``de``, início do dia após ``ate``)``."""
+    if input_dto.de and input_dto.ate and input_dto.de > input_dto.ate:
+        raise ValorInvalidoError("A data inicial deve ser anterior ou igual à final.", chave="auditoria.periodo_invalido")
+    return {
+        "entidade": input_dto.entidade,
+        "entidade_id": input_dto.entidade_id,
+        "operacao": input_dto.operacao,
+        "quem": input_dto.quem,
+        "de": inicio_do_dia_operacional(input_dto.de) if input_dto.de else None,
+        "ate": inicio_do_dia_operacional(input_dto.ate + timedelta(days=1)) if input_dto.ate else None,
+    }
+
+
 class ConsultarAuditoria(InterfaceConsultarAuditoria):
     def __init__(
         self,
@@ -58,17 +80,13 @@ class ConsultarAuditoria(InterfaceConsultarAuditoria):
         self._repositorio_ocorrencia = repositorio_ocorrencia
         self._repositorio_viatura = repositorio_viatura
 
-    async def executar(
-        self, ator: Ator, input_dto: ConsultarAuditoriaInput
-    ) -> tuple[RegistroAuditoriaOutput, ...]:
+    async def executar(self, ator: Ator, input_dto: ConsultarAuditoriaInput) -> PaginaAuditoriaOutput:
         ator.exigir(Permissao.CONSULTAR_AUDITORIA)
-        registros = await self._auditoria.listar(
-            entidade=input_dto.entidade,
-            entidade_id=input_dto.entidade_id,
-            operacao=input_dto.operacao,
-            quem=input_dto.quem,
-            limit=max(1, min(input_dto.limit, LIMITE_MAXIMO_CONSULTA)),
-        )
+        filtros = _filtros(input_dto)
+        limit = max(1, min(input_dto.limit, LIMITE_MAXIMO_CONSULTA))
+        offset = max(0, input_dto.offset)
+        registros = await self._auditoria.listar(**filtros, limit=limit, offset=offset)
+        total = await self._auditoria.contar(**filtros)
 
         usuarios_cache: dict[UUID, tuple[str, str]] = {}
         identificadores_cache: dict[tuple[str, str], str] = {}
@@ -77,7 +95,7 @@ class ConsultarAuditoria(InterfaceConsultarAuditoria):
             await self._mapear_registro(r, usuarios_cache, identificadores_cache)
             for r in registros
         ]
-        return tuple(saida)
+        return PaginaAuditoriaOutput(itens=tuple(saida), total=total, limit=limit, offset=offset)
 
     async def _resolver_autor(
         self, quem: UUID | None, cache: dict[UUID, tuple[str, str]]

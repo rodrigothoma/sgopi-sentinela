@@ -16,9 +16,8 @@ from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia._mapeadores import para_detalhe
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
 from application.use_cases.ocorrencia.registrar_ocorrencia_policial import _tipo_envolvido
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia import eventos
+from domain.ocorrencia.auditoria import OcorrenciaCorrigida, OcorrenciaReenviada, SituacaoOcorrencia
 from domain.ocorrencia.entity import Envolvido, TipificacaoPenal
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
@@ -60,7 +59,7 @@ class CorrigirOcorrencia(InterfaceCorrigirOcorrencia):
                     input_dto.latitude if input_dto.latitude is not None else ocorrencia.coordenada.latitude,
                     input_dto.longitude if input_dto.longitude is not None else ocorrencia.coordenada.longitude,
                 )
-            antes = {"versao": ocorrencia.versao, "descricao": ocorrencia.descricao}
+            versao_antes, descricao_antes = ocorrencia.versao, ocorrencia.descricao
             ocorrencia.corrigir(
                 ator.id,
                 agora,
@@ -74,11 +73,7 @@ class CorrigirOcorrencia(InterfaceCorrigirOcorrencia):
             )
             await self._repositorio.salvar(ocorrencia)
             await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id, quando=agora, operacao=OperacaoAuditada.OCORRENCIA_CORRIGIR, entidade=EntidadeAuditada.OCORRENCIA,
-                    entidade_id=str(ocorrencia.id), dados_antes=antes,
-                    dados_depois={"versao": ocorrencia.versao, "descricao": ocorrencia.descricao}, ip=ator.ip,
-                )
+                OcorrenciaCorrigida.de(ocorrencia, versao_antes, descricao_antes), ator.contexto_auditoria(agora)
             )
             await self._uow.commit()
         return para_detalhe(ocorrencia, ator)
@@ -95,16 +90,10 @@ class ReenviarOcorrencia(InterfaceReenviarOcorrencia):
         agora = self._relogio.agora()
         async with self._uow:
             ocorrencia = await carregar_ou_404(self._repositorio, ocorrencia_id)
-            antes = {"status": ocorrencia.status.value, "versao": ocorrencia.versao}
+            antes = SituacaoOcorrencia.de(ocorrencia)
             ocorrencia.reenviar(ator.id, agora)
             await self._repositorio.salvar(ocorrencia)
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id, quando=agora, operacao=OperacaoAuditada.OCORRENCIA_REENVIAR, entidade=EntidadeAuditada.OCORRENCIA,
-                    entidade_id=str(ocorrencia.id), dados_antes=antes,
-                    dados_depois={"status": ocorrencia.status.value, "versao": ocorrencia.versao}, ip=ator.ip,
-                )
-            )
+            await self._auditoria.registrar(OcorrenciaReenviada.de(ocorrencia, antes), ator.contexto_auditoria(agora))
             await self._uow.commit()
         await self._publicador.publicar(eventos.ocorrencia_reenviada(ocorrencia.id, agora))
         return para_detalhe(ocorrencia, ator)

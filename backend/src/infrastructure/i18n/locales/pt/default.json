@@ -162,5 +162,8 @@
     "prioridade_invalida": "Prioridade inválida.",
     "sigilo_invalido": "Nível de sigilo inválido.",
     "nao_encontrada": "Comunicação interagências não encontrada."
+  },
+  "auditoria": {
+    "periodo_invalido": "A data inicial deve ser anterior ou igual à data final."
   }
 }

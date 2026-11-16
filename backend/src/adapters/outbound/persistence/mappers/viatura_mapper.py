@@ -5,7 +5,7 @@ Isola a lógica de conversão bidirecional entre Viatura (Domain) e ViaturaModel
 """
 from __future__ import annotations
 
-from adapters.outbound.persistence._datas import aware
+from adapters.outbound.persistence._datas import aware, aware_opcional
 from domain.shared.geo import Coordenada
 from domain.viatura.entity import Posicao, SituacaoViatura, Viatura
 from infrastructure.database.models import ViaturaModel
@@ -16,12 +16,7 @@ class ViaturaMapper:
 
     @staticmethod
     def atualizar_model(model: ViaturaModel, viatura: Viatura) -> None:
-        """Sincroniza os atributos escalares e a última posição conhecida da viatura no modelo ORM.
-
-        Args:
-            model: Instância do modelo SQLAlchemy a ser atualizado.
-            viatura: Entidade de domínio Viatura com os dados mais recentes.
-        """
+        """A última posição conhecida é achatada nas colunas de latitude, longitude e instante do registro."""
         p = viatura.ultima_posicao
         model.prefixo = viatura.prefixo
         model.placa = viatura.placa
@@ -36,30 +31,13 @@ class ViaturaMapper:
 
     @classmethod
     def to_model(cls, viatura: Viatura) -> ViaturaModel:
-        """Cria e preenche uma nova instância de ViaturaModel a partir da entidade de domínio.
-
-        Args:
-            viatura: Entidade Viatura.
-
-        Returns:
-            ViaturaModel: Modelo ORM pronto para inclusão na sessão.
-        """
         model = ViaturaModel(id=viatura.id)
         cls.atualizar_model(model, viatura)
         return model
 
     @staticmethod
     def to_domain(m: ViaturaModel) -> Viatura:
-        """Reconstitui a entidade Viatura a partir de um registro ViaturaModel.
-
-        Garante a reconstrução do Value Object Coordenada e Posicao com timezone consciente.
-
-        Args:
-            m: Registro ORM ViaturaModel do banco.
-
-        Returns:
-            Viatura: Entidade de domínio reconstituída.
-        """
+        """A posição só é reconstituída quando latitude, longitude e instante estão todos preenchidos."""
         posicao = None
         if m.latitude is not None and m.longitude is not None and m.posicao_registrada_em is not None:
             posicao = Posicao(coordenada=Coordenada(m.latitude, m.longitude), registrada_em=aware(m.posicao_registrada_em))
@@ -72,5 +50,5 @@ class ViaturaMapper:
             situacao=SituacaoViatura(m.situacao),
             ultima_posicao=posicao,
             versao=m.versao,
-            atualizada_em=aware(m.atualizada_em) if m.atualizada_em else None,
+            atualizada_em=aware_opcional(m.atualizada_em),
         )

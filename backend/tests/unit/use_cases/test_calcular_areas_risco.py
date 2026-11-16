@@ -4,7 +4,6 @@ from uuid import uuid4
 import pytest
 
 from application.ports.inbound.ator import Ator
-from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
@@ -19,6 +18,7 @@ from domain.notificacao.entity import Notificacao
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
+from tests.fakes.portas_fake import AuditoriaFake
 
 
 class RelogioFixo(Relogio):
@@ -87,17 +87,6 @@ class RepoNotifFake(RepositorioNotificacao):
             ),
             None,
         )
-
-
-class AuditoriaFake(PortaAuditoria):
-    def __init__(self) -> None:
-        self.registros = []
-
-    async def registrar(self, registro) -> None:
-        self.registros.append(registro)
-
-    async def listar(self, **kwargs):
-        return self.registros
 
 
 class PublicadorFake(PublicadorEventos):

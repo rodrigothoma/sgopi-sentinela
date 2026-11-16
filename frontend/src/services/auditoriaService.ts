@@ -1,10 +1,15 @@
 import { api } from './api';
-import type { FiltroAuditoria, RegistroAuditoria } from '../types/api';
+import type { AcaoAuditada, FiltroAuditoria, PaginaAuditoria } from '../types/api';
 import { nomeDoArquivo, salvarBlob } from '../utils/download';
 
 export const auditoriaService = {
-  async listar(filtro?: FiltroAuditoria): Promise<RegistroAuditoria[]> {
-    return (await api.get<RegistroAuditoria[]>('/v1/auditoria', { params: filtro })).data;
+  /** Catálogo das ações auditadas, usado nos filtros da trilha. */
+  async catalogo(): Promise<AcaoAuditada[]> {
+    return (await api.get<AcaoAuditada[]>('/v1/auditoria/catalogo')).data;
+  },
+  /** Uma página da trilha (mais recentes primeiro), com o total para a paginação. */
+  async listar(filtro?: FiltroAuditoria): Promise<PaginaAuditoria> {
+    return (await api.get<PaginaAuditoria>('/v1/auditoria', { params: filtro })).data;
   },
   /** CSV da trilha filtrada (CPF mascarado no backend); a própria exportação entra na auditoria. */
   async exportarCsv(filtro?: FiltroAuditoria): Promise<void> {

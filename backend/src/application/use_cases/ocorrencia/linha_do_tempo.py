@@ -27,12 +27,13 @@ from application.ports.outbound.repositorio_ordem_despacho import RepositorioOrd
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_autorizada
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
+from domain.inquerito.auditoria import EventoInquerito
+from domain.ocorrencia.auditoria_provas import EventoEvidencia, IntegridadeEvidenciaVerificada
 from domain.ocorrencia.entity import Ocorrencia
 
-OPERACAO_VERIFICAR_INTEGRIDADE = OperacaoAuditada.EVIDENCIA_VERIFICAR_INTEGRIDADE
-ENTIDADE_EVIDENCIA = EntidadeAuditada.EVIDENCIA
-ENTIDADE_INQUERITO = EntidadeAuditada.INQUERITO
+OPERACAO_VERIFICAR_INTEGRIDADE = IntegridadeEvidenciaVerificada.OPERACAO
+ENTIDADE_EVIDENCIA = EventoEvidencia.ENTIDADE
+ENTIDADE_INQUERITO = EventoInquerito.ENTIDADE
 LIMITE_ORDENS = 100
 LIMITE_LAUDOS = 100
 LIMITE_AUDITORIA = 200

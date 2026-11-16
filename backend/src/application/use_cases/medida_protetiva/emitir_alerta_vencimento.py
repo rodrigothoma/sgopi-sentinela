@@ -22,8 +22,8 @@ from application.ports.outbound.repositorio_medida_protetiva import RepositorioM
 from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.auditoria.contexto import ContextoAuditoria
+from domain.medida_protetiva.auditoria import AlertaVencimentoEmitido
 from domain.medida_protetiva.entity import ESTADOS_VIGENTES, MedidaProtetiva, StatusMedida
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.ocorrencia.entity import Ocorrencia
@@ -131,6 +131,16 @@ class EmitirAlertaVencimentoMedidaUseCase(InterfaceEmitirAlertaVencimentoMedida)
             log.warning("Falha ao enviar e-mail de vencimento de medida: %s", e)
             return False
 
+    async def _persistir_alerta(self, medida: MedidaProtetiva, evento: AlertaVencimentoEmitido, contexto: ContextoAuditoria) -> None:
+        if self._uow is None:
+            await self._repo_medida.salvar(medida)
+            await self._porta_auditoria.registrar(evento, contexto)
+            return
+        async with self._uow:
+            await self._repo_medida.salvar(medida)
+            await self._porta_auditoria.registrar(evento, contexto)
+            await self._uow.commit()
+
     async def _processar_alerta_medida(
         self,
         *,
@@ -199,32 +209,10 @@ class EmitirAlertaVencimentoMedidaUseCase(InterfaceEmitirAlertaVencimentoMedida)
             )
         )
 
-        # 4. Registra no log de auditoria imutável (UC12 / RNF03)
-        await self._porta_auditoria.registrar(
-            RegistroAuditoria(
-                quem=ator.id,
-                quando=agora,
-                operacao=OperacaoAuditada.MEDIDA_PROTETIVA_ALERTAR_VENCIMENTO,
-                entidade=EntidadeAuditada.MEDIDA_PROTETIVA,
-                entidade_id=str(medida.id),
-                dados_depois={
-                    "numero_referencia": medida.numero_referencia,
-                    "dias_restantes": dias_restantes,
-                    "email_destinatario": destinatario_final,
-                    "email_enviado": email_sucesso,
-                    "manual": manual,
-                },
-            )
-        )
-
-        # 5. Atualiza carimbo na medida
+        # 4. Carimba a medida e grava a auditoria imutável na mesma transação (UC12 / RNF03)
         medida.marcar_alerta_vencimento_enviado(agora)
-        if self._uow:
-            async with self._uow:
-                await self._repo_medida.salvar(medida)
-                await self._uow.commit()
-        else:
-            await self._repo_medida.salvar(medida)
+        evento = AlertaVencimentoEmitido.de(medida, dias_restantes, destinatario_final, email_sucesso, manual)
+        await self._persistir_alerta(medida, evento, ator.contexto_auditoria(agora))
 
         return {
             "medida_id": str(medida.id),

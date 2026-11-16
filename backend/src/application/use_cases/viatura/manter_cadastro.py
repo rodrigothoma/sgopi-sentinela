@@ -16,11 +16,10 @@ from application.ports.outbound.repositorio_ordem_despacho import RepositorioOrd
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.viatura.gerir_viaturas import carregar_viatura, para_output
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.eventos import EventoDominio
 from domain.shared.exceptions import ConflitoError
 from domain.usuario.permissoes import Permissao
+from domain.viatura.auditoria import CadastroViaturaEditado, CadastroViaturaExcluido
 from domain.viatura.entity import Viatura
 
 
@@ -63,11 +62,9 @@ class EditarViatura(InterfaceEditarViatura):
             viatura.alterar_cadastro(input_dto.prefixo, input_dto.placa, input_dto.responsavel, agora)
             await exigir_identificacao_unica(self._repositorio, viatura)
             await self._repositorio.salvar(viatura)
-            await self._auditoria.registrar(RegistroAuditoria(
-                quem=ator.id, quando=agora, operacao=OperacaoAuditada.VIATURA_EDITAR,
-                entidade=EntidadeAuditada.VIATURA, entidade_id=str(viatura.id),
-                dados_antes=antes, dados_depois=dados_cadastro(viatura), ip=ator.ip,
-            ))
+            await self._auditoria.registrar(
+                CadastroViaturaEditado.de(viatura, antes), ator.contexto_auditoria(agora)
+            )
             await self._uow.commit()
         await self._publicador.publicar(_evento("ViaturaCadastroAlterado", viatura, agora))
         return para_output(viatura, agora, self._max_idade)
@@ -92,11 +89,9 @@ class ExcluirViatura(InterfaceExcluirViatura):
             antes = dados_cadastro(viatura)
             viatura.excluir(agora)
             await self._repositorio.salvar(viatura)
-            await self._auditoria.registrar(RegistroAuditoria(
-                quem=ator.id, quando=agora, operacao=OperacaoAuditada.VIATURA_EXCLUIR,
-                entidade=EntidadeAuditada.VIATURA, entidade_id=str(viatura.id),
-                dados_antes=antes, dados_depois=dados_cadastro(viatura), ip=ator.ip,
-            ))
+            await self._auditoria.registrar(
+                CadastroViaturaExcluido.de(viatura, antes), ator.contexto_auditoria(agora)
+            )
             await self._uow.commit()
         await self._publicador.publicar(_evento("ViaturaExcluida", viatura, agora))
 

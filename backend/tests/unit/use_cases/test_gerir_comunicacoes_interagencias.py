@@ -4,7 +4,6 @@ from uuid import uuid4
 import pytest
 
 from application.ports.inbound.ator import Ator
-from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_comunicacao_interagencias import (
@@ -23,6 +22,7 @@ from domain.notificacao.entity import Notificacao
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
+from tests.fakes.portas_fake import AuditoriaFake as AuditFake
 
 
 class GeradorOficioFake(GeradorNumeroOficio):
@@ -123,16 +123,6 @@ class RepoNotifFake(RepositorioNotificacao):
             None,
         )
 
-
-class AuditFake(PortaAuditoria):
-    def __init__(self) -> None:
-        self.registros = []
-
-    async def registrar(self, reg):
-        self.registros.append(reg)
-
-    async def listar(self, **kwargs):
-        return self.registros
 
 
 class PubFake(PublicadorEventos):

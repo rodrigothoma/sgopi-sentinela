@@ -11,8 +11,7 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.medida_protetiva.auditoria import MedidaRevogada
 from domain.shared.exceptions import EntidadeNaoEncontradaError
 from domain.shared.tempo import data_operacional
 from domain.usuario.permissoes import Permissao
@@ -49,21 +48,7 @@ class RevogarMedida(InterfaceRevogarMedida):
 
         async with self._uow:
             await self._repo_medida.salvar(medida)
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.MEDIDA_PROTETIVA_REVOGAR,
-                    entidade=EntidadeAuditada.MEDIDA_PROTETIVA,
-                    entidade_id=str(medida.id),
-                    dados_antes={"status": status_anterior},
-                    dados_depois={
-                        "status": medida.status.value,
-                        "motivo_revogacao": dados.motivo,
-                    },
-                    ip=ator.ip,
-                )
-            )
+            await self._auditoria.registrar(MedidaRevogada.de(medida, status_anterior, dados.motivo), ator.contexto_auditoria(agora))
             await self._uow.commit()
 
         return MedidaProtetivaOutput(

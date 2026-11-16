@@ -1,7 +1,6 @@
 """Caso de uso: Vincular Ocorrências a Inquérito (RF06 / UC06 / sq06)."""
 from __future__ import annotations
 
-from datetime import datetime
 from uuid import UUID
 
 from application.ports.inbound.ator import Ator
@@ -16,8 +15,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.inquerito.auditoria import OcorrenciasVinculadasAoInquerito
 from domain.inquerito.entity import Inquerito
 from domain.ocorrencia.entity import Ocorrencia
 from domain.shared.exceptions import EntidadeNaoEncontradaError
@@ -54,7 +52,9 @@ class VincularOcorrenciasInquerito(InterfaceVincularOcorrenciasInquerito):
                 inquerito.vincular_ocorrencia(oc.id, agora)
                 await self._repo_ocorrencia.salvar(oc)
             await self._repo_inquerito.salvar(inquerito)
-            await self._auditoria.registrar(_auditoria_vinculo(ator, inquerito, dados, agora))
+            await self._auditoria.registrar(
+                OcorrenciasVinculadasAoInquerito.de(inquerito, novas=dados.ocorrencias_ids), ator.contexto_auditoria(agora)
+            )
             await self._uow.commit()
         return await self._saida(inquerito)
 
@@ -93,20 +93,4 @@ def _resumo(oc: Ocorrencia) -> OcorrenciaResumoInqueritoOutput:
         localizacao=oc.localizacao,
         data_hora_fato=oc.data_hora_fato.isoformat(),
         status=oc.status.value,
-    )
-
-
-def _auditoria_vinculo(ator: Ator, inquerito: Inquerito, dados: VincularOcorrenciasInput, agora: datetime) -> RegistroAuditoria:
-    return RegistroAuditoria(
-        quem=ator.id,
-        quando=agora,
-        operacao=OperacaoAuditada.INQUERITO_VINCULAR_OCORRENCIAS,
-        entidade=EntidadeAuditada.INQUERITO,
-        entidade_id=str(inquerito.id),
-        dados_depois={
-            "numero": inquerito.numero,
-            "novas_vinculadas": [str(x) for x in dados.ocorrencias_ids],
-            "total_vinculadas": len(inquerito.ocorrencias_ids),
-        },
-        ip=ator.ip,
     )

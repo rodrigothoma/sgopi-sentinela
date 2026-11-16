@@ -22,7 +22,8 @@ sgopi-sentinela/
 │   │   │   ├── viatura/           # Viatura, SituacaoViatura, Posicao
 │   │   │   ├── despacho/          # OrdemDeDespacho, serviço de proximidade (Haversine)
 │   │   │   ├── usuario/           # Usuario, Papel, permissoes.py (catálogo RBAC: Permissao → papéis)
-│   │   │   ├── auditoria/         # RegistroAuditoria, catalogo.py (OperacaoAuditada, EntidadeAuditada)
+│   │   │   ├── auditoria/         # RegistroAuditoria, EventoAuditoria (classe base dos eventos), ContextoAuditoria,
+│   │   │   │                      # catalogo_eventos.py (catálogo gerado das classes); eventos em <agregado>/auditoria.py
 │   │   │   ├── inquerito/         # Inquérito policial (extra RF06)
 │   │   │   ├── laudo/             # Laudo pericial (extra RF07)
 │   │   │   ├── medida_protetiva/  # Medida protetiva de urgência (extra RF09)

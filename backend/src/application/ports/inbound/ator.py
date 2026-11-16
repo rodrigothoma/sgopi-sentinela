@@ -2,8 +2,10 @@
 DTO transversal: Ator — quem executa o caso de uso (vem do token JWT, nunca do body).
 """
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
+from domain.auditoria.contexto import ContextoAuditoria
 from domain.shared.exceptions import AcessoNegadoError
 from domain.usuario.entity import Papel
 from domain.usuario.permissoes import Permissao, papeis_com, tem_permissao
@@ -24,6 +26,10 @@ class Ator:
                 papel=self.papel.value,
                 exigido=[p.value for p in papeis],
             )
+
+    def contexto_auditoria(self, quando: datetime) -> ContextoAuditoria:
+        """Quem/quando/onde de um registro de auditoria feito por este ator (o IP vem junto)."""
+        return ContextoAuditoria(quem=self.id, quando=quando, ip=self.ip)
 
     def pode(self, permissao: Permissao) -> bool:
         return tem_permissao(self.papel, permissao)

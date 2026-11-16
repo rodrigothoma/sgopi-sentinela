@@ -9,8 +9,6 @@ cadastro a cada chamada).
 """
 from __future__ import annotations
 
-from typing import Any
-
 from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_gerir_usuarios import (
     AlterarPapelInput,
@@ -28,13 +26,16 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import AcessoNegadoError, ConflitoError, EntidadeNaoEncontradaError, ValorInvalidoError
+from domain.usuario.auditoria import (
+    EventoGestaoUsuario,
+    PapelUsuarioAlterado,
+    UsuarioCadastrado,
+    UsuarioDesativado,
+    UsuarioReativado,
+)
 from domain.usuario.entity import TAMANHO_MINIMO_SENHA, Papel, Usuario, interpretar_papel
 from domain.usuario.permissoes import Permissao
-
-ENTIDADE_USUARIO = EntidadeAuditada.USUARIO
 
 
 def para_gestao(u: Usuario) -> UsuarioGestaoOutput:
@@ -59,21 +60,8 @@ class _GestaoBase:
         self._relogio = relogio
         self._auditoria = auditoria
 
-    async def _registrar(
-        self, ator: Ator, operacao: OperacaoAuditada, usuario: Usuario, antes: dict[str, Any] | None, depois: dict[str, Any]
-    ) -> None:
-        await self._auditoria.registrar(
-            RegistroAuditoria(
-                quem=ator.id,
-                quando=self._relogio.agora(),
-                operacao=operacao,
-                entidade=ENTIDADE_USUARIO,
-                entidade_id=str(usuario.id),
-                dados_antes=antes,
-                dados_depois={"login": usuario.login, **depois},
-                ip=ator.ip,
-            )
-        )
+    async def _registrar(self, ator: Ator, evento: EventoGestaoUsuario) -> None:
+        await self._auditoria.registrar(evento, ator.contexto_auditoria(self._relogio.agora()))
 
     async def _alvo(self, ator: Ator, usuario_id) -> Usuario:
         """Carrega o usuário-alvo; o gestor não age sobre a própria conta."""
@@ -114,7 +102,7 @@ class CadastrarUsuario(_GestaoBase, InterfaceCadastrarUsuario):
             if await self._repositorio.buscar_por_login(usuario.login) is not None:
                 raise ConflitoError("Login já está em uso.", chave="usuario.login_em_uso")
             await self._repositorio.salvar(usuario)
-            await self._registrar(ator, OperacaoAuditada.USUARIO_CADASTRAR, usuario, None, {"nome": usuario.nome, "papel": papel.value, "ativo": True})
+            await self._registrar(ator, UsuarioCadastrado.de(usuario))
             await self._uow.commit()
         return para_gestao(usuario)
 
@@ -126,7 +114,7 @@ class AlterarPapelUsuario(_GestaoBase, InterfaceAlterarPapelUsuario):
             usuario = await self._alvo(ator, input_dto.usuario_id)
             anterior = usuario.alterar_papel(novo)
             await self._repositorio.salvar(usuario)
-            await self._registrar(ator, OperacaoAuditada.USUARIO_ALTERAR_PAPEL, usuario, {"papel": anterior.value}, {"papel": novo.value})
+            await self._registrar(ator, PapelUsuarioAlterado.de(usuario, anterior=anterior))
             await self._uow.commit()
         return para_gestao(usuario)
 
@@ -137,9 +125,7 @@ class DesativarUsuario(_GestaoBase, InterfaceDesativarUsuario):
             usuario = await self._alvo(ator, input_dto.usuario_id)
             usuario.desativar()
             await self._repositorio.salvar(usuario)
-            await self._registrar(
-                ator, "usuario.desativar", usuario, {"ativo": True}, {"ativo": False, "motivo": (input_dto.motivo or "").strip() or None}
-            )
+            await self._registrar(ator, UsuarioDesativado.de(usuario, input_dto.motivo))
             await self._uow.commit()
         return para_gestao(usuario)
 
@@ -150,8 +136,6 @@ class ReativarUsuario(_GestaoBase, InterfaceReativarUsuario):
             usuario = await self._alvo(ator, input_dto.usuario_id)
             usuario.reativar()
             await self._repositorio.salvar(usuario)
-            await self._registrar(
-                ator, "usuario.reativar", usuario, {"ativo": False}, {"ativo": True, "motivo": (input_dto.motivo or "").strip() or None}
-            )
+            await self._registrar(ator, UsuarioReativado.de(usuario, input_dto.motivo))
             await self._uow.commit()
         return para_gestao(usuario)

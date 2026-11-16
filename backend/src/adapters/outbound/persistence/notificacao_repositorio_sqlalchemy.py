@@ -12,9 +12,9 @@ from uuid import UUID
 from sqlalchemy import ColumnElement, and_, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from adapters.outbound.persistence._datas import aware
+from adapters.outbound.persistence.mappers import NotificacaoMapper
 from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
-from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
+from domain.notificacao.entity import Notificacao
 from infrastructure.database.models import NotificacaoLeituraModel, NotificacaoModel
 
 
@@ -41,33 +41,16 @@ class NotificacaoRepositorioSQLAlchemy(RepositorioNotificacao):
     async def salvar(self, notificacao: Notificacao) -> Notificacao:
         existente = await self._session.get(NotificacaoModel, notificacao.id)
         if existente is None:
-            self._session.add(
-                NotificacaoModel(
-                    id=notificacao.id,
-                    usuario_id=notificacao.usuario_id,
-                    papel_destinatario=notificacao.papel_destinatario,
-                    departamento_destinatario=notificacao.departamento_destinatario,
-                    tipo=notificacao.tipo.value,
-                    titulo=notificacao.titulo,
-                    mensagem=notificacao.mensagem,
-                    prioridade=notificacao.prioridade.value,
-                    link=notificacao.link,
-                    lida=False,
-                    lida_em=None,
-                    metadados=notificacao.metadados,
-                    criada_em=notificacao.criada_em,
-                    ativo=notificacao.ativo,
-                )
-            )
+            self._session.add(NotificacaoMapper.to_model(notificacao))
         else:
-            existente.ativo = notificacao.ativo
+            NotificacaoMapper.atualizar_model(existente, notificacao)
         await self._session.flush()
         return notificacao
 
     async def obter_por_id(self, notificacao_id: UUID) -> Notificacao | None:
         stmt = select(NotificacaoModel).where(NotificacaoModel.id == notificacao_id, NotificacaoModel.ativo.is_(True))
         model = (await self._session.execute(stmt)).scalar_one_or_none()
-        return self._to_domain(model, None) if model else None
+        return NotificacaoMapper.to_domain(model, None) if model else None
 
     async def listar(
         self,
@@ -90,7 +73,7 @@ class NotificacaoRepositorioSQLAlchemy(RepositorioNotificacao):
             stmt = stmt.where(~_lida_por(usuario_id))
         stmt = stmt.order_by(NotificacaoModel.criada_em.desc()).limit(limite).offset(offset)
         linhas = (await self._session.execute(stmt)).all()
-        return [self._to_domain(model, leitura) for model, leitura in linhas]
+        return [NotificacaoMapper.to_domain(model, leitura) for model, leitura in linhas]
 
     async def contar_nao_lidas(self, usuario_id: UUID | None = None, papel: str | None = None) -> int:
         stmt = select(func.count(NotificacaoModel.id)).where(_visivel_para(usuario_id, papel), ~_lida_por(usuario_id))
@@ -125,23 +108,4 @@ class NotificacaoRepositorioSQLAlchemy(RepositorioNotificacao):
         if tipo is not None:
             stmt = stmt.where(NotificacaoModel.tipo == tipo)
         model = (await self._session.execute(stmt)).scalars().first()
-        return self._to_domain(model, None) if model else None
-
-    @staticmethod
-    def _to_domain(model: NotificacaoModel, lida_em: datetime | None) -> Notificacao:
-        return Notificacao(
-            id=model.id,
-            titulo=model.titulo,
-            mensagem=model.mensagem,
-            tipo=TipoNotificacao(model.tipo) if model.tipo in TipoNotificacao.__members__ else TipoNotificacao.SISTEMA,
-            prioridade=PrioridadeNotificacao(model.prioridade) if model.prioridade in PrioridadeNotificacao.__members__ else PrioridadeNotificacao.MEDIA,
-            usuario_id=model.usuario_id,
-            papel_destinatario=model.papel_destinatario,
-            departamento_destinatario=model.departamento_destinatario,
-            link=model.link,
-            lida=lida_em is not None,
-            lida_em=aware(lida_em) if lida_em else None,
-            metadados=model.metadados,
-            criada_em=aware(model.criada_em),
-            ativo=model.ativo,
-        )
+        return NotificacaoMapper.to_domain(model, None) if model else None

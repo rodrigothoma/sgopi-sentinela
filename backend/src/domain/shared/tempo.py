@@ -17,3 +17,8 @@ def data_operacional(instante: datetime) -> date:
     if instante.tzinfo is None:
         instante = instante.replace(tzinfo=UTC)
     return instante.astimezone(FUSO_OPERACIONAL).date()
+
+
+def inicio_do_dia_operacional(dia: date) -> datetime:
+    """Meia-noite do ``dia`` no fuso da operação (aware): limite de períodos por data de calendário."""
+    return datetime(dia.year, dia.month, dia.day, tzinfo=FUSO_OPERACIONAL)

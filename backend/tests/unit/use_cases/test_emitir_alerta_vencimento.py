@@ -4,7 +4,6 @@ from uuid import uuid4
 import pytest
 
 from application.ports.inbound.ator import Ator
-from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.porta_notificacao_email import PortaNotificacaoEmail
 from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
@@ -17,6 +16,7 @@ from domain.notificacao.entity import Notificacao
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
+from tests.fakes.portas_fake import AuditoriaFake
 
 
 class EmailFake(PortaNotificacaoEmail):
@@ -26,17 +26,6 @@ class EmailFake(PortaNotificacaoEmail):
     async def enviar_email(self, para: str, assunto: str, corpo_html: str, corpo_texto: str) -> bool:
         self.enviados.append({"para": para, "assunto": assunto})
         return True
-
-
-class AuditoriaFake(PortaAuditoria):
-    def __init__(self) -> None:
-        self.registros = []
-
-    async def registrar(self, registro) -> None:
-        self.registros.append(registro)
-
-    async def listar(self, **kwargs):
-        return self.registros
 
 
 class PublicadorFake(PublicadorEventos):

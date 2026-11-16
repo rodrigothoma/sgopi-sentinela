@@ -24,10 +24,9 @@ from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorren
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia._mensagens_registro import montar_evento_registro, montar_notificacao_registro
 from application.use_cases.ocorrencia.apreensoes import auditoria_registro_item, exigir_lacre_inedito, montar_item
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
 from domain.notificacao.entity import Notificacao, TipoNotificacao
 from domain.notificacao.eventos import notificacao_emitida
+from domain.ocorrencia.auditoria import OcorrenciaRegistrada
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, OrigemOcorrencia, TipificacaoPenal, TipoEnvolvido
 from domain.ocorrencia.prioridade import interpretar_prioridade
 from domain.shared.enums import interpretar_enum
@@ -99,25 +98,10 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
             )
             await self._repositorio.salvar(ocorrencia)
             await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.OCORRENCIA_REGISTRAR,
-                    entidade=EntidadeAuditada.OCORRENCIA,
-                    entidade_id=str(ocorrencia.id),
-                    dados_depois={
-                        "status": ocorrencia.status.value,
-                        "protocolo": numero_protocolo,
-                        "origem": ocorrencia.origem.value,
-                        "prioridade": ocorrencia.prioridade.value,
-                        "prioridade_sugerida": prioridade is None,
-                        "itens_apreendidos": len(ocorrencia.itens_apreendidos),
-                    },
-                    ip=ator.ip,
-                )
+                OcorrenciaRegistrada.de(ocorrencia, prioridade_sugerida=prioridade is None), ator.contexto_auditoria(agora)
             )
             for item in ocorrencia.itens_apreendidos:
-                await self._auditoria.registrar(auditoria_registro_item(ator, ocorrencia, item, agora))
+                await self._auditoria.registrar(auditoria_registro_item(ocorrencia, item), ator.contexto_auditoria(agora))
             notificacao = await self._notificar_delegado(ocorrencia, agora)
             await self._uow.commit()
 

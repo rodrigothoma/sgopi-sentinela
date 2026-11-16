@@ -19,8 +19,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_autorizada
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.ocorrencia.auditoria_provas import AcessoEvidencia, EvidenciaBaixada, IntegridadeEvidenciaVerificada
 from domain.ocorrencia.entity import Evidencia
 from domain.shared.exceptions import ConflitoError, EntidadeNaoEncontradaError
 
@@ -54,32 +53,23 @@ class _AcessoEvidencia:
         ator: Ator,
         ocorrencia_id: UUID,
         evidencia: Evidencia,
-        operacao: OperacaoAuditada,
+        evento_acesso: type[AcessoEvidencia],
         estado: EstadoIntegridadeEvidencia,
         quando: datetime,
     ) -> None:
+        evento = evento_acesso(evidencia_id=evidencia.id, ocorrencia_id=ocorrencia_id, integridade=estado.value)
         async with self._uow:
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=quando,
-                    operacao=operacao,
-                    entidade=EntidadeAuditada.EVIDENCIA,
-                    entidade_id=str(evidencia.id),
-                    dados_depois={"ocorrencia_id": str(ocorrencia_id), "integridade": estado.value},
-                    ip=ator.ip,
-                )
-            )
+            await self._auditoria.registrar(evento, ator.contexto_auditoria(quando))
             await self._uow.commit()
 
     async def _ler_e_conferir(
-        self, ator: Ator, ocorrencia_id: UUID, evidencia_id: UUID, operacao: OperacaoAuditada
+        self, ator: Ator, ocorrencia_id: UUID, evidencia_id: UUID, evento_acesso: type[AcessoEvidencia]
     ) -> tuple[Evidencia, bytes, EstadoIntegridadeEvidencia, str, datetime]:
         evidencia = await self._localizar(ator, ocorrencia_id, evidencia_id)
         conteudo = await self._armazenamento.ler(evidencia.chave_armazenamento)
         if conteudo is None:
             await self._auditar(
-                ator, ocorrencia_id, evidencia, operacao, EstadoIntegridadeEvidencia.ARQUIVO_AUSENTE, self._relogio.agora()
+                ator, ocorrencia_id, evidencia, evento_acesso, EstadoIntegridadeEvidencia.ARQUIVO_AUSENTE, self._relogio.agora()
             )
             raise EntidadeNaoEncontradaError(
                 "Arquivo físico da evidência não encontrado.", chave="evidencia.arquivo_ausente"
@@ -91,7 +81,7 @@ class _AcessoEvidencia:
             else EstadoIntegridadeEvidencia.DIVERGENTE
         )
         verificado_em = self._relogio.agora()
-        await self._auditar(ator, ocorrencia_id, evidencia, operacao, estado, verificado_em)
+        await self._auditar(ator, ocorrencia_id, evidencia, evento_acesso, estado, verificado_em)
         return evidencia, conteudo, estado, hash_recalculado, verificado_em
 
 
@@ -100,7 +90,7 @@ class VerificarIntegridadeEvidencia(_AcessoEvidencia, InterfaceVerificarIntegrid
         self, ator: Ator, ocorrencia_id: UUID, evidencia_id: UUID
     ) -> IntegridadeEvidenciaOutput:
         evidencia, _, estado, hash_recalculado, verificado_em = await self._ler_e_conferir(
-            ator, ocorrencia_id, evidencia_id, OperacaoAuditada.EVIDENCIA_VERIFICAR_INTEGRIDADE
+            ator, ocorrencia_id, evidencia_id, IntegridadeEvidenciaVerificada
         )
         return IntegridadeEvidenciaOutput(
             evidencia_id=evidencia.id,
@@ -116,7 +106,7 @@ class ObterEvidenciaParaDownload(_AcessoEvidencia, InterfaceObterEvidenciaParaDo
         self, ator: Ator, ocorrencia_id: UUID, evidencia_id: UUID
     ) -> DownloadEvidenciaOutput:
         evidencia, conteudo, estado, _, _ = await self._ler_e_conferir(
-            ator, ocorrencia_id, evidencia_id, OperacaoAuditada.EVIDENCIA_DOWNLOAD
+            ator, ocorrencia_id, evidencia_id, EvidenciaBaixada
         )
         if estado == EstadoIntegridadeEvidencia.DIVERGENTE:
             raise ConflitoError(

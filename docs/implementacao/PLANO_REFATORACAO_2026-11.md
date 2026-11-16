@@ -1,6 +1,6 @@
 # Plano de Refatoração — SGOPI Sentinela (novembro/2026)
 
-**Situação em 08/11/2026:** Ondas 0 e 1 concluídas e integradas na `dev` (CI verde nos 3 jobs). Ondas 2 a 5 pendentes.
+**Situação em 16/11/2026:** Ondas 0 e 1 concluídas e integradas na `dev`. Onda 3 em andamento: extração de todos os Data Mappers e unificação dos geradores sequenciais concluídas. Ondas 2, 4 e 5 pendentes.
 
 **Legenda:** `[x]` concluído (com o commit) · `[~]` parcial · `[ ]` pendente.
 
@@ -10,18 +10,18 @@ Caminhos do backend são relativos a `backend/src/`; os do frontend, a `frontend
 
 ## 1. Ponto de partida e progresso
 
-| Métrica | Antes (06/11) | Agora (08/11) | Onde |
+| Métrica | Antes (06/11) | Agora (16/11) | Onde |
 | :--- | :--- | :--- | :--- |
 | Checagens de papel escritas à mão (`if ator.papel ...`) | 15 | 0 | casos de uso |
 | Tuplas de papéis duplicadas entre routers e casos de uso | 20+ | 0 | `adapters/inbound/http/v1/*`, casos de uso |
 | Strings soltas de auditoria (`operacao=`/`entidade=`) | 39 pontos | 0 | casos de uso, `deps.py` |
 | Incrementos manuais `versao += 1` | 12 | 0 | entidades |
 | Validações de texto vazio/curto repetidas | 28 | 0 | entidades |
-| Testes do backend | 831 + 13 E2E | 939 + 13 E2E | `backend/tests/` |
+| Testes do backend | 831 + 13 E2E | 1065 + 13 E2E | `backend/tests/` |
 | Cobertura (`domain/` + `application/`) | 95,4% | 96,9% | — |
-| Tamanho do composition root | 1164 linhas | 1164 linhas | `infrastructure/di.py` (Onda 3) |
+| Tamanho do composition root | 1164 linhas | 1176 linhas | `infrastructure/di.py` (Onda 3) |
 | Maior página do frontend | 1362 linhas | 1362 linhas | `pages/InqueritosPage.tsx` (Onda 4) |
-| Repositórios ainda sem Mapper | 8 | 8 | `adapters/outbound/persistence/` (Onda 3) |
+| Repositórios ainda sem Mapper | 8 | 0 | `adapters/outbound/persistence/` (Onda 3) |
 
 ### Padrão para constantes e parâmetros
 
@@ -66,7 +66,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 ## 3. Onda 1 — Fundações de domínio ✅
 
 - [x] **Permissões centralizadas.** `domain/usuario/permissoes.py` (`Permissao` → papéis), `ator.exigir(...)` nos casos de uso e `exigir_permissao(...)` nos routers e no WebSocket. — `2f254c1`
-- [x] **Catálogo de auditoria.** `domain/auditoria/catalogo.py` (`OperacaoAuditada`, `EntidadeAuditada`, `grafias()` para os registros legados). — `79b5a8d`
+- [x] **Catálogo de auditoria.** Primeira versão com enums (`79b5a8d`), **refeita após a apresentação** como eventos de auditoria tipados: classe base `EventoAuditoria` (Template Method + registro automático), uma subclasse por ação em `domain/<agregado>/auditoria.py`, `ContextoAuditoria` (quem/quando/IP) e catálogo gerado das classes (`domain/auditoria/catalogo_eventos.py`). — `5a50e76` … `a03026f`
 - [x] **Máquina de estados genérica.** `domain/shared/maquina_estados.py`; Ocorrência (`OperacaoOcorrencia`), Viatura, Inquérito e Medida declaram suas transições. — `de2b4fe`
 - [x] **Mixin `Versionado`.** `domain/shared/versionado.py` com `_tocar(instante)` nas 5 entidades versionadas. — `de2b4fe`
 - [x] **Helpers de validação e enum.** `domain/shared/validacao.exigir_texto` e `domain/shared/enums.interpretar_enum`; mínimos viraram constantes `TAMANHO_MINIMO_*`. — `8b281d1`
@@ -106,8 +106,8 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 ## 5. Onda 3 — Adapters e infraestrutura
 
 - [~] **Repositório base versionado** `RepositorioVersionadoSQLAlchemy[M, E]`: `ControleVersaoMixin` em `persistence/_concorrencia.py` unificou a verificação de versão e o locking nos 5 repositórios (`ocorrencia`, `viatura`, `inquerito`, `laudo`, `medida_protetiva`). **Pendente:** extração da classe base genérica para unificar `salvar`, `_reconstituir` e `buscar_por_id`.
-- [ ] **Mappers** para medida_protetiva, laudo, inquerito, comunicacao, notificacao, ordem_despacho, usuario e auditoria (padrão de `persistence/mappers/`); helpers `aware_opcional()` e `enum_ou_padrao()`.
-- [ ] **`GeradorSequencialSQLAlchemy(tabela, formatador)`** no lugar dos 6 UPSERTs idênticos.
+- [x] **Mappers** para todos os agregados (medida_protetiva, laudo, inquerito, comunicacao, notificacao, ordem_despacho e usuario no padrão de `persistence/mappers/`); helpers `aware_opcional()` e `enum_ou_padrao()`. — `2f436f3` … `0b8d050`
+- [x] **`GeradorSequencialSQLAlchemy(tabela, formatador)`** no lugar dos 6 UPSERTs idênticos com validação de identificador e testes de concorrência. — `096f773`
 - [ ] **Routers**: schemas em `http/schemas/`, conversores em `conversores.py` (sem import entre routers), `ConfigDict(from_attributes=True)`, `Pagina[T]` genérico; regra de negócio fora de `viaturas_router`, `laudos_router` (validação de upload) e `inqueritos_router` (`split(' · ')`).
 - [ ] **Dividir o `di.py` (1164 linhas)** em `infrastructure/providers/*`, com `ContextoSessao` no lugar das tuplas posicionais e singletons no `lifespan`.
 - [ ] **Novos contratos no import-linter**: http ↛ simulador, outbound ↛ inbound, routers ↛ routers.
@@ -126,7 +126,8 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 - [ ] **Badges de conexão por `tipo`**, não por `includes('suspeito')` (depende da Onda 2).
 - [ ] **Tipos e serviços** centralizados em `types/` (ou `openapi-typescript`); `ocorrenciasService.listar` com objeto de opções.
 - [ ] **i18n e estilos**: strings fixas de Interagências, `MapaTatico`, `title`/`placeholder`, `'Sem local'`; estilos inline → classes.
-- [ ] **Trilha de auditoria**: incluir no filtro as operações do catálogo que faltam (interagências, inteligência, medida, laudo, inquérito), de preferência vindas da API.
+- [x] **Trilha de auditoria**: filtros de operação e entidade carregados de `GET /v1/auditoria/catalogo`, com rótulos pt/en das 48 operações e 16 entidades. — `e386c3f`, `ecf1189`
+- [x] **Trilha de auditoria paginada**: 50 registros por página com paginação no servidor (`{itens, total, limit, offset}`), filtro de período De/Até no fuso da operação e componente comum `Paginacao`. — `a32b531`, `49ec746`
 - [ ] **Cypress**: specs para inquéritos, laudos, medidas e interagências.
 
 ---
@@ -135,6 +136,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 
 - [ ] **Traduções faltando** *(encontrado em 08/11)*: 36 das 147 chaves de erro usadas no backend não existem em `infrastructure/i18n/locales/*/default.json` (inquérito 12, laudo 12, medida 11, ocorrência 1); a API devolve a chave crua (ex.: `inquerito.apenas_delegado`) no lugar da mensagem.
 - [ ] **Testes unitários que faltam**: inquérito `consultar`/`instaurar`, laudo (4), medida (renovar/revogar), `linha_do_tempo`, `emitir_credencial_telemetria`; concorrência otimista por repositório (estender `tests/integration/contratos/` a inquérito, laudo e medida).
+- [ ] **Migração 0008 sem `downgrade` no PostgreSQL** *(encontrado em 16/11)*: o `downgrade` tenta remover a constraint `fk_ocorrencias_inquerito_id_inqueritos`, que não existe com esse nome no PostgreSQL; `alembic downgrade base` e o `npm run e2e:db` falham. O CI não detecta porque só desce até a 0011.
 - [ ] **Higiene da suíte**: hash argon2 uma vez por sessão, helper de login único, enum `Papel` nos testes, consolidar fakes duplicadas em `tests/fakes/`.
 - [ ] **Wiki** sincronizada com `docs/` (página `Guia-de-Instalacao` inexistente, "11 tabelas", mensageria assíncrona, classificação de extras).
 - [ ] **Diagramas**: marcar o diagrama de classes como conceitual ou gerar um novo do código; fontes `.puml` para todos; atualizar o `sq06` com o motor de conexões.

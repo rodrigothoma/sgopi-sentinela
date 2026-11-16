@@ -4,18 +4,17 @@ import pytest
 from application.ports.inbound.interface_arquivar_ocorrencia import AutorizacaoDelegadoInput
 from application.ports.inbound.interface_autenticar_documento import AutenticarDocumentoInput
 from application.ports.inbound.interface_revisar_ocorrencia import ValidarOcorrenciaInput
-from application.use_cases.documento.autenticar_documento import (
-    ENTIDADE_DOCUMENTO,
-    OPERACAO_CONSULTA,
-    OPERACAO_NAO_LOCALIZADO,
-    OPERACAO_SUSPEITA_FRAUDE,
-    AutenticarDocumento,
-)
+from application.use_cases.documento.autenticar_documento import AutenticarDocumento
 from application.use_cases.ocorrencia.arquivar_ocorrencia import ExcluirOcorrencia
 from application.use_cases.ocorrencia.revisar_ocorrencia import ValidarOcorrencia
+from domain.ocorrencia.auditoria import DocumentoAutenticado, DocumentoNaoLocalizado, SuspeitaDeFraudeDocumento
 from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
 from tests.fakes.atores import DELEGADO
 
+ENTIDADE_DOCUMENTO = DocumentoAutenticado.ENTIDADE
+OPERACAO_CONSULTA = DocumentoAutenticado.OPERACAO
+OPERACAO_NAO_LOCALIZADO = DocumentoNaoLocalizado.OPERACAO
+OPERACAO_SUSPEITA_FRAUDE = SuspeitaDeFraudeDocumento.OPERACAO
 IP_CONSULENTE = "203.0.113.7"
 
 

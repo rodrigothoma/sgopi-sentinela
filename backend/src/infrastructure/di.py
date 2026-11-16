@@ -25,22 +25,22 @@ from adapters.outbound.eventos.publicador_em_memoria import PublicadorEventosEmM
 from adapters.outbound.persistence.auditoria_sqlalchemy import AuditoriaSQLAlchemy
 from adapters.outbound.persistence.comunicacao_interagencias_repositorio_sqlalchemy import (
     ComunicacaoInteragenciasRepositorioSQLAlchemy,
-    GeradorNumeroOficioSQLAlchemy,
 )
-from adapters.outbound.persistence.gerador_numero_inquerito_sqlalchemy import GeradorNumeroInqueritoSQLAlchemy
-from adapters.outbound.persistence.gerador_numero_laudo_sqlalchemy import GeradorNumeroLaudoSQLAlchemy
-from adapters.outbound.persistence.gerador_numero_medida_sqlalchemy import GeradorNumeroMedidaSQLAlchemy
-from adapters.outbound.persistence.gerador_protocolo_sqlalchemy import GeradorProtocoloSQLAlchemy
+from adapters.outbound.persistence.geradores_sequenciais_sqlalchemy import (
+    GeradorNumeroInqueritoSQLAlchemy,
+    GeradorNumeroLaudoSQLAlchemy,
+    GeradorNumeroMedidaSQLAlchemy,
+    GeradorNumeroOficioSQLAlchemy,
+    GeradorNumeroOrdemSQLAlchemy,
+    GeradorProtocoloSQLAlchemy,
+)
 from adapters.outbound.persistence.indicadores_sqlalchemy import IndicadoresSQLAlchemy
 from adapters.outbound.persistence.inquerito_repositorio_sqlalchemy import InqueritoRepositorioSQLAlchemy
 from adapters.outbound.persistence.laudo_repositorio_sqlalchemy import LaudoRepositorioSQLAlchemy
 from adapters.outbound.persistence.medida_protetiva_repositorio_sqlalchemy import MedidaProtetivaRepositorioSQLAlchemy
 from adapters.outbound.persistence.notificacao_repositorio_sqlalchemy import NotificacaoRepositorioSQLAlchemy
 from adapters.outbound.persistence.ocorrencia_repositorio_sqlalchemy import OcorrenciaRepositorioSQLAlchemy
-from adapters.outbound.persistence.ordem_despacho_repositorio_sqlalchemy import (
-    GeradorNumeroOrdemSQLAlchemy,
-    OrdemDespachoRepositorioSQLAlchemy,
-)
+from adapters.outbound.persistence.ordem_despacho_repositorio_sqlalchemy import OrdemDespachoRepositorioSQLAlchemy
 from adapters.outbound.persistence.unidade_de_trabalho_sqlalchemy import UnidadeDeTrabalhoSQLAlchemy
 from adapters.outbound.persistence.usuario_repositorio_sqlalchemy import UsuarioRepositorioSQLAlchemy
 from adapters.outbound.persistence.viatura_repositorio_sqlalchemy import ViaturaRepositorioSQLAlchemy
@@ -64,6 +64,7 @@ from application.ports.inbound.interface_arquivar_ocorrencia import (
 )
 from application.ports.inbound.interface_autenticar_documento import InterfaceAutenticarDocumento
 from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
+from application.ports.inbound.interface_catalogo_auditoria import InterfaceListarCatalogoAuditoria
 from application.ports.inbound.interface_comunicacoes_interagencias import (
     InterfaceConsultarComunicacoesInteragencias,
     InterfaceEnviarComunicacaoInteragencias,
@@ -177,6 +178,7 @@ from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.auditoria.consultar_auditoria import ConsultarAuditoria
+from application.use_cases.auditoria.listar_catalogo_auditoria import ListarCatalogoAuditoria
 from application.use_cases.auditoria.registrar_exportacao import RegistrarExportacao
 from application.use_cases.auth.autenticar_usuario import AutenticarUsuario
 from application.use_cases.despacho.despachar_viatura import DespacharViatura, ListarOrdensDespacho, SugerirViaturasProximas
@@ -502,6 +504,10 @@ def get_registrar_exportacao(
     relogio: Relogio = Depends(get_relogio),
 ) -> InterfaceRegistrarExportacao:
     return RegistrarExportacao(auditoria, uow, relogio)
+
+
+def get_listar_catalogo_auditoria() -> InterfaceListarCatalogoAuditoria:
+    return ListarCatalogoAuditoria()
 
 
 def get_consultar_auditoria(

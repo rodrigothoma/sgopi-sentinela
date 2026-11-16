@@ -140,7 +140,7 @@ Foram criadas pela API policial real, com usuário agente do seed e conteúdo ex
 Entrar como delegado → Fila de revisão → Aguardando revisão. Se houver filtro preenchido, limpar ou buscar pelo protocolo. Escolher uma ocorrência para demonstrar validar/devolver/rejeitar; somente uma validada segue para despacho pelo operador. Não há necessidade de recriar ou reiniciar o banco.
 
 
-## Resultado final executado
+## Resultado executado antes da integração da dev
 
 | Verificação | Resultado em 16/11/2026 |
 | --- | --- |
@@ -158,3 +158,12 @@ Entrar como delegado → Fila de revisão → Aguardando revisão. Se houver fil
 Os totais de backend e Vitest incluem a suíte herdada; não são apresentados como testes todos criados nesta entrega. Os novos testes estão discriminados na seção anterior. “Tudo verde” refere-se às etapas de `verificar.sh` e às duas specs selecionadas, não à suíte completa do Cypress nem à pendência anterior de notificações.
 
 **Validação do usuário:** os cenários novos de CRUD/responsável estão cobertos por testes automatizados, não validados manualmente pelo usuário até este registro. Houve ainda conferência da API local e aplicação da migração pelo agente; isso não substitui sua revisão visual e funcional.
+
+
+## Integração com a dev para publicação do PR
+
+A dev avançou durante o trabalho. A branch do PR incorpora a dev em um commit de merge, preservando os 13 commits granulares da entrega e as refatorações anteriores do PR #71. Os conflitos de imports e estilos foram combinados, sem remover os novos componentes de alerta/relatório tabular nem os estilos de espera/auditoria.
+
+A auditoria da dev passou a usar eventos tipados: as operações novas são `CadastroViaturaEditado` e `CadastroViaturaExcluido`, em `domain/viatura/auditoria.py`, derivadas de `EventoViatura`. Os casos de uso chamam `registrar(evento, ator.contexto_auditoria(agora))`. O cadastro também inclui o responsável no evento `ViaturaCadastrada`. O antigo catálogo de Enums não foi reintroduzido. Esta é uma adaptação necessária à integração, não a criação da arquitetura de auditoria desta semana.
+
+Os totais da seção anterior são o snapshot anterior ao merge. A validação do código integrado e seus resultados estão registrados no PR e no CI do commit final.

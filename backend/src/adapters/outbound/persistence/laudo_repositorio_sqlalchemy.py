@@ -12,9 +12,9 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from adapters.outbound.persistence._concorrencia import ControleVersaoMixin
-from adapters.outbound.persistence._datas import aware
+from adapters.outbound.persistence.mappers import LaudoMapper
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
-from domain.laudo.entity import LaudoPericial, StatusLaudo, TipoPericia
+from domain.laudo.entity import LaudoPericial, StatusLaudo
 from infrastructure.database.models import LaudoPericialModel
 
 
@@ -30,28 +30,7 @@ class LaudoRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioLaudoPericial):
     async def salvar(self, laudo: LaudoPericial) -> None:
         existente = await self._carregar_model(laudo.id)
         if existente is None:
-            model = LaudoPericialModel(
-                id=laudo.id,
-                numero_referencia=laudo.numero_referencia,
-                tipo_pericia=laudo.tipo_pericia.value,
-                descricao_solicitacao=laudo.descricao_solicitacao,
-                solicitante_id=laudo.solicitante_id,
-                perito_id=laudo.perito_id,
-                ocorrencia_id=laudo.ocorrencia_id,
-                inquerito_id=laudo.inquerito_id,
-                item_apreendido_id=laudo.item_apreendido_id,
-                conclusoes_tecnicas=laudo.conclusoes_tecnicas,
-                arquivo_chave=laudo.arquivo_chave,
-                arquivo_nome=laudo.arquivo_nome,
-                hash_sha256=laudo.hash_sha256,
-                status=laudo.status.value,
-                solicitado_em=laudo.solicitado_em,
-                concluido_em=laudo.concluido_em,
-                atualizado_em=laudo.atualizado_em,
-                ativo=laudo.ativo,
-                versao=laudo.versao,
-            )
-            self._session.add(model)
+            self._session.add(LaudoMapper.to_model(laudo))
         else:
             await self._verificar_versao(
                 LaudoPericialModel,
@@ -59,16 +38,7 @@ class LaudoRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioLaudoPericial):
                 laudo.versao,
                 "O laudo pericial foi alterado por outro usuário; recarregue e tente novamente.",
             )
-            existente.perito_id = laudo.perito_id
-            existente.conclusoes_tecnicas = laudo.conclusoes_tecnicas
-            existente.arquivo_chave = laudo.arquivo_chave
-            existente.arquivo_nome = laudo.arquivo_nome
-            existente.hash_sha256 = laudo.hash_sha256
-            existente.status = laudo.status.value
-            existente.concluido_em = laudo.concluido_em
-            existente.atualizado_em = laudo.atualizado_em
-            existente.ativo = laudo.ativo
-            existente.versao = laudo.versao
+            LaudoMapper.atualizar_model(existente, laudo)
         await self._session.flush()
         self._registrar_versao(laudo.id, laudo.versao)
 
@@ -77,7 +47,7 @@ class LaudoRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioLaudoPericial):
         if model is None:
             return None
         self._registrar_versao(model.id, model.versao)
-        return self._to_domain(model)
+        return LaudoMapper.to_domain(model)
 
     async def buscar_por_referencia(self, numero_referencia: str) -> LaudoPericial | None:
         stmt = select(LaudoPericialModel).where(LaudoPericialModel.numero_referencia == numero_referencia)
@@ -85,7 +55,7 @@ class LaudoRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioLaudoPericial):
         if model is None:
             return None
         self._registrar_versao(model.id, model.versao)
-        return self._to_domain(model)
+        return LaudoMapper.to_domain(model)
 
     async def listar(
         self,
@@ -109,28 +79,4 @@ class LaudoRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioLaudoPericial):
         models = (await self._session.execute(stmt)).scalars().all()
         for m in models:
             self._registrar_versao(m.id, m.versao)
-        return [self._to_domain(m) for m in models], total
-
-    @staticmethod
-    def _to_domain(model: LaudoPericialModel) -> LaudoPericial:
-        return LaudoPericial(
-            id=model.id,
-            numero_referencia=model.numero_referencia,
-            tipo_pericia=TipoPericia(model.tipo_pericia),
-            descricao_solicitacao=model.descricao_solicitacao,
-            solicitante_id=model.solicitante_id,
-            perito_id=model.perito_id,
-            ocorrencia_id=model.ocorrencia_id,
-            inquerito_id=model.inquerito_id,
-            item_apreendido_id=model.item_apreendido_id,
-            conclusoes_tecnicas=model.conclusoes_tecnicas,
-            arquivo_chave=model.arquivo_chave,
-            arquivo_nome=model.arquivo_nome,
-            hash_sha256=model.hash_sha256,
-            status=StatusLaudo(model.status),
-            solicitado_em=aware(model.solicitado_em),
-            concluido_em=aware(model.concluido_em) if model.concluido_em else None,
-            atualizado_em=aware(model.atualizado_em) if model.atualizado_em else None,
-            ativo=model.ativo,
-            versao=model.versao,
-        )
+        return [LaudoMapper.to_domain(m) for m in models], total

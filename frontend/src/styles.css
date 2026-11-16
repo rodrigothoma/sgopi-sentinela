@@ -2087,3 +2087,60 @@ dl.grid2 dd { margin: 0 0 8px; }
 .frota-editando { flex-basis: 100%; margin: 0; font-weight: 600; }
 .frota-tabela { overflow-x: auto; }
 .frota-acoes { flex-wrap: wrap; min-width: 200px; }
+/* --- Selo de tempo de espera na fila de revisão --- */
+.espera-badge {
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.espera-badge.espera-atencao {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warn);
+}
+
+.espera-badge.espera-critico {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+}
+
+/* --- Alerta de criticidade recebido em tempo real (UC11) --- */
+.alerta-criticidade-recebido {
+  border-left: 4px solid var(--danger);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.alerta-criticidade-topo,
+.mapa-indisponivel-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.alerta-criticidade-titulo { font-size: 1rem; }
+.alerta-criticidade-nivel { color: var(--danger); }
+.alerta-criticidade-assunto { margin-top: 0.2rem; font-weight: 600; }
+.alerta-criticidade-mensagem { font-size: 0.88rem; opacity: 0.9; }
+.alerta-criticidade-hora { margin-top: 0.25rem; font-size: 0.78rem; opacity: 0.75; }
+
+/* --- Relatório tabular quando o provedor de mapas cai (RNF04) --- */
+.mapa-indisponivel { border-left: 4px solid var(--warn); }
+.mapa-indisponivel-subtitulo { font-size: 0.85rem; opacity: 0.9; }
+
+.mapa-indisponivel-tabela {
+  margin-top: 0.75rem;
+  overflow-x: auto;
+}
+
+.mapa-indisponivel-tabela table {
+  width: 100%;
+  font-size: 0.85rem;
+}
+
+.mapa-indisponivel-tabela tbody tr { cursor: pointer; }
+.mapa-indisponivel-tabela tbody tr.selecionada { background: var(--card-hover); }

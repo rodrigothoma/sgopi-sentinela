@@ -5,15 +5,17 @@ import pytest
 from sqlalchemy import select
 
 from adapters.outbound.persistence.auditoria_sqlalchemy import AuditoriaSQLAlchemy
-from adapters.outbound.persistence.gerador_protocolo_sqlalchemy import GeradorProtocoloSQLAlchemy
+from adapters.outbound.persistence.geradores_sequenciais_sqlalchemy import GeradorProtocoloSQLAlchemy
 from adapters.outbound.persistence.ocorrencia_repositorio_sqlalchemy import OcorrenciaRepositorioSQLAlchemy
 from adapters.outbound.persistence.unidade_de_trabalho_sqlalchemy import UnidadeDeTrabalhoSQLAlchemy
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias
-from domain.auditoria.entity import RegistroAuditoria
+from domain.auditoria.contexto import ContextoAuditoria
+from domain.ocorrencia.auditoria import OcorrenciaRegistrada
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipificacaoPenal, TipoEnvolvido
 from domain.ocorrencia.status import StatusOcorrencia
 from domain.shared.exceptions import ConflitoError
 from domain.shared.geo import Coordenada
+from domain.usuario.auditoria import LoginNegado
 from infrastructure.database.models import EnvolvidoModel, HistoricoStatusModel
 
 AGORA = datetime(2026, 9, 13, 12, 0, tzinfo=UTC)
@@ -162,17 +164,18 @@ async def test_gerador_protocolo_sequencial_por_ano(session):
 
 async def test_auditoria_registra_e_lista(session, usuarios):
     aud = AuditoriaSQLAlchemy(session)
+    ocorrencia = _nova(usuarios)
     await aud.registrar(
-        RegistroAuditoria(
-            quem=usuarios["agente"], quando=AGORA, operacao="ocorrencia.registrar", entidade="Ocorrencia",
-            entidade_id="abc", dados_depois={"status": "AGUARDANDO_REVISAO"}, ip="127.0.0.1",
-        )
+        OcorrenciaRegistrada.de(ocorrencia, prioridade_sugerida=True),
+        ContextoAuditoria(quem=usuarios["agente"], quando=AGORA, ip="127.0.0.1"),
     )
     await aud.registrar(
-        RegistroAuditoria(quem=None, quando=AGORA + timedelta(seconds=1), operacao="auth.negado", entidade="Usuario", entidade_id="x")
+        LoginNegado(login="x", usuario_alvo_id=None, motivo="login_inexistente"),
+        ContextoAuditoria(quem=None, quando=AGORA + timedelta(seconds=1)),
     )
     await session.commit()
     todos = await aud.listar()
-    assert [r.operacao for r in todos] == ["auth.negado", "ocorrencia.registrar"]  # mais recente primeiro
-    por_entidade = await aud.listar(entidade="Ocorrencia", entidade_id="abc")
-    assert len(por_entidade) == 1 and por_entidade[0].dados_depois == {"status": "AGUARDANDO_REVISAO"}
+    assert [r.operacao for r in todos] == ["auth.login_negado", "ocorrencia.registrar"]  # mais recente primeiro
+    por_entidade = await aud.listar(entidade="Ocorrencia", entidade_id=str(ocorrencia.id))
+    assert len(por_entidade) == 1 and por_entidade[0].dados_depois["status"] == "AGUARDANDO_REVISAO"
+    assert por_entidade[0].ip == "127.0.0.1"

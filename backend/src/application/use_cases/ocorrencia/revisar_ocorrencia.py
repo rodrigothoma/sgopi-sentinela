@@ -26,11 +26,16 @@ from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorren
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia._mapeadores import para_detalhe
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
 from domain.notificacao.entity import Notificacao, PrioridadeNotificacao, TipoNotificacao
 from domain.notificacao.eventos import notificacao_emitida
 from domain.ocorrencia import eventos
+from domain.ocorrencia.auditoria import (
+    DecisaoSobreOcorrencia,
+    OcorrenciaDevolvidaParaCorrecao,
+    OcorrenciaRejeitada,
+    OcorrenciaValidada,
+    SituacaoOcorrencia,
+)
 from domain.ocorrencia.entity import Ocorrencia, OrigemOcorrencia
 from domain.shared.eventos import EventoDominio
 from domain.usuario.entity import Papel
@@ -39,8 +44,8 @@ ROTA_MINHAS_OCORRENCIAS = "/minhas"
 
 
 class _DecisaoBase:
-    operacao: OperacaoAuditada
-    campo_texto_auditoria = "justificativa"
+    # Evento de auditoria da decisão (define o nome da operação e o campo do texto).
+    evento_auditoria: type[DecisaoSobreOcorrencia]
     papeis: tuple[Papel, ...] = (Papel.DELEGADO,)
     # Decisões que avisam o agente autor definem o título (com {protocolo}) e a prioridade
     titulo_notificacao: str | None = None
@@ -93,33 +98,15 @@ class _DecisaoBase:
             instante=agora,
         )
 
-    def _registro_auditoria(
-        self, ocorrencia: Ocorrencia, ator: Ator, antes: dict[str, object], agora: datetime
-    ) -> RegistroAuditoria:
-        return RegistroAuditoria(
-            quem=ator.id,
-            quando=agora,
-            operacao=self.operacao,
-            entidade=EntidadeAuditada.OCORRENCIA,
-            entidade_id=str(ocorrencia.id),
-            dados_antes=antes,
-            dados_depois={
-                "status": ocorrencia.status.value,
-                "versao": ocorrencia.versao,
-                self.campo_texto_auditoria: ocorrencia.historico_status[-1].justificativa,
-            },
-            ip=ator.ip,
-        )
-
     async def _executar_decisao(self, ator: Ator, ocorrencia_id: UUID, texto_decisao: str | None) -> OcorrenciaDetalheOutput:
         ator.exigir_papel(*self.papeis)
         agora = self._relogio.agora()
         async with self._uow:
             ocorrencia = await carregar_ou_404(self._repositorio, ocorrencia_id)
-            antes = {"status": ocorrencia.status.value, "versao": ocorrencia.versao}
+            antes = SituacaoOcorrencia.de(ocorrencia)
             self._aplicar(ocorrencia, ator, texto_decisao, agora)
             await self._repositorio.salvar(ocorrencia)
-            await self._auditoria.registrar(self._registro_auditoria(ocorrencia, ator, antes, agora))
+            await self._auditoria.registrar(self.evento_auditoria.de(ocorrencia, antes), ator.contexto_auditoria(agora))
             notificacao = self._notificacao_ao_autor(ocorrencia, agora)
             if notificacao is not None:
                 await self._notificacoes.salvar(notificacao)
@@ -131,8 +118,7 @@ class _DecisaoBase:
 
 
 class ValidarOcorrencia(_DecisaoBase, InterfaceValidarOcorrencia):
-    operacao = OperacaoAuditada.OCORRENCIA_VALIDAR
-    campo_texto_auditoria = "despacho"
+    evento_auditoria = OcorrenciaValidada
     titulo_notificacao = "Ocorrência {protocolo} validada pelo Delegado"
     prioridade_notificacao = PrioridadeNotificacao.BAIXA
 
@@ -151,7 +137,7 @@ class ValidarOcorrencia(_DecisaoBase, InterfaceValidarOcorrencia):
 
 
 class DevolverParaCorrecao(_DecisaoBase, InterfaceDevolverParaCorrecao):
-    operacao = OperacaoAuditada.OCORRENCIA_DEVOLVER_PARA_CORRECAO
+    evento_auditoria = OcorrenciaDevolvidaParaCorrecao
     titulo_notificacao = "Ocorrência {protocolo} devolvida para correção"
     prioridade_notificacao = PrioridadeNotificacao.ALTA
 
@@ -166,7 +152,7 @@ class DevolverParaCorrecao(_DecisaoBase, InterfaceDevolverParaCorrecao):
 
 
 class RejeitarOcorrencia(_DecisaoBase, InterfaceRejeitarOcorrencia):
-    operacao = OperacaoAuditada.OCORRENCIA_REJEITAR
+    evento_auditoria = OcorrenciaRejeitada
     titulo_notificacao = "Ocorrência {protocolo} rejeitada pelo Delegado"
 
     def _aplicar(self, ocorrencia, ator, justificativa, agora):

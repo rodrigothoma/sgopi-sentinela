@@ -22,8 +22,8 @@ from application.ports.outbound.repositorio_comunicacao_interagencias import (
 from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from application.use_cases.transacao import executar_em_transacao
+from domain.interagencias.auditoria import OficioEnviado, OficioRespondido
 from domain.interagencias.entity import (
     PAPEIS_POR_NIVEL_SIGILO,
     ComunicacaoInteragencias,
@@ -130,30 +130,10 @@ class EnviarComunicacaoInteragenciasUseCase(InterfaceEnviarComunicacaoInteragenc
             for notif in _notificacoes_de_envio(salva_obj, agora):
                 await self._repo_notif.salvar(notif)
 
-            await self._porta_auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.INTERAGENCIAS_ENVIAR,
-                    entidade=EntidadeAuditada.COMUNICACAO_INTERAGENCIAS,
-                    entidade_id=str(salva_obj.id),
-                    dados_depois={
-                        "numero_oficio": salva_obj.numero_oficio,
-                        "origem": salva_obj.departamento_origem,
-                        "destinatarios": salva_obj.departamentos_destinatarios,
-                        "assunto": salva_obj.assunto,
-                        "protocolo": salva_obj.protocolo_ocorrencia,
-                    },
-                )
-            )
+            await self._porta_auditoria.registrar(OficioEnviado.de(salva_obj), ator.contexto_auditoria(agora))
             return salva_obj
 
-        if self._uow:
-            async with self._uow:
-                salva = await _salvar_tudo()
-                await self._uow.commit()
-        else:
-            salva = await _salvar_tudo()
+        salva = await executar_em_transacao(self._uow, _salvar_tudo)
 
         # Transmite via WebSocket
         await self._publicador.publicar(
@@ -264,23 +244,9 @@ class ResponderComunicacaoInteragenciasUseCase(InterfaceResponderComunicacaoInte
                 instante=agora,
             )
             await self._repo_notif.salvar(notif)
-            await self._porta_auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.INTERAGENCIAS_RESPONDER,
-                    entidade=EntidadeAuditada.COMUNICACAO_INTERAGENCIAS,
-                    entidade_id=str(salva_obj.id),
-                    dados_depois={"mensagem_pai_id": str(mensagem_pai_id), "numero_oficio": salva_obj.numero_oficio},
-                )
-            )
+            await self._porta_auditoria.registrar(OficioRespondido.de(salva_obj), ator.contexto_auditoria(agora))
             return salva_obj
 
-        if self._uow:
-            async with self._uow:
-                salva = await _salvar_resposta()
-                await self._uow.commit()
-        else:
-            salva = await _salvar_resposta()
+        salva = await executar_em_transacao(self._uow, _salvar_resposta)
 
         return salva

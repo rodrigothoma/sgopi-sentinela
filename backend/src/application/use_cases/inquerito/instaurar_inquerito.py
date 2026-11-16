@@ -14,8 +14,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.inquerito.auditoria import InqueritoInstaurado
 from domain.inquerito.entity import Inquerito
 from domain.shared.exceptions import EntidadeNaoEncontradaError
 from domain.usuario.permissoes import Permissao
@@ -72,21 +71,7 @@ class InstaurarInquerito(InterfaceInstaurarInquerito):
                 oc.vincular_inquerito(inquerito.id, agora)
                 await self._repo_ocorrencia.salvar(oc)
 
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.INQUERITO_INSTAURAR,
-                    entidade=EntidadeAuditada.INQUERITO,
-                    entidade_id=str(inquerito.id),
-                    dados_depois={
-                        "numero": inquerito.numero,
-                        "ementa": inquerito.ementa,
-                        "ocorrencias_vinculadas": [str(x) for x in ocorrencias_ids],
-                    },
-                    ip=ator.ip,
-                )
-            )
+            await self._auditoria.registrar(InqueritoInstaurado.de(inquerito), ator.contexto_auditoria(agora))
             await self._uow.commit()
 
         resumos = [

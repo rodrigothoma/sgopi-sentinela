@@ -9,11 +9,8 @@ from application.ports.inbound.interface_registrar_exportacao import (
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.auditoria.exportacao import exportacao_de
 from domain.usuario.permissoes import Permissao
-
-ENTIDADE_EXPORTACAO = EntidadeAuditada.EXPORTACAO
 
 
 def _serializavel(valor: Any) -> Any:
@@ -39,19 +36,6 @@ class RegistrarExportacao(InterfaceRegistrarExportacao):
         ator.exigir(Permissao.EXPORTAR_REGISTROS)
         filtros = _filtros_aplicados(input_dto.filtros)
         async with self._uow:
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=self._relogio.agora(),
-                    operacao=OperacaoAuditada(f"{input_dto.recurso.value}.exportar"),
-                    entidade=ENTIDADE_EXPORTACAO,
-                    entidade_id=input_dto.recurso.value,
-                    dados_depois={
-                        "formato": input_dto.formato,
-                        "filtros": filtros,
-                        "total_linhas": input_dto.total_linhas,
-                    },
-                    ip=ator.ip,
-                )
-            )
+            evento = exportacao_de(input_dto.recurso.value, input_dto.formato, filtros, input_dto.total_linhas)
+            await self._auditoria.registrar(evento, ator.contexto_auditoria(self._relogio.agora()))
             await self._uow.commit()

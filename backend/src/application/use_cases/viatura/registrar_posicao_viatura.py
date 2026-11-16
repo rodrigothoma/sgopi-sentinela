@@ -23,10 +23,10 @@ from application.ports.outbound.repositorio_ordem_despacho import RepositorioOrd
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.viatura.gerir_viaturas import carregar_viatura, para_output
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.auditoria.contexto import ContextoAuditoria
 from domain.shared.eventos import EventoDominio
 from domain.shared.geo import Coordenada
+from domain.viatura.auditoria import ViaturaChegouAoLocal
 from domain.viatura.entity import SituacaoViatura, Viatura
 from domain.viatura.eventos import posicao_atualizada, viatura_chegou_ao_local
 
@@ -83,15 +83,12 @@ class RegistrarPosicaoViatura(InterfaceRegistrarPosicaoViatura):
             return None
         viatura.chegar_ao_local(agora)
         if self._auditoria is not None:
+            # Telemetria não tem ator HTTP: o autor é o dispositivo/processo informado no DTO, sem IP.
             await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=input_dto.por_id, quando=agora, operacao=OperacaoAuditada.VIATURA_CHEGADA_AO_LOCAL, entidade=EntidadeAuditada.VIATURA, entidade_id=str(viatura.id),
-                    dados_antes={"situacao": SituacaoViatura.EM_DESLOCAMENTO.value},
-                    dados_depois={
-                        "situacao": viatura.situacao.value, "ocorrencia_id": str(ocorrencia.id), "numero_ordem": ordem.numero,
-                        "distancia_metros": round(distancia_m, 1), "origem": input_dto.origem,
-                    },
-                )
+                ViaturaChegouAoLocal.de(
+                    viatura, ocorrencia_id=ocorrencia.id, numero_ordem=ordem.numero, distancia_metros=distancia_m, origem=input_dto.origem
+                ),
+                ContextoAuditoria(quem=input_dto.por_id, quando=agora),
             )
         return viatura_chegou_ao_local(
             viatura, agora,

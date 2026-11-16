@@ -18,10 +18,9 @@ from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import ConflitoError, EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.permissoes import Permissao
+from domain.viatura.auditoria import SituacaoViaturaAlterada, ViaturaCadastrada
 from domain.viatura.entity import SituacaoViatura, Viatura
 from domain.viatura.eventos import viatura_situacao_alterada
 
@@ -65,7 +64,7 @@ class CadastrarViatura(InterfaceCadastrarViatura):
                 raise ConflitoError(f"Placa {viatura.placa} já cadastrada.", chave="viatura.placa_duplicada")
             await self._repositorio.salvar(viatura)
             await self._auditoria.registrar(
-                RegistroAuditoria(quem=ator.id, quando=agora, operacao=OperacaoAuditada.VIATURA_CADASTRAR, entidade=EntidadeAuditada.VIATURA, entidade_id=str(viatura.id), dados_depois={"prefixo": viatura.prefixo, "placa": viatura.placa, "responsavel": viatura.responsavel}, ip=ator.ip)
+                ViaturaCadastrada.de(viatura), ator.contexto_auditoria(agora)
             )
             await self._uow.commit()
         return para_output(viatura, agora, self._max_idade)
@@ -82,14 +81,14 @@ class AlterarSituacaoViatura(InterfaceAlterarSituacaoViatura):
             raise ValorInvalidoError("Só DISPONIVEL/INDISPONIVEL podem ser definidas manualmente.", chave="viatura.situacao_manual_invalida")
         async with self._uow:
             viatura = await carregar_viatura(self._repositorio, input_dto.viatura_id)
-            antes = viatura.situacao.value
+            antes = viatura.situacao
             if input_dto.situacao == SituacaoViatura.INDISPONIVEL.value:
                 viatura.marcar_indisponivel(agora)
             else:
                 viatura.marcar_disponivel(agora)
             await self._repositorio.salvar(viatura)
             await self._auditoria.registrar(
-                RegistroAuditoria(quem=ator.id, quando=agora, operacao=OperacaoAuditada.VIATURA_ALTERAR_SITUACAO, entidade=EntidadeAuditada.VIATURA, entidade_id=str(viatura.id), dados_antes={"situacao": antes}, dados_depois={"situacao": viatura.situacao.value}, ip=ator.ip)
+                SituacaoViaturaAlterada.de(viatura, situacao_antes=antes), ator.contexto_auditoria(agora)
             )
             await self._uow.commit()
         await self._publicador.publicar(viatura_situacao_alterada(viatura, agora))
