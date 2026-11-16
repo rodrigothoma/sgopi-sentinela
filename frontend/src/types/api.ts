@@ -119,6 +119,7 @@ export interface Pagina<T> { itens: T[]; total: number; limit: number; offset: n
 
 export interface Viatura {
   id: string; prefixo: string; placa: string; situacao: SituacaoViatura;
+  responsavel?: string | null; ativo?: boolean;
   latitude: number | null; longitude: number | null; posicao_registrada_em: string | null; sinal: Sinal; versao: number;
 }
 export interface ViaturaSugerida { viatura: Viatura; distancia_km: number }
