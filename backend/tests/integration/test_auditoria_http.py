@@ -146,3 +146,18 @@ async def test_mascaramento_cpf_em_payloads_de_auditoria(client, session):
     assert "987.654.321-00" not in resposta_str
     assert "11122233344" not in resposta_str
     assert "123.456.789-01" not in resposta_str
+
+
+async def test_catalogo_da_trilha_vem_das_classes_de_evento(client):
+    from domain.auditoria import catalogo_eventos
+
+    r = await client.get("/v1/auditoria/catalogo", headers=await auth(client, "delegado"))
+
+    assert r.status_code == 200
+    assert [(a["operacao"], a["entidade"]) for a in r.json()] == list(catalogo_eventos.catalogo())
+
+
+async def test_catalogo_da_trilha_exige_permissao(client):
+    r = await client.get("/v1/auditoria/catalogo", headers=await auth(client, "agente"))
+
+    assert r.status_code == 403

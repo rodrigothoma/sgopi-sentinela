@@ -64,6 +64,7 @@ from application.ports.inbound.interface_arquivar_ocorrencia import (
 )
 from application.ports.inbound.interface_autenticar_documento import InterfaceAutenticarDocumento
 from application.ports.inbound.interface_autenticar_usuario import InterfaceAutenticarUsuario
+from application.ports.inbound.interface_catalogo_auditoria import InterfaceListarCatalogoAuditoria
 from application.ports.inbound.interface_comunicacoes_interagencias import (
     InterfaceConsultarComunicacoesInteragencias,
     InterfaceEnviarComunicacaoInteragencias,
@@ -175,6 +176,7 @@ from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.auditoria.consultar_auditoria import ConsultarAuditoria
+from application.use_cases.auditoria.listar_catalogo_auditoria import ListarCatalogoAuditoria
 from application.use_cases.auditoria.registrar_exportacao import RegistrarExportacao
 from application.use_cases.auth.autenticar_usuario import AutenticarUsuario
 from application.use_cases.despacho.despachar_viatura import DespacharViatura, ListarOrdensDespacho, SugerirViaturasProximas
@@ -497,6 +499,10 @@ def get_registrar_exportacao(
     relogio: Relogio = Depends(get_relogio),
 ) -> InterfaceRegistrarExportacao:
     return RegistrarExportacao(auditoria, uow, relogio)
+
+
+def get_listar_catalogo_auditoria() -> InterfaceListarCatalogoAuditoria:
+    return ListarCatalogoAuditoria()
 
 
 def get_consultar_auditoria(
