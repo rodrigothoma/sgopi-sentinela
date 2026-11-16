@@ -299,6 +299,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             style={{ ...ESTILO_CAMPO, width: '100%' }}
+            data-cy="auditoria-busca"
           />
         </div>
 

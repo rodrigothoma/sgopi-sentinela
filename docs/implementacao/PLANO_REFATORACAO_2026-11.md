@@ -127,6 +127,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 - [ ] **Tipos e serviços** centralizados em `types/` (ou `openapi-typescript`); `ocorrenciasService.listar` com objeto de opções.
 - [ ] **i18n e estilos**: strings fixas de Interagências, `MapaTatico`, `title`/`placeholder`, `'Sem local'`; estilos inline → classes.
 - [x] **Trilha de auditoria**: filtros de operação e entidade carregados de `GET /v1/auditoria/catalogo`, com rótulos pt/en das 48 operações e 16 entidades. — `e386c3f`, `ecf1189`
+- [x] **Trilha de auditoria paginada**: 50 registros por página com paginação no servidor (`{itens, total, limit, offset}`), filtro de período De/Até no fuso da operação e componente comum `Paginacao`. — `a32b531`, `49ec746`
 - [ ] **Cypress**: specs para inquéritos, laudos, medidas e interagências.
 
 ---
@@ -135,6 +136,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 
 - [ ] **Traduções faltando** *(encontrado em 08/11)*: 36 das 147 chaves de erro usadas no backend não existem em `infrastructure/i18n/locales/*/default.json` (inquérito 12, laudo 12, medida 11, ocorrência 1); a API devolve a chave crua (ex.: `inquerito.apenas_delegado`) no lugar da mensagem.
 - [ ] **Testes unitários que faltam**: inquérito `consultar`/`instaurar`, laudo (4), medida (renovar/revogar), `linha_do_tempo`, `emitir_credencial_telemetria`; concorrência otimista por repositório (estender `tests/integration/contratos/` a inquérito, laudo e medida).
+- [ ] **Migração 0008 sem `downgrade` no PostgreSQL** *(encontrado em 16/11)*: o `downgrade` tenta remover a constraint `fk_ocorrencias_inquerito_id_inqueritos`, que não existe com esse nome no PostgreSQL; `alembic downgrade base` e o `npm run e2e:db` falham. O CI não detecta porque só desce até a 0011.
 - [ ] **Higiene da suíte**: hash argon2 uma vez por sessão, helper de login único, enum `Papel` nos testes, consolidar fakes duplicadas em `tests/fakes/`.
 - [ ] **Wiki** sincronizada com `docs/` (página `Guia-de-Instalacao` inexistente, "11 tabelas", mensageria assíncrona, classificação de extras).
 - [ ] **Diagramas**: marcar o diagrama de classes como conceitual ou gerar um novo do código; fontes `.puml` para todos; atualizar o `sq06` com o motor de conexões.
