@@ -1,6 +1,6 @@
 # Plano de Refatoração — SGOPI Sentinela (novembro/2026)
 
-**Situação em 08/11/2026:** Ondas 0 e 1 concluídas e integradas na `dev` (CI verde nos 3 jobs). Ondas 2 a 5 pendentes.
+**Situação em 16/11/2026:** Ondas 0 e 1 concluídas e integradas na `dev`. Onda 3 em andamento: extração de todos os Data Mappers e unificação dos geradores sequenciais concluídas. Ondas 2, 4 e 5 pendentes.
 
 **Legenda:** `[x]` concluído (com o commit) · `[~]` parcial · `[ ]` pendente.
 
@@ -10,18 +10,18 @@ Caminhos do backend são relativos a `backend/src/`; os do frontend, a `frontend
 
 ## 1. Ponto de partida e progresso
 
-| Métrica | Antes (06/11) | Agora (08/11) | Onde |
+| Métrica | Antes (06/11) | Agora (16/11) | Onde |
 | :--- | :--- | :--- | :--- |
 | Checagens de papel escritas à mão (`if ator.papel ...`) | 15 | 0 | casos de uso |
 | Tuplas de papéis duplicadas entre routers e casos de uso | 20+ | 0 | `adapters/inbound/http/v1/*`, casos de uso |
 | Strings soltas de auditoria (`operacao=`/`entidade=`) | 39 pontos | 0 | casos de uso, `deps.py` |
 | Incrementos manuais `versao += 1` | 12 | 0 | entidades |
 | Validações de texto vazio/curto repetidas | 28 | 0 | entidades |
-| Testes do backend | 831 + 13 E2E | 939 + 13 E2E | `backend/tests/` |
+| Testes do backend | 831 + 13 E2E | 1065 + 13 E2E | `backend/tests/` |
 | Cobertura (`domain/` + `application/`) | 95,4% | 96,9% | — |
-| Tamanho do composition root | 1164 linhas | 1164 linhas | `infrastructure/di.py` (Onda 3) |
+| Tamanho do composition root | 1164 linhas | 1176 linhas | `infrastructure/di.py` (Onda 3) |
 | Maior página do frontend | 1362 linhas | 1362 linhas | `pages/InqueritosPage.tsx` (Onda 4) |
-| Repositórios ainda sem Mapper | 8 | 8 | `adapters/outbound/persistence/` (Onda 3) |
+| Repositórios ainda sem Mapper | 8 | 0 | `adapters/outbound/persistence/` (Onda 3) |
 
 ### Padrão para constantes e parâmetros
 
@@ -106,8 +106,8 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 ## 5. Onda 3 — Adapters e infraestrutura
 
 - [~] **Repositório base versionado** `RepositorioVersionadoSQLAlchemy[M, E]`: `ControleVersaoMixin` em `persistence/_concorrencia.py` unificou a verificação de versão e o locking nos 5 repositórios (`ocorrencia`, `viatura`, `inquerito`, `laudo`, `medida_protetiva`). **Pendente:** extração da classe base genérica para unificar `salvar`, `_reconstituir` e `buscar_por_id`.
-- [ ] **Mappers** para medida_protetiva, laudo, inquerito, comunicacao, notificacao, ordem_despacho, usuario e auditoria (padrão de `persistence/mappers/`); helpers `aware_opcional()` e `enum_ou_padrao()`.
-- [ ] **`GeradorSequencialSQLAlchemy(tabela, formatador)`** no lugar dos 6 UPSERTs idênticos.
+- [x] **Mappers** para todos os agregados (medida_protetiva, laudo, inquerito, comunicacao, notificacao, ordem_despacho e usuario no padrão de `persistence/mappers/`); helpers `aware_opcional()` e `enum_ou_padrao()`. — `2f436f3` … `0b8d050`
+- [x] **`GeradorSequencialSQLAlchemy(tabela, formatador)`** no lugar dos 6 UPSERTs idênticos com validação de identificador e testes de concorrência. — `096f773`
 - [ ] **Routers**: schemas em `http/schemas/`, conversores em `conversores.py` (sem import entre routers), `ConfigDict(from_attributes=True)`, `Pagina[T]` genérico; regra de negócio fora de `viaturas_router`, `laudos_router` (validação de upload) e `inqueritos_router` (`split(' · ')`).
 - [ ] **Dividir o `di.py` (1164 linhas)** em `infrastructure/providers/*`, com `ContextoSessao` no lugar das tuplas posicionais e singletons no `lifespan`.
 - [ ] **Novos contratos no import-linter**: http ↛ simulador, outbound ↛ inbound, routers ↛ routers.
