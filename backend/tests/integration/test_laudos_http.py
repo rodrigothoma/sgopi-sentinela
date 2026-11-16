@@ -103,7 +103,7 @@ async def test_download_devolve_o_pdf_anexado_e_audita(app, client, tmp_path):
     assert r.status_code == 200
     assert r.content == conteudo
     assert r.headers["X-Sha256"] == hashlib.sha256(conteudo).hexdigest()
-    trilha = (await client.get("/v1/auditoria", params={"operacao": "laudo.download"}, headers=h)).json()
+    trilha = (await client.get("/v1/auditoria", params={"operacao": "laudo.download"}, headers=h)).json()["itens"]
     assert any(i["operacao"] == "laudo.download" for i in trilha)
 
 

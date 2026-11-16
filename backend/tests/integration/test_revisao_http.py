@@ -171,6 +171,6 @@ async def test_auditoria_consultavel_pelo_delegado(client):
     await client.post(f"/v1/ocorrencias/{o['ocorrencia_id']}/validar", headers=hd)
     r = await client.get("/v1/auditoria", params={"entidade_id": o["ocorrencia_id"]}, headers=hd)
     assert r.status_code == 200
-    assert [x["operacao"] for x in r.json()] == ["ocorrencia.validar", "ocorrencia.registrar"]
+    assert [x["operacao"] for x in r.json()["itens"]] == ["ocorrencia.validar", "ocorrencia.registrar"]
     r = await client.get("/v1/auditoria", headers=await auth(client, "agente"))
     assert r.status_code == 403

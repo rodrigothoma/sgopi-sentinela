@@ -11,3 +11,12 @@ def test_noite_em_brasilia_ainda_e_o_mesmo_dia():
 
 def test_instante_naive_e_tratado_como_utc():
     assert data_operacional(datetime(2026, 10, 11, 1, 30)) == date(2026, 10, 10)
+
+
+def test_inicio_do_dia_operacional_e_meia_noite_em_brasilia():
+    from domain.shared.tempo import inicio_do_dia_operacional
+
+    inicio = inicio_do_dia_operacional(date(2026, 11, 16))
+
+    assert inicio.astimezone(UTC) == datetime(2026, 11, 16, 3, 0, tzinfo=UTC)
+    assert data_operacional(inicio) == date(2026, 11, 16)

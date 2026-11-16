@@ -1,5 +1,5 @@
 """Adapter de entrada: /v1/auditoria (RNF03) — leitura e exportação CSV, somente Delegado/Supervisor."""
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 from uuid import UUID
 
@@ -44,6 +44,13 @@ class RegistroAuditoriaSchema(BaseModel):
     identificador_amigavel: str | None = None
 
 
+class PaginaAuditoriaSchema(BaseModel):
+    itens: list[RegistroAuditoriaSchema]
+    total: int
+    limit: int
+    offset: int
+
+
 class AcaoAuditadaSchema(BaseModel):
     operacao: str
     entidade: str
@@ -78,46 +85,58 @@ async def exportar_auditoria(
     entidade_id: str | None = Query(default=None),
     operacao: str | None = Query(default=None),
     quem: UUID | None = Query(default=None),
+    de: date | None = Query(default=None, description="Data inicial (inclusa), no fuso da operação"),
+    ate: date | None = Query(default=None, description="Data final (inclusa), no fuso da operação"),
     limit: int = Query(default=LIMITE_MAXIMO_CONSULTA, ge=1, le=LIMITE_MAXIMO_CONSULTA),
     ator: Ator = Depends(exigir_permissao(Permissao.EXPORTAR_REGISTROS)),
     use_case: InterfaceConsultarAuditoria = Depends(get_consultar_auditoria),
     registrar_exportacao: InterfaceRegistrarExportacao = Depends(get_registrar_exportacao),
 ) -> StreamingResponse:
     """Exporta a trilha filtrada em CSV (Excel pt-BR). A própria exportação é auditada (RNF03)."""
-    input_dto = ConsultarAuditoriaInput(entidade=entidade, entidade_id=entidade_id, operacao=operacao, quem=quem, limit=limit)
-    registros = await use_case.executar(ator, input_dto)
+    input_dto = ConsultarAuditoriaInput(
+        entidade=entidade, entidade_id=entidade_id, operacao=operacao, quem=quem, limit=limit, de=de, ate=ate
+    )
+    registros = (await use_case.executar(ator, input_dto)).itens
     await registrar_exportacao.executar(
         ator,
         RegistrarExportacaoInput(
             recurso=RecursoExportavel.AUDITORIA,
             formato=formato.value,
             total_linhas=len(registros),
-            filtros={"entidade": entidade, "entidade_id": entidade_id, "operacao": operacao, "quem": quem, "limit": limit},
+            filtros={
+                "entidade": entidade, "entidade_id": entidade_id, "operacao": operacao, "quem": quem,
+                "de": de, "ate": ate, "limit": limit,
+            },
         ),
     )
     nome = f"auditoria_{datetime.now(UTC):%Y%m%d_%H%M%S}.csv"
     return resposta_csv(nome, CABECALHO_CSV, (_linha_csv(r) for r in registros))
 
 
-@router.get("", response_model=list[RegistroAuditoriaSchema])
+@router.get("", response_model=PaginaAuditoriaSchema)
 async def listar_auditoria(
     entidade: str | None = Query(default=None),
     entidade_id: str | None = Query(default=None),
     operacao: str | None = Query(default=None),
     quem: UUID | None = Query(default=None),
+    de: date | None = Query(default=None, description="Data inicial (inclusa), no fuso da operação"),
+    ate: date | None = Query(default=None, description="Data final (inclusa), no fuso da operação"),
     limit: int = Query(default=LIMITE_PADRAO_CONSULTA, ge=1, le=LIMITE_MAXIMO_CONSULTA),
+    offset: int = Query(default=0, ge=0),
     ator: Ator = Depends(exigir_permissao(Permissao.CONSULTAR_AUDITORIA)),
     use_case: InterfaceConsultarAuditoria = Depends(get_consultar_auditoria),
-) -> list[RegistroAuditoriaSchema]:
-    """Trilha de auditoria append-only (mais recente primeiro)."""
-    registros = await use_case.executar(
+) -> PaginaAuditoriaSchema:
+    """Página da trilha de auditoria append-only (mais recente primeiro), com o total para a paginação."""
+    pagina = await use_case.executar(
         ator,
         ConsultarAuditoriaInput(
-            entidade=entidade,
-            entidade_id=entidade_id,
-            operacao=operacao,
-            quem=quem,
-            limit=limit,
+            entidade=entidade, entidade_id=entidade_id, operacao=operacao, quem=quem,
+            limit=limit, offset=offset, de=de, ate=ate,
         ),
     )
-    return [RegistroAuditoriaSchema(**r.__dict__) for r in registros]
+    return PaginaAuditoriaSchema(
+        itens=[RegistroAuditoriaSchema(**r.__dict__) for r in pagina.itens],
+        total=pagina.total,
+        limit=pagina.limit,
+        offset=pagina.offset,
+    )

@@ -20,12 +20,12 @@ async def test_delegado_e_supervisor_podem_consultar_auditoria(client):
     # Delegado
     r_del = await client.get("/v1/auditoria", headers=await auth(client, "delegado"))
     assert r_del.status_code == 200
-    assert isinstance(r_del.json(), list)
+    assert isinstance(r_del.json()["itens"], list) and r_del.json()["limit"] == 50
 
     # Supervisor
     r_sup = await client.get("/v1/auditoria", headers=await auth(client, "supervisor"))
     assert r_sup.status_code == 200
-    assert isinstance(r_sup.json(), list)
+    assert isinstance(r_sup.json()["itens"], list)
 
 
 async def test_agente_e_anonimo_recebem_403_e_401(client):
@@ -71,28 +71,28 @@ async def test_filtros_de_auditoria(client, session):
     # 1. Filtro por entidade
     r_ent = await client.get("/v1/auditoria", params={"entidade": "Ocorrencia"}, headers=h_delegado)
     assert r_ent.status_code == 200
-    itens_ent = r_ent.json()
+    itens_ent = r_ent.json()["itens"]
     assert len(itens_ent) >= 2
     assert all(i["entidade"] == "Ocorrencia" for i in itens_ent)
 
     # 2. Filtro por operacao
     r_op = await client.get("/v1/auditoria", params={"operacao": "ocorrencia.validar"}, headers=h_delegado)
     assert r_op.status_code == 200
-    itens_op = r_op.json()
+    itens_op = r_op.json()["itens"]
     assert len(itens_op) >= 1
     assert all(i["operacao"] == "ocorrencia.validar" for i in itens_op)
 
     # 3. Filtro por entidade_id
     r_id = await client.get("/v1/auditoria", params={"entidade_id": oc_id}, headers=h_delegado)
     assert r_id.status_code == 200
-    itens_id = r_id.json()
+    itens_id = r_id.json()["itens"]
     assert len(itens_id) >= 2
     assert all(i["entidade_id"] == oc_id for i in itens_id)
 
     # 4. Filtro por quem
     r_quem = await client.get("/v1/auditoria", params={"quem": str(IDS["delegado"])}, headers=h_delegado)
     assert r_quem.status_code == 200
-    itens_quem = r_quem.json()
+    itens_quem = r_quem.json()["itens"]
     assert len(itens_quem) >= 1
     assert all(i["quem"] == str(IDS["delegado"]) for i in itens_quem)
 
@@ -130,7 +130,7 @@ async def test_mascaramento_cpf_em_payloads_de_auditoria(client, session):
     # Consultar via API
     r = await client.get("/v1/auditoria", params={"entidade_id": registro.entidade_id}, headers=h_delegado)
     assert r.status_code == 200
-    itens = r.json()
+    itens = r.json()["itens"]
     assert len(itens) == 1
     item = itens[0]
 
@@ -161,3 +161,24 @@ async def test_catalogo_da_trilha_exige_permissao(client):
     r = await client.get("/v1/auditoria/catalogo", headers=await auth(client, "agente"))
 
     assert r.status_code == 403
+
+
+async def test_trilha_paginada_e_filtrada_por_periodo(client):
+    h_delegado = await auth(client, "delegado")
+    for _ in range(3):
+        await registrar(client, await auth(client, "agente"))
+
+    pagina = await client.get("/v1/auditoria", params={"operacao": "ocorrencia.registrar", "limit": 2}, headers=h_delegado)
+    seguinte = await client.get("/v1/auditoria", params={"operacao": "ocorrencia.registrar", "limit": 2, "offset": 2}, headers=h_delegado)
+    passado = await client.get("/v1/auditoria", params={"de": "2020-01-01", "ate": "2020-01-31"}, headers=h_delegado)
+
+    assert pagina.status_code == 200
+    assert (pagina.json()["total"], len(pagina.json()["itens"]), pagina.json()["offset"]) == (3, 2, 0)
+    assert len(seguinte.json()["itens"]) == 1
+    assert passado.json() == {"itens": [], "total": 0, "limit": 50, "offset": 0}
+
+
+async def test_periodo_invertido_responde_422(client):
+    r = await client.get("/v1/auditoria", params={"de": "2026-11-16", "ate": "2026-11-10"}, headers=await auth(client, "delegado"))
+
+    assert r.status_code == 422 and r.json()["code"] == "auditoria.periodo_invalido"

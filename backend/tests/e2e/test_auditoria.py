@@ -9,7 +9,7 @@ def test_auditoria_registra_fluxo_e_agente_nao_consulta(client: httpx.Client, au
     # Delegado consulta a trilha
     r = client.get("/v1/auditoria", params={"entidade": "Ocorrencia", "entidade_id": oc_id}, headers=auth("delegado"))
     assert r.status_code == 200, r.text
-    operacoes = [reg["operacao"] for reg in r.json()]
+    operacoes = [reg["operacao"] for reg in r.json()["itens"]]
     assert "ocorrencia.registrar" in operacoes
     assert "ocorrencia.validar" in operacoes
 

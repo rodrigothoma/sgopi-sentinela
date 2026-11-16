@@ -65,18 +65,44 @@ class AuditoriaFake(PortaAuditoria):
         operacao: str | None = None,
         quem: UUID | None = None,
         limit: int = 100,
+        de: datetime | None = None,
+        ate: datetime | None = None,
+        offset: int = 0,
     ) -> list[RegistroAuditoria]:
         # Mesma ordem do adapter SQL: mais recentes primeiro (``quando`` desc).
-        itens = sorted(self.registros, key=lambda r: r.quando, reverse=True)
-        if entidade:
-            itens = [r for r in itens if r.entidade == entidade]
-        if entidade_id:
-            itens = [r for r in itens if r.entidade_id == entidade_id]
-        if operacao:
-            itens = [r for r in itens if r.operacao == operacao]
-        if quem:
-            itens = [r for r in itens if r.quem == quem]
-        return itens[:limit]
+        itens = sorted(self._filtrar(entidade, entidade_id, operacao, quem, de, ate), key=lambda r: r.quando, reverse=True)
+        return itens[offset : offset + limit]
+
+    async def contar(
+        self,
+        entidade: str | None = None,
+        entidade_id: str | None = None,
+        operacao: str | None = None,
+        quem: UUID | None = None,
+        de: datetime | None = None,
+        ate: datetime | None = None,
+    ) -> int:
+        return len(self._filtrar(entidade, entidade_id, operacao, quem, de, ate))
+
+    def _filtrar(
+        self,
+        entidade: str | None,
+        entidade_id: str | None,
+        operacao: str | None,
+        quem: UUID | None,
+        de: datetime | None,
+        ate: datetime | None,
+    ) -> list[RegistroAuditoria]:
+        return [
+            r
+            for r in self.registros
+            if (not entidade or r.entidade == entidade)
+            and (not entidade_id or r.entidade_id == entidade_id)
+            and (not operacao or r.operacao == operacao)
+            and (not quem or r.quem == quem)
+            and (de is None or r.quando >= de)
+            and (ate is None or r.quando < ate)
+        ]
 
     def operacoes(self) -> list[str]:
         return [r.operacao for r in self.registros]

@@ -160,5 +160,8 @@
     "prioridade_invalida": "Invalid priority.",
     "sigilo_invalido": "Invalid secrecy level.",
     "nao_encontrada": "Interagency communication not found."
+  },
+  "auditoria": {
+    "periodo_invalido": "The start date must be on or before the end date."
   }
 }
