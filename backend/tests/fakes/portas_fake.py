@@ -3,11 +3,13 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from application.ports.outbound.gerador_protocolo import GeradorProtocolo, formatar_protocolo
-from application.ports.outbound.porta_auditoria import PortaAuditoria
+from application.ports.outbound.porta_auditoria import PortaAuditoria, como_registro
 from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
+from domain.auditoria.contexto import ContextoAuditoria
 from domain.auditoria.entity import RegistroAuditoria
+from domain.auditoria.evento import EventoAuditoria
 from domain.shared.eventos import EventoDominio
 
 
@@ -46,9 +48,12 @@ class UnidadeDeTrabalhoFake(UnidadeDeTrabalho):
 class AuditoriaFake(PortaAuditoria):
     def __init__(self) -> None:
         self.registros: list[RegistroAuditoria] = []
+        self.eventos: list[EventoAuditoria] = []
 
-    async def registrar(self, registro: RegistroAuditoria) -> None:
-        self.registros.append(registro)
+    async def registrar(self, evento: EventoAuditoria | RegistroAuditoria, contexto: ContextoAuditoria | None = None) -> None:
+        if isinstance(evento, EventoAuditoria):
+            self.eventos.append(evento)
+        self.registros.append(como_registro(evento, contexto))
 
     async def listar(
         self,

@@ -12,9 +12,8 @@ from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia._mapeadores import para_detalhe
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
 from application.use_cases.viatura.gerir_viaturas import carregar_viatura
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia import eventos as ev_ocorrencia
+from domain.ocorrencia.auditoria import OcorrenciaEncerrada, SituacaoOcorrencia
 from domain.usuario.permissoes import Permissao
 from domain.viatura.eventos import viatura_situacao_alterada
 
@@ -39,7 +38,7 @@ class EncerrarOcorrencia(InterfaceEncerrarOcorrencia):
         liberadas = []
         async with self._uow:
             ocorrencia = await carregar_ou_404(self._ocorrencias, input_dto.ocorrencia_id)
-            antes = {"status": ocorrencia.status.value, "versao": ocorrencia.versao}
+            antes = SituacaoOcorrencia.de(ocorrencia)
             ocorrencia.encerrar(ator.id, input_dto.desfecho, agora)
             for ordem in await self._ordens.listar(ocorrencia.id, somente_ativas=True):
                 viatura = await carregar_viatura(self._viaturas, ordem.viatura_id)
@@ -50,12 +49,8 @@ class EncerrarOcorrencia(InterfaceEncerrarOcorrencia):
                 liberadas.append(viatura)
             await self._ocorrencias.salvar(ocorrencia)
             await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id, quando=agora, operacao=OperacaoAuditada.OCORRENCIA_ENCERRAR, entidade=EntidadeAuditada.OCORRENCIA, entidade_id=str(ocorrencia.id),
-                    dados_antes=antes,
-                    dados_depois={"status": ocorrencia.status.value, "desfecho": ocorrencia.desfecho, "viaturas_liberadas": [v.prefixo for v in liberadas]},
-                    ip=ator.ip,
-                )
+                OcorrenciaEncerrada.de(ocorrencia, antes, viaturas_liberadas=(v.prefixo for v in liberadas)),
+                ator.contexto_auditoria(agora),
             )
             await self._uow.commit()
         await self._publicador.publicar(ev_ocorrencia.ocorrencia_encerrada(ocorrencia.id, agora, desfecho=ocorrencia.desfecho))
