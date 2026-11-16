@@ -240,6 +240,9 @@ class ViaturaModel(Base):
 
     __tablename__ = "viaturas"
 
+    responsavel: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=text("true"))
+
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     prefixo: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     placa: Mapped[str] = mapped_column(String(10), unique=True, nullable=False)

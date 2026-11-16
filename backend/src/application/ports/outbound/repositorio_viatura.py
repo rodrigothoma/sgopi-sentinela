@@ -20,5 +20,5 @@ class RepositorioViatura(ABC):
 
     @abstractmethod
     async def listar(self, situacoes: tuple[SituacaoViatura, ...] = ()) -> list[Viatura]:
-        """Ordenada por prefixo."""
+        """Somente cadastros ativos, ordenados por prefixo; buscas por identidade preservam o histórico."""
         ...
