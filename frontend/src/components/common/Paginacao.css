@@ -1,0 +1,24 @@
+.paginacao {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.paginacao-info {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.paginacao-botoes {
+  display: flex;
+  gap: 6px;
+}
+
+.paginacao-botoes .btn {
+  min-width: 32px;
+  font-weight: 700;
+}

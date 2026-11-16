@@ -164,7 +164,18 @@ export interface FiltroAuditoria {
   entidade_id?: string;
   operacao?: string;
   quem?: string;
+  /** Datas de calendário (AAAA-MM-DD), ambas inclusas. */
+  de?: string;
+  ate?: string;
   limit?: number;
+  offset?: number;
+}
+
+export interface PaginaAuditoria {
+  itens: RegistroAuditoria[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export interface ErroApi { detail: string; code: string; request_id: string | null; extra?: Record<string, unknown> }

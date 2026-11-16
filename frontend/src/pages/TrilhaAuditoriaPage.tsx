@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GlideSelect, GlideSelectOption } from '../components/common/GlideSelect';
 import { Button } from '../components/common/Button';
+import { Paginacao } from '../components/common/Paginacao';
 import { StatusBadge } from '../components/StatusBadge';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
@@ -9,6 +10,19 @@ import { auditoriaService } from '../services/auditoriaService';
 import type { AcaoAuditada, FiltroAuditoria, RegistroAuditoria } from '../types/api';
 import { OPCAO_TODAS, entidadesDoCatalogo, opcoesDoCatalogo } from '../utils/catalogoAuditoria';
 import { formatarData, formatarDataHora, formatarHora } from '../utils/datas';
+import { offsetDaPagina } from '../utils/paginacao';
+
+/** Registros por página da trilha (paginação no servidor). */
+const POR_PAGINA = 50;
+
+const ESTILO_CAMPO: React.CSSProperties = {
+  padding: '8px 12px',
+  borderRadius: 8,
+  border: '1px solid var(--line)',
+  background: 'var(--bg)',
+  color: 'var(--ink)',
+  fontSize: '0.88rem',
+};
 
 /** Tentativa de login falha não tem autor conhecido (quem tentou pode não ser o titular do login). */
 const OPERACOES_SEM_AUTOR_IDENTIFICADO = ['auth.login_negado', 'auth.login_bloqueado'];
@@ -43,6 +57,10 @@ export const TrilhaAuditoriaPage: React.FC = () => {
   const [busca, setBusca] = useState<string>('');
   const [filtroOperacao, setFiltroOperacao] = useState<string>('TODAS');
   const [filtroEntidade, setFiltroEntidade] = useState<string>('TODAS');
+  const [dataDe, setDataDe] = useState<string>('');
+  const [dataAte, setDataAte] = useState<string>('');
+  const [pagina, setPagina] = useState<number>(1);
+  const [total, setTotal] = useState<number>(0);
   const [detalheSelecionado, setDetalheSelecionado] = useState<RegistroAuditoria | null>(null);
   const [abaModal, setAbaModal] = useState<'amigavel' | 'json'>('amigavel');
   const [copiado, setCopiado] = useState<boolean>(false);
@@ -51,19 +69,29 @@ export const TrilhaAuditoriaPage: React.FC = () => {
     const params: FiltroAuditoria = {};
     if (filtroOperacao !== 'TODAS') params.operacao = filtroOperacao;
     if (filtroEntidade !== 'TODAS') params.entidade = filtroEntidade;
+    if (dataDe) params.de = dataDe;
+    if (dataAte) params.ate = dataAte;
     return params;
-  }, [filtroOperacao, filtroEntidade]);
+  }, [filtroOperacao, filtroEntidade, dataDe, dataAte]);
+
+  /** Qualquer filtro novo volta para a primeira página. */
+  const alterarFiltro = useCallback((aplicar: () => void) => {
+    aplicar();
+    setPagina(1);
+  }, []);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
     try {
-      setRegistros(await auditoriaService.listar({ ...filtroServidor, limit: 200 }));
+      const resposta = await auditoriaService.listar({ ...filtroServidor, limit: POR_PAGINA, offset: offsetDaPagina(pagina, POR_PAGINA) });
+      setRegistros(resposta.itens);
+      setTotal(resposta.total);
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
     } finally {
       setCarregando(false);
     }
-  }, [filtroServidor, avisar]);
+  }, [filtroServidor, pagina, avisar]);
 
   /** Exporta com os filtros de operação/entidade (a busca livre é só local, na tela). */
   const exportar = useCallback(async () => {
@@ -120,11 +148,10 @@ export const TrilhaAuditoriaPage: React.FC = () => {
   }, [registros, busca, t]);
 
   const kpis = useMemo(() => {
-    const total = registros.length;
     const mutacoes = registros.filter((r) => !r.operacao.startsWith('auth.')).length;
     const acessos = registros.filter((r) => r.operacao.startsWith('auth.')).length;
     return { total, mutacoes, acessos };
-  }, [registros]);
+  }, [registros, total]);
 
   const temAntes = Boolean(detalheSelecionado?.dados_antes && Object.keys(detalheSelecionado.dados_antes).length > 0);
   const temDepois = Boolean(detalheSelecionado?.dados_depois && Object.keys(detalheSelecionado.dados_depois).length > 0);
@@ -271,15 +298,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
             placeholder={t('auditoria.pesquisar_placeholder')}
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              borderRadius: 8,
-              border: '1px solid var(--line)',
-              background: 'var(--bg)',
-              color: 'var(--ink)',
-              fontSize: '0.88rem',
-            }}
+            style={{ ...ESTILO_CAMPO, width: '100%' }}
           />
         </div>
 
@@ -287,7 +306,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
           <GlideSelect
             options={opcoesOperacao}
             value={filtroOperacao}
-            onChange={(val) => setFiltroOperacao(val)}
+            onChange={(val) => alterarFiltro(() => setFiltroOperacao(val))}
             size="sm"
             menuWidth={260}
             ariaLabel={t('auditoria.filtro_operacao')}
@@ -298,12 +317,44 @@ export const TrilhaAuditoriaPage: React.FC = () => {
           <GlideSelect
             options={opcoesEntidade}
             value={filtroEntidade}
-            onChange={(val) => setFiltroEntidade(val)}
+            onChange={(val) => alterarFiltro(() => setFiltroEntidade(val))}
             size="sm"
             menuWidth={180}
             ariaLabel={t('auditoria.filtro_entidade')}
           />
         </div>
+
+        <label className="small muted" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {t('auditoria.filtro_de')}
+          <input
+            type="date"
+            value={dataDe}
+            max={dataAte || undefined}
+            onChange={(e) => alterarFiltro(() => setDataDe(e.target.value))}
+            style={ESTILO_CAMPO}
+            data-cy="auditoria-data-de"
+          />
+        </label>
+        <label className="small muted" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {t('auditoria.filtro_ate')}
+          <input
+            type="date"
+            value={dataAte}
+            min={dataDe || undefined}
+            onChange={(e) => alterarFiltro(() => setDataAte(e.target.value))}
+            style={ESTILO_CAMPO}
+            data-cy="auditoria-data-ate"
+          />
+        </label>
+        {(dataDe || dataAte) && (
+          <button
+            type="button"
+            className="btn btn-sm btn-ghost"
+            onClick={() => alterarFiltro(() => { setDataDe(''); setDataAte(''); })}
+          >
+            {t('auditoria.limpar_periodo')}
+          </button>
+        )}
       </div>
 
       {/* Tabela de Registros de Auditoria */}
@@ -412,6 +463,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
             )}
           </tbody>
         </table>
+        <Paginacao pagina={pagina} porPagina={POR_PAGINA} total={total} onMudarPagina={setPagina} carregando={carregando} />
       </div>
 
       {/* Modal de Inspeção dos Payloads (com dados antes/depois sanitizados) */}

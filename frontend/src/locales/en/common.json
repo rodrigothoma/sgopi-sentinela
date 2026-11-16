@@ -174,8 +174,8 @@
     "titulo": "Audit Trail",
     "subtitulo": "Chronological, indelible log of all actions and changes performed in the system.",
     "kpi_total": "Total Log Entries",
-    "kpi_mutacoes": "Audited Mutations",
-    "kpi_acessos": "Auth Events",
+    "kpi_mutacoes": "Changes on this page",
+    "kpi_acessos": "Sign-ins on this page",
     "operacoes": {
       "auth.login": "Signed In",
       "auth.login_negado": "Failed Sign In",
@@ -227,7 +227,7 @@
       "viatura.emitir_credencial_telemetria": "Telemetry Credential Issued"
     },
     "autor_sistema": "System / Citizen",
-    "pesquisar_placeholder": "Filter by protocol, vehicle, author, IP or operation...",
+    "pesquisar_placeholder": "Search this page by protocol, unit, author, IP or operation...",
     "filtro_todas_operacoes": "All operations",
     "filtro_todas_entidades": "All entities",
     "filtro_operacao": "Operation",
@@ -297,7 +297,7 @@
     },
     "autor_nao_identificado": "Unidentified",
     "exportar_csv": "Export CSV",
-    "exportar_dica": "Exports with the operation and entity filters (CPF masked). The export itself is audited.",
+    "exportar_dica": "Exports with the operation, entity and period filters (masked IDs). The export itself is audited.",
     "entidades": {
       "Ocorrencia": "Incident",
       "Viatura": "Patrol Unit",
@@ -315,14 +315,20 @@
       "comunicacoes_interagencias": "Interagency Letter",
       "notificacoes": "Notification",
       "inteligencia_criminal": "Criminal Intelligence"
-    }
+    },
+    "filtro_de": "From",
+    "filtro_ate": "To",
+    "limpar_periodo": "Clear period"
   },
   "paginacao": {
     "pagina": "Page",
     "de": "of",
     "registros": "incidents",
     "anterior": "Previous page",
-    "proxima": "Next page"
+    "proxima": "Next page",
+    "navegacao": "Pagination",
+    "exibindo": "Showing {{inicio}}–{{fim}} of {{total}}",
+    "pagina_de": "Page {{pagina}} of {{total}}"
   },
   "acesso_negado": {
     "titulo": "Access not authorized",

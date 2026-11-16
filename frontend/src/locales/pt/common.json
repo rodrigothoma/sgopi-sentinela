@@ -174,8 +174,8 @@
     "titulo": "Trilha de Auditoria",
     "subtitulo": "Registro cronológico e imutável de todas as ações e alterações realizadas no sistema.",
     "kpi_total": "Total de Registros",
-    "kpi_mutacoes": "Mutações Auditadas",
-    "kpi_acessos": "Eventos de Autenticação",
+    "kpi_mutacoes": "Mutações nesta página",
+    "kpi_acessos": "Autenticações nesta página",
     "operacoes": {
       "auth.login": "Login realizado",
       "auth.login_negado": "Tentativa de login inválida",
@@ -227,7 +227,7 @@
       "viatura.emitir_credencial_telemetria": "Credencial de telemetria emitida"
     },
     "autor_sistema": "Sistema / Cidadão",
-    "pesquisar_placeholder": "Filtrar por protocolo, viatura, autor, IP ou operação...",
+    "pesquisar_placeholder": "Buscar nesta página por protocolo, viatura, autor, IP ou operação...",
     "filtro_todas_operacoes": "Todas as operações",
     "filtro_todas_entidades": "Todas as entidades",
     "filtro_operacao": "Operação",
@@ -297,7 +297,7 @@
     },
     "autor_nao_identificado": "Não identificado",
     "exportar_csv": "Exportar CSV",
-    "exportar_dica": "Exporta com os filtros de operação e entidade (CPF mascarado). A exportação também é auditada.",
+    "exportar_dica": "Exporta com os filtros de operação, entidade e período (CPF mascarado). A exportação também é auditada.",
     "entidades": {
       "Ocorrencia": "Ocorrência",
       "Viatura": "Viatura",
@@ -315,14 +315,20 @@
       "comunicacoes_interagencias": "Ofício interagências",
       "notificacoes": "Notificação",
       "inteligencia_criminal": "Inteligência criminal"
-    }
+    },
+    "filtro_de": "De",
+    "filtro_ate": "Até",
+    "limpar_periodo": "Limpar período"
   },
   "paginacao": {
     "pagina": "Página",
     "de": "de",
     "registros": "ocorrências",
     "anterior": "Página anterior",
-    "proxima": "Próxima página"
+    "proxima": "Próxima página",
+    "navegacao": "Paginação",
+    "exibindo": "Exibindo {{inicio}}–{{fim}} de {{total}}",
+    "pagina_de": "Página {{pagina}} de {{total}}"
   },
   "acesso_negado": {
     "titulo": "Acesso não autorizado",
