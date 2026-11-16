@@ -145,3 +145,14 @@ async def test_editar_viatura_recusa_duplicidade_e_agente(client) -> None:
     assert (await client.patch(url, json=dados, headers=ha)).status_code == 403
     assert (await client.delete(url, params={"versao": v["versao"]}, headers=ha)).status_code == 403
 
+
+async def test_indicadores_nao_contam_viatura_excluida(session) -> None:
+    from adapters.outbound.persistence.indicadores_sqlalchemy import IndicadoresSQLAlchemy
+    from infrastructure.database.models import ViaturaModel
+
+    session.add_all([
+        ViaturaModel(prefixo="ATIVA", placa="ABC1234", situacao="DISPONIVEL", ativo=True),
+        ViaturaModel(prefixo="EXCLUIDA", placa="DEF5678", situacao="INDISPONIVEL", ativo=False),
+    ])
+    await session.flush()
+    assert await IndicadoresSQLAlchemy(session).viaturas_por_situacao() == {"DISPONIVEL": 1}
