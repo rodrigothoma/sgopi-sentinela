@@ -12,35 +12,45 @@ from sqlalchemy import select
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from adapters.outbound.persistence.auditoria_sqlalchemy import AuditoriaSQLAlchemy  # noqa: E402
-from adapters.outbound.persistence.ocorrencia_repositorio_sqlalchemy import (  # noqa: E402
+from adapters.outbound.persistence.auditoria_sqlalchemy import AuditoriaSQLAlchemy
+from adapters.outbound.persistence.ocorrencia_repositorio_sqlalchemy import (
     OcorrenciaRepositorioSQLAlchemy,
 )
-from adapters.outbound.persistence.ordem_despacho_repositorio_sqlalchemy import (  # noqa: E402
+from adapters.outbound.persistence.ordem_despacho_repositorio_sqlalchemy import (
     OrdemDespachoRepositorioSQLAlchemy,
 )
-from adapters.outbound.persistence.usuario_repositorio_sqlalchemy import (  # noqa: E402
+from adapters.outbound.persistence.usuario_repositorio_sqlalchemy import (
     UsuarioRepositorioSQLAlchemy,
 )
-from adapters.outbound.persistence.viatura_repositorio_sqlalchemy import (  # noqa: E402
+from adapters.outbound.persistence.viatura_repositorio_sqlalchemy import (
     ViaturaRepositorioSQLAlchemy,
 )
-from domain.auditoria.entity import RegistroAuditoria  # noqa: E402
-from domain.despacho.entity import OrdemDeDespacho  # noqa: E402
-from domain.ocorrencia.entity import (  # noqa: E402
+from domain.auditoria.contexto import ContextoAuditoria
+from domain.despacho.auditoria import OrdemDeDespachoCriada
+from domain.despacho.entity import OrdemDeDespacho
+from domain.ocorrencia.auditoria import (
+    OcorrenciaDevolvidaParaCorrecao,
+    OcorrenciaEncerrada,
+    OcorrenciaRegistrada,
+    OcorrenciaValidada,
+    SituacaoOcorrencia,
+)
+from domain.ocorrencia.entity import (
     Envolvido,
     Ocorrencia,
     TipificacaoPenal,
     TipoEnvolvido,
 )
-from domain.shared.geo import Coordenada  # noqa: E402
-from infrastructure.database.connection import AsyncSessionLocal  # noqa: E402
-from infrastructure.database.models import (  # noqa: E402
+from domain.shared.geo import Coordenada
+from infrastructure.database.connection import AsyncSessionLocal
+from infrastructure.database.models import (
     OcorrenciaModel,
     OrdemDespachoModel,
     SequenciaOrdemDespachoModel,
     SequenciaProtocoloModel,
 )
+
+IP_SEED = "127.0.0.1"
 
 
 async def semear_ocorrencias() -> None:
@@ -107,15 +117,8 @@ async def semear_ocorrencias() -> None:
             )
             await ocorrencia_repo.salvar(oc1)
             await auditoria_repo.registrar(
-                RegistroAuditoria(
-                    quem=agente.id,
-                    quando=criada_em1,
-                    operacao="ocorrencia.registrar",
-                    entidade="Ocorrencia",
-                    entidade_id=str(oc1.id),
-                    dados_depois={"numero_protocolo": p1, "status": "AGUARDANDO_REVISAO"},
-                    ip="127.0.0.1",
-                )
+                OcorrenciaRegistrada.de(oc1, prioridade_sugerida=True),
+                ContextoAuditoria(quem=agente.id, quando=criada_em1, ip=IP_SEED),
             )
             print(f"  + ocorrência '{p1}' (AGUARDANDO_REVISAO) - Pronta para Triagem do Delegado")
 
@@ -159,18 +162,12 @@ async def semear_ocorrencias() -> None:
                 ],
             )
             validada_em2 = criada_em2 + timedelta(minutes=20)
+            antes_validacao2 = SituacaoOcorrencia.de(oc2)
             oc2.validar(delegado.id, em=validada_em2)
             await ocorrencia_repo.salvar(oc2)
             await auditoria_repo.registrar(
-                RegistroAuditoria(
-                    quem=delegado.id,
-                    quando=validada_em2,
-                    operacao="ocorrencia.validar",
-                    entidade="Ocorrencia",
-                    entidade_id=str(oc2.id),
-                    dados_depois={"numero_protocolo": p2, "status": "VALIDADA", "hash": oc2.hash_narrativa},
-                    ip="127.0.0.1",
-                )
+                OcorrenciaValidada.de(oc2, antes_validacao2),
+                ContextoAuditoria(quem=delegado.id, quando=validada_em2, ip=IP_SEED),
             )
             print(f"  + ocorrência '{p2}' (VALIDADA) - Pronta para Despacho Tático")
 
@@ -233,15 +230,8 @@ async def semear_ocorrencias() -> None:
                 )
                 await despacho_repo.salvar(ordem)
                 await auditoria_repo.registrar(
-                    RegistroAuditoria(
-                        quem=operador.id,
-                        quando=despachada_em3,
-                        operacao="despacho.criar",
-                        entidade="OrdemDeDespacho",
-                        entidade_id=str(ordem.id),
-                        dados_depois={"numero": od_num, "viatura": "VTR-02", "ocorrencia": p3},
-                        ip="127.0.0.1",
-                    )
+                    OrdemDeDespachoCriada.de(ordem, vtr_02),
+                    ContextoAuditoria(quem=operador.id, quando=despachada_em3, ip=IP_SEED),
                 )
             print(f"  + ocorrência '{p3}' (EM_ATENDIMENTO) - VTR-02 despachada ({od_num})")
 
@@ -285,6 +275,7 @@ async def semear_ocorrencias() -> None:
             )
             oc4.validar(delegado.id, em=criada_em4 + timedelta(minutes=15))
             oc4.despachar(operador.id, em=criada_em4 + timedelta(minutes=20))
+            antes_encerramento4 = SituacaoOcorrencia.de(oc4)
             encerrada_em4 = criada_em4 + timedelta(hours=1, minutes=30)
             oc4.encerrar(
                 operador.id,
@@ -293,15 +284,8 @@ async def semear_ocorrencias() -> None:
             )
             await ocorrencia_repo.salvar(oc4)
             await auditoria_repo.registrar(
-                RegistroAuditoria(
-                    quem=operador.id,
-                    quando=encerrada_em4,
-                    operacao="ocorrencia.encerrar",
-                    entidade="Ocorrencia",
-                    entidade_id=str(oc4.id),
-                    dados_depois={"numero_protocolo": p4, "status": "ENCERRADA"},
-                    ip="127.0.0.1",
-                )
+                OcorrenciaEncerrada.de(oc4, antes_encerramento4),
+                ContextoAuditoria(quem=operador.id, quando=encerrada_em4, ip=IP_SEED),
             )
             print(f"  + ocorrência '{p4}' (ENCERRADA) - Histórico completo")
 
@@ -338,6 +322,7 @@ async def semear_ocorrencias() -> None:
                 ],
             )
             devolvida_em5 = criada_em5 + timedelta(minutes=25)
+            antes_devolucao5 = SituacaoOcorrencia.de(oc5)
             oc5.devolver_para_correcao(
                 delegado.id,
                 justificativa="Necessário qualificar testemunhas que presenciaram o fato e detalhar ponto de referência exato.",
@@ -345,15 +330,8 @@ async def semear_ocorrencias() -> None:
             )
             await ocorrencia_repo.salvar(oc5)
             await auditoria_repo.registrar(
-                RegistroAuditoria(
-                    quem=delegado.id,
-                    quando=devolvida_em5,
-                    operacao="ocorrencia.devolver_para_correcao",
-                    entidade="Ocorrencia",
-                    entidade_id=str(oc5.id),
-                    dados_depois={"numero_protocolo": p5, "status": "EM_CORRECAO"},
-                    ip="127.0.0.1",
-                )
+                OcorrenciaDevolvidaParaCorrecao.de(oc5, antes_devolucao5),
+                ContextoAuditoria(quem=delegado.id, quando=devolvida_em5, ip=IP_SEED),
             )
             print(f"  + ocorrência '{p5}' (EM_CORRECAO) - Justificativa do delegado registrada")
 

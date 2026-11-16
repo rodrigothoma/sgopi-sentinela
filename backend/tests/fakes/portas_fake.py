@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from application.ports.outbound.gerador_protocolo import GeradorProtocolo, formatar_protocolo
-from application.ports.outbound.porta_auditoria import PortaAuditoria, como_registro
+from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
@@ -50,10 +50,13 @@ class AuditoriaFake(PortaAuditoria):
         self.registros: list[RegistroAuditoria] = []
         self.eventos: list[EventoAuditoria] = []
 
-    async def registrar(self, evento: EventoAuditoria | RegistroAuditoria, contexto: ContextoAuditoria | None = None) -> None:
-        if isinstance(evento, EventoAuditoria):
-            self.eventos.append(evento)
-        self.registros.append(como_registro(evento, contexto))
+    async def registrar(self, evento: EventoAuditoria, contexto: ContextoAuditoria) -> None:
+        self.eventos.append(evento)
+        self.registros.append(evento.para_registro(contexto))
+
+    def semear(self, registro: RegistroAuditoria) -> None:
+        """Só para testes: trilha já existente (inclusive com grafias legadas)."""
+        self.registros.append(registro)
 
     async def listar(
         self,

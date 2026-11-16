@@ -14,18 +14,22 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
-from domain.auditoria.catalogo import EntidadeAuditada, grafias
+from domain.auditoria.catalogo_eventos import grafias_da_entidade
 from domain.auditoria.entity import RegistroAuditoria
+from domain.despacho.auditoria import OrdemDeDespachoCriada
+from domain.ocorrencia.auditoria import EventoOcorrencia
 from domain.shared.documentos import mascarar_cpf
+from domain.usuario.auditoria import ENTIDADE_USUARIO
 from domain.usuario.permissoes import Permissao
+from domain.viatura.auditoria import EventoViatura
 
 _CPF_REGEX = re.compile(r"\b(\d{3})\.?(\d{3})\.?(\d{3})[-.]?(\d{2})\b")
 _CHAVES_SENSIVEIS = ("documento", "cpf", "doc")
 
-ENTIDADES_OCORRENCIA = grafias(EntidadeAuditada.OCORRENCIA)
-ENTIDADES_DESPACHO = grafias(EntidadeAuditada.ORDEM_DESPACHO)
-ENTIDADES_VIATURA = grafias(EntidadeAuditada.VIATURA)
-ENTIDADE_USUARIO = EntidadeAuditada.USUARIO
+# Grafia canônica + legadas: registros antigos da trilha (append-only) não são reescritos.
+ENTIDADES_OCORRENCIA = grafias_da_entidade(EventoOcorrencia.ENTIDADE)
+ENTIDADES_DESPACHO = grafias_da_entidade(OrdemDeDespachoCriada.ENTIDADE)
+ENTIDADES_VIATURA = grafias_da_entidade(EventoViatura.ENTIDADE)
 
 
 def _sanitizar_payload(dados: Any) -> Any:

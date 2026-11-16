@@ -16,10 +16,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from adapters.outbound.persistence.usuario_repositorio_sqlalchemy import UsuarioRepositorioSQLAlchemy  # noqa: E402
-from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2  # noqa: E402
-from domain.usuario.entity import Papel, Usuario  # noqa: E402
-from infrastructure.database.connection import AsyncSessionLocal  # noqa: E402
+from adapters.outbound.persistence.usuario_repositorio_sqlalchemy import UsuarioRepositorioSQLAlchemy
+from adapters.outbound.seguranca.hasher_argon2 import HasherArgon2
+from domain.usuario.entity import Papel, Usuario
+from infrastructure.database.connection import AsyncSessionLocal
 
 SENHA_PADRAO = "Senha@123"
 

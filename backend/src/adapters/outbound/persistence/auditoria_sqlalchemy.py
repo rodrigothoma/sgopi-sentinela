@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from adapters.outbound.persistence._datas import aware
-from application.ports.outbound.porta_auditoria import PortaAuditoria, como_registro
+from application.ports.outbound.porta_auditoria import PortaAuditoria
 from domain.auditoria.contexto import ContextoAuditoria
 from domain.auditoria.entity import RegistroAuditoria
 from domain.auditoria.evento import EventoAuditoria
@@ -16,8 +16,8 @@ class AuditoriaSQLAlchemy(PortaAuditoria):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def registrar(self, evento: EventoAuditoria | RegistroAuditoria, contexto: ContextoAuditoria | None = None) -> None:
-        registro = como_registro(evento, contexto)
+    async def registrar(self, evento: EventoAuditoria, contexto: ContextoAuditoria) -> None:
+        registro = evento.para_registro(contexto)
         self._session.add(
             RegistroAuditoriaModel(
                 id=registro.id,

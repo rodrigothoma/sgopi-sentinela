@@ -83,8 +83,8 @@ async def test_filtra_por_entidade_operacao_e_aplica_limites(uc, auditoria_fake)
         entidade_id="456",
         dados_depois={"login": "admin"},
     )
-    await auditoria_fake.registrar(reg1)
-    await auditoria_fake.registrar(reg2)
+    auditoria_fake.semear(reg1)
+    auditoria_fake.semear(reg2)
 
     # Consulta filtrando por entidade
     saida = await uc.executar(DELEGADO, ConsultarAuditoriaInput(entidade="Ocorrencia"))
@@ -105,8 +105,8 @@ async def test_enriquecimento_de_autor_com_cache(uc, auditoria_fake, repo_usuari
 
     reg1 = RegistroAuditoria(quem=user_id, quando=AGORA, operacao="ocorrencia.registrar", entidade="Ocorrencia", entidade_id="1")
     reg2 = RegistroAuditoria(quem=user_id, quando=AGORA, operacao="ocorrencia.corrigir", entidade="Ocorrencia", entidade_id="1")
-    await auditoria_fake.registrar(reg1)
-    await auditoria_fake.registrar(reg2)
+    auditoria_fake.semear(reg1)
+    auditoria_fake.semear(reg2)
 
     saida = await uc.executar(DELEGADO, ConsultarAuditoriaInput())
     assert len(saida) == 2
@@ -139,8 +139,8 @@ async def test_enriquecimento_identificador_amigavel(uc, auditoria_fake, repo_vi
         entidade_id="999",
         dados_depois={"numero": "OD-2026-0005"},
     )
-    await auditoria_fake.registrar(reg_viatura)
-    await auditoria_fake.registrar(reg_despacho)
+    auditoria_fake.semear(reg_viatura)
+    auditoria_fake.semear(reg_despacho)
 
     saida = await uc.executar(DELEGADO, ConsultarAuditoriaInput())
     assert len(saida) == 2
@@ -162,7 +162,7 @@ async def test_sanitizacao_cpf_formatado_e_nao_formatado_em_texto_livre_e_campos
             "doc": "99988877766",
         },
     )
-    await auditoria_fake.registrar(reg)
+    auditoria_fake.semear(reg)
 
     saida = await uc.executar(DELEGADO, ConsultarAuditoriaInput())
     assert len(saida) == 1
