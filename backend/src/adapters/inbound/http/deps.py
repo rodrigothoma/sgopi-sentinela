@@ -20,9 +20,8 @@ from application.ports.outbound.provedor_token import ProvedorToken
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
 from domain.shared.exceptions import AcessoNegadoError, CredenciaisInvalidasError, MuitasTentativasError
+from domain.usuario.auditoria import AcessoNegado
 from domain.usuario.entity import Papel
 from domain.usuario.permissoes import Permissao, papeis_com
 from infrastructure.config.settings import settings
@@ -112,15 +111,8 @@ def exigir_papel(*papeis: Papel):
         if ator.papel not in papeis:
             async with uow:
                 await auditoria.registrar(
-                    RegistroAuditoria(
-                        quem=ator.id,
-                        quando=relogio.agora(),
-                        operacao=OperacaoAuditada.AUTH_ACESSO_NEGADO,
-                        entidade=EntidadeAuditada.ROTA,
-                        entidade_id=f"{request.method} {request.url.path}",
-                        dados_depois={"papel": ator.papel.value, "exigido": [p.value for p in papeis]},
-                        ip=ator.ip,
-                    )
+                    AcessoNegado(rota=f"{request.method} {request.url.path}", papel=ator.papel, exigido=tuple(papeis)),
+                    ator.contexto_auditoria(relogio.agora()),
                 )
                 await uow.commit()
             raise AcessoNegadoError(

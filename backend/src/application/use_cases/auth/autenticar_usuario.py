@@ -23,9 +23,9 @@ from application.ports.outbound.provedor_token import ProvedorToken
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_usuario import RepositorioUsuario
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.auditoria.contexto import ContextoAuditoria
 from domain.shared.exceptions import CredenciaisInvalidasError, MuitasTentativasError
+from domain.usuario.auditoria import LoginBloqueado, LoginNegado, LoginRealizado, TentativaDeLoginRecusada
 from domain.usuario.entity import Usuario
 
 
@@ -54,7 +54,7 @@ class AutenticarUsuario(InterfaceAutenticarUsuario):
         chave_limite = f"{login}|{input_dto.ip or '-'}"
         bloqueio = self._limitador.bloqueado_ate(chave_limite, agora)
         if bloqueio is not None:
-            await self._auditar_falha(OperacaoAuditada.AUTH_LOGIN_BLOQUEADO, login, None, {"bloqueado_ate": bloqueio.isoformat()}, input_dto.ip, agora)
+            await self._auditar_falha(LoginBloqueado(login=login, usuario_alvo_id=None, bloqueado_ate=bloqueio), input_dto.ip, agora)
             segundos = max(1, int((bloqueio - agora).total_seconds()))
             raise MuitasTentativasError(
                 "Muitas tentativas de login.", chave="auth.muitas_tentativas", retry_after_segundos=segundos
@@ -64,24 +64,15 @@ class AutenticarUsuario(InterfaceAutenticarUsuario):
         motivo = self._motivo_falha(usuario, input_dto.senha or "")
         if motivo:
             self._limitador.registrar(chave_limite, agora)
-            await self._auditar_falha(OperacaoAuditada.AUTH_LOGIN_NEGADO, login, usuario, {"motivo": motivo}, input_dto.ip, agora)
+            alvo = usuario.id if usuario is not None else None
+            await self._auditar_falha(LoginNegado(login=login, usuario_alvo_id=alvo, motivo=motivo), input_dto.ip, agora)
             raise CredenciaisInvalidasError("Credenciais inválidas.", chave="auth.credenciais_invalidas")
         self._limitador.limpar(chave_limite)
 
         assert usuario is not None
         token, expira_em = self._provedor_token.emitir(usuario.id, usuario.login, usuario.papel, agora)
         async with self._uow:
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=usuario.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.AUTH_LOGIN,
-                    entidade=EntidadeAuditada.USUARIO,
-                    entidade_id=str(usuario.id),
-                    dados_depois={"papel": usuario.papel.value},
-                    ip=input_dto.ip,
-                )
-            )
+            await self._auditoria.registrar(LoginRealizado.de(usuario), ContextoAuditoria(quem=usuario.id, quando=agora, ip=input_dto.ip))
             await self._uow.commit()
 
         return AutenticarOutput(
@@ -100,21 +91,8 @@ class AutenticarUsuario(InterfaceAutenticarUsuario):
             return "senha_invalida"
         return None
 
-    async def _auditar_falha(
-        self, operacao: OperacaoAuditada, login: str, usuario: Usuario | None, dados: dict, ip: str | None, agora: datetime
-    ) -> None:
-        if usuario is not None:
-            dados = {**dados, "usuario_alvo_id": str(usuario.id)}
+    async def _auditar_falha(self, evento: TentativaDeLoginRecusada, ip: str | None, agora: datetime) -> None:
+        """Tentativa recusada é auditada sem autor: quem tentou é desconhecido."""
         async with self._uow:
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=None,
-                    quando=agora,
-                    operacao=operacao,
-                    entidade=EntidadeAuditada.USUARIO,
-                    entidade_id=login or None,
-                    dados_depois=dados,
-                    ip=ip,
-                )
-            )
+            await self._auditoria.registrar(evento, ContextoAuditoria(quem=None, quando=agora, ip=ip))
             await self._uow.commit()
