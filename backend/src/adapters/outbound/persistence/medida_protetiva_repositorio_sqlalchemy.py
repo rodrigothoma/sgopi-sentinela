@@ -12,7 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from adapters.outbound.persistence._concorrencia import ControleVersaoMixin
-from adapters.outbound.persistence._datas import aware
+from adapters.outbound.persistence.mappers import MedidaProtetivaMapper
 from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
 from domain.medida_protetiva.entity import MedidaProtetiva, StatusMedida
 from infrastructure.database.models import MedidaProtetivaModel
@@ -30,29 +30,7 @@ class MedidaProtetivaRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioMedid
     async def salvar(self, medida: MedidaProtetiva) -> None:
         existente = await self._carregar_model(medida.id)
         if existente is None:
-            model = MedidaProtetivaModel(
-                id=medida.id,
-                numero_referencia=medida.numero_referencia,
-                ocorrencia_id=medida.ocorrencia_id,
-                delegado_id=medida.delegado_id,
-                vitima_id=medida.vitima_id,
-                agressor_id=medida.agressor_id,
-                tipos_restricao=medida.tipos_restricao,
-                distancia_minima_metros=medida.distancia_minima_metros,
-                data_inicio=medida.data_inicio,
-                prazo_dias=medida.prazo_dias,
-                data_vencimento=medida.data_vencimento,
-                condicoes_especificas=medida.condicoes_especificas,
-                motivo_revogacao=medida.motivo_revogacao,
-                justificativa_renovacao=medida.justificativa_renovacao,
-                status=medida.status.value,
-                criada_em=medida.criada_em,
-                atualizada_em=medida.atualizada_em,
-                ativo=medida.ativo,
-                versao=medida.versao,
-                alerta_vencimento_enviado_em=medida.alerta_vencimento_enviado_em,
-            )
-            self._session.add(model)
+            self._session.add(MedidaProtetivaMapper.to_model(medida))
         else:
             await self._verificar_versao(
                 MedidaProtetivaModel,
@@ -60,18 +38,7 @@ class MedidaProtetivaRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioMedid
                 medida.versao,
                 "A medida protetiva foi alterada por outro usuário; recarregue e tente novamente.",
             )
-            existente.tipos_restricao = medida.tipos_restricao
-            existente.distancia_minima_metros = medida.distancia_minima_metros
-            existente.prazo_dias = medida.prazo_dias
-            existente.data_vencimento = medida.data_vencimento
-            existente.condicoes_especificas = medida.condicoes_especificas
-            existente.motivo_revogacao = medida.motivo_revogacao
-            existente.justificativa_renovacao = medida.justificativa_renovacao
-            existente.status = medida.status.value
-            existente.atualizada_em = medida.atualizada_em
-            existente.ativo = medida.ativo
-            existente.versao = medida.versao
-            existente.alerta_vencimento_enviado_em = medida.alerta_vencimento_enviado_em
+            MedidaProtetivaMapper.atualizar_model(existente, medida)
         await self._session.flush()
         self._registrar_versao(medida.id, medida.versao)
 
@@ -80,7 +47,7 @@ class MedidaProtetivaRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioMedid
         if model is None:
             return None
         self._registrar_versao(model.id, model.versao)
-        return self._to_domain(model)
+        return MedidaProtetivaMapper.to_domain(model)
 
     async def buscar_por_referencia(self, numero_referencia: str) -> MedidaProtetiva | None:
         stmt = select(MedidaProtetivaModel).where(MedidaProtetivaModel.numero_referencia == numero_referencia)
@@ -88,7 +55,7 @@ class MedidaProtetivaRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioMedid
         if model is None:
             return None
         self._registrar_versao(model.id, model.versao)
-        return self._to_domain(model)
+        return MedidaProtetivaMapper.to_domain(model)
 
     async def listar(
         self,
@@ -109,29 +76,4 @@ class MedidaProtetivaRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioMedid
         models = (await self._session.execute(stmt)).scalars().all()
         for m in models:
             self._registrar_versao(m.id, m.versao)
-        return [self._to_domain(m) for m in models], total
-
-    @staticmethod
-    def _to_domain(model: MedidaProtetivaModel) -> MedidaProtetiva:
-        return MedidaProtetiva(
-            id=model.id,
-            numero_referencia=model.numero_referencia,
-            ocorrencia_id=model.ocorrencia_id,
-            delegado_id=model.delegado_id,
-            vitima_id=model.vitima_id,
-            agressor_id=model.agressor_id,
-            tipos_restricao=list(model.tipos_restricao),
-            distancia_minima_metros=model.distancia_minima_metros,
-            data_inicio=model.data_inicio,
-            prazo_dias=model.prazo_dias,
-            data_vencimento=model.data_vencimento,
-            condicoes_especificas=model.condicoes_especificas,
-            motivo_revogacao=model.motivo_revogacao,
-            justificativa_renovacao=model.justificativa_renovacao,
-            status=StatusMedida(model.status),
-            criada_em=aware(model.criada_em),
-            atualizada_em=aware(model.atualizada_em) if model.atualizada_em else None,
-            ativo=model.ativo,
-            versao=model.versao,
-            alerta_vencimento_enviado_em=aware(model.alerta_vencimento_enviado_em) if model.alerta_vencimento_enviado_em else None,
-        )
+        return [MedidaProtetivaMapper.to_domain(m) for m in models], total
