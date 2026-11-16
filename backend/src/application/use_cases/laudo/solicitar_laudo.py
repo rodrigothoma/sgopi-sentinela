@@ -14,8 +14,7 @@ from application.ports.outbound.repositorio_inquerito import RepositorioInquerit
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.laudo.auditoria import LaudoSolicitado
 from domain.laudo.entity import LaudoPericial, TipoPericia
 from domain.shared.enums import interpretar_enum
 from domain.shared.exceptions import EntidadeNaoEncontradaError
@@ -80,22 +79,7 @@ class SolicitarLaudo(InterfaceSolicitarLaudo):
 
         async with self._uow:
             await self._repo_laudo.salvar(laudo)
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.LAUDO_SOLICITAR,
-                    entidade=EntidadeAuditada.LAUDO_PERICIAL,
-                    entidade_id=str(laudo.id),
-                    dados_depois={
-                        "numero_referencia": laudo.numero_referencia,
-                        "tipo_pericia": laudo.tipo_pericia.value,
-                        "ocorrencia_id": str(dados.ocorrencia_id) if dados.ocorrencia_id else None,
-                        "inquerito_id": str(dados.inquerito_id) if dados.inquerito_id else None,
-                    },
-                    ip=ator.ip,
-                )
-            )
+            await self._auditoria.registrar(LaudoSolicitado.de(laudo), ator.contexto_auditoria(agora))
             await self._uow.commit()
 
         return LaudoOutput(

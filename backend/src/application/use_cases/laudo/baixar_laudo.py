@@ -15,8 +15,7 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.laudo.auditoria import LaudoBaixado
 from domain.laudo.entity import LaudoPericial
 from domain.shared.exceptions import ConflitoError, EntidadeNaoEncontradaError
 from domain.usuario.permissoes import Permissao
@@ -57,15 +56,5 @@ class BaixarArquivoLaudo(InterfaceBaixarArquivoLaudo):
 
     async def _auditar(self, ator: Ator, laudo: LaudoPericial, integridade: str) -> None:
         async with self._uow:
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=self._relogio.agora(),
-                    operacao=OperacaoAuditada.LAUDO_DOWNLOAD,
-                    entidade=EntidadeAuditada.LAUDO_PERICIAL,
-                    entidade_id=str(laudo.id),
-                    dados_depois={"numero_referencia": laudo.numero_referencia, "integridade": integridade},
-                    ip=ator.ip,
-                )
-            )
+            await self._auditoria.registrar(LaudoBaixado.de(laudo, integridade), ator.contexto_auditoria(self._relogio.agora()))
             await self._uow.commit()

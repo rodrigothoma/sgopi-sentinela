@@ -17,8 +17,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.inquerito.auditoria import InqueritoConcluido
 from domain.inquerito.entity import StatusInquerito
 from domain.shared.exceptions import EntidadeNaoEncontradaError
 from domain.usuario.permissoes import Permissao
@@ -151,17 +150,7 @@ class ConcluirInquerito(InterfaceConcluirInquerito):
 
         async with self._uow:
             await self._repo_inquerito.salvar(inquerito)
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.INQUERITO_CONCLUIR,
-                    entidade=EntidadeAuditada.INQUERITO,
-                    entidade_id=str(inquerito.id),
-                    dados_depois={"numero": inquerito.numero, "status": inquerito.status.value},
-                    ip=ator.ip,
-                )
-            )
+            await self._auditoria.registrar(InqueritoConcluido.de(inquerito), ator.contexto_auditoria(agora))
             await self._uow.commit()
 
         resumos = []

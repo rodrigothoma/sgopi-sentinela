@@ -14,8 +14,7 @@ from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.laudo.auditoria import LaudoAnexado
 from domain.shared.exceptions import EntidadeNaoEncontradaError, ValorInvalidoError
 from domain.usuario.permissoes import Permissao
 
@@ -72,22 +71,7 @@ class AnexarLaudo(InterfaceAnexarLaudo):
 
         async with self._uow:
             await self._repo.salvar(laudo)
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.LAUDO_ANEXAR,
-                    entidade=EntidadeAuditada.LAUDO_PERICIAL,
-                    entidade_id=str(laudo.id),
-                    dados_depois={
-                        "numero_referencia": laudo.numero_referencia,
-                        "arquivo_nome": laudo.arquivo_nome,
-                        "hash_sha256": laudo.hash_sha256,
-                        "status": laudo.status.value,
-                    },
-                    ip=ator.ip,
-                )
-            )
+            await self._auditoria.registrar(LaudoAnexado.de(laudo), ator.contexto_auditoria(agora))
             await self._uow.commit()
 
         return LaudoOutput(
