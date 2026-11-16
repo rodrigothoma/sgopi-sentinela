@@ -20,6 +20,8 @@ class ViaturaMapper:
         p = viatura.ultima_posicao
         model.prefixo = viatura.prefixo
         model.placa = viatura.placa
+        model.responsavel = viatura.responsavel
+        model.ativo = viatura.ativo
         model.situacao = viatura.situacao.value
         model.versao = viatura.versao
         model.atualizada_em = viatura.atualizada_em
@@ -43,6 +45,8 @@ class ViaturaMapper:
             id=m.id,
             prefixo=m.prefixo,
             placa=m.placa,
+            responsavel=m.responsavel,
+            ativo=m.ativo if m.ativo is not None else True,
             situacao=SituacaoViatura(m.situacao),
             ultima_posicao=posicao,
             versao=m.versao,

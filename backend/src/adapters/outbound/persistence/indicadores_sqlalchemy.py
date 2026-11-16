@@ -153,4 +153,4 @@ class IndicadoresSQLAlchemy(ConsultaIndicadores):
         return await self._contagem(stmt)
 
     async def viaturas_por_situacao(self) -> dict[str, int]:
-        return await self._contagem(select(ViaturaModel.situacao, func.count()).group_by(ViaturaModel.situacao))
+        return await self._contagem(select(ViaturaModel.situacao, func.count()).where(ViaturaModel.ativo.is_(True)).group_by(ViaturaModel.situacao))

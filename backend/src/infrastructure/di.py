@@ -14,7 +14,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from adapters.inbound.simulador.gerador_ocorrencias import GeradorOcorrencias
-from adapters.inbound.simulador.orquestrador_despacho import OrquestradorDespacho
+from adapters.inbound.simulador.orquestrador_despacho import ContextoDespacho, OrquestradorDespacho
 from adapters.inbound.simulador.resolvedor_destino import ResolvedorDestinoSessao
 from adapters.inbound.simulador.roteador import RoteadorLinhaReta, RoteadorOSRM
 from adapters.inbound.simulador.simulador_telemetria import SimuladorTelemetria
@@ -118,7 +118,9 @@ from application.ports.inbound.interface_gerir_usuarios import (
 from application.ports.inbound.interface_gerir_viaturas import (
     InterfaceAlterarSituacaoViatura,
     InterfaceCadastrarViatura,
+    InterfaceEditarViatura,
     InterfaceEmitirCredencialTelemetria,
+    InterfaceExcluirViatura,
     InterfaceListarViaturas,
     InterfaceRegistrarPosicaoViatura,
 )
@@ -243,6 +245,7 @@ from application.use_cases.usuario.gerir_usuarios import (
 from application.use_cases.usuario.listar_usuarios import ListarUsuarios
 from application.use_cases.viatura.emitir_credencial_telemetria import EmitirCredencialTelemetria
 from application.use_cases.viatura.gerir_viaturas import AlterarSituacaoViatura, CadastrarViatura, ListarViaturas
+from application.use_cases.viatura.manter_cadastro import EditarViatura, ExcluirViatura
 from application.use_cases.viatura.registrar_posicao_viatura import RegistrarPosicaoViatura
 from domain.shared.geo import Coordenada
 from infrastructure.config.settings import settings
@@ -563,6 +566,29 @@ def get_alterar_situacao_viatura(
     return AlterarSituacaoViatura(repositorio, uow, relogio, auditoria, publicador, settings.telemetria_max_idade_segundos)
 
 
+def get_editar_viatura(
+    repositorio: RepositorioViatura = Depends(get_repositorio_viatura),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    relogio: Relogio = Depends(get_relogio),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+) -> InterfaceEditarViatura:
+    """Compõe a manutenção de cadastro com as portas da sessão atual."""
+    return EditarViatura(repositorio, uow, relogio, auditoria, publicador, settings.telemetria_max_idade_segundos)
+
+
+def get_excluir_viatura(
+    repositorio: RepositorioViatura = Depends(get_repositorio_viatura),
+    ordens: RepositorioOrdemDespacho = Depends(get_repositorio_ordem),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    relogio: Relogio = Depends(get_relogio),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+) -> InterfaceExcluirViatura:
+    """Compõe a exclusão lógica com a verificação de ordens ativas."""
+    return ExcluirViatura(repositorio, ordens, uow, relogio, auditoria, publicador)
+
+
 def get_listar_viaturas(
     repositorio: RepositorioViatura = Depends(get_repositorio_viatura), relogio: Relogio = Depends(get_relogio)
 ) -> InterfaceListarViaturas:
@@ -732,14 +758,14 @@ def montar_orquestrador_despacho(
     relogio_efetivo = relogio or relogio_sistema
 
     @asynccontextmanager
-    async def contexto() -> AsyncIterator[tuple]:
+    async def contexto() -> AsyncIterator[ContextoDespacho]:
         async with session_factory() as session:
             usuarios = UsuarioRepositorioSQLAlchemy(session)
-            yield (
-                ViaturaRepositorioSQLAlchemy(session),
-                OcorrenciaRepositorioSQLAlchemy(session),
-                OrdemDespachoRepositorioSQLAlchemy(session),
-                DespacharViatura(
+            yield ContextoDespacho(
+                viaturas=ViaturaRepositorioSQLAlchemy(session),
+                ocorrencias=OcorrenciaRepositorioSQLAlchemy(session),
+                ordens=OrdemDespachoRepositorioSQLAlchemy(session),
+                despachar=DespacharViatura(
                     OcorrenciaRepositorioSQLAlchemy(session),
                     ViaturaRepositorioSQLAlchemy(session),
                     OrdemDespachoRepositorioSQLAlchemy(session),
@@ -749,7 +775,7 @@ def montar_orquestrador_despacho(
                     AuditoriaSQLAlchemy(session),
                     publicador_eventos,
                 ),
-                EncerrarOcorrencia(
+                encerrar=EncerrarOcorrencia(
                     OcorrenciaRepositorioSQLAlchemy(session),
                     ViaturaRepositorioSQLAlchemy(session),
                     OrdemDespachoRepositorioSQLAlchemy(session),
@@ -758,8 +784,8 @@ def montar_orquestrador_despacho(
                     AuditoriaSQLAlchemy(session),
                     publicador_eventos,
                 ),
-                await _resolver_ator(usuarios, "simulador-operador"),
-                await _resolver_ator(usuarios, "simulador-delegado"),
+                ator_operador=await _resolver_ator(usuarios, "simulador-operador"),
+                ator_delegado=await _resolver_ator(usuarios, "simulador-delegado"),
             )
 
     return OrquestradorDespacho(

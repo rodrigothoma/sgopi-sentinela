@@ -99,12 +99,16 @@ const assinantesEvento = new Set<AssinanteEvento>();
 const assinantesReconexao = new Set<() => void>();
 const assinantesEstado = new Set<AssinanteEstado>();
 let clienteCompartilhado: ClienteTempoReal | null = null;
+let estadoCompartilhado: EstadoConexao = 'desconectado';
 
 function abrirClienteCompartilhado(): void {
   if (clienteCompartilhado) return;
   clienteCompartilhado = new ClienteTempoReal(
     (e) => assinantesEvento.forEach((a) => a(e)),
-    (s) => assinantesEstado.forEach((a) => a(s)),
+    (s) => {
+      estadoCompartilhado = s;
+      assinantesEstado.forEach((a) => a(s));
+    },
     () => assinantesReconexao.forEach((a) => a()),
   );
   clienteCompartilhado.conectar();
@@ -122,7 +126,11 @@ export function assinarTempoReal(
 ): () => void {
   if (onEvento) assinantesEvento.add(onEvento);
   if (onReconectar) assinantesReconexao.add(onReconectar);
-  if (onEstado) assinantesEstado.add(onEstado);
+  if (onEstado) {
+    assinantesEstado.add(onEstado);
+    // Quem chega depois da abertura também precisa conhecer o estado vigente.
+    if (clienteCompartilhado) onEstado(estadoCompartilhado);
+  }
   abrirClienteCompartilhado();
   return () => {
     if (onEvento) assinantesEvento.delete(onEvento);
