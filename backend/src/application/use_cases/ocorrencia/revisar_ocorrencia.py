@@ -143,6 +143,7 @@ class ValidarOcorrencia(_DecisaoBase, InterfaceValidarOcorrencia):
         return eventos.ocorrencia_validada(
             ocorrencia.id, agora, numero_protocolo=ocorrencia.numero_protocolo, natureza=ocorrencia.natureza,
             latitude=ocorrencia.coordenada.latitude, longitude=ocorrencia.coordenada.longitude,
+            agente_policial_id=str(ocorrencia.agente_policial_id),
         )
 
     async def executar(self, ator: Ator, input_dto: ValidarOcorrenciaInput) -> OcorrenciaDetalheOutput:

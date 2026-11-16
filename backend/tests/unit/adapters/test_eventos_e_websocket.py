@@ -8,7 +8,7 @@ from adapters.inbound.websocket.audiencia import pode_receber
 from adapters.inbound.websocket.gerenciador_conexoes import GerenciadorConexoes, Sessao
 from adapters.outbound.eventos.publicador_em_memoria import PublicadorEventosEmMemoria
 from domain.shared.eventos import EventoDominio
-from tests.fakes.atores import AGENTE, DELEGADO, OPERADOR
+from tests.fakes.atores import AGENTE, DELEGADO, OPERADOR, SUPERVISOR
 from tests.fakes.portas_fake import RelogioFake
 
 AGORA = datetime(2026, 9, 13, tzinfo=UTC)
@@ -129,3 +129,12 @@ async def test_sessao_expirada_e_fechada_com_1008_e_nao_recebe():
 )
 def test_audiencia_por_tipo_de_evento(evento, ator, esperado):
     assert pode_receber(evento, ator) is esperado
+
+
+@pytest.mark.parametrize(
+    ("ator", "esperado"),
+    [(DELEGADO, True), (SUPERVISOR, True), (AGENTE, False), (OPERADOR, False)],
+)
+def test_nova_ocorrencia_chega_somente_a_revisao_e_supervisao(ator, esperado):
+    """OcorrenciaCriada não é operacional: só quem tria (Delegado) e quem supervisiona recebe."""
+    assert pode_receber(EventoDominio("OcorrenciaCriada", AGORA, {}), ator) is esperado

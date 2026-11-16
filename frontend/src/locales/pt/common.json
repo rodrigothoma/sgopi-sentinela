@@ -383,5 +383,9 @@
     "rotulo": "Busca global de ocorrências",
     "buscando": "Buscando…",
     "vazio": "Nada encontrado"
+  },
+  "tempo_real": {
+    "nova_ocorrencia": "Nova ocorrência {{protocolo}} ({{natureza}}) aguardando revisão.",
+    "validada": "Ocorrência {{protocolo}} validada pelo Delegado."
   }
 }

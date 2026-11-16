@@ -13,6 +13,10 @@ def _evento(tipo: str, ocorrencia_id: UUID, status: str, em: datetime, **extra: 
     )
 
 
+def ocorrencia_criada(ocorrencia_id: UUID, em: datetime, **extra: object) -> EventoDominio:
+    return _evento("OcorrenciaCriada", ocorrencia_id, "AGUARDANDO_REVISAO", em, **extra)
+
+
 def ocorrencia_validada(ocorrencia_id: UUID, em: datetime, **extra: object) -> EventoDominio:
     return _evento("OcorrenciaValidada", ocorrencia_id, "VALIDADA", em, **extra)
 

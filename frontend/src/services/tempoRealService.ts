@@ -88,3 +88,49 @@ export class ClienteTempoReal {
     ws.onerror = () => ws.close();
   }
 }
+
+// ---------------------------------------------------------------------------
+// Instância única por sessão (issue #68): casca, painel e fila compartilham a
+// mesma conexão; o cliente sobe na primeira assinatura e desce na última.
+type AssinanteEvento = (e: EventoTempoReal) => void;
+type AssinanteEstado = (s: EstadoConexao) => void;
+
+const assinantesEvento = new Set<AssinanteEvento>();
+const assinantesReconexao = new Set<() => void>();
+const assinantesEstado = new Set<AssinanteEstado>();
+let clienteCompartilhado: ClienteTempoReal | null = null;
+
+function abrirClienteCompartilhado(): void {
+  if (clienteCompartilhado) return;
+  clienteCompartilhado = new ClienteTempoReal(
+    (e) => assinantesEvento.forEach((a) => a(e)),
+    (s) => assinantesEstado.forEach((a) => a(s)),
+    () => assinantesReconexao.forEach((a) => a()),
+  );
+  clienteCompartilhado.conectar();
+}
+
+function semAssinantes(): boolean {
+  return assinantesEvento.size === 0 && assinantesReconexao.size === 0 && assinantesEstado.size === 0;
+}
+
+/** Assina o canal compartilhado; a função devolvida cancela a assinatura (e fecha a conexão na última). */
+export function assinarTempoReal(
+  onEvento?: AssinanteEvento,
+  onReconectar?: () => void,
+  onEstado?: AssinanteEstado,
+): () => void {
+  if (onEvento) assinantesEvento.add(onEvento);
+  if (onReconectar) assinantesReconexao.add(onReconectar);
+  if (onEstado) assinantesEstado.add(onEstado);
+  abrirClienteCompartilhado();
+  return () => {
+    if (onEvento) assinantesEvento.delete(onEvento);
+    if (onReconectar) assinantesReconexao.delete(onReconectar);
+    if (onEstado) assinantesEstado.delete(onEstado);
+    if (semAssinantes() && clienteCompartilhado) {
+      clienteCompartilhado.fechar();
+      clienteCompartilhado = null;
+    }
+  };
+}

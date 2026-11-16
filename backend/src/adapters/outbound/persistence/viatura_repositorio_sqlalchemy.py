@@ -7,19 +7,19 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from adapters.outbound.persistence._concorrencia import ControleVersaoMixin
 from adapters.outbound.persistence.mappers import ViaturaMapper
 from application.ports.outbound.repositorio_viatura import RepositorioViatura
-from domain.shared.exceptions import ConflitoError
 from domain.viatura.entity import SituacaoViatura, Viatura
 from infrastructure.database.models import ViaturaModel
 
 
-class ViaturaRepositorioSQLAlchemy(RepositorioViatura):
+class ViaturaRepositorioSQLAlchemy(ControleVersaoMixin, RepositorioViatura):
     """Repositório de viaturas policiais com persistência relacional via SQLAlchemy async."""
 
     def __init__(self, session: AsyncSession) -> None:
         self._session: AsyncSession = session
-        self._versoes_carregadas: dict[UUID, int] = {}
+        super().__init__()
 
     @overload
     def _reconstituir(self, model: None) -> None: ...
@@ -31,7 +31,7 @@ class ViaturaRepositorioSQLAlchemy(RepositorioViatura):
         """Registra a versão atual para controle otimista e converte o model para entidade."""
         if model is None:
             return None
-        self._versoes_carregadas[model.id] = model.versao
+        self._registrar_versao(model.id, model.versao)
         return ViaturaMapper.to_domain(model)
 
     async def salvar(self, viatura: Viatura) -> None:
@@ -45,15 +45,16 @@ class ViaturaRepositorioSQLAlchemy(RepositorioViatura):
             model = ViaturaMapper.to_model(viatura)
             self._session.add(model)
         else:
-            stmt = select(ViaturaModel.versao).where(ViaturaModel.id == viatura.id).with_for_update()
-            versao_banco = (await self._session.execute(stmt)).scalar_one()
-            esperada = self._versoes_carregadas.get(viatura.id, versao_banco)
-            if versao_banco != esperada or viatura.versao < versao_banco:
-                raise ConflitoError("A viatura foi alterada por outro usuário.", chave="generic.versao_desatualizada", versao_atual=versao_banco)
+            await self._verificar_versao(
+                ViaturaModel,
+                viatura.id,
+                viatura.versao,
+                "A viatura foi alterada por outro usuário; recarregue e tente novamente.",
+            )
             ViaturaMapper.atualizar_model(model, viatura)
 
         await self._session.flush()
-        self._versoes_carregadas[viatura.id] = viatura.versao
+        self._registrar_versao(viatura.id, viatura.versao)
 
     async def buscar_por_id(self, viatura_id: UUID) -> Viatura | None:
         """Localiza viatura pelo UUID primário."""

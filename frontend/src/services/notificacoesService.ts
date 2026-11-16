@@ -4,10 +4,12 @@ export type TipoNotificacao =
   | 'ALERTA_CRITICIDADE'
   | 'ALERTA_VENCIMENTO_MEDIDA'
   | 'COMUNICACAO_INTERAGENCIAS'
+  | 'DESPACHO'
+  | 'NOVA_OCORRENCIA'
   | 'REVISAO_OCORRENCIA'
   | 'SISTEMA';
 
-export type PrioridadeNotificacao = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
+export type PrioridadeNotificacao = 'BAIXA' | 'MEDIA' | 'ALTA' | 'CRITICA';
 
 export interface Notificacao {
   id: string;

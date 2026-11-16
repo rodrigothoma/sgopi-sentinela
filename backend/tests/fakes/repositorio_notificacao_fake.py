@@ -35,3 +35,15 @@ class RepositorioNotificacaoFake(RepositorioNotificacao):
         for n in pendentes:
             self.leituras.add((n.id, usuario_id))
         return len(pendentes)
+
+    async def buscar_por_metadado(self, chave: str, valor: str, tipo: str | None = None) -> Notificacao | None:
+        return next(
+            (
+                n
+                for n in self.itens
+                if n.ativo
+                and (tipo is None or n.tipo.value == tipo)
+                and (n.metadados or {}).get(chave) == valor
+            ),
+            None,
+        )
