@@ -19,6 +19,10 @@ from domain.shared.maquina_estados import MaquinaEstados
 from domain.shared.validacao import exigir_texto
 from domain.shared.versionado import Versionado
 
+LIMITE_PREFIXO = 20
+LIMITE_PLACA = 10
+LIMITE_RESPONSAVEL = 120
+
 
 class SituacaoViatura(str, Enum):
     DISPONIVEL = "DISPONIVEL"
@@ -79,12 +83,31 @@ class Viatura(Versionado):
     ultima_posicao: Posicao | None = None
     versao: int = 1
     atualizada_em: datetime | None = None
+    responsavel: str | None = None
+    ativo: bool = True
 
     def __post_init__(self) -> None:
         exigir_texto(self.prefixo, "Prefixo da viatura é obrigatório.", chave="viatura.prefixo_vazio")
         exigir_texto(self.placa, "Placa da viatura é obrigatória.", chave="viatura.placa_vazia")
         self.prefixo = self.prefixo.strip().upper()
         self.placa = self.placa.strip().upper().replace(" ", "")
+        self.responsavel = (self.responsavel or "").strip() or None
+        if len(self.prefixo) > LIMITE_PREFIXO or len(self.placa) > LIMITE_PLACA or len(self.responsavel or "") > LIMITE_RESPONSAVEL:
+            raise ValorInvalidoError("Cadastro da viatura excede o tamanho permitido.", chave="viatura.cadastro_longo")
+
+    def alterar_cadastro(self, prefixo: str, placa: str, responsavel: str | None, agora: datetime) -> None:
+        """Altera identificação e responsável sem modificar situação ou telemetria."""
+        cadastro = Viatura(prefixo=prefixo, placa=placa, responsavel=responsavel)
+        self.prefixo, self.placa, self.responsavel = cadastro.prefixo, cadastro.placa, cadastro.responsavel
+        self._tocar(agora)
+
+    def excluir(self, agora: datetime) -> None:
+        """Retira logicamente da frota, preservando o UUID e os vínculos históricos."""
+        if self.situacao not in (SituacaoViatura.DISPONIVEL, SituacaoViatura.INDISPONIVEL):
+            raise TransicaoInvalidaError("Viatura em atendimento não pode ser excluída.", chave="viatura.exclusao_em_atendimento")
+        self.ativo = False
+        self.situacao = SituacaoViatura.INDISPONIVEL
+        self._tocar(agora)
 
     # -------------------------------------------------------------- telemetria
     def registrar_posicao(self, coordenada: Coordenada, registrada_em: datetime, agora: datetime, tolerancia_segundos: int) -> None:
@@ -144,4 +167,4 @@ class Viatura(Versionado):
 
     @property
     def despachavel(self) -> bool:
-        return self.situacao == SituacaoViatura.DISPONIVEL
+        return self.ativo and self.situacao == SituacaoViatura.DISPONIVEL

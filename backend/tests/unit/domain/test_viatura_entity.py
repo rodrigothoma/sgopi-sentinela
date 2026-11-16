@@ -81,3 +81,37 @@ def test_indisponivel_manual():
         v.marcar_indisponivel(AGORA)
     v.marcar_disponivel(AGORA)
     assert v.despachavel
+
+
+def test_responsavel_opcional_e_normalizado() -> None:
+    v = Viatura("VTR-01", "AAA1111")
+    assert getattr(v, "responsavel", "ausente") is None
+    v.alterar_cadastro(" vtr-02 ", "bbb 2222", " Ana Souza ", AGORA)
+    assert (v.prefixo, v.placa, v.responsavel, v.versao) == ("VTR-02", "BBB2222", "Ana Souza", 2)
+    v.alterar_cadastro(v.prefixo, v.placa, "  ", AGORA)
+    assert v.responsavel is None
+
+
+def test_exclusao_logica_preserva_cadastro_e_impede_despacho() -> None:
+    v = Viatura("VTR-01", "AAA1111")
+    assert getattr(v, "ativo", False)
+    v.excluir(AGORA)
+    assert not v.ativo and not v.despachavel
+    assert v.situacao == SituacaoViatura.INDISPONIVEL and v.versao == 2
+    assert v.prefixo == "VTR-01"
+
+
+@pytest.mark.parametrize("situacao", [SituacaoViatura.EM_DESLOCAMENTO, SituacaoViatura.OPERANDO])
+def test_nao_exclui_viatura_em_atendimento(situacao: SituacaoViatura) -> None:
+    v = Viatura("VTR-01", "AAA1111", situacao=situacao)
+    assert hasattr(v, "excluir")
+    with pytest.raises(TransicaoInvalidaError):
+        v.excluir(AGORA)
+
+
+@pytest.mark.parametrize("campo,valor", [("prefixo", "P" * 21), ("placa", "A" * 11), ("responsavel", "A" * 121)])
+def test_limites_do_cadastro(campo: str, valor: str) -> None:
+    dados = {"prefixo": "VTR-01", "placa": "ABC1234", campo: valor}
+    with pytest.raises(ValorInvalidoError) as erro:
+        Viatura(**dados)
+    assert erro.value.chave == "viatura.cadastro_longo"
