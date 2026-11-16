@@ -17,6 +17,7 @@ from typing import Any, ClassVar, Self
 from uuid import UUID
 
 from domain.auditoria.evento import EventoAuditoria
+from domain.ocorrencia.autenticidade import CodigoVerificacao, SituacaoDocumento
 from domain.ocorrencia.entity import Ocorrencia
 from domain.ocorrencia.prioridade import PrioridadeOcorrencia
 
@@ -213,3 +214,54 @@ class PrioridadeRedefinida(EventoOcorrencia):
 
     def dados_depois(self) -> dict[str, Any] | None:
         return {"prioridade": self.prioridade, "versao": self.versao, "justificativa": self.justificativa}
+
+
+# --------------------------------------------- consulta pública ao documento (RF08)
+TAMANHO_SUFIXO_AUDITADO = 4  # o código de verificação nunca é gravado por inteiro
+
+
+@dataclass(frozen=True, kw_only=True)
+class ConsultaDocumento(EventoAuditoria):
+    """Consulta anônima ao documento oficial em ``/autenticar`` (UC08)."""
+
+    ENTIDADE: ClassVar[str] = "DocumentoPolicial"
+
+    ocorrencia_id: UUID | None
+    tipo_codigo: str
+    codigo_sufixo: str
+    situacao: str | None
+
+    @classmethod
+    def de(cls, codigo: CodigoVerificacao, ocorrencia_id: UUID | None = None, situacao: SituacaoDocumento | None = None) -> Self:
+        return cls(
+            ocorrencia_id=ocorrencia_id,
+            tipo_codigo=codigo.tipo.value,
+            codigo_sufixo=codigo.valor[-TAMANHO_SUFIXO_AUDITADO:],
+            situacao=situacao.value if situacao is not None else None,
+        )
+
+    def id_entidade(self) -> str | None:
+        return str(self.ocorrencia_id) if self.ocorrencia_id else None
+
+    def dados_depois(self) -> dict[str, Any] | None:
+        dados: dict[str, Any] = {"tipo_codigo": self.tipo_codigo, "codigo_sufixo": self.codigo_sufixo}
+        if self.situacao is not None:
+            dados["situacao"] = self.situacao
+        return dados
+
+
+@dataclass(frozen=True, kw_only=True)
+class DocumentoAutenticado(ConsultaDocumento):
+    OPERACAO: ClassVar[str] = "documento.autenticar"
+
+
+@dataclass(frozen=True, kw_only=True)
+class SuspeitaDeFraudeDocumento(ConsultaDocumento):
+    """O documento apresentado não confere com o hash emitido (ADULTERADO)."""
+
+    OPERACAO: ClassVar[str] = "documento.suspeita_fraude"
+
+
+@dataclass(frozen=True, kw_only=True)
+class DocumentoNaoLocalizado(ConsultaDocumento):
+    OPERACAO: ClassVar[str] = "documento.nao_localizado"

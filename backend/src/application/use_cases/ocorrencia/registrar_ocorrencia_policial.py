@@ -90,7 +90,7 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
                 OcorrenciaRegistrada.de(ocorrencia, prioridade_sugerida=prioridade is None), ator.contexto_auditoria(agora)
             )
             for item in ocorrencia.itens_apreendidos:
-                await self._auditoria.registrar(auditoria_registro_item(ator, ocorrencia, item, agora))
+                await self._auditoria.registrar(auditoria_registro_item(ocorrencia, item), ator.contexto_auditoria(agora))
             await self._uow.commit()
 
         return RegistrarOcorrenciaOutput(

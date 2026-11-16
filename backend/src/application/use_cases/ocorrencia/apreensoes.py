@@ -32,9 +32,8 @@ from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorren
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia._mapeadores import para_item_apreendido
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
 from domain.ocorrencia.apreensao import EstadoConservacao, ItemApreendido, TipoItemApreendido, UnidadeMedida
+from domain.ocorrencia.auditoria_provas import AutoApreensaoEmitido, CustodiaMovimentada, ItemApreendidoRegistrado
 from domain.ocorrencia.entity import Ocorrencia
 from domain.shared.enums import interpretar_enum
 from domain.shared.exceptions import AcessoNegadoError, ConflitoError, ValorInvalidoError
@@ -74,23 +73,9 @@ async def exigir_lacre_inedito(repositorio: RepositorioOcorrencia, item: ItemApr
         )
 
 
-def auditoria_registro_item(ator: Ator, ocorrencia: Ocorrencia, item: ItemApreendido, agora: datetime) -> RegistroAuditoria:
-    return RegistroAuditoria(
-        quem=ator.id,
-        quando=agora,
-        operacao=OperacaoAuditada.APREENSAO_REGISTRAR,
-        entidade=EntidadeAuditada.ITEM_APREENDIDO,
-        entidade_id=str(item.id),
-        dados_depois={
-            "ocorrencia_id": str(ocorrencia.id),
-            "tipo": item.tipo.value,
-            "numero_lacre": item.numero_lacre,
-            "quantidade": item.quantidade,
-            "unidade": item.unidade.value,
-            "localizacao_deposito": item.localizacao_deposito,
-        },
-        ip=ator.ip,
-    )
+def auditoria_registro_item(ocorrencia: Ocorrencia, item: ItemApreendido) -> ItemApreendidoRegistrado:
+    """Evento de cada item lavrado (no registro da ocorrência ou depois dele)."""
+    return ItemApreendidoRegistrado.de(ocorrencia.id, item)
 
 
 def numero_do_auto(numero_protocolo: str) -> str:
@@ -117,7 +102,7 @@ class RegistrarItemApreendido(InterfaceRegistrarItemApreendido):
             await exigir_lacre_inedito(self._repositorio, item)
             ocorrencia.registrar_apreensao(item, ator.id, agora)
             await self._repositorio.salvar(ocorrencia)
-            await self._auditoria.registrar(auditoria_registro_item(ator, ocorrencia, item, agora))
+            await self._auditoria.registrar(auditoria_registro_item(ocorrencia, item), ator.contexto_auditoria(agora))
             await self._uow.commit()
         return para_item_apreendido(item)
 
@@ -142,20 +127,7 @@ class MovimentarCustodia(InterfaceMovimentarCustodia):
             )
             await self._repositorio.salvar(ocorrencia)
             await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.APREENSAO_MOVIMENTAR,
-                    entidade=EntidadeAuditada.ITEM_APREENDIDO,
-                    entidade_id=str(input_dto.item_id),
-                    dados_antes={"localizacao": movimentacao.origem},
-                    dados_depois={
-                        "ocorrencia_id": str(ocorrencia.id),
-                        "localizacao": movimentacao.destino,
-                        "observacao": movimentacao.observacao,
-                    },
-                    ip=ator.ip,
-                )
+                CustodiaMovimentada.de(ocorrencia.id, input_dto.item_id, movimentacao), ator.contexto_auditoria(agora)
             )
             await self._uow.commit()
         return para_item_apreendido(ocorrencia.item_apreendido(input_dto.item_id))
@@ -205,21 +177,8 @@ class EmitirAutoApreensao(InterfaceEmitirAutoApreensao):
                 )
             numero = numero_do_auto(ocorrencia.numero_protocolo)
             hash_ = self.calcular_hash(numero, ocorrencia)
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.APREENSAO_EMITIR_AUTO,
-                    entidade=EntidadeAuditada.AUTO_APREENSAO,
-                    entidade_id=numero,
-                    dados_depois={
-                        "ocorrencia_id": str(ocorrencia.id),
-                        "itens": len(ocorrencia.itens_apreendidos),
-                        "hash_sha256": hash_,
-                    },
-                    ip=ator.ip,
-                )
-            )
+            evento = AutoApreensaoEmitido(numero=numero, ocorrencia_id=ocorrencia.id, itens=len(ocorrencia.itens_apreendidos), hash_sha256=hash_)
+            await self._auditoria.registrar(evento, ator.contexto_auditoria(agora))
             await self._uow.commit()
         return AutoApreensaoOutput(
             numero=numero,

@@ -16,8 +16,7 @@ from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
 from application.use_cases.ocorrencia.consultar_ocorrencias import carregar_ou_404
-from domain.auditoria.catalogo import EntidadeAuditada, OperacaoAuditada
-from domain.auditoria.entity import RegistroAuditoria
+from domain.ocorrencia.auditoria_provas import EvidenciaAnexada
 from domain.ocorrencia.entity import Evidencia
 from domain.shared.exceptions import CampoObrigatorioError, ValorInvalidoError
 from domain.usuario.entity import Papel
@@ -100,23 +99,7 @@ class AnexarEvidencia(InterfaceAnexarEvidencia):
             )
             ocorrencia.adicionar_evidencia(evidencia, ator.id, agora)
             await self._repositorio.salvar(ocorrencia)
-            await self._auditoria.registrar(
-                RegistroAuditoria(
-                    quem=ator.id,
-                    quando=agora,
-                    operacao=OperacaoAuditada.EVIDENCIA_ANEXAR,
-                    entidade=EntidadeAuditada.EVIDENCIA,
-                    entidade_id=str(evidencia.id),
-                    dados_depois={
-                        "ocorrencia_id": str(ocorrencia.id),
-                        "nome_original": evidencia.nome_original,
-                        "formato": evidencia.formato,
-                        "tamanho": evidencia.tamanho,
-                        "hash_sha256": evidencia.hash_sha256,
-                    },
-                    ip=ator.ip,
-                )
-            )
+            await self._auditoria.registrar(EvidenciaAnexada.de(ocorrencia.id, evidencia), ator.contexto_auditoria(agora))
             await self._uow.commit()
         return EvidenciaOutput(
             id=evidencia.id,
