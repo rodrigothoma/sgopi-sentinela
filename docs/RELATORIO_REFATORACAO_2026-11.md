@@ -1,6 +1,6 @@
 # Relatório de Refatoração — SGOPI Sentinela
 
-**Período:** 06 a 09/11/2026 · **Branch:** `fade` (integrada na `dev`) · **Responsável:** Fade Hassan Husein Kanaan
+**Período:** 06 a 16/11/2026 · **Branch:** `fade` (integrada na `dev`) · **Responsável:** Fade Hassan Husein Kanaan
 
 Este relatório resume o que foi corrigido e refatorado no sistema, em ordem de prioridade, e o que ficou planejado para as próximas etapas. O detalhamento item a item, com o commit de cada um, está no [plano de refatoração](implementacao/PLANO_REFATORACAO_2026-11.md).
 
@@ -22,8 +22,8 @@ Este relatório resume o que foi corrigido e refatorado no sistema, em ordem de 
 | Textos soltos na trilha de auditoria | 39 | 0 |
 | Controles de versão escritos à mão (`versao += 1`) | 12 | 0 |
 | Validações de texto repetidas nas entidades | 28 | 0 |
-| Testes automatizados do backend | 844 | 939 |
-| Cobertura de testes (`domain/` + `application/`) | 95,4% | 96,7% |
+| Testes automatizados do backend | 844 | 1006 |
+| Cobertura de testes (`domain/` + `application/`) | 95,4% | 97,0% |
 | Contratos da arquitetura hexagonal (import-linter) | 4 mantidos | 4 mantidos |
 | Pipeline de CI no GitHub Actions | falhando | verde nos 3 jobs |
 
@@ -56,7 +56,7 @@ Este relatório resume o que foi corrigido e refatorado no sistema, em ordem de 
 | Antes | Depois | Commit |
 | :--- | :--- | :---: |
 | Regras de acesso espalhadas em `if`s e tuplas de papéis copiadas entre router, caso de uso e WebSocket | **Catálogo de permissões** único (ação → papéis), consultado pelas três camadas | `2f254c1` |
-| Operações de auditoria digitadas à mão, com grafias divergentes | **Catálogo de auditoria** (`OperacaoAuditada`, `EntidadeAuditada`), mantendo a leitura dos registros antigos | `79b5a8d` |
+| Operações de auditoria digitadas à mão, com grafias divergentes | **Eventos de auditoria tipados** (ver 3.5) | `79b5a8d` → `a03026f` |
 | Transições de estado escritas como `if status not in (...)` em cada método | **Máquina de estados genérica**: cada agregado declara sua tabela de transições | `de2b4fe` |
 | Incremento de versão e data de atualização repetidos em cada mutação, com inconsistências | **Mixin `Versionado`** com `_tocar(instante)` nas 5 entidades versionadas | `de2b4fe` |
 | Regras de negócio copiadas nos casos de uso (vínculo a inquérito, despacho, alerta de vencimento) | Regras movidas para as entidades (`exigir_vinculavel`, `exigir_despachavel`, `precisa_alerta`) | `de2b4fe`, `904d547` |
@@ -73,6 +73,22 @@ Este relatório resume o que foi corrigido e refatorado no sistema, em ordem de 
 | Verificação automática antes do commit (pre-commit) e script que reproduz o CI localmente | `39b79ec`, `281c047` |
 | Roteiros para agentes de IA (TDD no backend e no frontend, verificação e passagem de contexto), referenciados no `AGENTS.md` | `bd670f1` |
 
+### 3.5 Revisão após a apresentação — auditoria por eventos tipados
+
+Na apresentação, o catálogo de auditoria (dois enums com os nomes das operações) foi apontado como fora do padrão: auditoria é a parte dinâmica do sistema, e o esperado é modelá-la com classes. A refatoração seguiu o padrão de **eventos de auditoria** (*audit events*):
+
+| Antes | Depois |
+| :--- | :--- |
+| Enums `OperacaoAuditada`/`EntidadeAuditada` e 38 pontos montando `RegistroAuditoria` à mão, com o payload escrito em cada caso de uso | Classe base abstrata `EventoAuditoria` e **48 subclasses**, uma por ação (ex.: `OcorrenciaValidada`, `MedidaRevogada`), agrupadas por agregado em `domain/<agregado>/auditoria.py` |
+| Mesmo payload repetido (ex.: `{status, versao}` em 4 lugares) | Classes intermediárias abstratas (`MudancaStatusOcorrencia`, `DecisaoSobreOcorrencia`, `EventoGestaoUsuario`...) concentram o que é comum |
+| Catálogo mantido à mão e filtro da tela com 24 de 48 operações | Cada subclasse se registra sozinha; o catálogo e o filtro da tela (`GET /v1/auditoria/catalogo`) são gerados das classes |
+| Quem/quando/IP passados em cada chamada (7 pontos sem IP) | `ContextoAuditoria`, montado por `ator.contexto_auditoria(agora)`, separado do evento |
+
+- **Padrões:** Template Method (`para_registro` monta o registro; cada subclasse só fornece `id_entidade` e os dados), registro automático de subclasses (`__init_subclass__`, que recusa nome fora do formato `dominio.acao` ou repetido) e herança em camadas (base → agregado → ação).
+- **Compatibilidade:** os nomes gravados e as chaves dos dados são os mesmos de antes — um teste compara o catálogo gerado com as 48 operações e 16 entidades já existentes, e os testes antigos de payload continuaram passando sem alteração.
+- **Correções de carona:** registro sem IP em 7 pontos, alerta de vencimento auditado fora da transação, desativação/reativação de usuário gravadas como texto solto e blocos de gravação duplicados nos ramos com e sem unidade de trabalho.
+- **Verificação:** 1006 testes do backend (incluindo os de ponta a ponta), cobertura de 97,0% e os 4 contratos da arquitetura hexagonal mantidos.
+
 ---
 
 ## 4. Onde ficou cada responsabilidade
@@ -82,7 +98,9 @@ Todos os novos componentes estão na camada de domínio (Python puro), conforme 
 | Responsabilidade | Arquivo |
 | :--- | :--- |
 | Permissões (RBAC — RNF02) | `domain/usuario/permissoes.py` |
-| Catálogo da trilha de auditoria (RNF03) | `domain/auditoria/catalogo.py` |
+| Eventos de auditoria (RNF03): classe base e contexto | `domain/auditoria/evento.py`, `domain/auditoria/contexto.py` |
+| Eventos de cada agregado | `domain/<agregado>/auditoria.py` (ex.: `domain/ocorrencia/auditoria.py`) |
+| Catálogo da trilha (gerado das classes) | `domain/auditoria/catalogo_eventos.py` e `GET /v1/auditoria/catalogo` |
 | Máquina de estados genérica | `domain/shared/maquina_estados.py` |
 | Controle otimista de versão (mixin) | `domain/shared/versionado.py` |
 | Validação de texto e conversão de enums | `domain/shared/validacao.py`, `domain/shared/enums.py` |
@@ -95,7 +113,8 @@ Todos os novos componentes estão na camada de domínio (Python puro), conforme 
 - **Mixin em vez de classe base com campos:** em `dataclasses`, herdar campos com valor padrão força a reordenação dos campos de todas as entidades filhas. O mixin `Versionado` traz só o comportamento, e cada entidade continua declarando seus campos.
 - **Permissões organizadas por ação, não por papel:** o código sempre pergunta "este usuário pode executar esta ação?". Com a tabela por ação, mudar quem pode fazer algo é alterar uma linha, e router, caso de uso e WebSocket passam a obedecer juntos.
 - **Sigilo por papel:** os usuários não têm departamento cadastrado; a credencial compatível do UC10 passou a ser o papel (tabela na seção UC10 da documentação de engenharia).
-- **Trilha de auditoria preservada:** como a auditoria é *append-only*, os registros antigos não foram reescritos; o catálogo guarda as grafias legadas para leitura.
+- **Auditoria como eventos, não como lista de nomes:** permissões são uma tabela estática (quem pode o quê); auditoria é o registro de algo que aconteceu, com dados diferentes em cada ação. Por isso cada ação virou uma classe que sabe montar seus próprios dados, e o catálogo passou a ser consequência das classes.
+- **Trilha de auditoria preservada:** como a auditoria é *append-only*, os registros antigos não foram reescritos; as classes guardam as grafias legadas para leitura.
 
 ## 6. Garantia de qualidade
 
@@ -129,5 +148,5 @@ Todos os novos componentes estão na camada de domínio (Python puro), conforme 
 ## 9. Referências
 
 - Plano detalhado, com o commit de cada item: [`docs/implementacao/PLANO_REFATORACAO_2026-11.md`](implementacao/PLANO_REFATORACAO_2026-11.md)
-- Comparação completa no GitHub: [`2b07f82...281c047`](https://github.com/rodrigothoma/sgopi-sentinela/compare/2b07f82...281c047)
+- Comparação completa no GitHub: [`2b07f82...fade`](https://github.com/rodrigothoma/sgopi-sentinela/compare/2b07f82...fade) · só a revisão da auditoria: [`db7eb68...fade`](https://github.com/rodrigothoma/sgopi-sentinela/compare/db7eb68...fade)
 - Regras de arquitetura e de contribuição: [`AGENTS.md`](../AGENTS.md)

@@ -66,7 +66,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 ## 3. Onda 1 — Fundações de domínio ✅
 
 - [x] **Permissões centralizadas.** `domain/usuario/permissoes.py` (`Permissao` → papéis), `ator.exigir(...)` nos casos de uso e `exigir_permissao(...)` nos routers e no WebSocket. — `2f254c1`
-- [x] **Catálogo de auditoria.** `domain/auditoria/catalogo.py` (`OperacaoAuditada`, `EntidadeAuditada`, `grafias()` para os registros legados). — `79b5a8d`
+- [x] **Catálogo de auditoria.** Primeira versão com enums (`79b5a8d`), **refeita após a apresentação** como eventos de auditoria tipados: classe base `EventoAuditoria` (Template Method + registro automático), uma subclasse por ação em `domain/<agregado>/auditoria.py`, `ContextoAuditoria` (quem/quando/IP) e catálogo gerado das classes (`domain/auditoria/catalogo_eventos.py`). — `5a50e76` … `a03026f`
 - [x] **Máquina de estados genérica.** `domain/shared/maquina_estados.py`; Ocorrência (`OperacaoOcorrencia`), Viatura, Inquérito e Medida declaram suas transições. — `de2b4fe`
 - [x] **Mixin `Versionado`.** `domain/shared/versionado.py` com `_tocar(instante)` nas 5 entidades versionadas. — `de2b4fe`
 - [x] **Helpers de validação e enum.** `domain/shared/validacao.exigir_texto` e `domain/shared/enums.interpretar_enum`; mínimos viraram constantes `TAMANHO_MINIMO_*`. — `8b281d1`
@@ -126,7 +126,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 - [ ] **Badges de conexão por `tipo`**, não por `includes('suspeito')` (depende da Onda 2).
 - [ ] **Tipos e serviços** centralizados em `types/` (ou `openapi-typescript`); `ocorrenciasService.listar` com objeto de opções.
 - [ ] **i18n e estilos**: strings fixas de Interagências, `MapaTatico`, `title`/`placeholder`, `'Sem local'`; estilos inline → classes.
-- [ ] **Trilha de auditoria**: incluir no filtro as operações do catálogo que faltam (interagências, inteligência, medida, laudo, inquérito), de preferência vindas da API.
+- [x] **Trilha de auditoria**: filtros de operação e entidade carregados de `GET /v1/auditoria/catalogo`, com rótulos pt/en das 48 operações e 16 entidades. — `e386c3f`, `ecf1189`
 - [ ] **Cypress**: specs para inquéritos, laudos, medidas e interagências.
 
 ---

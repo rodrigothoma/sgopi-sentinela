@@ -44,7 +44,7 @@ Comece pela camada mais interna que o comportamento toca. Só desça para a pró
 ## Padrões do projeto (reaproveite, não reescreva)
 
 - **Acesso:** `ator.exigir(Permissao.X, "mensagem", chave="dominio.chave")` no caso de uso e `Depends(exigir_permissao(Permissao.X))` no router. Ação nova entra em `domain/usuario/permissoes.py` e no teste `tests/unit/domain/test_permissoes.py`.
-- **Auditoria:** `RegistroAuditoria(operacao=OperacaoAuditada.X, entidade=EntidadeAuditada.Y, ...)`; operação nova no catálogo (`domain/auditoria/catalogo.py`) no formato `dominio.acao`.
+- **Auditoria:** cada ação auditável é uma subclasse de `EventoAuditoria` (`domain/auditoria/evento.py`) no `auditoria.py` do agregado, com `OPERACAO` (`dominio.acao`), `ENTIDADE`, `dados_depois()` e uma fábrica `de(...)`; reaproveite as classes intermediárias (ex.: `MudancaStatusOcorrencia`). No caso de uso: `await self._auditoria.registrar(Evento.de(...), ator.contexto_auditoria(agora))`. Teste o payload em `tests/unit/domain/test_auditoria_<agregado>.py`; o catálogo é gerado sozinho (`tests/unit/domain/test_catalogo_eventos.py`).
 - **Transição de estado:** declare na tabela `MaquinaEstados` do agregado; o método da entidade consulta `proximo()`/`permite()` e lança o erro com a chave própria.
 - **Mutação de entidade versionada:** termine com `self._tocar(instante)` (mixin `Versionado`).
 - **Entrada da borda:** `exigir_texto(...)` para texto obrigatório/mínimo e `interpretar_enum(...)` para enum (valor inválido é recusado, não vira padrão).
