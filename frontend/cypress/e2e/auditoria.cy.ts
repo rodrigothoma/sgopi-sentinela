@@ -50,6 +50,25 @@ describe('Issue #47 — Trilha de Auditoria Imutável e RBAC (RNF02 / RNF03)', (
     });
   });
 
+  it('delegado escolhe a página da trilha pelos números e pelo campo "Ir para"', () => {
+    // Garante mais de duas páginas (50 por página): cada login entra na trilha como auth.login
+    const api = 'http://localhost:8000';
+    const senha = 'Senha@123';
+    Cypress._.times(120, () => {
+      cy.request('POST', `${api}/v1/auth/login`, { login: 'operador', senha });
+    });
+
+    cy.login('delegado', '/auditoria');
+    cy.get('[data-cy="paginacao-pagina-1"]').should('have.attr', 'aria-current', 'page');
+
+    cy.get('[data-cy="paginacao-pagina-2"]').click();
+    cy.get('[data-cy="paginacao"]').should('contain.text', 'Página 2 de');
+    cy.get('[data-cy="paginacao-pagina-2"]').should('have.attr', 'aria-current', 'page');
+
+    cy.get('[data-cy="paginacao-ir-para"]').type('3{enter}');
+    cy.get('[data-cy="paginacao"]').should('contain.text', 'Página 3 de').and('contain.text', 'Exibindo 101–');
+  });
+
   it('agente não vê o link de auditoria no menu e não acessa a rota /auditoria', () => {
     cy.login('agente', '/minhas');
     // Não deve existir link para auditoria no menu

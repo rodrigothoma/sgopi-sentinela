@@ -56,7 +56,7 @@ class EventoAuditoria(ABC):
         if not hasattr(type(self), "OPERACAO"):
             raise TypeError(f"{type(self).__name__} é uma classe intermediária (sem OPERACAO) e não pode ser instanciada.")
 
-    # ------------------------------------------------------------ passos do template
+    # passos do template
     @abstractmethod
     def id_entidade(self) -> str | None:
         """Identificador do registro afetado (gravado em ``entidade_id``)."""
@@ -68,7 +68,7 @@ class EventoAuditoria(ABC):
     def dados_depois(self) -> dict[str, Any] | None:
         """Estado relevante após a ação; as chaves aparecem na trilha de auditoria."""
 
-    # --------------------------------------------------------------- template method
+    # template method
     def para_registro(self, contexto: ContextoAuditoria) -> RegistroAuditoria:
         return RegistroAuditoria(
             quem=contexto.quem,
@@ -81,7 +81,7 @@ class EventoAuditoria(ABC):
             ip=contexto.ip,
         )
 
-    # ------------------------------------------------------------ catálogo (leitura)
+    # catálogo (leitura)
     @staticmethod
     def catalogo() -> tuple[tuple[str, str], ...]:
         """(operação, entidade) de todas as ações declaradas, em ordem alfabética."""

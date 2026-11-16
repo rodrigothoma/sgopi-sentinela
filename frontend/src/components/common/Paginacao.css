@@ -22,3 +22,36 @@
   min-width: 32px;
   font-weight: 700;
 }
+
+.paginacao-botoes {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.paginacao-atual:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.paginacao-reticencias {
+  padding: 0 4px;
+  color: var(--muted);
+}
+
+.paginacao-ir {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.paginacao-ir input {
+  width: 64px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+}

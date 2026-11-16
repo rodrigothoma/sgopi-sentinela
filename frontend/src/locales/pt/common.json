@@ -328,7 +328,9 @@
     "proxima": "Próxima página",
     "navegacao": "Paginação",
     "exibindo": "Exibindo {{inicio}}–{{fim}} de {{total}}",
-    "pagina_de": "Página {{pagina}} de {{total}}"
+    "pagina_de": "Página {{pagina}} de {{total}}",
+    "ir_para": "Ir para",
+    "pagina_n": "Página {{pagina}}"
   },
   "acesso_negado": {
     "titulo": "Acesso não autorizado",

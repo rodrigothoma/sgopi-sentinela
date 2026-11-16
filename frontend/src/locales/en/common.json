@@ -328,7 +328,9 @@
     "proxima": "Next page",
     "navegacao": "Pagination",
     "exibindo": "Showing {{inicio}}–{{fim}} of {{total}}",
-    "pagina_de": "Page {{pagina}} of {{total}}"
+    "pagina_de": "Page {{pagina}} of {{total}}",
+    "ir_para": "Go to",
+    "pagina_n": "Page {{pagina}}"
   },
   "acesso_negado": {
     "titulo": "Access not authorized",

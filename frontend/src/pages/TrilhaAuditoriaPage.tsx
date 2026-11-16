@@ -359,7 +359,8 @@ export const TrilhaAuditoriaPage: React.FC = () => {
       </div>
 
       {/* Tabela de Registros de Auditoria */}
-      <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+      <div className="card" style={{ padding: 0 }}>
+        <div style={{ overflowX: 'auto' }}>
         <table className="tabela" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
@@ -464,6 +465,7 @@ export const TrilhaAuditoriaPage: React.FC = () => {
             )}
           </tbody>
         </table>
+        </div>
         <Paginacao pagina={pagina} porPagina={POR_PAGINA} total={total} onMudarPagina={setPagina} carregando={carregando} />
       </div>
 
