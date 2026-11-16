@@ -17,8 +17,8 @@ Caminhos do backend são relativos a `backend/src/`; os do frontend, a `frontend
 | Strings soltas de auditoria (`operacao=`/`entidade=`) | 39 pontos | 0 | casos de uso, `deps.py` |
 | Incrementos manuais `versao += 1` | 12 | 0 | entidades |
 | Validações de texto vazio/curto repetidas | 28 | 0 | entidades |
-| Testes do backend | 831 + 13 E2E | 926 + 13 E2E | `backend/tests/` |
-| Cobertura (`domain/` + `application/`) | 95,4% | 96,7% | — |
+| Testes do backend | 831 + 13 E2E | 939 + 13 E2E | `backend/tests/` |
+| Cobertura (`domain/` + `application/`) | 95,4% | 96,9% | — |
 | Tamanho do composition root | 1164 linhas | 1164 linhas | `infrastructure/di.py` (Onda 3) |
 | Maior página do frontend | 1362 linhas | 1362 linhas | `pages/InqueritosPage.tsx` (Onda 4) |
 | Repositórios ainda sem Mapper | 8 | 8 | `adapters/outbound/persistence/` (Onda 3) |
@@ -87,7 +87,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 
 - [ ] **`application/use_cases/_base.py` com `ComandoAuditado[E](ABC)`** (Template Method: papel → carregar → aplicar → salvar → auditar → commit → saída). Promover `_DecisaoBase` (`revisar_ocorrencia.py`) e `_GestaoBase` (`gerir_usuarios.py`); aplicar em renovar/revogar medida, laudos e inquéritos.
 - [ ] **`obter_ou_falhar(busca, id, chave)` genérico** no lugar de `carregar_ou_404` (8 importadores) e `carregar_viatura`; `_comum.py` por pacote, acabando com os imports cruzados entre casos de uso.
-- [ ] **`_mapeadores.py` por pacote**: `MedidaProtetivaOutput` é montado 4 vezes, `LaudoOutput` 3, `InqueritoOutput` 3, `OcorrenciaResumoInqueritoOutput` 5.
+- [~] **`_mapeadores.py` por pacote**: `LaudoOutput` centralizado e coberto por testes de caracterização — `99e248d`. **Pendentes:** `MedidaProtetivaOutput` (4 montagens), `InqueritoOutput` (3) e `OcorrenciaResumoInqueritoOutput` (5).
 - [ ] **Alinhar notificação, interagências, inteligência e alerta ao padrão**: UoW obrigatório (8 `uow | None`), Output DTOs no lugar de `dict`/entidades (12 portas), nomes sem sufixo `UseCase`, `chave` em todas as exceções.
 - [ ] **Motor de conexões** (`inquerito/buscar_conexoes.py`, 421 linhas):
     - [ ] Mover a lógica pura para `domain/inquerito/motor_conexoes.py` com Strategy (`CriterioConexao`: envolvidos, natureza, tipificação, itens, área de risco, proximidade, temporal).
@@ -105,7 +105,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 
 ## 5. Onda 3 — Adapters e infraestrutura
 
-- [ ] **Repositório base versionado** `RepositorioVersionadoSQLAlchemy[M, E]` para os 5 repositórios que copiam o controle de versão.
+- [~] **Repositório base versionado** `RepositorioVersionadoSQLAlchemy[M, E]`: `ControleVersaoMixin` em `persistence/_concorrencia.py` unificou a verificação de versão e o locking nos 5 repositórios (`ocorrencia`, `viatura`, `inquerito`, `laudo`, `medida_protetiva`). **Pendente:** extração da classe base genérica para unificar `salvar`, `_reconstituir` e `buscar_por_id`.
 - [ ] **Mappers** para medida_protetiva, laudo, inquerito, comunicacao, notificacao, ordem_despacho, usuario e auditoria (padrão de `persistence/mappers/`); helpers `aware_opcional()` e `enum_ou_padrao()`.
 - [ ] **`GeradorSequencialSQLAlchemy(tabela, formatador)`** no lugar dos 6 UPSERTs idênticos.
 - [ ] **Routers**: schemas em `http/schemas/`, conversores em `conversores.py` (sem import entre routers), `ConfigDict(from_attributes=True)`, `Pagina[T]` genérico; regra de negócio fora de `viaturas_router`, `laudos_router` (validação de upload) e `inqueritos_router` (`split(' · ')`).

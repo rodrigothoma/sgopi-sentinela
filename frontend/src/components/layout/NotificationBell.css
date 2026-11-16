@@ -212,7 +212,8 @@
   color: var(--muted);
 }
 
-.notification-item.prio-urgente .notification-item-icon {
+.notification-item.prio-urgente .notification-item-icon,
+.notification-item.prio-critica .notification-item-icon {
   background: rgba(229, 62, 62, 0.12);
   color: #e53e3e;
 }

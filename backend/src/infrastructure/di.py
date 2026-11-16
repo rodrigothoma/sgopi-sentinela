@@ -360,8 +360,10 @@ def get_registrar_ocorrencia(
     relogio: Relogio = Depends(get_relogio),
     gerador: GeradorProtocolo = Depends(get_gerador_protocolo),
     auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+    notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
 ) -> InterfaceRegistrarOcorrenciaPolicial:
-    return RegistrarOcorrenciaPolicial(repositorio, uow, relogio, gerador, auditoria)
+    return RegistrarOcorrenciaPolicial(repositorio, uow, relogio, gerador, auditoria, publicador, notificacoes)
 
 
 def get_registrar_ocorrencia_publica(
@@ -688,6 +690,8 @@ def montar_gerador(session_factory: async_sessionmaker, relogio: Relogio | None 
                 relogio_efetivo,
                 GeradorProtocoloSQLAlchemy(session),
                 AuditoriaSQLAlchemy(session),
+                publicador_eventos,
+                NotificacaoRepositorioSQLAlchemy(session),
             )
             yield ator, uc
 

@@ -138,6 +138,7 @@
     "titulo": "Review queue",
     "vazia": "Nothing in this filter.",
     "selecione": "Select an occurrence from the queue.",
+    "nova": "NEW",
     "filtro_0": "Awaiting review",
     "filtro_1": "Needs correction",
     "filtro_2": "Validated / in progress",

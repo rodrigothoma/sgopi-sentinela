@@ -49,6 +49,18 @@ class RepositorioNotificacaoEmMemoria(RepositorioNotificacao):
                 count += 1
         return count
 
+    async def buscar_por_metadado(self, chave: str, valor: str, tipo: str | None = None) -> Notificacao | None:
+        return next(
+            (
+                n
+                for n in self.itens.values()
+                if n.ativo
+                and (tipo is None or n.tipo.value == tipo)
+                and (n.metadados or {}).get(chave) == valor
+            ),
+            None,
+        )
+
 
 class PublicadorFake(PublicadorEventos):
     def __init__(self) -> None:

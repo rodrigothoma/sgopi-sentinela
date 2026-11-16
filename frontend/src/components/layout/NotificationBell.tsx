@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useTempoRealListener } from '../../hooks/useTempoReal';
 import {
   notificacoesService,
   Notificacao,
+  PrioridadeNotificacao,
   TipoNotificacao,
 } from '../../services/notificacoesService';
+import type { EventoTempoReal } from '../../types/api';
 import './NotificationBell.css';
 
 interface NotificationBellProps {
@@ -55,6 +58,15 @@ const IconRevisao = () => (
   </svg>
 );
 
+/** Documento com sinal de mais: nova ocorrência entrou na fila do Delegado (issue #68). */
+const IconNovaOcorrencia = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <path d="M14 2v6h6" />
+    <path d="M9 15h6M12 12v6" />
+  </svg>
+);
+
 const IconInfo = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" />
@@ -71,6 +83,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ colapsada = 
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [carregando, setCarregando] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const abertoRef = useRef(false);
+  abertoRef.current = aberto;
 
   const carregarResumo = async () => {
     try {
@@ -93,6 +107,34 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ colapsada = 
       setCarregando(false);
     }
   };
+
+  // Badge e lista sobem por evento (o WS entrega só o que é deste usuário);
+  // o polling de 15 s abaixo permanece como fallback caso a conexão caia (RNF04).
+  useTempoRealListener({
+    onEvento: (e: EventoTempoReal) => {
+      if (e.tipo !== 'NOTIFICACAO_EMITIDA') return;
+      const d = e.dados as Record<string, unknown>;
+      setNaoLidas((prev) => prev + 1);
+      setNotificacoes((prev) => [
+        {
+          id: String(d.id ?? ''),
+          usuario_id: (d.usuario_id as string) ?? '',
+          titulo: String(d.titulo ?? ''),
+          mensagem: String(d.mensagem ?? ''),
+          tipo: (d.tipo as TipoNotificacao) ?? 'SISTEMA',
+          prioridade: (d.prioridade as PrioridadeNotificacao) ?? 'MEDIA',
+          lida: false,
+          criada_em: String(d.criada_em ?? new Date().toISOString()),
+          link: (d.link as string) ?? null,
+        },
+        ...prev,
+      ].slice(0, 15));
+    },
+    onReconectar: () => {
+      carregarResumo();
+      if (abertoRef.current) carregarLista();
+    },
+  });
 
   useEffect(() => {
     carregarResumo();
@@ -156,6 +198,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ colapsada = 
       navigate('/medidas');
     } else if (n.tipo === 'COMUNICACAO_INTERAGENCIAS') {
       navigate('/interagencias');
+    } else if (n.tipo === 'NOVA_OCORRENCIA') {
+      navigate('/fila');
     } else if (n.tipo === 'REVISAO_OCORRENCIA') {
       navigate('/minhas');
     }
@@ -169,6 +213,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ colapsada = 
         return <IconEscudo />;
       case 'COMUNICACAO_INTERAGENCIAS':
         return <IconMensagem />;
+      case 'NOVA_OCORRENCIA':
+        return <IconNovaOcorrencia />;
       case 'REVISAO_OCORRENCIA':
         return <IconRevisao />;
       default:

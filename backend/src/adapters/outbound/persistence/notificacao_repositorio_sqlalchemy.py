@@ -112,6 +112,21 @@ class NotificacaoRepositorioSQLAlchemy(RepositorioNotificacao):
         await self._session.flush()
         return len(pendentes)
 
+    async def buscar_por_metadado(self, chave: str, valor: str, tipo: str | None = None) -> Notificacao | None:
+        # Caminho JSON do SQLAlchemy muda para json_extract no SQLite e ->> no PostgreSQL.
+        stmt = (
+            select(NotificacaoModel)
+            .where(
+                NotificacaoModel.ativo.is_(True),
+                NotificacaoModel.metadados[chave].as_string() == valor,
+            )
+            .order_by(NotificacaoModel.criada_em.desc())
+        )
+        if tipo is not None:
+            stmt = stmt.where(NotificacaoModel.tipo == tipo)
+        model = (await self._session.execute(stmt)).scalars().first()
+        return self._to_domain(model, None) if model else None
+
     @staticmethod
     def _to_domain(model: NotificacaoModel, lida_em: datetime | None) -> Notificacao:
         return Notificacao(
