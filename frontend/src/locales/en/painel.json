@@ -54,7 +54,20 @@
     "disponibilizar": "Mark available",
     "indisponibilizar": "Mark unavailable",
     "marcada_disponivel": "{{prefixo}} marked as available.",
-    "marcada_indisponivel": "{{prefixo}} marked as unavailable."
+    "marcada_indisponivel": "{{prefixo}} marked as unavailable.",
+    "responsavel": "Responsible person (optional)",
+    "sem_responsavel": "No responsible person",
+    "editar": "Edit",
+    "salvar": "Save changes",
+    "cancelar": "Cancel editing",
+    "editando": "Editing {{prefixo}}",
+    "atualizada": "Vehicle registration updated.",
+    "excluir": "Delete",
+    "excluida": "Vehicle removed from the active fleet.",
+    "confirmar_exclusao": "Remove {{prefixo}} from the active fleet? History will be preserved.",
+    "acoes": "Actions",
+    "vazio": "No registered vehicles.",
+    "exclusao_bloqueada": "Close the assignment before deleting."
   },
   "manchas": {
     "mostrar": "Crime hotspots",

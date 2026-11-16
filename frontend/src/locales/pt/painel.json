@@ -54,7 +54,20 @@
     "disponibilizar": "Marcar disponível",
     "indisponibilizar": "Marcar indisponível",
     "marcada_disponivel": "{{prefixo}} marcada como disponível.",
-    "marcada_indisponivel": "{{prefixo}} marcada como indisponível."
+    "marcada_indisponivel": "{{prefixo}} marcada como indisponível.",
+    "responsavel": "Responsável (opcional)",
+    "sem_responsavel": "Sem responsável",
+    "editar": "Editar",
+    "salvar": "Salvar alterações",
+    "cancelar": "Cancelar edição",
+    "editando": "Editando {{prefixo}}",
+    "atualizada": "Cadastro da viatura atualizado.",
+    "excluir": "Excluir",
+    "excluida": "Viatura excluída da frota ativa.",
+    "confirmar_exclusao": "Excluir {{prefixo}} da frota ativa? O histórico será preservado.",
+    "acoes": "Ações",
+    "vazio": "Nenhuma viatura cadastrada.",
+    "exclusao_bloqueada": "Encerre o atendimento antes de excluir."
   },
   "manchas": {
     "mostrar": "Manchas criminais",

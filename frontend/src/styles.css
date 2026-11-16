@@ -2079,3 +2079,11 @@ dl.grid2 dd { margin: 0 0 8px; }
 .frota-inspecionar:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 3px; }
 
 .inspecao-viatura > .lista-badges { flex-direction: row; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+
+/* Cadastro da frota: campos identificados e ações que se acomodam em telas menores. */
+.frota-formulario { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem; }
+.frota-formulario label { display: grid; gap: .4rem; flex: 1 1 180px; }
+.frota-formulario .acoes { flex-wrap: wrap; }
+.frota-editando { flex-basis: 100%; margin: 0; font-weight: 600; }
+.frota-tabela { overflow-x: auto; }
+.frota-acoes { flex-wrap: wrap; min-width: 200px; }
