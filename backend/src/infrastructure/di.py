@@ -117,7 +117,9 @@ from application.ports.inbound.interface_gerir_usuarios import (
 from application.ports.inbound.interface_gerir_viaturas import (
     InterfaceAlterarSituacaoViatura,
     InterfaceCadastrarViatura,
+    InterfaceEditarViatura,
     InterfaceEmitirCredencialTelemetria,
+    InterfaceExcluirViatura,
     InterfaceListarViaturas,
     InterfaceRegistrarPosicaoViatura,
 )
@@ -241,6 +243,7 @@ from application.use_cases.usuario.gerir_usuarios import (
 from application.use_cases.usuario.listar_usuarios import ListarUsuarios
 from application.use_cases.viatura.emitir_credencial_telemetria import EmitirCredencialTelemetria
 from application.use_cases.viatura.gerir_viaturas import AlterarSituacaoViatura, CadastrarViatura, ListarViaturas
+from application.use_cases.viatura.manter_cadastro import EditarViatura, ExcluirViatura
 from application.use_cases.viatura.registrar_posicao_viatura import RegistrarPosicaoViatura
 from domain.shared.geo import Coordenada
 from infrastructure.config.settings import settings
@@ -555,6 +558,29 @@ def get_alterar_situacao_viatura(
     publicador: PublicadorEventos = Depends(get_publicador),
 ) -> InterfaceAlterarSituacaoViatura:
     return AlterarSituacaoViatura(repositorio, uow, relogio, auditoria, publicador, settings.telemetria_max_idade_segundos)
+
+
+def get_editar_viatura(
+    repositorio: RepositorioViatura = Depends(get_repositorio_viatura),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    relogio: Relogio = Depends(get_relogio),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+) -> InterfaceEditarViatura:
+    """Compõe a manutenção de cadastro com as portas da sessão atual."""
+    return EditarViatura(repositorio, uow, relogio, auditoria, publicador, settings.telemetria_max_idade_segundos)
+
+
+def get_excluir_viatura(
+    repositorio: RepositorioViatura = Depends(get_repositorio_viatura),
+    ordens: RepositorioOrdemDespacho = Depends(get_repositorio_ordem),
+    uow: UnidadeDeTrabalho = Depends(get_uow),
+    relogio: Relogio = Depends(get_relogio),
+    auditoria: PortaAuditoria = Depends(get_auditoria),
+    publicador: PublicadorEventos = Depends(get_publicador),
+) -> InterfaceExcluirViatura:
+    """Compõe a exclusão lógica com a verificação de ordens ativas."""
+    return ExcluirViatura(repositorio, ordens, uow, relogio, auditoria, publicador)
 
 
 def get_listar_viaturas(

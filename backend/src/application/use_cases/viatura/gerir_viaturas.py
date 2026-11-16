@@ -38,12 +38,14 @@ def para_output(v: Viatura, agora: datetime, max_idade: int) -> ViaturaOutput:
         posicao_registrada_em=p.registrada_em.isoformat() if p else None,
         sinal=v.sinal(agora, max_idade).value,
         versao=v.versao,
+        responsavel=v.responsavel,
+        ativo=v.ativo,
     )
 
 
 async def carregar_viatura(repositorio: RepositorioViatura, viatura_id: UUID) -> Viatura:
     v = await repositorio.buscar_por_id(viatura_id)
-    if v is None:
+    if v is None or not v.ativo:
         raise EntidadeNaoEncontradaError("Viatura não encontrada.", chave="viatura.not_found")
     return v
 
@@ -55,7 +57,7 @@ class CadastrarViatura(InterfaceCadastrarViatura):
     async def executar(self, ator: Ator, input_dto: CadastrarViaturaInput) -> ViaturaOutput:
         ator.exigir(Permissao.GERIR_FROTA)
         agora = self._relogio.agora()
-        viatura = Viatura(prefixo=input_dto.prefixo, placa=input_dto.placa, atualizada_em=agora)
+        viatura = Viatura(prefixo=input_dto.prefixo, placa=input_dto.placa, responsavel=input_dto.responsavel, atualizada_em=agora)
         async with self._uow:
             if await self._repositorio.buscar_por_prefixo(viatura.prefixo):
                 raise ConflitoError(f"Prefixo {viatura.prefixo} já cadastrado.", chave="viatura.prefixo_duplicado")
@@ -63,7 +65,7 @@ class CadastrarViatura(InterfaceCadastrarViatura):
                 raise ConflitoError(f"Placa {viatura.placa} já cadastrada.", chave="viatura.placa_duplicada")
             await self._repositorio.salvar(viatura)
             await self._auditoria.registrar(
-                RegistroAuditoria(quem=ator.id, quando=agora, operacao=OperacaoAuditada.VIATURA_CADASTRAR, entidade=EntidadeAuditada.VIATURA, entidade_id=str(viatura.id), dados_depois={"prefixo": viatura.prefixo, "placa": viatura.placa}, ip=ator.ip)
+                RegistroAuditoria(quem=ator.id, quando=agora, operacao=OperacaoAuditada.VIATURA_CADASTRAR, entidade=EntidadeAuditada.VIATURA, entidade_id=str(viatura.id), dados_depois={"prefixo": viatura.prefixo, "placa": viatura.placa, "responsavel": viatura.responsavel}, ip=ator.ip)
             )
             await self._uow.commit()
         return para_output(viatura, agora, self._max_idade)

@@ -57,6 +57,8 @@ class OperacaoAuditada(str, Enum):
     USUARIO_ALTERAR_PAPEL = "usuario.alterar_papel"
     USUARIO_DESATIVAR = "usuario.desativar"
     USUARIO_REATIVAR = "usuario.reativar"
+    VIATURA_EDITAR = "viatura.editar"
+    VIATURA_EXCLUIR = "viatura.excluir"
     VIATURA_CADASTRAR = "viatura.cadastrar"
     VIATURA_ALTERAR_SITUACAO = "viatura.alterar_situacao"
     VIATURA_CHEGADA_AO_LOCAL = "viatura.chegada_ao_local"
