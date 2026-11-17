@@ -1,0 +1,203 @@
+@startuml
+title Busca Global de Ocorrências — Fluxo Técnico (NÃO é caso de uso)
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam legendBackgroundColor #FFEBEE
+skinparam legendBorderColor #C62828
+skinparam legendFontSize 14
+
+legend top
+  <b>ATENÇÃO: este diagrama NÃO representa um caso de uso.</b>
+  A busca global é uma funcionalidade <b>extra</b>: não há RF nem UC para ela na
+  DOCUMENTACAO_DE_ENGENHARIA, e ela está fora do escopo canônico do MVP (RF01, RF04, RF02).
+  Por isso o arquivo não segue a numeração sqNN, em que cada número corresponde
+  a um caso de uso da documentação (sq01 = UC01 … sq11 = UC11).
+  Ele documenta o funcionamento técnico atual da busca, atravessando as camadas da arquitetura.
+endlegend
+
+actor "Usuário autenticado" as U
+
+box "Frontend — React (navegador)" #F4F8FF
+  boundary "BuscaGlobal\n(barra lateral)" as Busca
+  boundary "Página de destino\nFilaDelegadoPage ou\nMinhasOcorrenciasPage" as Destino
+  control "buscaOcorrencias.ts\nfunções puras" as Util
+  control "ocorrenciasService\n+ api.ts (axios)" as Svc
+end box
+
+box "Backend — adapter de entrada (HTTP)" #FFF8EC
+  boundary "FastAPI\nocorrencias_router\n+ deps.py" as HTTP
+end box
+
+box "Backend — aplicação" #F1FAF1
+  control "ListarOcorrencias\n(caso de uso da\ncamada de aplicação)" as UC
+end box
+
+box "Backend — domínio" #FBF3FB
+  entity "Catálogo de permissões\n· entidade Ocorrencia" as Dom
+end box
+
+box "Backend — adapter de saída (persistência)" #F5F5F5
+  control "OcorrenciaRepositorioSQLAlchemy\n«implementa RepositorioOcorrencia»\n+ OcorrenciaQueryBuilder" as Repo
+end box
+
+database "PostgreSQL\nocorrencias\n(+ tabelas filhas)" as DB
+
+== Digitação ==
+
+U -> Busca: digita no campo de busca
+Busca -> Util: termoBuscavel(termo)
+Util --> Busca: tem 2 ou mais caracteres (após trim)?
+
+alt menos de 2 caracteres
+  Busca --> U: limpa a lista (nenhuma consulta é feita)
+else 2 ou mais caracteres
+  Busca -> Busca: marca "buscando" e agenda a consulta\npara daqui a 300 ms ("Buscando…" aparece\nse a lista de resultados já estiver aberta)
+  note right of Busca
+    Se o usuário digitar de novo antes dos 300 ms,
+    o agendamento é cancelado e recomeça.
+    Respostas que chegarem de uma digitação
+    anterior são descartadas.
+  end note
+
+  ...300 ms sem nova digitação...
+
+  Busca -> Util: separarTermos(termo)
+  Util --> Busca: lista de palavras (no máximo 4;\na partir da 5ª são ignoradas)
+  Busca -> Busca: limite por campo:\n6 se for 1 palavra, 25 se forem 2 ou mais
+
+  == Consultas ==
+
+  loop para cada palavra — todas ao mesmo tempo (Promise.all)
+    Busca -> Busca: acharPorTermo(palavra, limite)
+
+    par três consultas ao mesmo tempo (Promise.all)
+      Busca -> Svc: listar([], limite, 0, true,\n{ protocolo: palavra })
+
+      Svc -> HTTP: GET /v1/ocorrencias?limit=6&offset=0\n&mais_recentes_primeiro=true&protocolo=roubo\nAuthorization: Bearer (JWT) · Accept-Language\n(exemplo: busca de uma palavra, "roubo")
+      note right of Svc
+        Em desenvolvimento a chamada passa
+        pelo proxy do Vite (/v1 → localhost:8000).
+        As consultas de natureza e texto
+        fazem exatamente este mesmo caminho.
+      end note
+
+      HTTP -> HTTP: filtros_listagem: query string →\nListarOcorrenciasInput (termo até 200 caracteres)
+      HTTP -> HTTP: ator_atual: valida o JWT e confere se o\nusuário existe, está ativo e mantém o papel
+      HTTP -> HTTP: exigir_permissao(CONSULTAR_OCORRENCIAS)
+
+      alt token inválido ou expirado, ou usuário inativo
+        HTTP --> Svc: 401
+        Svc -> Svc: interceptor do axios limpa a sessão\ne dispara "sgopi:sessao-expirada"
+        Svc --> Busca: erro → .catch → lista vazia
+      else papel sem a permissão (Perito, Escrivão, Cidadão)
+        HTTP -> HTTP: registra AUTH_ACESSO_NEGADO\nna trilha de auditoria
+        HTTP --> Svc: 403
+        Svc --> Busca: erro → .catch → lista vazia
+      else Agente, Delegado, Operador Central ou Supervisor
+        HTTP -> UC: executar(ator, input com limit e offset)
+        UC -> Dom: ator.exigir(CONSULTAR_OCORRENCIAS)\n→ tem_permissao(papel, permissão)
+        Dom --> UC: permitido
+        UC -> UC: limita limit a no máximo 200
+        UC -> UC: montar_filtro(ator, input)
+        note right of UC
+          Agente: filtro recebe agente_policial_id = próprio id,
+          ou seja, só encontra as próprias ocorrências.
+          Demais papéis: sem essa restrição.
+          A busca não informa status, então vale o padrão
+          ESTADOS_VISIVEIS_POR_PADRAO: todas as situações
+          menos EXCLUIDA (arquivadas aparecem; excluídas não).
+        end note
+
+        UC -> Repo: listar(filtro)
+        Repo -> DB: SELECT … WHERE status IN (todos menos EXCLUIDA)\nAND numero_protocolo ILIKE '%roubo%'\nORDER BY criada_em DESC LIMIT 6 OFFSET 0\n(+ carga das tabelas filhas via selectinload)
+        DB --> Repo: linhas encontradas
+        Repo -> Dom: OcorrenciaMapper.to_domain(linha)
+        Dom --> Repo: entidades Ocorrencia
+        Repo --> UC: list[Ocorrencia]
+
+        UC -> Repo: contar(filtro)
+        Repo -> DB: SELECT COUNT(id) … mesmo WHERE
+        DB --> Repo: total
+        Repo --> UC: total
+
+        UC -> UC: para_resumo: entidade →\nOcorrenciaResumoOutput
+        UC --> HTTP: PaginaOcorrenciasOutput
+        HTTP --> Svc: 200 · JSON { itens, total, limit, offset }
+        Svc --> Busca: pagina.itens (o total não é usado)
+      end
+    else
+      Busca -> Svc: listar([], limite, 0, true,\n{ natureza: palavra })
+      note right of Svc
+        Mesmo caminho até o banco; a condição
+        de busca passa a ser
+        natureza ILIKE '%palavra%'
+      end note
+      Svc --> Busca: itens (ou lista vazia, se falhar)
+    else
+      Busca -> Svc: listar([], limite, 0, true,\n{ texto: palavra })
+      note right of Svc
+        Mesmo caminho até o banco; a condição
+        de busca passa a ser
+        (descricao ILIKE '%palavra%'
+         OR localizacao ILIKE '%palavra%')
+      end note
+      Svc --> Busca: itens (ou lista vazia, se falhar)
+    end
+
+    Busca -> Util: mesclarResultadosBusca(\n[protocolo, natureza, texto], sem teto)
+    Util --> Busca: UNIÃO da palavra: sem repetidos,\nna ordem protocolo → natureza → texto
+  end
+
+  == Combinação das palavras ==
+
+  Busca -> Util: intersectarResultados(uma lista por palavra)
+  Util --> Busca: INTERSEÇÃO: só quem casou com todas as palavras,\nna ordem da 1ª palavra, no máximo 6
+  note right of Util
+    Com uma palavra só, a interseção apenas
+    corta a lista nos 6 primeiros.
+    Ex.: "roubo andradas" → só o roubo da
+    Rua dos Andradas, não todos os roubos
+    somados a tudo daquela rua.
+  end note
+  Busca --> U: lista suspensa com até 6 resultados\nou "Nada encontrado"
+end
+
+== Escolha de um resultado ==
+
+U -> Busca: clica em um resultado
+Busca -> Busca: fecha a lista e limpa o campo
+
+alt Delegado ou Supervisor
+  Busca -> Destino: navigate("/fila?ocorrencia={id}")
+  Destino -> Svc: buscarPorId(id)
+  Svc -> HTTP: GET /v1/ocorrencias/{id}
+  note right of HTTP
+    Desce pelas mesmas camadas,
+    pelo caso de uso ObterDetalheOcorrencia.
+  end note
+  HTTP --> Svc: detalhe da ocorrência
+  Svc --> Destino: detalhe
+  Destino -> Destino: abaDoStatus(status): abre a aba\ndo status e exibe o detalhe
+  Destino --> U: ocorrência aberta na aba correta
+else demais papéis
+  Busca -> Destino: navigate("/minhas?ocorrencia={id}")
+  alt Agente
+    Destino -> Svc: buscarPorId(id)
+    Svc -> HTTP: GET /v1/ocorrencias/{id}
+    HTTP --> Svc: detalhe da ocorrência
+    Svc --> Destino: detalhe
+    Destino --> U: ocorrência aberta em Minhas ocorrências
+  else Operador Central
+    Destino --> U: tela "Acesso não autorizado"\n(o detalhe não chega a ser pedido)
+    note right of Destino
+      Comportamento atual: a rota /minhas exige o
+      papel AGENTE (RequireRole), então o Operador
+      Central encontra a ocorrência na busca mas
+      não consegue abri-la por ela.
+    end note
+  end
+end
+
+@enduml

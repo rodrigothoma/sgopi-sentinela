@@ -1,0 +1,70 @@
+@startuml
+title Busca Global de Ocorrências — Visão Geral (NÃO é caso de uso)
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam defaultFontSize 14
+skinparam legendBackgroundColor #FFEBEE
+skinparam legendBorderColor #C62828
+
+legend top
+  <b>ATENÇÃO: este diagrama NÃO representa um caso de uso.</b>
+  A busca global é uma funcionalidade <b>extra</b>, sem RF nem UC na DOCUMENTACAO_DE_ENGENHARIA
+  e fora do escopo canônico do MVP. Esta é a versão resumida do funcionamento técnico.
+  Camadas internas do servidor, erros e regras por papel: ver <b>extra-busca-global-ocorrencias</b>.
+endlegend
+
+actor "Usuário" as U
+boundary "Frontend (navegador)\ncampo de busca e\npágina de destino" as Tela
+control "Servidor\n(backend — FastAPI)\nrota HTTP → aplicação → repositório" as Servidor
+database "Banco de dados\n(PostgreSQL)" as Banco
+
+== 1. Digitação ==
+
+U -> Tela: digita "roubo andradas"
+Tela -> Tela: espera 300 ms sem nova digitação\ne separa o texto em palavras:\n"roubo" e "andradas"
+note right of Tela
+  Com menos de 2 caracteres, não busca.
+  Aceita no máximo 4 palavras.
+end note
+
+== 2. Consultas ==
+
+loop para cada palavra — todas ao mesmo tempo
+  Tela -> Servidor: 3 consultas ao mesmo tempo:\npor protocolo · por natureza · por texto (relato ou endereço)
+  Servidor -> Servidor: confere quem está logado\ne se tem permissão de consulta
+  Servidor -> Banco: procura a palavra na tabela de ocorrências\n(ILIKE: "contém", sem diferenciar maiúsculas)
+  Banco --> Servidor: ocorrências que casaram
+  Servidor --> Tela: 3 listas de ocorrências
+  Tela -> Tela: UNIÃO: junta as 3 listas da palavra,\nsem repetir ocorrência
+end
+
+== 3. Combinação das palavras ==
+
+Tela -> Tela: INTERSEÇÃO: fica só quem está\nnas listas de TODAS as palavras
+note right of Tela
+  Cada palavra a mais estreita o resultado.
+  "roubo andradas" → só o roubo da Rua dos Andradas.
+  Com uma palavra só, não há o que cruzar:
+  a lista é apenas limitada a 6.
+end note
+Tela --> U: lista com até 6 resultados\n(ou "Nada encontrado")
+
+== 4. Abertura do resultado ==
+
+U -> Tela: clica em um resultado
+Tela -> Tela: abre a página de destino:\nFila de revisão (Delegado, Supervisor)\nou Minhas ocorrências (demais papéis)
+Tela -> Servidor: a página pede o detalhe da ocorrência\nGET /v1/ocorrencias/{id}
+Servidor -> Banco: lê a ocorrência
+Banco --> Servidor: dados da ocorrência
+Servidor --> Tela: detalhe
+Tela --> U: ocorrência aberta
+note right of Tela
+  Exceção: para o Operador Central, a página
+  Minhas ocorrências recusa o acesso
+  ("Acesso não autorizado") e o detalhe não
+  chega a ser pedido. Ver o diagrama detalhado.
+end note
+
+@enduml
