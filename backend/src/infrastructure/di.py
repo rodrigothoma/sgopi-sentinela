@@ -27,12 +27,7 @@ from adapters.outbound.persistence.comunicacao_interagencias_repositorio_sqlalch
     ComunicacaoInteragenciasRepositorioSQLAlchemy,
 )
 from adapters.outbound.persistence.geradores_sequenciais_sqlalchemy import (
-    GeradorNumeroInqueritoSQLAlchemy,
-    GeradorNumeroLaudoSQLAlchemy,
-    GeradorNumeroMedidaSQLAlchemy,
-    GeradorNumeroOficioSQLAlchemy,
-    GeradorNumeroOrdemSQLAlchemy,
-    GeradorProtocoloSQLAlchemy,
+    GeradorSequencialSQLAlchemy,
 )
 from adapters.outbound.persistence.indicadores_sqlalchemy import IndicadoresSQLAlchemy
 from adapters.outbound.persistence.inquerito_repositorio_sqlalchemy import InqueritoRepositorioSQLAlchemy
@@ -150,11 +145,7 @@ from application.ports.inbound.interface_revisar_ocorrencia import (
 from application.ports.outbound.armazenamento_arquivos import ArmazenamentoArquivos
 from application.ports.outbound.consulta_indicadores import ConsultaIndicadores
 from application.ports.outbound.credencial_dispositivo import CredencialDispositivo
-from application.ports.outbound.gerador_numero_inquerito import GeradorNumeroInquerito
-from application.ports.outbound.gerador_numero_laudo import GeradorNumeroLaudo
-from application.ports.outbound.gerador_numero_medida import GeradorNumeroMedida
-from application.ports.outbound.gerador_numero_ordem import GeradorNumeroOrdem
-from application.ports.outbound.gerador_protocolo import GeradorProtocolo
+from application.ports.outbound.gerador_numero_sequencial import GeradorNumeroSequencial
 from application.ports.outbound.hasher_senha import HasherSenha
 from application.ports.outbound.limitador_tentativas import LimitadorTentativas
 from application.ports.outbound.porta_auditoria import PortaAuditoria
@@ -162,10 +153,7 @@ from application.ports.outbound.porta_notificacao_email import PortaNotificacaoE
 from application.ports.outbound.provedor_token import ProvedorToken
 from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
-from application.ports.outbound.repositorio_comunicacao_interagencias import (
-    GeradorNumeroOficio,
-    RepositorioComunicacaoInteragencias,
-)
+from application.ports.outbound.repositorio_comunicacao_interagencias import RepositorioComunicacaoInteragencias
 from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
 from application.ports.outbound.repositorio_laudo import RepositorioLaudoPericial
 from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
@@ -325,10 +313,6 @@ def get_repositorio_ordem(session: AsyncSession = Depends(get_session)) -> Repos
     return OrdemDespachoRepositorioSQLAlchemy(session)
 
 
-def get_gerador_numero_ordem(session: AsyncSession = Depends(get_session)) -> GeradorNumeroOrdem:
-    return GeradorNumeroOrdemSQLAlchemy(session)
-
-
 def get_gerenciador_conexoes() -> GerenciadorConexoes:
     return gerenciador_conexoes
 
@@ -349,8 +333,8 @@ def get_auditoria(session: AsyncSession = Depends(get_session)) -> PortaAuditori
     return AuditoriaSQLAlchemy(session)
 
 
-def get_gerador_protocolo(session: AsyncSession = Depends(get_session)) -> GeradorProtocolo:
-    return GeradorProtocoloSQLAlchemy(session)
+def get_gerador_sequencial(session: AsyncSession = Depends(get_session)) -> GeradorNumeroSequencial:
+    return GeradorSequencialSQLAlchemy(session)
 
 
 # --------------------------------------------------------------- casos de uso
@@ -358,7 +342,7 @@ def get_registrar_ocorrencia(
     repositorio: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
     uow: UnidadeDeTrabalho = Depends(get_uow),
     relogio: Relogio = Depends(get_relogio),
-    gerador: GeradorProtocolo = Depends(get_gerador_protocolo),
+    gerador: GeradorNumeroSequencial = Depends(get_gerador_sequencial),
     auditoria: PortaAuditoria = Depends(get_auditoria),
     publicador: PublicadorEventos = Depends(get_publicador),
     notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
@@ -679,7 +663,7 @@ def montar_gerador(session_factory: async_sessionmaker, relogio: Relogio | None 
                     OcorrenciaRepositorioSQLAlchemy(session),
                     UnidadeDeTrabalhoSQLAlchemy(session),
                     relogio_efetivo,
-                    GeradorProtocoloSQLAlchemy(session),
+                    GeradorSequencialSQLAlchemy(session),
                     AuditoriaSQLAlchemy(session),
                 )
                 return
@@ -688,7 +672,7 @@ def montar_gerador(session_factory: async_sessionmaker, relogio: Relogio | None 
                 OcorrenciaRepositorioSQLAlchemy(session),
                 UnidadeDeTrabalhoSQLAlchemy(session),
                 relogio_efetivo,
-                GeradorProtocoloSQLAlchemy(session),
+                GeradorSequencialSQLAlchemy(session),
                 AuditoriaSQLAlchemy(session),
                 publicador_eventos,
                 NotificacaoRepositorioSQLAlchemy(session),
@@ -743,7 +727,7 @@ def montar_orquestrador_despacho(
                     OcorrenciaRepositorioSQLAlchemy(session),
                     ViaturaRepositorioSQLAlchemy(session),
                     OrdemDespachoRepositorioSQLAlchemy(session),
-                    GeradorNumeroOrdemSQLAlchemy(session),
+                    GeradorSequencialSQLAlchemy(session),
                     UnidadeDeTrabalhoSQLAlchemy(session),
                     relogio_efetivo,
                     AuditoriaSQLAlchemy(session),
@@ -792,7 +776,7 @@ def get_despachar_viatura(
     ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
     viaturas: RepositorioViatura = Depends(get_repositorio_viatura),
     ordens: RepositorioOrdemDespacho = Depends(get_repositorio_ordem),
-    gerador: GeradorNumeroOrdem = Depends(get_gerador_numero_ordem),
+    gerador: GeradorNumeroSequencial = Depends(get_gerador_sequencial),
     uow: UnidadeDeTrabalho = Depends(get_uow),
     relogio: Relogio = Depends(get_relogio),
     auditoria: PortaAuditoria = Depends(get_auditoria),
@@ -822,14 +806,10 @@ def get_repositorio_inquerito(session: AsyncSession = Depends(get_session)) -> R
     return InqueritoRepositorioSQLAlchemy(session)
 
 
-def get_gerador_numero_inquerito(session: AsyncSession = Depends(get_session)) -> GeradorNumeroInquerito:
-    return GeradorNumeroInqueritoSQLAlchemy(session)
-
-
 def get_instaurar_inquerito(
     inqueritos: RepositorioInquerito = Depends(get_repositorio_inquerito),
     ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
-    gerador: GeradorNumeroInquerito = Depends(get_gerador_numero_inquerito),
+    gerador: GeradorNumeroSequencial = Depends(get_gerador_sequencial),
     relogio: Relogio = Depends(get_relogio),
     uow: UnidadeDeTrabalho = Depends(get_uow),
     auditoria: PortaAuditoria = Depends(get_auditoria),
@@ -891,15 +871,11 @@ def get_repositorio_laudo(session: AsyncSession = Depends(get_session)) -> Repos
     return LaudoRepositorioSQLAlchemy(session)
 
 
-def get_gerador_numero_laudo(session: AsyncSession = Depends(get_session)) -> GeradorNumeroLaudo:
-    return GeradorNumeroLaudoSQLAlchemy(session)
-
-
 def get_solicitar_laudo(
     laudos: RepositorioLaudoPericial = Depends(get_repositorio_laudo),
     ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
     inqueritos: RepositorioInquerito = Depends(get_repositorio_inquerito),
-    gerador: GeradorNumeroLaudo = Depends(get_gerador_numero_laudo),
+    gerador: GeradorNumeroSequencial = Depends(get_gerador_sequencial),
     relogio: Relogio = Depends(get_relogio),
     uow: UnidadeDeTrabalho = Depends(get_uow),
     auditoria: PortaAuditoria = Depends(get_auditoria),
@@ -944,14 +920,10 @@ def get_repositorio_medida_protetiva(session: AsyncSession = Depends(get_session
     return MedidaProtetivaRepositorioSQLAlchemy(session)
 
 
-def get_gerador_numero_medida(session: AsyncSession = Depends(get_session)) -> GeradorNumeroMedida:
-    return GeradorNumeroMedidaSQLAlchemy(session)
-
-
 def get_conceder_medida(
     medidas: RepositorioMedidaProtetiva = Depends(get_repositorio_medida_protetiva),
     ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
-    gerador: GeradorNumeroMedida = Depends(get_gerador_numero_medida),
+    gerador: GeradorNumeroSequencial = Depends(get_gerador_sequencial),
     relogio: Relogio = Depends(get_relogio),
     uow: UnidadeDeTrabalho = Depends(get_uow),
     auditoria: PortaAuditoria = Depends(get_auditoria),
@@ -1065,13 +1037,9 @@ def get_confirmar_ciencia_alerta(
 
 
 # ------------------------------------------------------------------ comunicacao interagencias
-def get_gerador_numero_oficio(session: AsyncSession = Depends(get_session)) -> GeradorNumeroOficio:
-    return GeradorNumeroOficioSQLAlchemy(session)
-
-
 def get_enviar_comunicacao_interagencias(
     comunicacoes: RepositorioComunicacaoInteragencias = Depends(get_repositorio_comunicacao_interagencias),
-    gerador_oficio: GeradorNumeroOficio = Depends(get_gerador_numero_oficio),
+    gerador_oficio: GeradorNumeroSequencial = Depends(get_gerador_sequencial),
     ocorrencias: RepositorioOcorrencia = Depends(get_repositorio_ocorrencia),
     notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
     auditoria: PortaAuditoria = Depends(get_auditoria),
@@ -1099,7 +1067,7 @@ def get_consultar_comunicacoes_interagencias(
 
 def get_responder_comunicacao_interagencias(
     comunicacoes: RepositorioComunicacaoInteragencias = Depends(get_repositorio_comunicacao_interagencias),
-    gerador_oficio: GeradorNumeroOficio = Depends(get_gerador_numero_oficio),
+    gerador_oficio: GeradorNumeroSequencial = Depends(get_gerador_sequencial),
     notificacoes: RepositorioNotificacao = Depends(get_repositorio_notificacao),
     auditoria: PortaAuditoria = Depends(get_auditoria),
     publicador: PublicadorEventos = Depends(get_publicador),
