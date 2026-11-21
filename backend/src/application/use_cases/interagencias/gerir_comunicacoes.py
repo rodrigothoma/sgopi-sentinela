@@ -12,13 +12,11 @@ from application.ports.inbound.interface_comunicacoes_interagencias import (
     InterfaceEnviarComunicacaoInteragencias,
     InterfaceResponderComunicacaoInteragencias,
 )
+from application.ports.outbound.gerador_numero_sequencial import GeradorNumeroSequencial, TipoDocumentoSequencial
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
-from application.ports.outbound.repositorio_comunicacao_interagencias import (
-    GeradorNumeroOficio,
-    RepositorioComunicacaoInteragencias,
-)
+from application.ports.outbound.repositorio_comunicacao_interagencias import RepositorioComunicacaoInteragencias
 from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.ports.outbound.unidade_de_trabalho import UnidadeDeTrabalho
@@ -71,7 +69,7 @@ class EnviarComunicacaoInteragenciasUseCase(InterfaceEnviarComunicacaoInteragenc
     def __init__(
         self,
         repositorio_comunicacao: RepositorioComunicacaoInteragencias,
-        gerador_oficio: GeradorNumeroOficio,
+        gerador_oficio: GeradorNumeroSequencial,
         repositorio_ocorrencia: RepositorioOcorrencia,
         repositorio_notificacao: RepositorioNotificacao,
         porta_auditoria: PortaAuditoria,
@@ -110,7 +108,7 @@ class EnviarComunicacaoInteragenciasUseCase(InterfaceEnviarComunicacaoInteragenc
             if ocorrencia is None:
                 raise EntidadeNaoEncontradaError(f"Ocorrência de protocolo '{prot_limpo}' não foi localizada.")
 
-        numero_oficio = await self._gerador.proximo_numero(ano)
+        numero_oficio = await self._gerador.proximo(TipoDocumentoSequencial.OFICIO, ano)
 
         comunicacao = ComunicacaoInteragencias.criar(
             numero_oficio=numero_oficio,
@@ -178,7 +176,7 @@ class ResponderComunicacaoInteragenciasUseCase(InterfaceResponderComunicacaoInte
     def __init__(
         self,
         repositorio_comunicacao: RepositorioComunicacaoInteragencias,
-        gerador_oficio: GeradorNumeroOficio,
+        gerador_oficio: GeradorNumeroSequencial,
         repositorio_notificacao: RepositorioNotificacao,
         porta_auditoria: PortaAuditoria,
         publicador_eventos: PublicadorEventos,
@@ -213,7 +211,7 @@ class ResponderComunicacaoInteragenciasUseCase(InterfaceResponderComunicacaoInte
             )
 
         agora = self._relogio.agora()
-        numero_oficio = await self._gerador.proximo_numero(agora.year)
+        numero_oficio = await self._gerador.proximo(TipoDocumentoSequencial.OFICIO, agora.year)
 
         # Destinatário da resposta é o departamento de origem da mensagem anterior
         destinatarios = [pai.departamento_origem]

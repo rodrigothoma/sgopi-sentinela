@@ -7,7 +7,7 @@ from application.ports.inbound.interface_gerir_laudos import (
     LaudoOutput,
     SolicitarLaudoInput,
 )
-from application.ports.outbound.gerador_numero_laudo import GeradorNumeroLaudo
+from application.ports.outbound.gerador_numero_sequencial import GeradorNumeroSequencial, TipoDocumentoSequencial
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
@@ -29,7 +29,7 @@ class SolicitarLaudo(InterfaceSolicitarLaudo):
         repositorio_laudo: RepositorioLaudoPericial,
         repositorio_ocorrencia: RepositorioOcorrencia,
         repositorio_inquerito: RepositorioInquerito,
-        gerador_numero: GeradorNumeroLaudo,
+        gerador_numero: GeradorNumeroSequencial,
         relogio: Relogio,
         uow: UnidadeDeTrabalho,
         auditoria: PortaAuditoria,
@@ -66,7 +66,7 @@ class SolicitarLaudo(InterfaceSolicitarLaudo):
         tipo_enum = interpretar_enum(TipoPericia, dados.tipo_pericia, "laudo.tipo_invalido", "Tipo de perícia inválido: {valor}")
 
         agora = self._relogio.agora()
-        numero_ref = await self._gerador.proximo(agora.year)
+        numero_ref = await self._gerador.proximo(TipoDocumentoSequencial.LAUDO, agora.year)
 
         laudo = LaudoPericial.solicitar(
             numero_referencia=numero_ref,
