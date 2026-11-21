@@ -135,7 +135,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 
 ## 7. Onda 5 — Testes e documentação
 
-- [ ] **Traduções faltando** *(encontrado em 08/11)*: 36 das 147 chaves de erro usadas no backend não existem em `infrastructure/i18n/locales/*/default.json` (inquérito 12, laudo 12, medida 11, ocorrência 1); a API devolve a chave crua (ex.: `inquerito.apenas_delegado`) no lugar da mensagem.
+- [x] **Traduções faltando**: 36 chaves de erro (inquérito 12, laudo 12, medida 11, ocorrência 1) adicionadas em `pt` e `en`, com teste automatizado de varredura AST (`test_traducoes_erros.py`). — `c45a35d`, `4e7d74b`
 - [ ] **Testes unitários que faltam**: inquérito `consultar`/`instaurar`, laudo (4), medida (renovar/revogar), `linha_do_tempo`, `emitir_credencial_telemetria`; concorrência otimista por repositório (estender `tests/integration/contratos/` a inquérito, laudo e medida).
 - [ ] **Migração 0008 sem `downgrade` no PostgreSQL** *(encontrado em 16/11)*: o `downgrade` tenta remover a constraint `fk_ocorrencias_inquerito_id_inqueritos`, que não existe com esse nome no PostgreSQL; `alembic downgrade base` e o `npm run e2e:db` falham. O CI não detecta porque só desce até a 0011.
 - [ ] **Higiene da suíte**: hash argon2 uma vez por sessão, helper de login único, enum `Papel` nos testes, consolidar fakes duplicadas em `tests/fakes/`.
