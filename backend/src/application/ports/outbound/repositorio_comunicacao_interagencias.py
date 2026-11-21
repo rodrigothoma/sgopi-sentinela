@@ -1,4 +1,4 @@
-"""Porta de saída: Repositório e Gerador de Ofício para Comunicação Interagências (RF10 / UC10)."""
+"""Porta de saída: Repositório de Comunicação Interagências (RF10 / UC10)."""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -6,16 +6,6 @@ from collections.abc import Collection
 from uuid import UUID
 
 from domain.interagencias.entity import ComunicacaoInteragencias, NivelSigilo
-
-
-class GeradorNumeroOficio(ABC):
-    @abstractmethod
-    async def proximo_numero(self, ano: int) -> str:
-        """Gera o próximo número de ofício no formato OFI-AAAA-NNNNNN."""
-
-
-def formatar_numero_oficio(ano: int, sequencial: int) -> str:
-    return f"OFI-{ano:04d}-{sequencial:06d}"
 
 
 class RepositorioComunicacaoInteragencias(ABC):
