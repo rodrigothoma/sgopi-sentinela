@@ -33,8 +33,8 @@ sgopi-sentinela/
 │   │   │                          # mixin Versionado, exigir_texto, interpretar_enum, Prioridade
 │   │   ├── application/
 │   │   │   ├── ports/inbound/     # Interface* + DTOs + Ator (um arquivo por caso de uso)
-│   │   │   ├── ports/outbound/    # Repositorio*, UnidadeDeTrabalho, Relogio, GeradorProtocolo,
-│   │   │   │                      # GeradorNumero*, PortaAuditoria, PublicadorEventos, HasherSenha,
+│   │   │   ├── ports/outbound/    # Repositorio*, UnidadeDeTrabalho, Relogio,
+│   │   │   │                      # GeradorNumeroSequencial, PortaAuditoria, PublicadorEventos, HasherSenha,
 │   │   │   │                      # ProvedorToken, ArmazenamentoArquivos, PortaNotificacaoEmail
 │   │   │   └── use_cases/         # auth/, ocorrencia/, viatura/, despacho/, auditoria/, usuario/,
 │   │   │                          # inquerito/, laudo/, medida_protetiva/, documento/, interagencias/,

@@ -99,7 +99,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 - [ ] **Áreas de risco com parâmetros nomeados**: `ParametrosAreasRisco` (raio de agrupamento, mínimos por janela, faixa de raio, folga, limiar de criticidade, limite de varredura) e serviço de domínio de manchas no lugar do agrupamento O(n²) dentro do caso de uso.
 - [ ] **Fatores únicos em `domain/shared`**: `METROS_POR_KM` + `Coordenada.distancia_metros()` (fator repetido em 4 arquivos) e `TAMANHO_HASH_SHA256` (evidência e laudo); `LIMITE_VARREDURA` no alerta de vencimento.
 - [ ] **Decompor as funções longas**: `_processar_alerta_medida` (103 linhas; HTML do e-mail vai para um adapter), `gerir_comunicacoes.executar` (97), `instaurar_inquerito` (86), `calcular_areas_risco.executar` (85), `solicitar_laudo` (80), `anexar_laudo` (77), `conceder_medida` (75).
-- [ ] **Portas**: um único `GeradorNumeroSequencial` com enum de prefixos (hoje 6 portas); remover métodos abstratos sem uso; padronizar `Input`/`dados`/`buscar_por_id`/paginação `limit/offset`; remover o `UsuarioOutput` duplicado.
+- [~] **Portas**: um único `GeradorNumeroSequencial` com enum `TipoDocumentoSequencial` no lugar das 6 portas, implementado só por `GeradorSequencialSQLAlchemy` (sem subclasses) e com uma única fake. — `3f339c9` … `5af0841`. **Pendente:** remover métodos abstratos sem uso; padronizar `Input`/`dados`/`buscar_por_id`/paginação `limit/offset`; remover o `UsuarioOutput` duplicado.
 
 ---
 
