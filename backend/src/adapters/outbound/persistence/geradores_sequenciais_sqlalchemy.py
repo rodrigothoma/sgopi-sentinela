@@ -1,20 +1,17 @@
 """
-Adapters de saída: geradores de número sequencial por ano (HEX-08).
+Adapter de saída: GeradorNumeroSequencial sobre as tabelas ``sequencias_*`` (HEX-08).
 
-Cada documento numerado (protocolo, inquérito, laudo, medida, ordem de despacho, ofício) tem a sua
-tabela ``sequencias_*`` com uma linha por ano; a numeração recomeça em 1 a cada virada de ano.
+Cada tipo de documento (protocolo, inquérito, laudo, medida, ordem de despacho, ofício) tem a sua
+tabela com uma linha por ano; a numeração recomeça em 1 a cada virada de ano.
 """
-from collections.abc import Callable
-
-from sqlalchemy import text
+from sqlalchemy import TextClause, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from application.ports.outbound.gerador_numero_inquerito import GeradorNumeroInquerito, formatar_numero_inquerito
-from application.ports.outbound.gerador_numero_laudo import GeradorNumeroLaudo, formatar_numero_laudo
-from application.ports.outbound.gerador_numero_medida import GeradorNumeroMedida, formatar_numero_medida
-from application.ports.outbound.gerador_numero_ordem import GeradorNumeroOrdem, formatar_numero_ordem
-from application.ports.outbound.gerador_protocolo import GeradorProtocolo, formatar_protocolo
-from application.ports.outbound.repositorio_comunicacao_interagencias import GeradorNumeroOficio, formatar_numero_oficio
+from application.ports.outbound.gerador_numero_sequencial import (
+    GeradorNumeroSequencial,
+    TipoDocumentoSequencial,
+    formatar_numero_sequencial,
+)
 from infrastructure.database.models import (
     SequenciaInqueritoModel,
     SequenciaLaudoModel,
@@ -24,62 +21,41 @@ from infrastructure.database.models import (
     SequenciaProtocoloModel,
 )
 
-Formatador = Callable[[int, int], str]
+_TABELAS: dict[TipoDocumentoSequencial, str] = {
+    TipoDocumentoSequencial.PROTOCOLO: SequenciaProtocoloModel.__tablename__,
+    TipoDocumentoSequencial.INQUERITO: SequenciaInqueritoModel.__tablename__,
+    TipoDocumentoSequencial.LAUDO: SequenciaLaudoModel.__tablename__,
+    TipoDocumentoSequencial.MEDIDA_PROTETIVA: SequenciaMedidaModel.__tablename__,
+    TipoDocumentoSequencial.ORDEM_DESPACHO: SequenciaOrdemDespachoModel.__tablename__,
+    TipoDocumentoSequencial.OFICIO: SequenciaOficioModel.__tablename__,
+}
 
 
-class GeradorSequencialSQLAlchemy:
-    """Contador por ano com upsert atômico (``INSERT … ON CONFLICT DO UPDATE … RETURNING``).
+def montar_upsert_sequencia(tabela: str) -> TextClause:
+    """Upsert atômico (``INSERT … ON CONFLICT DO UPDATE … RETURNING``) que incrementa o contador do ano.
 
     Válido em PostgreSQL e SQLite ≥ 3.35. O lock de linha do Postgres serializa transações
-    concorrentes, inclusive na criação do primeiro número do ano (RF01* critério 3).
+    concorrentes, inclusive na criação do primeiro número do ano (RF01* critério 3). O nome da
+    tabela entra por interpolação no SQL, então só identificador simples é aceito.
     """
+    if not tabela.isidentifier():
+        raise ValueError(f"Nome de tabela de sequência inválido: {tabela!r}")
+    return text(
+        f"INSERT INTO {tabela} (ano, ultimo) VALUES (:ano, 1) "
+        f"ON CONFLICT (ano) DO UPDATE SET ultimo = {tabela}.ultimo + 1 "
+        "RETURNING ultimo"
+    )
 
-    def __init__(self, session: AsyncSession, tabela: str, formatar: Formatador) -> None:
-        # O nome entra por interpolação no SQL: só identificador simples, vindo do __tablename__ do model.
-        if not tabela.isidentifier():
-            raise ValueError(f"Nome de tabela de sequência inválido: {tabela!r}")
+
+_UPSERTS: dict[TipoDocumentoSequencial, TextClause] = {
+    tipo: montar_upsert_sequencia(tabela) for tipo, tabela in _TABELAS.items()
+}
+
+
+class GeradorSequencialSQLAlchemy(GeradorNumeroSequencial):
+    def __init__(self, session: AsyncSession) -> None:
         self._session = session
-        self._formatar = formatar
-        self._upsert = text(
-            f"INSERT INTO {tabela} (ano, ultimo) VALUES (:ano, 1) "
-            f"ON CONFLICT (ano) DO UPDATE SET ultimo = {tabela}.ultimo + 1 "
-            "RETURNING ultimo"
-        )
 
-    async def proximo(self, ano: int) -> str:
-        sequencial = (await self._session.execute(self._upsert, {"ano": ano})).scalar_one()
-        return self._formatar(ano, int(sequencial))
-
-
-class GeradorProtocoloSQLAlchemy(GeradorSequencialSQLAlchemy, GeradorProtocolo):
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, SequenciaProtocoloModel.__tablename__, formatar_protocolo)
-
-
-class GeradorNumeroInqueritoSQLAlchemy(GeradorSequencialSQLAlchemy, GeradorNumeroInquerito):
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, SequenciaInqueritoModel.__tablename__, formatar_numero_inquerito)
-
-
-class GeradorNumeroLaudoSQLAlchemy(GeradorSequencialSQLAlchemy, GeradorNumeroLaudo):
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, SequenciaLaudoModel.__tablename__, formatar_numero_laudo)
-
-
-class GeradorNumeroMedidaSQLAlchemy(GeradorSequencialSQLAlchemy, GeradorNumeroMedida):
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, SequenciaMedidaModel.__tablename__, formatar_numero_medida)
-
-
-class GeradorNumeroOrdemSQLAlchemy(GeradorSequencialSQLAlchemy, GeradorNumeroOrdem):
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, SequenciaOrdemDespachoModel.__tablename__, formatar_numero_ordem)
-
-
-class GeradorNumeroOficioSQLAlchemy(GeradorSequencialSQLAlchemy, GeradorNumeroOficio):
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, SequenciaOficioModel.__tablename__, formatar_numero_oficio)
-
-    async def proximo_numero(self, ano: int) -> str:
-        """A porta de ofício nomeia a operação como ``proximo_numero``; a contagem é a mesma das demais."""
-        return await self.proximo(ano)
+    async def proximo(self, tipo: TipoDocumentoSequencial, ano: int) -> str:
+        sequencial = (await self._session.execute(_UPSERTS[tipo], {"ano": ano})).scalar_one()
+        return formatar_numero_sequencial(tipo, ano, int(sequencial))

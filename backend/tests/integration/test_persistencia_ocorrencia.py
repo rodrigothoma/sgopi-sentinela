@@ -1,13 +1,14 @@
-"""Integração: OcorrenciaRepositorioSQLAlchemy + UoW + GeradorProtocolo + Auditoria (SQLite em memória)."""
+"""Integração: OcorrenciaRepositorioSQLAlchemy + UoW + GeradorSequencial + Auditoria (SQLite em memória)."""
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
 
 from adapters.outbound.persistence.auditoria_sqlalchemy import AuditoriaSQLAlchemy
-from adapters.outbound.persistence.geradores_sequenciais_sqlalchemy import GeradorProtocoloSQLAlchemy
+from adapters.outbound.persistence.geradores_sequenciais_sqlalchemy import GeradorSequencialSQLAlchemy
 from adapters.outbound.persistence.ocorrencia_repositorio_sqlalchemy import OcorrenciaRepositorioSQLAlchemy
 from adapters.outbound.persistence.unidade_de_trabalho_sqlalchemy import UnidadeDeTrabalhoSQLAlchemy
+from application.ports.outbound.gerador_numero_sequencial import TipoDocumentoSequencial
 from application.ports.outbound.repositorio_ocorrencia import FiltroOcorrencias
 from domain.auditoria.contexto import ContextoAuditoria
 from domain.ocorrencia.auditoria import OcorrenciaRegistrada
@@ -154,12 +155,13 @@ async def test_listar_filtra_por_status_e_ordena_mais_antiga_primeiro(session, u
 
 
 async def test_gerador_protocolo_sequencial_por_ano(session):
-    g = GeradorProtocoloSQLAlchemy(session)
-    assert await g.proximo(2026) == "SGOPI-2026-000001"
-    assert await g.proximo(2026) == "SGOPI-2026-000002"
-    assert await g.proximo(2027) == "SGOPI-2027-000001"
+    g = GeradorSequencialSQLAlchemy(session)
+    protocolo = TipoDocumentoSequencial.PROTOCOLO
+    assert await g.proximo(protocolo, 2026) == "SGOPI-2026-000001"
+    assert await g.proximo(protocolo, 2026) == "SGOPI-2026-000002"
+    assert await g.proximo(protocolo, 2027) == "SGOPI-2027-000001"
     await session.commit()
-    assert await g.proximo(2026) == "SGOPI-2026-000003"
+    assert await g.proximo(protocolo, 2026) == "SGOPI-2026-000003"
 
 
 async def test_auditoria_registra_e_lista(session, usuarios):

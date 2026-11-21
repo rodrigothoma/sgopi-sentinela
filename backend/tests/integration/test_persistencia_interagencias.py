@@ -5,7 +5,8 @@ from uuid import uuid4
 from adapters.outbound.persistence.comunicacao_interagencias_repositorio_sqlalchemy import (
     ComunicacaoInteragenciasRepositorioSQLAlchemy,
 )
-from adapters.outbound.persistence.geradores_sequenciais_sqlalchemy import GeradorNumeroOficioSQLAlchemy
+from adapters.outbound.persistence.geradores_sequenciais_sqlalchemy import GeradorSequencialSQLAlchemy
+from application.ports.outbound.gerador_numero_sequencial import TipoDocumentoSequencial
 from domain.interagencias.entity import ComunicacaoInteragencias, NivelSigilo
 
 AGORA = datetime(2026, 11, 9, 10, 0, tzinfo=UTC)
@@ -60,8 +61,9 @@ async def test_filtro_de_sigilo_preserva_os_do_remetente(session, usuarios):
 
 
 async def test_gerador_de_oficio_sequencial_por_ano(session):
-    gerador = GeradorNumeroOficioSQLAlchemy(session)
+    gerador = GeradorSequencialSQLAlchemy(session)
+    oficio = TipoDocumentoSequencial.OFICIO
 
-    assert await gerador.proximo_numero(2026) == "OFI-2026-000001"
-    assert await gerador.proximo_numero(2026) == "OFI-2026-000002"
-    assert await gerador.proximo_numero(2027) == "OFI-2027-000001"
+    assert await gerador.proximo(oficio, 2026) == "OFI-2026-000001"
+    assert await gerador.proximo(oficio, 2026) == "OFI-2026-000002"
+    assert await gerador.proximo(oficio, 2027) == "OFI-2027-000001"

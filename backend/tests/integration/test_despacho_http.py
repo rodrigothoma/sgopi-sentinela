@@ -77,16 +77,13 @@ async def test_sem_elegiveis_permite_despacho_manual(client):
 
 
 async def test_despacho_e_atomico_em_falha_no_meio(app, client, session):
-    from infrastructure.di import get_gerador_numero_ordem
-
-    class GeradorQuebrado:
-        async def proximo(self, ano):
-            raise RuntimeError("sequência indisponível")
+    from infrastructure.di import get_gerador_sequencial
+    from tests.fakes.portas_fake import GeradorNumeroSequencialFake
 
     ho = await auth(client, "operador")
     frota = await _frota(client, ho)
     oid = await _validada(client)
-    app.dependency_overrides[get_gerador_numero_ordem] = lambda: GeradorQuebrado()
+    app.dependency_overrides[get_gerador_sequencial] = lambda: GeradorNumeroSequencialFake(falhar=True)
     r = await client.post("/v1/despachos", json={"ocorrencia_id": oid, "viatura_id": frota["VTR-01"]}, headers=ho)
     assert r.status_code == 500 and r.json()["code"] == "generic.internal_error"
     assert r.json()["request_id"] and r.headers["X-Request-ID"] == r.json()["request_id"]
