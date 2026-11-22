@@ -1,0 +1,217 @@
+{
+  "@@locale": "pt",
+  "appTitulo": "SGOPI Sentinela",
+  "saudacao": "Olá, {nome}",
+  "@saudacao": {
+    "placeholders": {
+      "nome": {
+        "type": "String"
+      }
+    }
+  },
+  "sair": "Sair",
+  "cancelar": "Cancelar",
+  "confirmar": "Confirmar",
+  "ok": "OK",
+  "tentarNovamente": "Tentar novamente",
+  "campoObrigatorio": "Campo obrigatório",
+  "nenhumItem": "Nenhum.",
+  "loginTitulo": "Acesso restrito",
+  "loginSubtitulo": "Gestão de Ocorrências Policiais",
+  "loginCampoUsuario": "Usuário",
+  "loginCampoSenha": "Senha",
+  "loginEntrar": "Entrar",
+  "loginBloqueado": "Muitas tentativas. Tente novamente em {minutos} min.",
+  "@loginBloqueado": {
+    "placeholders": {
+      "minutos": {
+        "type": "int"
+      }
+    }
+  },
+  "sessaoExpirada": "Sua sessão expirou. Entre novamente.",
+  "erroSemConexao": "Servidor indisponível. Verifique a conexão.",
+  "erroInesperado": "Ocorreu um erro inesperado.",
+  "erroAcessoNegado": "Seu perfil não tem acesso a esta ação.",
+  "referenciaErro": "(ref. {referencia})",
+  "@referenciaErro": {
+    "placeholders": {
+      "referencia": {
+        "type": "String"
+      }
+    }
+  },
+  "semAcessoTitulo": "Perfil sem acesso no app",
+  "semAcessoMensagem": "O app mobile atende Agentes e Delegados. Use o sistema web para o seu perfil.",
+  "statusAguardandoRevisao": "Aguardando revisão",
+  "statusEmCorrecao": "Em correção",
+  "statusRejeitada": "Rejeitada",
+  "statusValidada": "Validada",
+  "statusEmAtendimento": "Em atendimento",
+  "statusEncerrada": "Encerrada",
+  "statusArquivada": "Arquivada",
+  "statusExcluida": "Excluída",
+  "prioridadeUrgente": "Urgente",
+  "prioridadeAlta": "Alta",
+  "prioridadeMedia": "Média",
+  "prioridadeBaixa": "Baixa",
+  "tipoVitima": "Vítima",
+  "tipoTestemunha": "Testemunha",
+  "tipoSuspeito": "Suspeito",
+  "tipoComunicante": "Comunicante",
+  "minhasTitulo": "Minhas ocorrências",
+  "filtroTodas": "Todas",
+  "listaVazia": "Nenhuma ocorrência encontrada.",
+  "erroCarregarMais": "Não foi possível carregar mais itens.",
+  "registrarTitulo": "Registrar ocorrência",
+  "secaoFato": "Dados do fato",
+  "campoNatureza": "Natureza",
+  "dicaNatureza": "Ex.: Furto, Roubo, Lesão corporal",
+  "campoDescricao": "Descrição circunstanciada",
+  "ajudaDescricao": "Mínimo de {minimo} caracteres",
+  "@ajudaDescricao": {
+    "placeholders": {
+      "minimo": {
+        "type": "int"
+      }
+    }
+  },
+  "campoDataHora": "Data/hora do fato",
+  "campoPrioridade": "Prioridade",
+  "prioridadeAutomatica": "Automática (sugerida pelo sistema)",
+  "secaoLocal": "Local do fato",
+  "campoLocalizacao": "Endereço / local",
+  "usarMinhaLocalizacao": "Usar minha localização",
+  "obtendoLocalizacao": "Obtendo localização...",
+  "coordenadaDefinida": "Coordenada: {latitude}, {longitude}",
+  "@coordenadaDefinida": {
+    "placeholders": {
+      "latitude": {
+        "type": "String"
+      },
+      "longitude": {
+        "type": "String"
+      }
+    }
+  },
+  "coordenadaPendente": "Coordenada ainda não definida.",
+  "secaoEnvolvidos": "Envolvidos",
+  "adicionarEnvolvido": "Adicionar envolvido",
+  "secaoTipificacoes": "Tipificações penais (opcional)",
+  "adicionarTipificacao": "Adicionar tipificação",
+  "secaoEvidencias": "Evidências",
+  "ajudaEvidencias": "Até {maximo} fotos JPG ou PNG de até 10 MB.",
+  "@ajudaEvidencias": {
+    "placeholders": {
+      "maximo": {
+        "type": "int"
+      }
+    }
+  },
+  "tirarFoto": "Câmera",
+  "escolherGaleria": "Galeria",
+  "remover": "Remover",
+  "enviarRegistro": "Registrar",
+  "registroConcluidoTitulo": "Ocorrência registrada",
+  "registroConcluidoMensagem": "Protocolo {protocolo}. Aguardando revisão do Delegado.",
+  "@registroConcluidoMensagem": {
+    "placeholders": {
+      "protocolo": {
+        "type": "String"
+      }
+    }
+  },
+  "evidenciasNaoEnviadas": "{quantidade} arquivo(s) não foram enviados. Anexe novamente pelo detalhe da ocorrência.",
+  "@evidenciasNaoEnviadas": {
+    "placeholders": {
+      "quantidade": {
+        "type": "int"
+      }
+    }
+  },
+  "erroNaturezaVazia": "Informe a natureza.",
+  "erroDescricaoCurta": "A descrição deve ter ao menos {minimo} caracteres.",
+  "@erroDescricaoCurta": {
+    "placeholders": {
+      "minimo": {
+        "type": "int"
+      }
+    }
+  },
+  "erroLocalizacaoVazia": "Informe o endereço ou local.",
+  "erroCoordenadaInvalida": "Defina a coordenada do fato.",
+  "erroDataFutura": "A data/hora do fato não pode ser futura.",
+  "erroSemEnvolvidos": "Adicione ao menos um envolvido.",
+  "erroNomeVazio": "Informe o nome.",
+  "erroNomeComNumeros": "O nome deve conter apenas letras.",
+  "erroDocumentoInvalido": "Documento: só números, 11 dígitos (CPF) ou 10 (RG).",
+  "erroArtigoVazio": "Informe o artigo.",
+  "erroDescricaoTipificacaoVazia": "Informe a descrição.",
+  "erroFormatoEvidencia": "Formato não suportado: use JPG, PNG ou PDF.",
+  "erroArquivoVazio": "O arquivo está vazio.",
+  "erroTamanhoEvidencia": "Arquivo acima de 10 MB.",
+  "erroLimiteEvidencias": "Limite de {maximo} evidências por ocorrência.",
+  "@erroLimiteEvidencias": {
+    "placeholders": {
+      "maximo": {
+        "type": "int"
+      }
+    }
+  },
+  "erroLocalizacaoServico": "Ative a localização do aparelho.",
+  "erroLocalizacaoPermissao": "Permissão de localização negada.",
+  "erroLocalizacaoLeitura": "Não foi possível obter a localização.",
+  "erroJustificativaCurta": "A justificativa deve ter ao menos {minimo} caracteres.",
+  "@erroJustificativaCurta": {
+    "placeholders": {
+      "minimo": {
+        "type": "int"
+      }
+    }
+  },
+  "envolvidoTitulo": "Envolvido",
+  "campoNome": "Nome",
+  "campoTipo": "Tipo",
+  "campoDocumento": "Documento (CPF ou RG, opcional)",
+  "campoEmail": "E-mail (opcional)",
+  "campoTelefone": "Telefone (opcional)",
+  "tipificacaoTitulo": "Tipificação penal",
+  "campoArtigo": "Artigo",
+  "dicaArtigo": "Ex.: Art. 155 CP",
+  "campoDescricaoTipificacao": "Descrição",
+  "detalheTitulo": "Ocorrência",
+  "rotuloProtocolo": "Protocolo",
+  "rotuloFato": "Fato em",
+  "rotuloRegistradaEm": "Registrada em",
+  "rotuloDescricao": "Descrição",
+  "rotuloHistorico": "Histórico",
+  "rotuloJustificativaDelegado": "Justificativa do Delegado",
+  "rotuloHashNarrativa": "Hash da narrativa (SHA-256)",
+  "acaoCorrigir": "Corrigir",
+  "acaoReenviar": "Reenviar para revisão",
+  "reenviarConfirmacao": "Reenviar a ocorrência corrigida para a fila do Delegado?",
+  "reenviada": "Ocorrência reenviada para revisão.",
+  "acaoAnexarFoto": "Anexar foto",
+  "evidenciaAnexada": "Evidência anexada.",
+  "verEvidencia": "Ver foto",
+  "imagemIlegivel": "Não foi possível exibir a imagem.",
+  "pdfSomenteWeb": "Abra PDFs pelo sistema web.",
+  "corrigirTitulo": "Corrigir ocorrência",
+  "salvarCorrecao": "Salvar correção",
+  "correcaoSalva": "Correção salva. Confira e reenvie ao Delegado.",
+  "filaTitulo": "Fila de revisão",
+  "filaVazia": "Nenhuma ocorrência aguardando revisão.",
+  "revisarTitulo": "Revisar ocorrência",
+  "acaoValidar": "Validar",
+  "acaoDevolver": "Devolver",
+  "acaoRejeitar": "Rejeitar",
+  "validarTitulo": "Validar ocorrência",
+  "campoDespacho": "Despacho (opcional)",
+  "devolverTitulo": "Devolver para correção",
+  "rejeitarTitulo": "Rejeitar ocorrência",
+  "rejeitarAviso": "A rejeição é definitiva e o Agente será notificado.",
+  "campoJustificativa": "Justificativa",
+  "decisaoValidada": "Ocorrência validada.",
+  "decisaoDevolvida": "Ocorrência devolvida ao Agente.",
+  "decisaoRejeitada": "Ocorrência rejeitada."
+}

@@ -1,0 +1,7 @@
+arb-dir: lib/core/l10n
+template-arb-file: app_pt.arb
+output-dir: lib/core/l10n/gerado
+output-localization-file: textos.dart
+output-class: Textos
+nullable-getter: false
+format: true
