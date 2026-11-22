@@ -2,7 +2,7 @@
 # Verificação local equivalente ao CI (.github/workflows/ci.yml) — AGENTS.md §6.
 #
 #   ./scripts/verificar.sh            # completo: o mesmo que o CI roda (exceto o job do PostgreSQL)
-#   ./scripts/verificar.sh --rapido   # arquitetura, ruff, testes sem E2E e tsc (~1 min)
+#   ./scripts/verificar.sh --rapido   # arquitetura, ruff, testes sem E2E, tsc e Flutter (~1 min)
 #
 # O completo usa um banco SQLite temporário e sobe a API numa porta livre para os testes
 # E2E em modo estrito; nada toca o banco local nem o .env.
@@ -63,7 +63,7 @@ testes_backend() {
 
 residuos_ia() {
   local marcador="content""Reference"  # em partes, para este script não acusar a si mesmo
-  ! grep -rn "$marcador" docs/ backend/src/ frontend/src/
+  ! grep -rn "$marcador" docs/ backend/src/ frontend/src/ mobile/lib/
 }
 
 # ------------------------------------------------------------------ backend
@@ -85,6 +85,21 @@ if [ "$RAPIDO" -eq 0 ]; then
   executar "Testes do frontend (Vitest)" npm test --silent
   executar "Build de produção (Vite)" npm run build --silent
   executar "Auditoria de dependências de produção" npm audit --omit=dev --audit-level=high
+fi
+
+# ------------------------------------------------------------------- mobile
+# O SDK do Flutter é opcional na máquina de quem só mexe no backend/frontend; o CI sempre roda.
+cd "$RAIZ/mobile" || exit 1
+if command -v flutter >/dev/null 2>&1; then
+  executar "Dependências do mobile (flutter pub get)" flutter pub get
+  executar "Formatação do mobile (dart format)" dart format --output=none --set-exit-if-changed lib test
+  executar "Análise estática do mobile (flutter analyze)" flutter analyze
+  executar "Testes e arquitetura do mobile (flutter test)" flutter test
+  if [ "$RAPIDO" -eq 0 ]; then
+    executar "Build do APK de debug (Flutter)" flutter build apk --debug
+  fi
+else
+  printf '\n\033[33m!  Flutter não encontrado: verificação do mobile/ pulada (ver mobile/README.md).\033[0m\n'
 fi
 
 cd "$RAIZ" || exit 1

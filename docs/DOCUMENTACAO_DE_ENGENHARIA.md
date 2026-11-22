@@ -271,6 +271,10 @@ Para garantir a viabilidade técnica do MVP e o alinhamento com a Arquitetura He
   * *Painel Tático:* Renderização e interação com o mapa utilizando a biblioteca **Leaflet**, conectada aos *tiles* do **OpenStreetMap**.
   * *Comunicação:* Comunicação bidirecional e reativa utilizando **WebSockets nativos do FastAPI**, permitindo a atualização das viaturas no mapa em tempo real.
 
+* **Aplicativo Móvel (`mobile/`):** Desenvolvido em **Flutter (Dart)** para Android, consumindo a mesma API REST `/v1` (mais um adaptador de entrada do ponto de vista do backend, sem nenhuma alteração nele).
+  * *Escopo da primeira entrega:* Agente de campo (RF01 — registro com GPS do aparelho e fotos como evidência, correção e reenvio) e Delegado (RF04 — fila de revisão e decisões validar/devolver/rejeitar). O modo "terminal da viatura" (RF02 — envio de posição com a credencial de dispositivo e recebimento da ordem de despacho) é o próximo incremento.
+  * *Arquitetura:* as mesmas camadas do backend por funcionalidade (`domain/` em Dart puro, `application/`, `data/` com os adaptadores HTTP e de dispositivo, `presentation/`), composition root em `mobile/lib/app/di.dart` e contratos de dependência verificados por `mobile/test/arquitetura_test.dart`. Regras e comandos no `AGENTS.md`.
+
 ## 5. Projeto do Software
 
 Esta seção reúne a modelagem visual do **SGOPI Sentinela**, cobrindo a visão de casos de uso, arquitetura lógica, artefatos executáveis, classes de domínio e topologia física de implantação.

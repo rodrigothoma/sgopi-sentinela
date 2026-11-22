@@ -87,7 +87,7 @@ jobs:
         working-directory: .
         run: |
           echo "Verificando se há artefatos de chat de LLM..."
-          ! grep -rn "contentReference" docs/ backend/src/ frontend/src/ || (echo "ERRO: Marcador de chat de IA encontrado!" && exit 1)
+          ! grep -rn "contentReference" docs/ backend/src/ frontend/src/ mobile/lib/ || (echo "ERRO: Marcador de chat de IA encontrado!" && exit 1)
 
   migracoes-postgres:
     name: Backend — Migrações no PostgreSQL 16
@@ -163,3 +163,33 @@ jobs:
 
       - name: 🔐 Auditoria de dependências de produção (N7)
         run: npm audit --omit=dev --audit-level=high
+
+  mobile-build:
+    name: Mobile — Análise, Testes e Arquitetura (Flutter)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: Configurar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.50.1
+          cache: true
+
+      - name: Instalar Dependências do Mobile (gera também as traduções)
+        run: flutter pub get
+
+      - name: 🎨 Formatação (dart format)
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: 🔍 Análise Estática (flutter analyze)
+        run: flutter analyze
+
+      - name: 🧪 Testes e Contratos da Arquitetura (flutter test)
+        run: flutter test

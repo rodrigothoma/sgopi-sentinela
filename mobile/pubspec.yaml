@@ -1,0 +1,67 @@
+name: sgopi_mobile
+description: "App mobile do SGOPI Sentinela: Agente de campo (RF01) e Delegado (RF04) sobre a API REST /v1."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  material_ui: ^1.11.1
+  # Estado e injeção de dependências. `riverpod` (sem Flutter) é o único usado em application/.
+  riverpod: ^3.5.0
+  flutter_riverpod: ^3.5.0
+  go_router: ^18.1.4
+  # Adaptadores de saída (só em data/ e app/di.dart).
+  dio: ^5.11.1
+  flutter_secure_storage: ^11.2.0
+  geolocator: ^14.1.2
+  image_picker: ^1.2.4
+  intl: ^0.20.3
+  shared_preferences: ^2.5.6
+  flutter_svg: ^2.5.0
+  package_info_plus: ^10.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  shared_preferences_platform_interface: ^2.4.2
+
+flutter:
+  generate: true
+  uses-material-design: true
+  assets:
+    - assets/logo.svg
+    # Licenças exibidas em Ajustes → Licenças (os .ttf entram pela seção `fonts`).
+    - assets/fontes/OFL-PlusJakartaSans.txt
+    - assets/fontes/OFL-Rajdhani.txt
+    - assets/fontes/OFL-JetBrainsMono.txt
+  # Fontes do frontend web (`frontend/index.html`), embutidas para funcionar offline. Licença SIL OFL 1.1.
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fontes/PlusJakartaSans-Regular.ttf
+        - asset: assets/fontes/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fontes/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fontes/PlusJakartaSans-Bold.ttf
+          weight: 700
+    - family: Rajdhani
+      fonts:
+        - asset: assets/fontes/Rajdhani-Medium.ttf
+          weight: 500
+        - asset: assets/fontes/Rajdhani-SemiBold.ttf
+          weight: 600
+        - asset: assets/fontes/Rajdhani-Bold.ttf
+          weight: 700
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fontes/JetBrainsMono-Regular.ttf
+        - asset: assets/fontes/JetBrainsMono-SemiBold.ttf
+          weight: 600
