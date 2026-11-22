@@ -71,17 +71,19 @@ backend/src/
 
 ```text
 mobile/lib/
-├── core/            # dominio/ (Falha, EnumApi, Pagina, Relogio), aplicacao/, http/ (Dio), apresentacao/, l10n/
-├── features/<f>/    # autenticacao, ocorrencias (RF01), revisao (RF04)
+├── core/            # dominio/ (Falha, EnumApi, Pagina, Relogio), aplicacao/, http/ (Dio), apresentacao/ (design/, componentes/), l10n/
+├── features/<f>/    # autenticacao, ocorrencias (RF01), revisao (RF04), notificacoes, preferencias (tema e idioma)
 │   ├── domain/      #   Dart puro: entidades, regras espelhadas do backend e portas (abstract interface class)
 │   ├── application/ #   casos de uso (`executar`) e Notifiers; só enxergam domain/, Dart puro e `package:riverpod`
 │   ├── data/        #   adaptadores: repositórios Dio, mappers JSON, GPS, câmera, armazenamento seguro
 │   └── presentation/#   telas e widgets; nunca importam data/ nem Dio
-└── app/             # di.dart (COMPOSITION ROOT), roteador e guarda de rotas por papel
+└── app/             # di.dart (COMPOSITION ROOT), tema, roteador, barra de abas e guarda de rotas por papel
 ```
 
 * **`domain/` é Dart puro:** proibido `package:flutter`, `material_ui`, Dio, Riverpod, plugins e `dart:io`/`dart:ui`.
 * **Composition Root:** só [`mobile/lib/app/di.dart`](mobile/lib/app/di.dart) instancia adaptadores de `data/` e os liga às portas (providers que lançam `PortaNaoConfigurada` até serem substituídos).
+* **Design system:** cores só por `Theme.of(context).colorScheme` ou `context.cores` (`CoresSgopi`), com os tokens do web em `core/apresentacao/design/paleta.dart`; nada de `Color(0x...)` nas telas. Componentes comuns (`CartaoSecao`, `EstadoVazio`, `BarraAcoes`...) ficam em `core/apresentacao/componentes/`.
+* **Toda string visível** entra em `app_pt.arb` **e** `app_en.arb` (o teste `traducoes_test.dart` falha se faltar uma).
 * **O backend é a autoridade:** regras espelhadas no app (tamanhos mínimos, limites, papéis) só evitam ida e volta à rede; mantenha os nomes e o arquivo de origem no comentário.
 
 ---
