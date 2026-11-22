@@ -10,23 +10,36 @@ class EstadoErro extends StatelessWidget {
   final VoidCallback aoTentarNovamente;
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.cloud_off, size: 48, color: Theme.of(context).colorScheme.error),
-          const SizedBox(height: 12),
-          Text(mensagem, textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: aoTentarNovamente,
-            icon: const Icon(Icons.refresh),
-            label: Text(context.textos.tentarNovamente),
-          ),
-        ],
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final perigo = context.cores.perigo;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: perigo.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Icon(Icons.cloud_off_outlined, size: 40, color: perigo),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(mensagem, textAlign: TextAlign.center, style: tema.textTheme.bodyLarge),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: aoTentarNovamente,
+              icon: const Icon(Icons.refresh),
+              label: Text(context.textos.tentarNovamente),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

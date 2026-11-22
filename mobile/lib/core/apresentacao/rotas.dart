@@ -6,8 +6,15 @@ abstract final class Rotas {
   static const minhasOcorrencias = '/ocorrencias';
   static const registrarOcorrencia = '/ocorrencias/nova';
   static const filaRevisao = '/revisao';
+  static const notificacoes = '/notificacoes';
+  static const ajustes = '/ajustes';
 
   static String detalheOcorrencia(String id) => '/ocorrencias/$id';
   static String corrigirOcorrencia(String id) => '/ocorrencias/$id/corrigir';
   static String revisarOcorrencia(String id) => '/revisao/$id';
+
+  /// Onde abrir uma ocorrência citada fora da lista (ex.: notificação):
+  /// o Delegado vai para a revisão, o Agente para o detalhe.
+  static String ocorrencia(String id, {required bool podeRevisar}) =>
+      podeRevisar ? revisarOcorrencia(id) : detalheOcorrencia(id);
 }

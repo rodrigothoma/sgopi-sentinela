@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../core/apresentacao/componentes/barra_acoes.dart';
+import '../../../core/apresentacao/componentes/lista_carregando.dart';
 import '../../../core/apresentacao/contexto.dart';
 import '../../../core/apresentacao/estado_erro.dart';
 import '../../../core/apresentacao/rotas.dart';
@@ -31,15 +33,15 @@ class TelaDetalheOcorrencia extends ConsumerWidget {
         AsyncValue(:final value?) => RefreshIndicator(
           onRefresh: () => ref.refresh(provider.future),
           child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [CorpoDetalheOcorrencia(value), const SizedBox(height: 96)],
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: [CorpoDetalheOcorrencia(value)],
           ),
         ),
         AsyncValue(:final error?) => EstadoErro(
           mensagem: mensagemDeErro(context.textos, error),
           aoTentarNovamente: () => ref.invalidate(provider),
         ),
-        _ => const Center(child: CircularProgressIndicator()),
+        _ => const ListaCarregando(quantidade: 3),
       },
       bottomNavigationBar: estado.value == null ? null : _AcoesAgente(estado.value!),
     );
@@ -124,11 +126,8 @@ class _AcoesAgenteState extends ConsumerState<_AcoesAgente> {
       ],
     ];
     if (!ehAgente || acoes.isEmpty) return const SizedBox.shrink();
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: acoes),
-      ),
+    return BarraAcoes(
+      child: Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: acoes),
     );
   }
 }

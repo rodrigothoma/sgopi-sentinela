@@ -13,3 +13,6 @@ final class PortaNaoConfigurada extends Error {
 }
 
 final relogioProvider = Provider<Relogio>((ref) => const RelogioDoSistema());
+
+/// Versão instalada (`pubspec.yaml`), ligada em `lib/app/di.dart`.
+final versaoAppProvider = Provider<String>((ref) => '');

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../../core/apresentacao/componentes/estado_vazio.dart';
+import '../../../../core/apresentacao/componentes/lista_carregando.dart';
 import '../../../../core/apresentacao/contexto.dart';
 import '../../../../core/apresentacao/estado_erro.dart';
 import '../../application/lista_ocorrencias.dart';
@@ -18,11 +20,15 @@ class ListaOcorrenciasPaginada extends ConsumerWidget {
     required this.filtro,
     required this.mensagemVazia,
     required this.aoTocar,
+    this.dicaVazia,
+    this.iconeVazio = Icons.inbox_outlined,
     super.key,
   });
 
   final FiltroOcorrencias filtro;
   final String mensagemVazia;
+  final String? dicaVazia;
+  final IconData iconeVazio;
   final void Function(OcorrenciaResumo) aoTocar;
 
   @override
@@ -39,19 +45,21 @@ class ListaOcorrenciasPaginada extends ConsumerWidget {
         mensagem: mensagemDeErro(context.textos, error),
         aoTentarNovamente: atualizar,
       ),
-      _ => const Center(child: CircularProgressIndicator()),
+      _ => const ListaCarregando(),
     };
   }
 
   Widget _lista(BuildContext context, WidgetRef ref, EstadoListaOcorrencias estado) {
     if (estado.itens.isEmpty) {
-      return ListView(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(48),
-            child: Center(child: Text(mensagemVazia)),
+      // Rolável para o "puxar para atualizar" funcionar também com a lista vazia.
+      return LayoutBuilder(
+        builder: (context, limites) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: limites.maxHeight,
+            child: EstadoVazio(icone: iconeVazio, titulo: mensagemVazia, mensagem: dicaVazia),
           ),
-        ],
+        ),
       );
     }
     return NotificationListener<ScrollNotification>(
@@ -61,10 +69,11 @@ class ListaOcorrenciasPaginada extends ConsumerWidget {
         }
         return false;
       },
-      child: ListView.builder(
+      child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
         itemCount: estado.itens.length + 1,
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, i) => i < estado.itens.length
             ? CartaoOcorrencia(estado.itens[i], aoTocar: () => aoTocar(estado.itens[i]))
             : _rodape(context, ref, estado),
@@ -82,7 +91,7 @@ class ListaOcorrenciasPaginada extends ConsumerWidget {
     if (estado.erroAoCarregarMais != null) {
       return TextButton(
         onPressed: () => ref.read(listaOcorrenciasProvider(filtro).notifier).carregarMais(),
-        child: Text('${context.textos.erroCarregarMais} ${context.textos.tentarNovamente}'),
+        child: Text(context.textos.carregarMaisFalhou, textAlign: TextAlign.center),
       );
     }
     return const SizedBox.shrink();

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:sgopi_mobile/features/autenticacao/domain/papel.dart';
 import 'package:sgopi_mobile/features/autenticacao/domain/sessao.dart';
 import 'package:sgopi_mobile/features/autenticacao/domain/usuario.dart';
+import 'package:sgopi_mobile/features/notificacoes/domain/notificacao.dart';
 import 'package:sgopi_mobile/features/ocorrencias/domain/arquivo_evidencia.dart';
 import 'package:sgopi_mobile/features/ocorrencias/domain/dados_ocorrencia.dart';
 import 'package:sgopi_mobile/features/ocorrencias/domain/enums.dart';
@@ -100,3 +101,20 @@ Map<String, dynamic> detalheJson({
     },
   ],
 };
+
+Notificacao notificacaoDe({
+  String id = 'n-1',
+  bool lida = false,
+  String? ocorrenciaId = 'oc-1',
+  String tipo = 'REVISAO_OCORRENCIA',
+  Duration ha = const Duration(minutes: 5),
+}) => Notificacao(
+  id: id,
+  titulo: 'Ocorrência BO-2026-000123 devolvida para correção',
+  mensagem: 'Falta qualificar a testemunha.',
+  tipo: tipo,
+  prioridade: 'MEDIA',
+  lida: lida,
+  criadaEm: agora.subtract(ha),
+  link: ocorrenciaId == null ? null : '/minhas?protocolo=BO-2026-000123&ocorrencia=$ocorrenciaId',
+);

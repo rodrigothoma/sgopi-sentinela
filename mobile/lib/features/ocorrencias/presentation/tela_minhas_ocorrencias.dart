@@ -3,7 +3,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/apresentacao/contexto.dart';
 import '../../../core/apresentacao/rotas.dart';
-import '../../autenticacao/presentation/botao_sair.dart';
 import '../domain/enums.dart';
 import '../domain/ocorrencia.dart';
 import 'rotulos.dart';
@@ -37,12 +36,13 @@ class _TelaMinhasOcorrenciasState extends State<TelaMinhasOcorrencias> {
     return Scaffold(
       appBar: AppBar(
         title: Text(t.minhasTitulo),
-        actions: const [BotaoSair()],
         bottom: PreferredSize(preferredSize: const Size.fromHeight(56), child: _chips(context)),
       ),
       body: ListaOcorrenciasPaginada(
         filtro: _filtro,
         mensagemVazia: t.listaVazia,
+        dicaVazia: _status == null ? t.listaVaziaDica : null,
+        iconeVazio: Icons.assignment_outlined,
         aoTocar: (o) => context.push(Rotas.detalheOcorrencia(o.id)),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -58,7 +58,7 @@ class _TelaMinhasOcorrenciasState extends State<TelaMinhasOcorrencias> {
     height: 56,
     child: ListView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       children: [
         for (final status in [null, ..._filtrosAgente])
           Padding(

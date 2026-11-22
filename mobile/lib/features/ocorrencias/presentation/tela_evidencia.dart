@@ -29,9 +29,11 @@ class TelaEvidencia extends ConsumerWidget {
     final referencia = (ocorrenciaId: ocorrenciaId, evidenciaId: evidencia.id);
     final conteudo = ref.watch(conteudoEvidenciaProvider(referencia));
     return Theme(
+      // Fundo preto para a foto, mantendo as cores semânticas do app (CoresSgopi).
       data: ThemeData(
         colorSchemeSeed: Theme.of(context).colorScheme.primary,
         brightness: Brightness.dark,
+        extensions: Theme.of(context).extensions.values,
       ),
       child: Scaffold(
         backgroundColor: Colors.black,

@@ -39,21 +39,26 @@ class TelaCorrigirOcorrencia extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = detalheOcorrenciaProvider(ocorrenciaId);
-    return Scaffold(
-      appBar: AppBar(title: Text(context.textos.corrigirTitulo)),
-      body: switch (ref.watch(provider)) {
-        AsyncValue(:final value?) => FormularioOcorrencia(
-          inicial: value,
-          evidenciasJaAnexadas: value.evidencias.length,
-          rotuloEnviar: context.textos.salvarCorrecao,
-          aoEnviar: (dados, evidencias) => _salvar(context, ref, value, dados, evidencias),
-        ),
-        AsyncValue(:final error?) => EstadoErro(
+    final titulo = context.textos.corrigirTitulo;
+    return switch (ref.watch(provider)) {
+      AsyncValue(:final value?) => FormularioOcorrencia(
+        titulo: titulo,
+        inicial: value,
+        evidenciasJaAnexadas: value.evidencias.length,
+        rotuloEnviar: context.textos.salvarCorrecao,
+        aoEnviar: (dados, evidencias) => _salvar(context, ref, value, dados, evidencias),
+      ),
+      AsyncValue(:final error?) => Scaffold(
+        appBar: AppBar(title: Text(titulo)),
+        body: EstadoErro(
           mensagem: mensagemDeErro(context.textos, error),
           aoTentarNovamente: () => ref.invalidate(provider),
         ),
-        _ => const Center(child: CircularProgressIndicator()),
-      },
-    );
+      ),
+      _ => Scaffold(
+        appBar: AppBar(title: Text(titulo)),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+    };
   }
 }

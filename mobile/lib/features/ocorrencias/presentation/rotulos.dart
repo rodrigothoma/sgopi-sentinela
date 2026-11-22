@@ -1,3 +1,6 @@
+import 'package:material_ui/material_ui.dart';
+
+import '../../../core/apresentacao/design/cores_sgopi.dart';
 import '../../../core/apresentacao/mensagem_falha.dart';
 import '../../../core/dominio/falha.dart';
 import '../../../core/l10n/gerado/textos.dart';
@@ -17,6 +20,16 @@ extension RotuloStatus on StatusOcorrencia {
     StatusOcorrencia.arquivada => t.statusArquivada,
     StatusOcorrencia.excluida => t.statusExcluida,
   };
+
+  /// Cores de `.status-*` em `frontend/src/styles.css`.
+  Color cor(CoresSgopi c) => switch (this) {
+    StatusOcorrencia.aguardandoRevisao => c.aviso,
+    StatusOcorrencia.emCorrecao => c.correcao,
+    StatusOcorrencia.validada => c.sucesso,
+    StatusOcorrencia.emAtendimento => c.informacao,
+    StatusOcorrencia.rejeitada || StatusOcorrencia.excluida => c.perigo,
+    StatusOcorrencia.encerrada || StatusOcorrencia.arquivada => c.neutro,
+  };
 }
 
 extension RotuloPrioridade on PrioridadeOcorrencia {
@@ -25,6 +38,20 @@ extension RotuloPrioridade on PrioridadeOcorrencia {
     PrioridadeOcorrencia.alta => t.prioridadeAlta,
     PrioridadeOcorrencia.media => t.prioridadeMedia,
     PrioridadeOcorrencia.baixa => t.prioridadeBaixa,
+  };
+
+  /// Marcador do web (`.prioridade-*`): a cor nunca é o único sinal.
+  String get simbolo => switch (this) {
+    PrioridadeOcorrencia.urgente => '▲▲',
+    PrioridadeOcorrencia.alta => '▲',
+    PrioridadeOcorrencia.media => '■',
+    PrioridadeOcorrencia.baixa => '▼',
+  };
+
+  Color cor(CoresSgopi c) => switch (this) {
+    PrioridadeOcorrencia.urgente => c.urgente,
+    PrioridadeOcorrencia.alta => c.alta,
+    PrioridadeOcorrencia.media || PrioridadeOcorrencia.baixa => c.neutro,
   };
 }
 

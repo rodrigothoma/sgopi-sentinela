@@ -5,12 +5,30 @@ import '../features/autenticacao/application/controlador_sessao.dart';
 import '../features/autenticacao/domain/papel.dart';
 import '../features/autenticacao/domain/permissao.dart';
 
-/// Tela inicial de cada papel: o app atende Agente (RF01) e Delegado (RF04).
-String inicioDoPapel(Papel papel) {
-  if (papel.pode(Permissao.registrarOcorrencia)) return Rotas.minhasOcorrencias;
-  if (papel.pode(Permissao.revisarOcorrencia)) return Rotas.filaRevisao;
-  return Rotas.semAcesso;
+/// Abas da barra inferior, na ordem dos ramos do `StatefulShellRoute` em `roteador.dart`.
+enum Aba {
+  ocorrencias(Rotas.minhasOcorrencias),
+  revisao(Rotas.filaRevisao),
+  notificacoes(Rotas.notificacoes),
+  ajustes(Rotas.ajustes);
+
+  const Aba(this.caminho);
+
+  final String caminho;
 }
+
+/// Abas visíveis para o papel: o fluxo principal (RF01 ou RF04) e as comuns.
+/// Papéis sem fluxo no app não têm abas e veem a tela "use o sistema web".
+List<Aba> abasDoPapel(Papel papel) {
+  final principais = [
+    if (papel.pode(Permissao.registrarOcorrencia)) Aba.ocorrencias,
+    if (papel.pode(Permissao.revisarOcorrencia)) Aba.revisao,
+  ];
+  return principais.isEmpty ? const [] : [...principais, Aba.notificacoes, Aba.ajustes];
+}
+
+/// Tela inicial de cada papel: o app atende Agente (RF01) e Delegado (RF04).
+String inicioDoPapel(Papel papel) => abasDoPapel(papel).firstOrNull?.caminho ?? Rotas.semAcesso;
 
 /// Decide para onde ir a cada navegação ou mudança de sessão (`null` = seguir).
 ///
@@ -21,11 +39,13 @@ String? redirecionar(AsyncValue<EstadoSessao> estado, String destino) {
   if (sessao == null) return destino == Rotas.abertura ? null : Rotas.abertura;
   return switch (sessao) {
     SemSessao() => destino == Rotas.login ? null : Rotas.login,
-    ComSessao(:final sessao) => _destinoPermitido(inicioDoPapel(sessao.usuario.papel), destino),
+    ComSessao(:final sessao) => _destinoPermitido(sessao.usuario.papel, destino),
   };
 }
 
-String? _destinoPermitido(String inicio, String destino) {
-  final dentroDoFluxo = destino == inicio || destino.startsWith('$inicio/');
-  return dentroDoFluxo ? null : inicio;
+String? _destinoPermitido(Papel papel, String destino) {
+  bool dentroDe(String caminho) => destino == caminho || destino.startsWith('$caminho/');
+  final abas = abasDoPapel(papel);
+  if (abas.isEmpty) return destino == Rotas.semAcesso ? null : Rotas.semAcesso;
+  return abas.any((aba) => dentroDe(aba.caminho)) ? null : abas.first.caminho;
 }

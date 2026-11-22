@@ -4,13 +4,15 @@ import 'package:material_ui/material_ui.dart';
 
 import 'app/app.dart';
 import 'app/di.dart';
+import 'app/licencas.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
+  registrarLicencasDasFontes();
   runApp(
     ProviderScope(
-      overrides: adaptadoresDeProducao(),
+      overrides: await adaptadoresDeProducao(),
       // Sem nova tentativa automática: erros de regra (403, 422) não mudam ao repetir,
       // e falhas de rede já oferecem "Tentar novamente" na tela.
       retry: (_, _) => null,

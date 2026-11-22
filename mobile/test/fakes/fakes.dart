@@ -4,6 +4,8 @@ import 'package:sgopi_mobile/core/dominio/falha.dart';
 import 'package:sgopi_mobile/core/dominio/pagina.dart';
 import 'package:sgopi_mobile/core/dominio/relogio.dart';
 import 'package:sgopi_mobile/features/autenticacao/domain/portas.dart';
+import 'package:sgopi_mobile/features/notificacoes/domain/notificacao.dart';
+import 'package:sgopi_mobile/features/notificacoes/domain/portas.dart';
 import 'package:sgopi_mobile/features/autenticacao/domain/sessao.dart';
 import 'package:sgopi_mobile/features/ocorrencias/data/ocorrencia_mapper.dart';
 import 'package:sgopi_mobile/features/ocorrencias/domain/arquivo_evidencia.dart';
@@ -11,6 +13,8 @@ import 'package:sgopi_mobile/features/ocorrencias/domain/dados_ocorrencia.dart';
 import 'package:sgopi_mobile/features/ocorrencias/domain/enums.dart';
 import 'package:sgopi_mobile/features/ocorrencias/domain/ocorrencia.dart';
 import 'package:sgopi_mobile/features/ocorrencias/domain/portas.dart';
+import 'package:sgopi_mobile/features/preferencias/domain/portas.dart';
+import 'package:sgopi_mobile/features/preferencias/domain/preferencias.dart';
 import 'package:sgopi_mobile/features/revisao/domain/decisao_revisao.dart';
 import 'package:sgopi_mobile/features/revisao/domain/portas.dart';
 
@@ -187,4 +191,57 @@ final class SeletorImagemFake implements PortaSeletorImagem {
 
   @override
   Future<ArquivoEvidencia?> selecionar(OrigemImagem origem) async => proxima;
+}
+
+final class ArmazenamentoPreferenciasMemoria implements ArmazenamentoPreferencias {
+  ArmazenamentoPreferenciasMemoria([this.preferencias = const Preferencias()]);
+
+  Preferencias preferencias;
+  int gravacoes = 0;
+
+  @override
+  Preferencias carregar() => preferencias;
+
+  @override
+  Future<void> salvar(Preferencias preferencias) async {
+    gravacoes++;
+    this.preferencias = preferencias;
+  }
+}
+
+/// Notificações em memória; [falhaAoMarcar] simula o backend recusando a marcação.
+final class RepositorioNotificacoesFake implements RepositorioNotificacoes {
+  final List<Notificacao> itens = [];
+  final List<String> marcadas = [];
+  final List<(int, int)> consultas = [];
+  int marcarTodasChamadas = 0;
+  Falha? falhaAoMarcar;
+
+  @override
+  Future<LoteNotificacoes> listar({required int limite, required int deslocamento}) async {
+    consultas.add((limite, deslocamento));
+    return LoteNotificacoes(
+      itens: itens.skip(deslocamento).take(limite).toList(),
+      naoLidas: await contarNaoLidas(),
+    );
+  }
+
+  @override
+  Future<int> contarNaoLidas() async => itens.where((n) => !n.lida).length;
+
+  @override
+  Future<void> marcarLida(String notificacaoId) async {
+    if (falhaAoMarcar case final falha?) throw falha;
+    marcadas.add(notificacaoId);
+    final i = itens.indexWhere((n) => n.id == notificacaoId);
+    if (i >= 0) itens[i] = itens[i].marcadaComoLida();
+  }
+
+  @override
+  Future<void> marcarTodasLidas() async {
+    marcarTodasChamadas++;
+    for (var i = 0; i < itens.length; i++) {
+      itens[i] = itens[i].marcadaComoLida();
+    }
+  }
 }

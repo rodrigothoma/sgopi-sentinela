@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../core/apresentacao/componentes/barra_acoes.dart';
+import '../../../core/apresentacao/componentes/lista_carregando.dart';
 import '../../../core/apresentacao/contexto.dart';
 import '../../../core/apresentacao/estado_erro.dart';
 import '../../ocorrencias/application/detalhe_ocorrencia.dart';
@@ -28,14 +30,14 @@ class TelaRevisarOcorrencia extends ConsumerWidget {
       appBar: AppBar(title: Text(context.textos.revisarTitulo)),
       body: switch (estado) {
         AsyncValue(:final value?) => ListView(
-          padding: const EdgeInsets.all(16),
-          children: [CorpoDetalheOcorrencia(value), const SizedBox(height: 96)],
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: [CorpoDetalheOcorrencia(value)],
         ),
         AsyncValue(:final error?) => EstadoErro(
           mensagem: mensagemDeErro(context.textos, error),
           aoTentarNovamente: () => ref.invalidate(provider),
         ),
-        _ => const Center(child: CircularProgressIndicator()),
+        _ => const ListaCarregando(quantidade: 3),
       },
       bottomNavigationBar: ocorrencia != null && ocorrencia.status.aguardaRevisao
           ? _BarraDecisao(ocorrencia)
@@ -85,38 +87,36 @@ class _BarraDecisaoState extends ConsumerState<_BarraDecisao> {
   @override
   Widget build(BuildContext context) {
     final t = context.textos;
-    final erro = Theme.of(context).colorScheme.error;
+    final perigo = context.cores.perigo;
     VoidCallback? acao(TipoDecisao tipo) => _enviando ? null : () => _decidir(tipo);
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextButton(
-                key: const Key('revisao.rejeitar'),
-                onPressed: acao(TipoDecisao.rejeitar),
-                style: TextButton.styleFrom(foregroundColor: erro),
-                child: Text(t.acaoRejeitar),
-              ),
+    // Hierarquia: validar é a ação principal; rejeitar (definitiva) fica discreta e em vermelho.
+    return BarraAcoes(
+      child: Row(
+        spacing: 8,
+        children: [
+          TextButton(
+            key: const Key('revisao.rejeitar'),
+            onPressed: acao(TipoDecisao.rejeitar),
+            style: TextButton.styleFrom(foregroundColor: perigo),
+            child: Text(t.acaoRejeitar),
+          ),
+          Expanded(
+            child: OutlinedButton.icon(
+              key: const Key('revisao.devolver'),
+              onPressed: acao(TipoDecisao.devolver),
+              icon: const Icon(Icons.undo),
+              label: Text(t.acaoDevolver),
             ),
-            Expanded(
-              child: OutlinedButton(
-                key: const Key('revisao.devolver'),
-                onPressed: acao(TipoDecisao.devolver),
-                child: Text(t.acaoDevolver),
-              ),
+          ),
+          Expanded(
+            child: FilledButton.icon(
+              key: const Key('revisao.validar'),
+              onPressed: acao(TipoDecisao.validar),
+              icon: const Icon(Icons.check),
+              label: Text(t.acaoValidar),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: FilledButton(
-                key: const Key('revisao.validar'),
-                onPressed: acao(TipoDecisao.validar),
-                child: Text(t.acaoValidar),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -38,14 +38,15 @@ class PainelEvidencias extends StatelessWidget {
           children: [for (final arquivo in arquivos) _miniatura(context, arquivo)],
         ),
         const SizedBox(height: 8),
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
             OutlinedButton.icon(
               onPressed: () => aoAdicionar(OrigemImagem.camera),
               icon: const Icon(Icons.photo_camera_outlined),
               label: Text(t.tirarFoto),
             ),
-            const SizedBox(width: 8),
             OutlinedButton.icon(
               onPressed: () => aoAdicionar(OrigemImagem.galeria),
               icon: const Icon(Icons.photo_library_outlined),

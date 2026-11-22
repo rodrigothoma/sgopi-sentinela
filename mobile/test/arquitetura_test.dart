@@ -78,6 +78,8 @@ void main() {
       'pkg:geolocator',
       'pkg:image_picker',
       'pkg:flutter_secure_storage',
+      'pkg:shared_preferences',
+      'pkg:package_info_plus',
     };
     _semViolacoes(
       fontes.where((f) => _camada(f.caminho, 'presentation') || f.em('lib/core/apresentacao/')),

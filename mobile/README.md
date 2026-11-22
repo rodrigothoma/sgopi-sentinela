@@ -7,7 +7,15 @@ Cliente Android da mesma API REST `/v1` do backend. **Nenhuma alteração no bac
 | **Agente** | Registra ocorrência com o GPS do aparelho, envolvidos, tipificações e fotos; acompanha as próprias; corrige e reenvia quando o Delegado devolve | RF01 / UC01 |
 | **Delegado** | Fila de revisão (mais graves primeiro); valida, devolve ou rejeita com justificativa | RF04 / UC04 |
 | Ambos | Abrem as fotos das evidências em tela cheia, com zoom (download autorizado, bloqueado se a integridade divergir; PDFs pelo web) | RF22 |
+| Ambos | Aba **Notificações** com selo de não lidas (atualiza a cada 60 s); tocar abre a ocorrência citada | `/v1/notificacoes` |
+| Ambos | Aba **Ajustes**: perfil, tema (sistema/claro/escuro), idioma (sistema/pt/en, vale também para as mensagens do backend), horário de expiração da sessão, servidor e versão | — |
 | Outros papéis | Aviso para usar o sistema web | — |
+
+Navegação: barra inferior com as abas do papel (Agente: Ocorrências · Notificações · Ajustes; Delegado: Fila · Notificações · Ajustes). Registrar, detalhar, corrigir e revisar abrem por cima, sem a barra, e o "voltar" retorna à aba de origem.
+
+Visual: mesmas cores, fontes (Plus Jakarta Sans, Rajdhani, JetBrains Mono, embutidas em `assets/fontes/` com a licença OFL) e selos do frontend web, nos temas claro e escuro.
+
+> **Limitação conhecida:** o título e a mensagem das notificações chegam do backend gravados em português; com o app em inglês, só eles ficam em português.
 
 Próximo incremento: **RF02** (mapa em tempo real pelo WebSocket `/v1/tempo-real` e modo "terminal da viatura" com a credencial de dispositivo `X-Credencial-Dispositivo`).
 
@@ -23,15 +31,18 @@ lib/
 │   ├── dominio/       Falha, EnumApi, Pagina, Relogio (Dart puro)
 │   ├── aplicacao/     PortaNaoConfigurada, relogioProvider
 │   ├── http/          Dio (Bearer + Accept-Language + 401), Falha a partir do corpo {detail, code, request_id}
-│   ├── apresentacao/  rotas, mensagens de erro, widgets comuns
+│   ├── apresentacao/  design/ (paleta do web, CoresSgopi, fontes), componentes/, rotas, mensagens de erro
 │   └── l10n/          app_pt.arb, app_en.arb  (gerado/ sai do `flutter pub get`)
 ├── features/
 │   ├── autenticacao/  login, sessão (8 h, sem refresh), papéis e permissões
 │   ├── ocorrencias/   RF01: listar, detalhar, registrar, corrigir, reenviar, anexar evidência
-│   └── revisao/       RF04: fila e decisões do Delegado
+│   ├── revisao/       RF04: fila e decisões do Delegado
+│   ├── notificacoes/  lista, contador de não lidas, marcar como lida
+│   └── preferencias/  tema e idioma (SharedPreferences) e a tela de Ajustes
 │       └── domain/ · application/ · data/ · presentation/
 └── app/
     ├── di.dart        COMPOSITION ROOT (único lugar que instancia adaptadores)
+    ├── casca.dart     barra inferior (abas por papel + selo de notificações)
     ├── guarda_rotas.dart, roteador.dart, app.dart, tema.dart
 ```
 
@@ -116,6 +127,7 @@ flutter pub get
 flutter run --dart-define=API_BASE_URL=http://<IP-do-PC>:8000
 ```
 
+- **Atalho com o celular conectado pelo adb (USB ou Wi-Fi):** `adb reverse tcp:8000 tcp:8000` e `--dart-define=API_BASE_URL=http://localhost:8000`. O `localhost:8000` do celular passa a apontar para o backend no WSL, sem mexer na rede do Windows. Só vale enquanto a depuração estiver ativa: refaça o `adb reverse` a cada novo `adb connect`.
 - Sem `--dart-define`, o app usa `http://10.0.2.2:8000`, que é o endereço do PC visto do emulador Android.
 - HTTP sem TLS só é liberado no build de **debug** (`android/app/src/debug/AndroidManifest.xml`). Release exige HTTPS.
 - Usuários do seed (`uv run python -m scripts.seed`), todos com a senha `Senha@123`: `agente`, `delegado`.
@@ -144,6 +156,7 @@ flutter test --coverage       # relatório em coverage/lcov.info
 | `test/features/*/dominio_*` | regras espelhadas do backend (descrição ≥ 20, documento CPF/RG, limite de 10 evidências, justificativa ≥ 10) |
 | `test/features/*/aplicacao_*`, `controlador_sessao_test.dart` | casos de uso e Notifiers com fakes (`test/fakes/`) |
 | `test/features/*/dados_*`, `test/core/http_test.dart` | requisições e JSON exatamente como o backend espera, sem rede (`AdaptadorHttpFake`) |
-| `test/app/` | guarda de rotas por papel e fluxos completos: login, registro pelo Agente e devolução pelo Delegado |
+| `test/app/` | guarda de rotas e abas por papel e fluxos completos (tela de celular 360×780 com texto 130%): login, registro, devolução, notificações, ajustes de tema/idioma e saída |
+| `test/core/traducoes_test.dart` | `app_pt.arb` e `app_en.arb` com as mesmas chaves |
 
 O `./scripts/verificar.sh` na raiz roda tudo isso (e o build do APK no modo completo) quando o Flutter está instalado. O CI roda o job `mobile-build`. Roteiro de TDD: skill [`mobile-tdd`](../.claude/skills/mobile-tdd/SKILL.md).

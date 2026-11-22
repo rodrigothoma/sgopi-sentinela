@@ -1,10 +1,12 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/apresentacao/contexto.dart';
+import '../../../../core/apresentacao/design/cores_sgopi.dart';
+import '../../../../core/apresentacao/design/tipografia.dart';
 import '../../domain/enums.dart';
 import '../rotulos.dart';
 
-/// Selo colorido do status: pendências do usuário em destaque, finais em neutro.
+/// Pílula do status com "●" e a cor do web, em Rajdhani maiúsculo.
 class SeloStatus extends StatelessWidget {
   const SeloStatus(this.status, {super.key});
 
@@ -12,22 +14,24 @@ class SeloStatus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cores = Theme.of(context).colorScheme;
-    final (fundo, texto) = switch (status) {
-      StatusOcorrencia.aguardandoRevisao => (cores.tertiaryContainer, cores.onTertiaryContainer),
-      StatusOcorrencia.emCorrecao ||
-      StatusOcorrencia.rejeitada => (cores.errorContainer, cores.onErrorContainer),
-      StatusOcorrencia.validada ||
-      StatusOcorrencia.emAtendimento => (cores.primaryContainer, cores.onPrimaryContainer),
-      _ => (cores.surfaceContainerHighest, cores.onSurfaceVariant),
-    };
+    final cor = status.cor(context.cores);
     return DecoratedBox(
-      decoration: BoxDecoration(color: fundo, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: CoresSgopi.fundoDe(cor),
+        borderRadius: BorderRadius.circular(999),
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
         child: Text(
-          status.rotulo(context.textos),
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: texto),
+          '● ${status.rotulo(context.textos).toUpperCase()}',
+          style: TextStyle(
+            fontFamily: Fontes.destaque,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+            letterSpacing: 0.4,
+            color: cor,
+            decoration: status == StatusOcorrencia.excluida ? TextDecoration.lineThrough : null,
+          ),
         ),
       ),
     );

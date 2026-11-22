@@ -213,5 +213,87 @@
   "campoJustificativa": "Justificativa",
   "decisaoValidada": "Ocorrência validada.",
   "decisaoDevolvida": "Ocorrência devolvida ao Agente.",
-  "decisaoRejeitada": "Ocorrência rejeitada."
+  "decisaoRejeitada": "Ocorrência rejeitada.",
+  "abaOcorrencias": "Ocorrências",
+  "abaFila": "Fila",
+  "abaNotificacoes": "Notificações",
+  "abaAjustes": "Ajustes",
+  "naoLidas": "{quantidade} não lidas",
+  "@naoLidas": {
+    "placeholders": {
+      "quantidade": {
+        "type": "int"
+      }
+    }
+  },
+  "listaVaziaDica": "Toque em Registrar para criar a primeira.",
+  "filaVaziaDica": "Tudo em dia por aqui.",
+  "carregarMaisFalhou": "Não foi possível carregar mais. Toque para tentar de novo.",
+  "notificacoesVazias": "Nenhuma notificação por enquanto.",
+  "notificacoesVaziasDica": "Você será avisado quando houver novidades nas suas ocorrências.",
+  "marcarTodasLidas": "Marcar todas como lidas",
+  "todasMarcadasLidas": "Notificações marcadas como lidas.",
+  "tempoAgora": "agora",
+  "tempoMinutos": "há {minutos} min",
+  "@tempoMinutos": {
+    "placeholders": {
+      "minutos": {
+        "type": "int"
+      }
+    }
+  },
+  "tempoHoras": "há {horas} h",
+  "@tempoHoras": {
+    "placeholders": {
+      "horas": {
+        "type": "int"
+      }
+    }
+  },
+  "tempoDias": "há {dias} d",
+  "@tempoDias": {
+    "placeholders": {
+      "dias": {
+        "type": "int"
+      }
+    }
+  },
+  "secaoPerfil": "Perfil",
+  "secaoAparencia": "Aparência",
+  "temaSistema": "Sistema",
+  "temaClaro": "Claro",
+  "temaEscuro": "Escuro",
+  "secaoIdioma": "Idioma",
+  "idiomaSistema": "Sistema",
+  "ajudaIdioma": "Vale também para as mensagens do servidor.",
+  "secaoSobre": "Sessão e aplicativo",
+  "sessaoExpiraAs": "Sessão expira às {hora}",
+  "@sessaoExpiraAs": {
+    "placeholders": {
+      "hora": {
+        "type": "String"
+      }
+    }
+  },
+  "rotuloUsuario": "Usuário",
+  "rotuloPapel": "Papel",
+  "rotuloServidor": "Servidor",
+  "rotuloVersao": "Versão",
+  "licencas": "Licenças de código aberto",
+  "sairConfirmacao": "Encerrar a sessão neste aparelho?",
+  "alterarTema": "Tema",
+  "alterarIdioma": "Idioma",
+  "papelAgente": "Agente",
+  "papelDelegado": "Delegado",
+  "papelOperadorCentral": "Operador da Central",
+  "papelSupervisor": "Supervisor",
+  "papelPerito": "Perito",
+  "papelEscrivao": "Escrivão",
+  "papelCidadao": "Cidadão",
+  "rotuloLocal": "Local",
+  "rotuloCoordenadas": "Coordenadas",
+  "acoesDisponiveis": "Ações",
+  "rotuloSessao": "Sessão",
+  "mostrarSenha": "Mostrar senha",
+  "ocultarSenha": "Ocultar senha"
 }

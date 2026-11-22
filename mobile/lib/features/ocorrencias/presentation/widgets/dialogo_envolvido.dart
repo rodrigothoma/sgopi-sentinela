@@ -71,6 +71,7 @@ class _DialogoEnvolvidoState extends State<_DialogoEnvolvido> {
               const SizedBox(height: 12),
               DropdownButtonFormField<TipoEnvolvido>(
                 initialValue: _tipo,
+                isExpanded: true,
                 decoration: InputDecoration(labelText: t.campoTipo),
                 items: [
                   for (final tipo in TipoEnvolvido.values)

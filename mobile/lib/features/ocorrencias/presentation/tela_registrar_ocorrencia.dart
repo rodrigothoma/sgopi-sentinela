@@ -56,11 +56,9 @@ class TelaRegistrarOcorrencia extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
-    appBar: AppBar(title: Text(context.textos.registrarTitulo)),
-    body: FormularioOcorrencia(
-      rotuloEnviar: context.textos.enviarRegistro,
-      aoEnviar: (dados, evidencias) => _registrar(context, ref, dados, evidencias),
-    ),
+  Widget build(BuildContext context, WidgetRef ref) => FormularioOcorrencia(
+    titulo: context.textos.registrarTitulo,
+    rotuloEnviar: context.textos.enviarRegistro,
+    aoEnviar: (dados, evidencias) => _registrar(context, ref, dados, evidencias),
   );
 }

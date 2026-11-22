@@ -3,7 +3,8 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/aplicacao/dependencias.dart';
 import '../../../../core/apresentacao/contexto.dart';
-import '../../../../core/apresentacao/secao.dart';
+import '../../../../core/apresentacao/componentes/barra_acoes.dart';
+import '../../../../core/apresentacao/componentes/cartao_secao.dart';
 import '../../application/dependencias.dart';
 import '../../domain/arquivo_evidencia.dart';
 import '../../domain/dados_ocorrencia.dart';
@@ -29,6 +30,7 @@ typedef AoEnviarOcorrencia = Future<void> Function(
 /// lançados por [aoEnviar] (rede, regra do backend) aparecem num aviso.
 class FormularioOcorrencia extends ConsumerStatefulWidget {
   const FormularioOcorrencia({
+    required this.titulo,
     required this.rotuloEnviar,
     required this.aoEnviar,
     this.inicial,
@@ -36,6 +38,7 @@ class FormularioOcorrencia extends ConsumerStatefulWidget {
     super.key,
   });
 
+  final String titulo;
   final String rotuloEnviar;
   final AoEnviarOcorrencia aoEnviar;
   final OcorrenciaDetalhe? inicial;
@@ -89,7 +92,11 @@ class _FormularioOcorrenciaState extends ConsumerState<FormularioOcorrencia> {
   Future<void> _enviar() async {
     final dados = _montarDados();
     setState(() => _erros = dados.validar(ref.read(relogioProvider).agora()));
-    if (_erros.isNotEmpty) return;
+    if (_erros.isNotEmpty) {
+      // O envio fica fixo no rodapé: o resumo avisa de erros em cartões fora da tela.
+      final t = context.textos;
+      return context.avisar(_erros.map((e) => mensagemErroOcorrencia(t, e)).join('\n'));
+    }
     setState(() => _enviando = true);
     try {
       await widget.aoEnviar(dados, List.of(_evidencias));
@@ -141,36 +148,61 @@ class _FormularioOcorrenciaState extends ConsumerState<FormularioOcorrencia> {
   String? _erro(ErroOcorrencia erro) =>
       _erros.contains(erro) ? mensagemErroOcorrencia(context.textos, erro) : null;
 
+  /// Cartões na ordem do registro em campo, com o envio fixo no rodapé. O
+  /// formulário monta o próprio Scaffold para o botão ocupar o `bottomNavigationBar`:
+  /// assim os avisos flutuantes aparecem acima dele, sem cobri-lo.
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-    children: [
-      ..._secaoFato(),
-      ..._secaoLocal(),
-      ..._secaoEnvolvidos(),
-      ..._secaoTipificacoes(),
-      TituloSecao(context.textos.secaoEvidencias),
-      PainelEvidencias(
-        arquivos: _evidencias,
-        aoAdicionar: _adicionarEvidencia,
-        aoRemover: (a) => setState(() => _evidencias.remove(a)),
+  Widget build(BuildContext context) {
+    final t = context.textos;
+    const espaco = SizedBox(height: 12);
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.titulo)),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        children: [
+          CartaoSecao(titulo: t.secaoFato, icone: Icons.event_note_outlined, filhos: _secaoFato()),
+          espaco,
+          CartaoSecao(titulo: t.secaoLocal, icone: Icons.place_outlined, filhos: _secaoLocal()),
+          espaco,
+          _secaoEnvolvidos(),
+          espaco,
+          _secaoTipificacoes(),
+          espaco,
+          CartaoSecao(
+            titulo: t.secaoEvidencias,
+            icone: Icons.photo_library_outlined,
+            filhos: [
+              PainelEvidencias(
+                arquivos: _evidencias,
+                aoAdicionar: _adicionarEvidencia,
+                aoRemover: (a) => setState(() => _evidencias.remove(a)),
+              ),
+            ],
+          ),
+        ],
       ),
-      const SizedBox(height: 24),
-      FilledButton.icon(
-        key: const Key('ocorrencia.enviar'),
-        onPressed: _enviando ? null : _enviar,
-        icon: _enviando
-            ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-            : const Icon(Icons.send),
-        label: Text(widget.rotuloEnviar),
+      bottomNavigationBar: BarraAcoes(
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            key: const Key('ocorrencia.enviar'),
+            onPressed: _enviando ? null : _enviar,
+            icon: _enviando
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.send),
+            label: Text(widget.rotuloEnviar),
+          ),
+        ),
       ),
-    ],
-  );
+    );
+  }
 
   List<Widget> _secaoFato() {
     final t = context.textos;
     return [
-      TituloSecao(t.secaoFato),
       TextField(
         key: const Key('ocorrencia.natureza'),
         controller: _natureza,
@@ -202,7 +234,7 @@ class _FormularioOcorrenciaState extends ConsumerState<FormularioOcorrencia> {
         subtitle: Text(_erro(ErroOcorrencia.dataFatoFutura) ?? context.dataHora(_dataHoraFato)),
         onTap: _escolherDataHora,
       ),
-      if (_novo) _campoPrioridade(),
+      if (_novo) ...[const SizedBox(height: 4), _campoPrioridade()],
     ];
   }
 
@@ -210,9 +242,10 @@ class _FormularioOcorrenciaState extends ConsumerState<FormularioOcorrencia> {
     final t = context.textos;
     return DropdownButtonFormField<PrioridadeOcorrencia?>(
       initialValue: _prioridade,
+      isExpanded: true,
       decoration: InputDecoration(labelText: t.campoPrioridade),
       items: [
-        DropdownMenuItem(child: Text(t.prioridadeAutomatica)),
+        DropdownMenuItem(child: Text(t.prioridadeAutomatica, overflow: TextOverflow.ellipsis)),
         for (final p in PrioridadeOcorrencia.values)
           DropdownMenuItem(value: p, child: Text(p.rotulo(t))),
       ],
@@ -224,7 +257,6 @@ class _FormularioOcorrenciaState extends ConsumerState<FormularioOcorrencia> {
     final t = context.textos;
     final c = _coordenada;
     return [
-      TituloSecao(t.secaoLocal),
       TextField(
         key: const Key('ocorrencia.localizacao'),
         controller: _localizacao,
@@ -247,44 +279,56 @@ class _FormularioOcorrenciaState extends ConsumerState<FormularioOcorrencia> {
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               )
             : null,
-        trailing: _localizando
-            ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
-            : TextButton(onPressed: _usarMinhaLocalizacao, child: Text(t.usarMinhaLocalizacao)),
+      ),
+      // Fora do ListTile: com texto ampliado o botão não cabe como `trailing`.
+      Align(
+        alignment: Alignment.centerLeft,
+        child: OutlinedButton.icon(
+          onPressed: _localizando ? null : _usarMinhaLocalizacao,
+          icon: _localizando
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.gps_fixed),
+          label: Text(_localizando ? t.obtendoLocalizacao : t.usarMinhaLocalizacao),
+        ),
       ),
     ];
   }
 
-  List<Widget> _secaoEnvolvidos() {
+  Widget _secaoEnvolvidos() {
     final t = context.textos;
-    return [
-      TituloSecao(
-        t.secaoEnvolvidos,
-        acao: IconButton(
-          key: const Key('ocorrencia.adicionarEnvolvido'),
-          tooltip: t.adicionarEnvolvido,
-          icon: const Icon(Icons.person_add_alt),
-          onPressed: _adicionarEnvolvido,
-        ),
+    return CartaoSecao(
+      titulo: t.secaoEnvolvidos,
+      icone: Icons.people_outline,
+      acao: IconButton.filledTonal(
+        key: const Key('ocorrencia.adicionarEnvolvido'),
+        tooltip: t.adicionarEnvolvido,
+        icon: const Icon(Icons.person_add_alt),
+        onPressed: _adicionarEnvolvido,
       ),
-      if (_erros.contains(ErroOcorrencia.semEnvolvidos))
-        Text(
-          _erro(ErroOcorrencia.semEnvolvidos)!,
-          style: TextStyle(color: Theme.of(context).colorScheme.error),
-        ),
-      for (final (i, e) in _envolvidos.indexed)
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.person_outline),
-          title: Text(e.nome),
-          subtitle: Text(e.tipo.rotulo(t)),
-          onTap: () => _editarEnvolvido(i),
-          trailing: IconButton(
-            tooltip: t.remover,
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () => setState(() => _envolvidos.removeAt(i)),
+      filhos: [
+        if (_erros.contains(ErroOcorrencia.semEnvolvidos))
+          Text(
+            _erro(ErroOcorrencia.semEnvolvidos)!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
-        ),
-    ];
+        for (final (i, e) in _envolvidos.indexed)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.person_outline),
+            title: Text(e.nome),
+            subtitle: Text(e.tipo.rotulo(t)),
+            onTap: () => _editarEnvolvido(i),
+            trailing: IconButton(
+              tooltip: t.remover,
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => setState(() => _envolvidos.removeAt(i)),
+            ),
+          ),
+      ],
+    );
   }
 
   Future<void> _adicionarEnvolvido() async {
@@ -297,32 +341,33 @@ class _FormularioOcorrenciaState extends ConsumerState<FormularioOcorrencia> {
     if (editado != null) setState(() => _envolvidos[indice] = editado);
   }
 
-  List<Widget> _secaoTipificacoes() {
+  Widget _secaoTipificacoes() {
     final t = context.textos;
-    return [
-      TituloSecao(
-        t.secaoTipificacoes,
-        acao: IconButton(
-          tooltip: t.adicionarTipificacao,
-          icon: const Icon(Icons.add),
-          onPressed: () async {
-            final nova = await abrirDialogoTipificacao(context);
-            if (nova != null) setState(() => _tipificacoes.add(nova));
-          },
-        ),
+    return CartaoSecao(
+      titulo: t.secaoTipificacoes,
+      icone: Icons.gavel_outlined,
+      acao: IconButton.filledTonal(
+        tooltip: t.adicionarTipificacao,
+        icon: const Icon(Icons.add),
+        onPressed: () async {
+          final nova = await abrirDialogoTipificacao(context);
+          if (nova != null) setState(() => _tipificacoes.add(nova));
+        },
       ),
-      for (final (i, tp) in _tipificacoes.indexed)
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.gavel_outlined),
-          title: Text(tp.artigo),
-          subtitle: Text(tp.descricao),
-          trailing: IconButton(
-            tooltip: t.remover,
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () => setState(() => _tipificacoes.removeAt(i)),
+      filhos: [
+        for (final (i, tp) in _tipificacoes.indexed)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.gavel_outlined),
+            title: Text(tp.artigo),
+            subtitle: Text(tp.descricao),
+            trailing: IconButton(
+              tooltip: t.remover,
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => setState(() => _tipificacoes.removeAt(i)),
+            ),
           ),
-        ),
-    ];
+      ],
+    );
   }
 }

@@ -3,7 +3,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/apresentacao/contexto.dart';
 import '../../../core/apresentacao/rotas.dart';
-import '../../autenticacao/presentation/botao_sair.dart';
 import '../../ocorrencias/presentation/widgets/lista_ocorrencias_paginada.dart';
 import '../application/fila_revisao.dart';
 
@@ -13,10 +12,12 @@ class TelaFilaRevisao extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(context.textos.filaTitulo), actions: const [BotaoSair()]),
+    appBar: AppBar(title: Text(context.textos.filaTitulo)),
     body: ListaOcorrenciasPaginada(
       filtro: filtroFilaRevisao,
       mensagemVazia: context.textos.filaVazia,
+      dicaVazia: context.textos.filaVaziaDica,
+      iconeVazio: Icons.task_alt,
       aoTocar: (o) => context.push(Rotas.revisarOcorrencia(o.id)),
     ),
   );
