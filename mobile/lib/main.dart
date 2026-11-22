@@ -4,12 +4,10 @@ import 'package:material_ui/material_ui.dart';
 
 import 'app/app.dart';
 import 'app/di.dart';
-import 'app/licencas.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
-  registrarLicencasDasFontes();
   runApp(
     ProviderScope(
       overrides: await adaptadoresDeProducao(),

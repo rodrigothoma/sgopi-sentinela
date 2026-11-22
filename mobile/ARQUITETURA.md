@@ -70,7 +70,6 @@ Ponto de entrada. Carrega os formatos de data, registra as licenças das fontes,
 | `roteador.dart` | Todas as rotas. As abas ficam num `StatefulShellRoute`; as telas de fluxo abrem por cima |
 | `casca.dart` | Barra inferior com as abas do papel e o selo de notificações |
 | `guarda_rotas.dart` | Quem pode ver o quê: abas por papel e redirecionamento (sem login → login) |
-| `licencas.dart` | Licenças das fontes, exibidas em Ajustes |
 
 ### `lib/core/`: compartilhado por todas as features
 
