@@ -23,7 +23,7 @@ Próximo incremento: **RF02** (mapa em tempo real pelo WebSocket `/v1/tempo-real
 
 ## Arquitetura
 
-Mesmas camadas do backend, por funcionalidade. As regras completas estão no [`AGENTS.md`](../AGENTS.md) §3 e são verificadas por [`test/arquitetura_test.dart`](test/arquitetura_test.dart).
+Mesmas camadas do backend, por funcionalidade. Guia didático, arquivo por arquivo, com o caminho de uma ação de ponta a ponta: [`ARQUITETURA.md`](ARQUITETURA.md). As regras completas estão no [`AGENTS.md`](../AGENTS.md) §3 e são verificadas por [`test/arquitetura_test.dart`](test/arquitetura_test.dart).
 
 ```
 lib/
