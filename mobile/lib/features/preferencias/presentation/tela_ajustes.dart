@@ -64,9 +64,20 @@ class TelaAjustes extends ConsumerWidget {
               SegmentedButton<ModoTema>(
                 key: const Key('ajustes.tema'),
                 showSelectedIcon: false,
+                style: SegmentedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
                 segments: [
                   for (final m in ModoTema.values)
-                    ButtonSegment(value: m, icon: Icon(m.icone), label: Text(m.rotulo(t))),
+                    ButtonSegment(
+                      value: m,
+                      icon: Icon(m.icone),
+                      // Em tela estreita ou fonte grande, encolhe o rótulo em vez de quebrá-lo.
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(m.rotulo(t), maxLines: 1, softWrap: false),
+                      ),
+                    ),
                 ],
                 selected: {preferencias.tema},
                 onSelectionChanged: (s) => controlador.definirTema(s.single),
@@ -120,17 +131,6 @@ class TelaAjustes extends ConsumerWidget {
                 icone: Icons.tag,
                 rotulo: t.rotuloVersao,
                 valor: ref.watch(versaoAppProvider),
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.description_outlined),
-                title: Text(t.licencas),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => showLicensePage(
-                  context: context,
-                  applicationName: t.appTitulo,
-                  applicationVersion: ref.read(versaoAppProvider),
-                ),
               ),
             ],
           ),
