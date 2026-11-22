@@ -6,6 +6,7 @@ Consulte sempre o arquivo AGENTS.md e docs/DOCUMENTACAO_DE_ENGENHARIA.md.
 1. STACK OBRIGATÓRIA:
    - Backend: Python >= 3.13, FastAPI, uv, PostgreSQL 16, SQLAlchemy 2.0 (async), Alembic.
    - Frontend: React 18, TypeScript, Vite, Leaflet, WebSockets nativos do FastAPI.
+   - Mobile (mobile/): Flutter/Dart, material_ui, Riverpod, go_router, Dio (regras em AGENTS.md §3).
    - NUNCA invente bibliotecas ou stacks alternativas (Java, NestJS, Spring, Flask, etc.).
 
 2. ARQUITETURA HEXAGONAL:
