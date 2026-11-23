@@ -69,12 +69,12 @@ export const ConsultaProtocoloPage: React.FC = () => {
     <div className="portal-wrap">
       <NavbarPublica />
 
-      <main className="pagina" style={{ maxWidth: 760, padding: '40px 20px' }}>
-        <div className="card" style={{ padding: '32px' }}>
+      <main className="pagina pagina-publico">
+        <div className="card card-publico">
           <h2>{t('publico:consulta.titulo')}</h2>
           <p className="muted">{t('publico:consulta.subtitulo')}</p>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+          <form onSubmit={handleSubmit} className="consulta-form">
             <input
               type="text"
               maxLength={25}
@@ -164,7 +164,7 @@ export const ConsultaProtocoloPage: React.FC = () => {
                 <dd>{formatarDataHora(resultado.criada_em)}</dd>
               </dl>
 
-              <div style={{ marginTop: 20, textAlign: 'right' }}>
+              <div className="publico-voltar">
                 <Link to="/" className="btn btn-ghost">
                   {t('publico:consulta.detalhes.voltar_inicio')}
                 </Link>

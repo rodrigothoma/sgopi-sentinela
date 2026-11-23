@@ -175,9 +175,9 @@ export const RegistroCidadaoPage: React.FC = () => {
     <div className="portal-wrap">
       <NavbarPublica />
 
-      <main className="pagina" style={{ maxWidth: 860, padding: '40px 20px' }}>
+      <main className="pagina pagina-publico pagina-publico--registro">
         {protocoloGerado ? (
-          <div className="card" style={{ textAlign: 'center', padding: '40px 24px' }}>
+          <div className="card card-publico card-publico--sucesso">
             <div
               style={{
                 width: 56,
@@ -247,7 +247,7 @@ export const RegistroCidadaoPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <form className="card form" onSubmit={handleSubmit} style={{ padding: '32px' }}>
+          <form className="card form card-publico" onSubmit={handleSubmit}>
             <div style={{ marginBottom: 24 }}>
               <h2>{t('publico:registro.titulo')}</h2>
               <p className="muted">{t('publico:registro.subtitulo')}</p>
@@ -538,7 +538,7 @@ export const RegistroCidadaoPage: React.FC = () => {
               </div>
             </fieldset>
 
-            <div style={{ display: 'flex', gap: 14, justifyContent: 'flex-end', marginTop: 28 }}>
+            <div className="publico-acoes">
               <Button to="/" variant="ghost">
                 {t('publico:registro.botao_cancelar')}
               </Button>
