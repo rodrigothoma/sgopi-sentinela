@@ -230,6 +230,58 @@ code, kbd, samp, pre, .mono {
   margin: 0 auto;
 }
 
+.detalhe-pagina {
+  max-width: 1100px;
+}
+
+.detalhe-pagina,
+.detalhe-pagina .card,
+.detalhe-pagina .detalhe {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.detalhe-pagina .voltar {
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+  .detalhe-pagina .card {
+    padding: 16px 12px;
+  }
+
+  .detalhe-pagina dl.grid2 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .detalhe-pagina dl.grid2 dt {
+    margin-top: 10px;
+  }
+
+  .detalhe-pagina dl.grid2 dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .detalhe-pagina .detalhe-cabecalho {
+    align-items: flex-start;
+  }
+
+  .detalhe-pagina .detalhe-cabecalho h2 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .detalhe-pagina .badge {
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+}
+
 .duas-colunas {
   display: grid;
   grid-template-columns: 1fr 1.4fr;

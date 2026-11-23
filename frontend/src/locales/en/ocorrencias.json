@@ -124,7 +124,8 @@
   "minhas": {
     "titulo": "My occurrences",
     "vazio": "No occurrences yet.",
-    "selecione": "Select an occurrence to see details."
+    "selecione": "Select an occurrence to see details.",
+    "voltar": "Back to occurrences"
   },
   "correcao": {
     "titulo": "Correct {{protocolo}}",
@@ -145,7 +146,8 @@
     "filtro_3": "Rejected / closed",
     "filtro_4": "Archived / deleted",
     "espera": "{{tempo}} ago",
-    "espera_titulo": "Time awaiting decision"
+    "espera_titulo": "Time awaiting decision",
+    "voltar": "Back to queue"
   },
   "revisao": {
     "despacho_label": "Authority decision (optional when validating)",

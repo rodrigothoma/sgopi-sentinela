@@ -124,7 +124,8 @@
   "minhas": {
     "titulo": "Minhas ocorrências",
     "vazio": "Nenhuma ocorrência registrada.",
-    "selecione": "Selecione uma ocorrência para ver o detalhe."
+    "selecione": "Selecione uma ocorrência para ver o detalhe.",
+    "voltar": "Voltar às ocorrências"
   },
   "correcao": {
     "titulo": "Corrigir {{protocolo}}",
@@ -145,7 +146,8 @@
     "filtro_3": "Rejeitadas / encerradas",
     "filtro_4": "Arquivadas / excluídas",
     "espera": "há {{tempo}}",
-    "espera_titulo": "Tempo aguardando decisão"
+    "espera_titulo": "Tempo aguardando decisão",
+    "voltar": "Voltar à fila"
   },
   "revisao": {
     "despacho_label": "Despacho da autoridade (opcional ao validar)",

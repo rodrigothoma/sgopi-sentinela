@@ -36,8 +36,8 @@ function rotaListagem(papel: Papel): string {
 }
 
 function linkVerificarOcorrencia(papel: Papel, id: string): string {
-  if (papel === 'AGENTE') return `/minhas?ocorrencia=${id}`;
-  if (papel === 'DELEGADO' || papel === 'SUPERVISOR') return `/fila?ocorrencia=${id}`;
+  if (papel === 'AGENTE') return `/minhas/${id}`;
+  if (papel === 'DELEGADO' || papel === 'SUPERVISOR') return `/fila/${id}`;
   return `/painel`;
 }
 
