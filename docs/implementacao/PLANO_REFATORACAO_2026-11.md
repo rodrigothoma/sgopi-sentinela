@@ -105,7 +105,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 
 ## 5. Onda 3 — Adapters e infraestrutura
 
-- [~] **Repositório base versionado** `RepositorioVersionadoSQLAlchemy[M, E]`: `ControleVersaoMixin` em `persistence/_concorrencia.py` unificou a verificação de versão e o locking nos 5 repositórios (`ocorrencia`, `viatura`, `inquerito`, `laudo`, `medida_protetiva`). **Pendente:** extração da classe base genérica para unificar `salvar`, `_reconstituir` e `buscar_por_id`.
+- [x] **Repositório base versionado** `RepositorioVersionadoSQLAlchemy[M, E]` em `persistence/_concorrencia.py`: sobre o `ControleVersaoMixin`, unifica `salvar`, `_reconstituir` e `buscar_por_id` nos 5 repositórios (`ocorrencia`, `viatura`, `inquerito`, `laudo`, `medida_protetiva`), que só declaram `_model_cls`, `_mapper_cls` e `_mensagem_conflito` (e sobrescrevem `_query_carregar_model` para pré-carregar coleções filhas). — `f99c7f7`, `2f35ccc`
 - [x] **Mappers** para todos os agregados (medida_protetiva, laudo, inquerito, comunicacao, notificacao, ordem_despacho e usuario no padrão de `persistence/mappers/`); helpers `aware_opcional()` e `enum_ou_padrao()`. — `2f436f3` … `0b8d050`
 - [x] **`GeradorSequencialSQLAlchemy(tabela, formatador)`** no lugar dos 6 UPSERTs idênticos com validação de identificador e testes de concorrência. — `096f773`
 - [ ] **Routers**: schemas em `http/schemas/`, conversores em `conversores.py` (sem import entre routers), `ConfigDict(from_attributes=True)`, `Pagina[T]` genérico; regra de negócio fora de `viaturas_router`, `laudos_router` (validação de upload) e `inqueritos_router` (`split(' · ')`).
