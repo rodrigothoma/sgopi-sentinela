@@ -11,13 +11,12 @@ from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     RegistrarOcorrenciaInput,
     TipificacaoInputDTO,
 )
-from application.ports.outbound.gerador_protocolo import GeradorProtocolo
 from application.use_cases.ocorrencia.registrar_ocorrencia_policial import RegistrarOcorrenciaPolicial
 from domain.notificacao.entity import Notificacao, TipoNotificacao
 from domain.shared.eventos import EventoDominio
 from domain.shared.exceptions import AcessoNegadoError, CampoObrigatorioError, ValorInvalidoError
 from tests.fakes.atores import AGENTE, DELEGADO
-from tests.fakes.portas_fake import AuditoriaFake, GeradorProtocoloFake, PublicadorEventosFake, RelogioFake, UnidadeDeTrabalhoFake
+from tests.fakes.portas_fake import AuditoriaFake, GeradorNumeroSequencialFake, PublicadorEventosFake, RelogioFake, UnidadeDeTrabalhoFake
 from tests.fakes.repositorio_notificacao_fake import RepositorioNotificacaoFake
 from tests.fakes.repositorio_ocorrencia_fake import RepositorioOcorrenciaFake
 
@@ -41,7 +40,7 @@ def auditoria():
 
 @pytest.fixture
 def use_case(repositorio, uow, auditoria):
-    return RegistrarOcorrenciaPolicial(repositorio, uow, RelogioFake(AGORA), GeradorProtocoloFake(), auditoria)
+    return RegistrarOcorrenciaPolicial(repositorio, uow, RelogioFake(AGORA), GeradorNumeroSequencialFake(), auditoria)
 
 
 def _input_valido(**kwargs) -> RegistrarOcorrenciaInput:
@@ -126,14 +125,6 @@ async def test_registrar_somente_agente(use_case):
 
 
 # ------------------------------------------------------------------ tempo real + notificação (issue #68)
-class _GeradorProtocoloFixo(GeradorProtocolo):
-    def __init__(self, protocolo: str) -> None:
-        self._protocolo = protocolo
-
-    async def proximo(self, ano: int) -> str:
-        return self._protocolo
-
-
 @pytest.fixture
 def publicador():
     return PublicadorEventosFake()
@@ -147,7 +138,7 @@ def notificacoes():
 @pytest.fixture
 def use_case_rt(repositorio, uow, auditoria, publicador, notificacoes):
     return RegistrarOcorrenciaPolicial(
-        repositorio, uow, RelogioFake(AGORA), GeradorProtocoloFake(), auditoria, publicador, notificacoes
+        repositorio, uow, RelogioFake(AGORA), GeradorNumeroSequencialFake(), auditoria, publicador, notificacoes
     )
 
 
@@ -187,7 +178,7 @@ async def test_registrar_publica_notificacao_depois_do_commit(use_case_rt, uow, 
 
 async def test_retry_com_mesmo_protocolo_nao_duplica_notificacao(repositorio, uow, auditoria, publicador, notificacoes):
     uc = RegistrarOcorrenciaPolicial(
-        repositorio, uow, RelogioFake(AGORA), _GeradorProtocoloFixo("SGOPI-2026-000001"), auditoria, publicador, notificacoes
+        repositorio, uow, RelogioFake(AGORA), GeradorNumeroSequencialFake(numero_fixo="SGOPI-2026-000001"), auditoria, publicador, notificacoes
     )
     await uc.executar(AGENTE, _input_valido())
     await uc.executar(AGENTE, _input_valido())

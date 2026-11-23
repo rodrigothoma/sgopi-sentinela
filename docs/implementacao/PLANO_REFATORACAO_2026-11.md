@@ -99,7 +99,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 - [ ] **Áreas de risco com parâmetros nomeados**: `ParametrosAreasRisco` (raio de agrupamento, mínimos por janela, faixa de raio, folga, limiar de criticidade, limite de varredura) e serviço de domínio de manchas no lugar do agrupamento O(n²) dentro do caso de uso.
 - [ ] **Fatores únicos em `domain/shared`**: `METROS_POR_KM` + `Coordenada.distancia_metros()` (fator repetido em 4 arquivos) e `TAMANHO_HASH_SHA256` (evidência e laudo); `LIMITE_VARREDURA` no alerta de vencimento.
 - [ ] **Decompor as funções longas**: `_processar_alerta_medida` (103 linhas; HTML do e-mail vai para um adapter), `gerir_comunicacoes.executar` (97), `instaurar_inquerito` (86), `calcular_areas_risco.executar` (85), `solicitar_laudo` (80), `anexar_laudo` (77), `conceder_medida` (75).
-- [ ] **Portas**: um único `GeradorNumeroSequencial` com enum de prefixos (hoje 6 portas); remover métodos abstratos sem uso; padronizar `Input`/`dados`/`buscar_por_id`/paginação `limit/offset`; remover o `UsuarioOutput` duplicado.
+- [~] **Portas**: um único `GeradorNumeroSequencial` com enum `TipoDocumentoSequencial` no lugar das 6 portas, implementado só por `GeradorSequencialSQLAlchemy` (sem subclasses) e com uma única fake. — `3f339c9` … `5af0841`. **Pendente:** remover métodos abstratos sem uso; padronizar `Input`/`dados`/`buscar_por_id`/paginação `limit/offset`; remover o `UsuarioOutput` duplicado.
 
 ---
 
@@ -135,7 +135,7 @@ Levantamento de 08/11 (varredura de constantes e números soltos no backend):
 
 ## 7. Onda 5 — Testes e documentação
 
-- [ ] **Traduções faltando** *(encontrado em 08/11)*: 36 das 147 chaves de erro usadas no backend não existem em `infrastructure/i18n/locales/*/default.json` (inquérito 12, laudo 12, medida 11, ocorrência 1); a API devolve a chave crua (ex.: `inquerito.apenas_delegado`) no lugar da mensagem.
+- [x] **Traduções faltando**: 36 chaves de erro (inquérito 12, laudo 12, medida 11, ocorrência 1) adicionadas em `pt` e `en`, com teste automatizado de varredura AST (`test_traducoes_erros.py`). — `c45a35d`, `4e7d74b`
 - [ ] **Testes unitários que faltam**: inquérito `consultar`/`instaurar`, laudo (4), medida (renovar/revogar), `linha_do_tempo`, `emitir_credencial_telemetria`; concorrência otimista por repositório (estender `tests/integration/contratos/` a inquérito, laudo e medida).
 - [ ] **Migração 0008 sem `downgrade` no PostgreSQL** *(encontrado em 16/11)*: o `downgrade` tenta remover a constraint `fk_ocorrencias_inquerito_id_inqueritos`, que não existe com esse nome no PostgreSQL; `alembic downgrade base` e o `npm run e2e:db` falham. O CI não detecta porque só desce até a 0011.
 - [ ] **Higiene da suíte**: hash argon2 uma vez por sessão, helper de login único, enum `Papel` nos testes, consolidar fakes duplicadas em `tests/fakes/`.

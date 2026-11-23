@@ -15,7 +15,7 @@ from application.ports.inbound.interface_registrar_ocorrencia_policial import (
     RegistrarOcorrenciaInput,
     RegistrarOcorrenciaOutput,
 )
-from application.ports.outbound.gerador_protocolo import GeradorProtocolo
+from application.ports.outbound.gerador_numero_sequencial import GeradorNumeroSequencial, TipoDocumentoSequencial
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
@@ -45,7 +45,7 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
         repositorio: RepositorioOcorrencia,
         uow: UnidadeDeTrabalho,
         relogio: Relogio,
-        gerador_protocolo: GeradorProtocolo,
+        gerador_protocolo: GeradorNumeroSequencial,
         auditoria: PortaAuditoria,
         publicador: PublicadorEventos | None = None,
         notificacoes: RepositorioNotificacao | None = None,
@@ -79,7 +79,7 @@ class RegistrarOcorrenciaPolicial(InterfaceRegistrarOcorrenciaPolicial):
         async with self._uow:
             for item in itens:
                 await exigir_lacre_inedito(self._repositorio, item)
-            numero_protocolo = await self._gerador_protocolo.proximo(agora.year)
+            numero_protocolo = await self._gerador_protocolo.proximo(TipoDocumentoSequencial.PROTOCOLO, agora.year)
             ocorrencia = Ocorrencia.registrar(
                 agente_policial_id=ator.id,
                 natureza=input_dto.natureza,

@@ -17,7 +17,7 @@ from domain.shared.exceptions import AcessoNegadoError, EntidadeNaoEncontradaErr
 from domain.usuario.entity import LOGIN_SISTEMA_CIDADAO, Papel
 from tests.fakes.atores import AGENTE, DELEGADO
 from tests.fakes.auth_fake import RepositorioUsuarioFake
-from tests.fakes.portas_fake import AuditoriaFake, GeradorProtocoloFake, RelogioFake, UnidadeDeTrabalhoFake
+from tests.fakes.portas_fake import AuditoriaFake, GeradorNumeroSequencialFake, RelogioFake, UnidadeDeTrabalhoFake
 from tests.fakes.repositorio_ocorrencia_fake import RepositorioOcorrenciaFake
 
 AGORA = datetime(2026, 9, 13, 12, 0, tzinfo=UTC)
@@ -35,7 +35,7 @@ def usuarios():
 
 @pytest.fixture
 def registro_policial(repositorio):
-    return RegistrarOcorrenciaPolicial(repositorio, UnidadeDeTrabalhoFake(), RelogioFake(AGORA), GeradorProtocoloFake(), AuditoriaFake())
+    return RegistrarOcorrenciaPolicial(repositorio, UnidadeDeTrabalhoFake(), RelogioFake(AGORA), GeradorNumeroSequencialFake(), AuditoriaFake())
 
 
 @pytest.fixture

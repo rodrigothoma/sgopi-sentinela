@@ -1,8 +1,7 @@
-"""Fakes de despacho: RepositorioOrdemDespachoFake e GeradorNumeroOrdemFake."""
+"""Fake de despacho: RepositorioOrdemDespachoFake."""
 import copy
 from uuid import UUID
 
-from application.ports.outbound.gerador_numero_ordem import GeradorNumeroOrdem, formatar_numero_ordem
 from application.ports.outbound.repositorio_ordem_despacho import RepositorioOrdemDespacho
 from domain.despacho.entity import OrdemDeDespacho
 
@@ -30,15 +29,3 @@ class RepositorioOrdemDespachoFake(RepositorioOrdemDespacho):
     async def buscar_ativa_por_viatura(self, viatura_id: UUID) -> OrdemDeDespacho | None:
         ativas = [o for o in self._store.values() if o.viatura_id == viatura_id and o.ativa]
         return copy.deepcopy(max(ativas, key=lambda o: o.criada_em)) if ativas else None
-
-
-class GeradorNumeroOrdemFake(GeradorNumeroOrdem):
-    def __init__(self, falhar: bool = False) -> None:
-        self._n = 0
-        self.falhar = falhar
-
-    async def proximo(self, ano: int) -> str:
-        if self.falhar:
-            raise RuntimeError("falha simulada ao gerar número da ordem")
-        self._n += 1
-        return formatar_numero_ordem(ano, self._n)

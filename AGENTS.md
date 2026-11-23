@@ -26,6 +26,12 @@ Este arquivo estabelece as regras canônicas de engenharia para qualquer **agent
   * **Linguagem & Framework:** React 18, TypeScript, Vite.
   * **Mapas:** Leaflet com tiles do OpenStreetMap.
   * **Comunicação em Tempo Real:** WebSockets nativos do FastAPI (JSON bidirecional).
+* **Mobile (`mobile/`):**
+  * **Linguagem & Framework:** Dart ≥ 3.14 e Flutter (stable ≥ 3.50), alvo Android.
+  * **UI:** `material_ui` (o `package:flutter/material.dart` está depreciado).
+  * **Estado & DI:** Riverpod 3 (`riverpod` puro em `application/`, `flutter_riverpod` na apresentação).
+  * **Navegação:** `go_router`. **HTTP:** Dio. **Sessão:** `flutter_secure_storage`. **GPS/câmera:** `geolocator` e `image_picker`.
+  * Cliente da mesma API REST `/v1`: **não** compartilha código com `backend/` nem `frontend/`, só o contrato HTTP.
 
 ---
 
@@ -60,6 +66,25 @@ backend/src/
    * `adapters/outbound/persistence/`: Implementa as portas de repositório usando SQLAlchemy e converte entre modelos relacionais e entidades de domínio.
 5. **Composition Root:**
    * O único arquivo autorizado a instanciar adaptadores e injetá-los nos casos de uso é o [`backend/src/infrastructure/di.py`](backend/src/infrastructure/di.py).
+
+### 📱 App mobile (`mobile/lib/`) — mesmas ideias, validadas por `mobile/test/arquitetura_test.dart`
+
+```text
+mobile/lib/
+├── core/            # dominio/ (Falha, EnumApi, Pagina, Relogio), aplicacao/, http/ (Dio), apresentacao/ (design/, componentes/), l10n/
+├── features/<f>/    # autenticacao, ocorrencias (RF01), revisao (RF04), notificacoes, preferencias (tema e idioma)
+│   ├── domain/      #   Dart puro: entidades, regras espelhadas do backend e portas (abstract interface class)
+│   ├── application/ #   casos de uso (`executar`) e Notifiers; só enxergam domain/, Dart puro e `package:riverpod`
+│   ├── data/        #   adaptadores: repositórios Dio, mappers JSON, GPS, câmera, armazenamento seguro
+│   └── presentation/#   telas e widgets; nunca importam data/ nem Dio
+└── app/             # di.dart (COMPOSITION ROOT), tema, roteador, barra de abas e guarda de rotas por papel
+```
+
+* **`domain/` é Dart puro:** proibido `package:flutter`, `material_ui`, Dio, Riverpod, plugins e `dart:io`/`dart:ui`.
+* **Composition Root:** só [`mobile/lib/app/di.dart`](mobile/lib/app/di.dart) instancia adaptadores de `data/` e os liga às portas (providers que lançam `PortaNaoConfigurada` até serem substituídos).
+* **Design system:** cores só por `Theme.of(context).colorScheme` ou `context.cores` (`CoresSgopi`), com os tokens do web em `core/apresentacao/design/paleta.dart`; nada de `Color(0x...)` nas telas. Componentes comuns (`CartaoSecao`, `EstadoVazio`, `BarraAcoes`...) ficam em `core/apresentacao/componentes/`.
+* **Toda string visível** entra em `app_pt.arb` **e** `app_en.arb` (o teste `traducoes_test.dart` falha se faltar uma).
+* **O backend é a autoridade:** regras espelhadas no app (tamanhos mínimos, limites, papéis) só evitam ida e volta à rede; mantenha os nomes e o arquivo de origem no comentário.
 
 ---
 
@@ -115,16 +140,19 @@ uv run pytest --cov
 
 # 3. Tipagem e Build do Frontend
 cd ../frontend && npx tsc --noEmit && npm run build
+
+# 4. App mobile: formatação, análise, testes e contratos da arquitetura
+cd ../mobile && dart format --output=none --set-exit-if-changed lib test && flutter analyze && flutter test
 ```
 
 Atalho que repete o CI inteiro localmente (inclui ruff, migrações, testes E2E, piso de cobertura por arquivo, Vitest e `npm audit`):
 
 ```bash
 ./scripts/verificar.sh            # completo
-./scripts/verificar.sh --rapido   # arquitetura, ruff, testes sem E2E e tsc
+./scripts/verificar.sh --rapido   # arquitetura, ruff, testes sem E2E, tsc e Flutter
 ```
 
-Ative uma vez por clone o pre-commit versionado (`./scripts/instalar-hooks.sh`): ele roda ruff e import-linter quando o commit tem Python do backend e `tsc` quando tem TypeScript do frontend. Não o contorne com `--no-verify`.
+Ative uma vez por clone o pre-commit versionado (`./scripts/instalar-hooks.sh`): ele roda ruff e import-linter quando o commit tem Python do backend, `tsc` quando tem TypeScript do frontend e `dart format` + `flutter analyze` quando tem Dart do mobile. Não o contorne com `--no-verify`.
 
 ---
 
@@ -136,6 +164,7 @@ Roteiros reutilizáveis em `.claude/skills/<nome>/SKILL.md`. O Claude Code os ca
 | :--- | :--- |
 | [`backend-tdd`](.claude/skills/backend-tdd/SKILL.md) | Implementar, alterar ou refatorar o backend com TDD (testes por camada, fakes, padrões do projeto) |
 | [`frontend-tdd`](.claude/skills/frontend-tdd/SKILL.md) | Implementar, alterar ou refatorar o frontend com TDD (Vitest para lógica, Cypress para fluxos) |
+| [`mobile-tdd`](.claude/skills/mobile-tdd/SKILL.md) | Implementar, alterar ou refatorar o app mobile com TDD (testes por camada, fakes, widget tests de fluxo) |
 | [`verificar`](.claude/skills/verificar/SKILL.md) | Antes de commitar, abrir PR ou concluir uma tarefa: roda `scripts/verificar.sh` e corrige as falhas |
 | [`handoff`](.claude/skills/handoff/SKILL.md) | Passar o trabalho para outra sessão de agente (documento de passagem em diretório temporário) |
 

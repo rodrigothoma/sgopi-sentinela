@@ -8,7 +8,7 @@ Decisões aplicadas: DEC-02 (máquina de estados única), DEC-03 (Coordenada +
 data_hora_fato obrigatórios), DEC-04 (Envolvido 1:N), DEC-09 (hash SHA-256 da
 narrativa na validação), HEX-06 (invariante ≥ 1 envolvido via factory),
 HEX-07 (instante recebido de fora — porta Relogio), HEX-08 (protocolo recebido
-de fora — porta GeradorProtocolo), RF03 (itens apreendidos + cadeia de custódia
+de fora — porta GeradorNumeroSequencial), RF03 (itens apreendidos + cadeia de custódia
 como filhos do agregado — ver ``domain/ocorrencia/apreensao.py``), RF08 (chave
 pública de autenticidade emitida na validação — ver ``domain/ocorrencia/autenticidade.py``).
 """

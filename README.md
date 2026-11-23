@@ -33,8 +33,8 @@ sgopi-sentinela/
 │   │   │                          # mixin Versionado, exigir_texto, interpretar_enum, Prioridade
 │   │   ├── application/
 │   │   │   ├── ports/inbound/     # Interface* + DTOs + Ator (um arquivo por caso de uso)
-│   │   │   ├── ports/outbound/    # Repositorio*, UnidadeDeTrabalho, Relogio, GeradorProtocolo,
-│   │   │   │                      # GeradorNumero*, PortaAuditoria, PublicadorEventos, HasherSenha,
+│   │   │   ├── ports/outbound/    # Repositorio*, UnidadeDeTrabalho, Relogio,
+│   │   │   │                      # GeradorNumeroSequencial, PortaAuditoria, PublicadorEventos, HasherSenha,
 │   │   │   │                      # ProvedorToken, ArmazenamentoArquivos, PortaNotificacaoEmail
 │   │   │   └── use_cases/         # auth/, ocorrencia/, viatura/, despacho/, auditoria/, usuario/,
 │   │   │                          # inquerito/, laudo/, medida_protetiva/, documento/, interagencias/,
@@ -59,6 +59,9 @@ sgopi-sentinela/
 ├── frontend/                      # SPA React + TypeScript + Leaflet
 │   ├── src/ {components, pages, services, hooks, types, utils, locales}
 │   └── cypress/e2e/               # Testes E2E de interface (Cypress)
+├── mobile/                        # App Flutter (Android) — Agente (RF01) e Delegado (RF04) sobre a API /v1
+│   ├── lib/ {core, features/{autenticacao, ocorrencias, revisao}/{domain, application, data, presentation}, app}
+│   └── test/                      # domínio, casos de uso, adaptadores HTTP, fluxos de tela e arquitetura
 ├── docs/
 │   ├── DOCUMENTACAO_DE_ENGENHARIA.md · PLANEJAMENTO_DESENVOLVIMENTO.md
 │   ├── implementacao/             # Registros de etapas e complementos de implementação
@@ -113,14 +116,25 @@ cp .env.example .env
 npm run dev                     # http://localhost:3000 (proxy /v1 e WebSocket para o backend)
 ```
 
+### App mobile (Flutter)
+
+```bash
+cd mobile
+flutter pub get                 # dependências e traduções (gera lib/core/l10n/gerado)
+flutter test                    # testes + contratos da arquitetura
+flutter run --dart-define=API_BASE_URL=http://<IP-do-PC>:8000   # celular na mesma rede
+```
+
+Instalação do SDK no WSL, celular físico via `adb` e rede: [`mobile/README.md`](mobile/README.md).
+
 ### Antes de commitar
 
 ```bash
-./scripts/instalar-hooks.sh       # uma vez por clone: ativa o pre-commit (ruff, import-linter e tsc)
+./scripts/instalar-hooks.sh       # uma vez por clone: ativa o pre-commit (ruff, import-linter, tsc e Dart)
 ./scripts/verificar.sh            # repete o CI localmente (use --rapido durante o desenvolvimento)
 ```
 
-Agentes de IA seguem o [`AGENTS.md`](AGENTS.md) e as skills em [`.claude/skills/`](.claude/skills/) (`backend-tdd`, `frontend-tdd`, `verificar`, `handoff`).
+Agentes de IA seguem o [`AGENTS.md`](AGENTS.md) e as skills em [`.claude/skills/`](.claude/skills/) (`backend-tdd`, `frontend-tdd`, `mobile-tdd`, `verificar`, `handoff`).
 
 ### 📋 Quadro de Desenvolvimento (Kanban GitHub Projects)
 Todas as etapas e fatias verticais do projeto estão mapeadas e organizadas no [**Quadro Oficial de Desenvolvimento no GitHub Projects**](https://github.com/users/rodrigothoma/projects/2).
@@ -268,9 +282,10 @@ O projeto adota a **Arquitetura Hexagonal** para garantir o isolamento estrito d
 | Dev local | Docker Compose |
 | Produção/Demo | Supabase (PostgreSQL gerenciado) |
 | Frontend | React + TypeScript + Vite |
+| Mobile | Flutter + Dart (Android) · Riverpod · go_router · Dio |
 | Mapa tático | Leaflet + OpenStreetMap |
 | Tempo real | WebSockets |
-| Testes | pytest + pytest-asyncio · Cypress (E2E de interface) |
+| Testes | pytest + pytest-asyncio · Cypress (E2E de interface) · flutter_test (mobile) |
 | Gerenciador deps | uv |
 
 ---

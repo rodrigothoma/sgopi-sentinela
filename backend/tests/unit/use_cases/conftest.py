@@ -6,7 +6,7 @@ import pytest
 from application.ports.inbound.interface_registrar_ocorrencia_policial import EnvolvidoInputDTO, RegistrarOcorrenciaInput
 from application.use_cases.ocorrencia.registrar_ocorrencia_policial import RegistrarOcorrenciaPolicial
 from tests.fakes.atores import AGENTE
-from tests.fakes.portas_fake import AuditoriaFake, GeradorProtocoloFake, PublicadorEventosFake, RelogioFake, UnidadeDeTrabalhoFake
+from tests.fakes.portas_fake import AuditoriaFake, GeradorNumeroSequencialFake, PublicadorEventosFake, RelogioFake, UnidadeDeTrabalhoFake
 from tests.fakes.repositorio_ocorrencia_fake import RepositorioOcorrenciaFake
 
 AGORA = datetime(2026, 9, 13, 12, 0, tzinfo=UTC)
@@ -58,7 +58,7 @@ def input_registro(**kwargs) -> RegistrarOcorrenciaInput:
 
 @pytest.fixture
 async def registrar(repositorio, uow, relogio, auditoria):
-    uc = RegistrarOcorrenciaPolicial(repositorio, uow, relogio, GeradorProtocoloFake(), auditoria)
+    uc = RegistrarOcorrenciaPolicial(repositorio, uow, relogio, GeradorNumeroSequencialFake(), auditoria)
 
     async def _registrar(ator=AGENTE, **kw):
         return await uc.executar(ator, input_registro(**kw))

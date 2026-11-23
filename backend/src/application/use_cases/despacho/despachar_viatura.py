@@ -19,7 +19,7 @@ from application.ports.inbound.interface_despachar_viatura import (
     SugestoesOutput,
     ViaturaSugeridaOutput,
 )
-from application.ports.outbound.gerador_numero_ordem import GeradorNumeroOrdem
+from application.ports.outbound.gerador_numero_sequencial import GeradorNumeroSequencial, TipoDocumentoSequencial
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
@@ -75,7 +75,7 @@ class DespacharViatura(InterfaceDespacharViatura):
         ocorrencias: RepositorioOcorrencia,
         viaturas: RepositorioViatura,
         ordens: RepositorioOrdemDespacho,
-        gerador: GeradorNumeroOrdem,
+        gerador: GeradorNumeroSequencial,
         uow: UnidadeDeTrabalho,
         relogio: Relogio,
         auditoria: PortaAuditoria,
@@ -98,7 +98,7 @@ class DespacharViatura(InterfaceDespacharViatura):
             else:
                 ocorrencia.despachar(ator.id, agora)  # VALIDADA → EM_ATENDIMENTO (ou TransicaoInvalidaError)
             viatura.despachar(agora)              # DISPONIVEL → EM_DESLOCAMENTO
-            numero = await self._gerador.proximo(agora.year)
+            numero = await self._gerador.proximo(TipoDocumentoSequencial.ORDEM_DESPACHO, agora.year)
             ordem = OrdemDeDespacho(
                 numero=numero, ocorrencia_id=ocorrencia.id, viatura_id=viatura.id, operador_id=ator.id, criada_em=agora, observacoes=input_dto.observacoes,
                 apoio=apoio,

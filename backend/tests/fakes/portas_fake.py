@@ -1,8 +1,12 @@
-"""Fakes das portas transversais (Relogio, GeradorProtocolo, UnidadeDeTrabalho, Auditoria, Eventos)."""
+"""Fakes das portas transversais (Relogio, GeradorNumeroSequencial, UnidadeDeTrabalho, Auditoria, Eventos)."""
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from application.ports.outbound.gerador_protocolo import GeradorProtocolo, formatar_protocolo
+from application.ports.outbound.gerador_numero_sequencial import (
+    GeradorNumeroSequencial,
+    TipoDocumentoSequencial,
+    formatar_numero_sequencial,
+)
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
@@ -24,13 +28,25 @@ class RelogioFake(Relogio):
         self.instante += timedelta(**delta)
 
 
-class GeradorProtocoloFake(GeradorProtocolo):
-    def __init__(self) -> None:
-        self._contadores: dict[int, int] = {}
+class GeradorNumeroSequencialFake(GeradorNumeroSequencial):
+    """Contador em memória por (tipo, ano), com o mesmo formato do adaptador SQL.
 
-    async def proximo(self, ano: int) -> str:
-        self._contadores[ano] = self._contadores.get(ano, 0) + 1
-        return formatar_protocolo(ano, self._contadores[ano])
+    ``numero_fixo`` devolve sempre o mesmo número (simula colisão); ``falhar`` simula sequência indisponível.
+    """
+
+    def __init__(self, *, numero_fixo: str | None = None, falhar: bool = False) -> None:
+        self._contadores: dict[tuple[TipoDocumentoSequencial, int], int] = {}
+        self._numero_fixo = numero_fixo
+        self.falhar = falhar
+
+    async def proximo(self, tipo: TipoDocumentoSequencial, ano: int) -> str:
+        if self.falhar:
+            raise RuntimeError(f"falha simulada ao gerar número de {tipo}")
+        if self._numero_fixo is not None:
+            return self._numero_fixo
+        chave = (tipo, ano)
+        self._contadores[chave] = self._contadores.get(chave, 0) + 1
+        return formatar_numero_sequencial(tipo, ano, self._contadores[chave])
 
 
 class UnidadeDeTrabalhoFake(UnidadeDeTrabalho):

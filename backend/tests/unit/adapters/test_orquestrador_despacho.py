@@ -22,8 +22,8 @@ from domain.ocorrencia.status import StatusOcorrencia
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
 from domain.viatura.entity import Posicao, SituacaoViatura, Viatura
-from tests.fakes.despacho_fake import GeradorNumeroOrdemFake, RepositorioOrdemDespachoFake
-from tests.fakes.portas_fake import AuditoriaFake, PublicadorEventosFake, RelogioFake, UnidadeDeTrabalhoFake
+from tests.fakes.despacho_fake import RepositorioOrdemDespachoFake
+from tests.fakes.portas_fake import AuditoriaFake, GeradorNumeroSequencialFake, PublicadorEventosFake, RelogioFake, UnidadeDeTrabalhoFake
 from tests.fakes.repositorio_ocorrencia_fake import RepositorioOcorrenciaFake
 from tests.fakes.repositorio_viatura_fake import RepositorioViaturaFake
 
@@ -47,7 +47,7 @@ class _Ambiente:
         self.operador = OPERADOR_SIMULADOR if com_atores else None
         self.delegado = DELEGADO_SIMULADOR if com_atores else None
         self._despachar = DespacharViatura(
-            self.ocorrencias, self.viaturas, self.ordens, GeradorNumeroOrdemFake(),
+            self.ocorrencias, self.viaturas, self.ordens, GeradorNumeroSequencialFake(),
             self._uow, self.relogio, self.auditoria, self.publicador,
         )
         self._encerrar = EncerrarOcorrencia(

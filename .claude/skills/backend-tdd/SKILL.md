@@ -36,7 +36,7 @@ Comece pela camada mais interna que o comportamento toca. Só desça para a pró
 | HTTP (`adapters/inbound/http/`) | `tests/integration/test_<x>_http.py` | Fixture `client` e `tests/integration/helpers.py`: `auth(client, "delegado")` devolve os headers, `registrar(client, headers)` cria uma ocorrência. Confira status, `json()["code"]` (chave i18n) e o corpo. |
 | Fluxo ponta a ponta | `tests/e2e/` | Contra a API real; rode pela skill `verificar` (completo). |
 
-**Fakes de `tests/fakes/`:** `RelogioFake`, `GeradorProtocoloFake`, `UnidadeDeTrabalhoFake`, `AuditoriaFake`, `PublicadorEventosFake` (`portas_fake.py`), `RepositorioOcorrenciaFake`, `RepositorioViaturaFake`, `RepositorioMedidaProtetivaFake` + `GeradorNumeroMedidaFake`, `RepositorioNotificacaoFake`, `RepositorioOrdemDespachoFake`, fakes de autenticação (`auth_fake.py`).
+**Fakes de `tests/fakes/`:** `RelogioFake`, `GeradorNumeroSequencialFake` (todos os números sequenciais; `numero_fixo`/`falhar`), `UnidadeDeTrabalhoFake`, `AuditoriaFake`, `PublicadorEventosFake` (`portas_fake.py`), `RepositorioOcorrenciaFake`, `RepositorioViaturaFake`, `RepositorioMedidaProtetivaFake`, `RepositorioNotificacaoFake`, `RepositorioOrdemDespachoFake`, fakes de autenticação (`auth_fake.py`).
 
 - Precisa de uma fake que não existe? Crie em `tests/fakes/`, implementando **toda** a porta, devolvendo cópias (`copy.deepcopy`) e com a mesma ordenação e regras do adaptador SQL. Não declare fakes dentro do arquivo de teste.
 - Repositório com `versao`: use `ControleVersaoFake` (`tests/fakes/controle_versao.py`) e acrescente o repositório à bateria de `tests/integration/contratos/` (fixtures `sessoes_fake`/`sessoes_sqlalchemy`, marcador `IMPLEMENTACOES`), que roda o mesmo teste contra a fake e contra o SQLAlchemy.

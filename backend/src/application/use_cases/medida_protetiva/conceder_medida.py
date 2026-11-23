@@ -7,7 +7,7 @@ from application.ports.inbound.interface_gerir_medidas_protetivas import (
     InterfaceConcederMedida,
     MedidaProtetivaOutput,
 )
-from application.ports.outbound.gerador_numero_medida import GeradorNumeroMedida
+from application.ports.outbound.gerador_numero_sequencial import GeradorNumeroSequencial, TipoDocumentoSequencial
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_medida_protetiva import RepositorioMedidaProtetiva
@@ -25,7 +25,7 @@ class ConcederMedida(InterfaceConcederMedida):
         self,
         repositorio_medida: RepositorioMedidaProtetiva,
         repositorio_ocorrencia: RepositorioOcorrencia,
-        gerador_numero: GeradorNumeroMedida,
+        gerador_numero: GeradorNumeroSequencial,
         relogio: Relogio,
         uow: UnidadeDeTrabalho,
         auditoria: PortaAuditoria,
@@ -50,7 +50,7 @@ class ConcederMedida(InterfaceConcederMedida):
 
         agora = self._relogio.agora()
         data_inicio = dados.data_inicio or data_operacional(agora)
-        numero_ref = await self._gerador.proximo(agora.year)
+        numero_ref = await self._gerador.proximo(TipoDocumentoSequencial.MEDIDA_PROTETIVA, agora.year)
 
         medida = MedidaProtetiva.conceder(
             numero_referencia=numero_ref,

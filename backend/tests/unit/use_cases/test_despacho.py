@@ -12,7 +12,8 @@ from domain.shared.exceptions import AcessoNegadoError, CampoObrigatorioError, C
 from domain.shared.geo import Coordenada
 from domain.viatura.entity import SituacaoViatura, Viatura
 from tests.fakes.atores import AGENTE, DELEGADO, OPERADOR
-from tests.fakes.despacho_fake import GeradorNumeroOrdemFake, RepositorioOrdemDespachoFake
+from tests.fakes.despacho_fake import RepositorioOrdemDespachoFake
+from tests.fakes.portas_fake import GeradorNumeroSequencialFake
 from tests.fakes.repositorio_viatura_fake import RepositorioViaturaFake
 from tests.unit.use_cases.conftest import AGORA
 
@@ -50,7 +51,7 @@ async def validada(registrar, deps):
 
 @pytest.fixture
 def despachar(repositorio, viaturas, ordens, uow, relogio, auditoria, publicador):
-    return DespacharViatura(repositorio, viaturas, ordens, GeradorNumeroOrdemFake(), uow, relogio, auditoria, publicador)
+    return DespacharViatura(repositorio, viaturas, ordens, GeradorNumeroSequencialFake(), uow, relogio, auditoria, publicador)
 
 
 @pytest.fixture
@@ -154,7 +155,7 @@ async def test_somente_operador_despacha(validada, frota, despachar):
 
 
 async def test_falha_no_meio_faz_rollback(validada, frota, repositorio, viaturas, ordens, uow, relogio, auditoria, publicador):
-    uc = DespacharViatura(repositorio, viaturas, ordens, GeradorNumeroOrdemFake(falhar=True), uow, relogio, auditoria, publicador)
+    uc = DespacharViatura(repositorio, viaturas, ordens, GeradorNumeroSequencialFake(falhar=True), uow, relogio, auditoria, publicador)
     with pytest.raises(RuntimeError):
         await uc.executar(OPERADOR, DespacharInput(validada, frota["VTR-02"]))
     assert uow.rollbacks == 1 and await ordens.listar() == [] and publicador.tipos()[-1] == "OcorrenciaValidada"

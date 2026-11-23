@@ -6,10 +6,7 @@ import pytest
 from application.ports.inbound.ator import Ator
 from application.ports.outbound.publicador_eventos import PublicadorEventos
 from application.ports.outbound.relogio import Relogio
-from application.ports.outbound.repositorio_comunicacao_interagencias import (
-    GeradorNumeroOficio,
-    RepositorioComunicacaoInteragencias,
-)
+from application.ports.outbound.repositorio_comunicacao_interagencias import RepositorioComunicacaoInteragencias
 from application.ports.outbound.repositorio_notificacao import RepositorioNotificacao
 from application.ports.outbound.repositorio_ocorrencia import RepositorioOcorrencia
 from application.use_cases.interagencias.gerir_comunicacoes import (
@@ -23,15 +20,7 @@ from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido
 from domain.shared.geo import Coordenada
 from domain.usuario.entity import Papel
 from tests.fakes.portas_fake import AuditoriaFake as AuditFake
-
-
-class GeradorOficioFake(GeradorNumeroOficio):
-    def __init__(self) -> None:
-        self.seq = 0
-
-    async def proximo_numero(self, ano: int) -> str:
-        self.seq += 1
-        return f"OFI-{ano}-{self.seq:06d}"
+from tests.fakes.portas_fake import GeradorNumeroSequencialFake
 
 
 class RepoComFake(RepositorioComunicacaoInteragencias):
@@ -141,7 +130,7 @@ class RelFixo(Relogio):
 @pytest.mark.asyncio
 async def test_fluxo_completo_comunicacao_interagencias():
     repo_com = RepoComFake()
-    gerador = GeradorOficioFake()
+    gerador = GeradorNumeroSequencialFake()
     repo_oc = RepoOcFake()
     repo_notif = RepoNotifFake()
     porta_audit = AuditFake()
@@ -227,7 +216,7 @@ async def test_oficio_confidencial_notifica_apenas_papeis_autorizados():
     repo_notif = RepoNotifFake()
     uc = EnviarComunicacaoInteragenciasUseCase(
         repositorio_comunicacao=RepoComFake(),
-        gerador_oficio=GeradorOficioFake(),
+        gerador_oficio=GeradorNumeroSequencialFake(),
         repositorio_ocorrencia=RepoOcFake(),
         repositorio_notificacao=repo_notif,
         porta_auditoria=AuditFake(),
@@ -254,7 +243,7 @@ async def test_evento_de_oficio_informa_sigilo_e_remetente():
     ator = Ator(id=uuid4(), papel=Papel.DELEGADO, login="delegado")
     uc = EnviarComunicacaoInteragenciasUseCase(
         repositorio_comunicacao=RepoComFake(),
-        gerador_oficio=GeradorOficioFake(),
+        gerador_oficio=GeradorNumeroSequencialFake(),
         repositorio_ocorrencia=RepoOcFake(),
         repositorio_notificacao=RepoNotifFake(),
         porta_auditoria=AuditFake(),

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pre-commit do SGOPI Sentinela: barra no commit o que reprovaria no CI.
-# Só roda as checagens das áreas com arquivos no commit (backend e/ou frontend).
+# Só roda as checagens das áreas com arquivos no commit (backend, frontend e/ou mobile).
 # Instalação (uma vez por clone): ./scripts/instalar-hooks.sh
 # Emergência: git commit --no-verify (o CI continua checando tudo).
 set -euo pipefail
@@ -13,10 +13,12 @@ while IFS= read -r f; do arquivos+=("$f"); done < <(git diff --cached --name-onl
 
 py_backend=()
 ts_frontend=0
+dart_mobile=()
 for f in "${arquivos[@]}"; do
   case "$f" in
     backend/*.py) py_backend+=("${f#backend/}") ;;
     frontend/*.ts|frontend/*.tsx) ts_frontend=1 ;;
+    mobile/lib/*.dart|mobile/test/*.dart) dart_mobile+=("${f#mobile/}") ;;
   esac
 done
 
@@ -26,7 +28,7 @@ etapa() { printf '\n\033[1m[pre-commit] %s\033[0m\n' "$1"; }
 # Mesmas pastas da checagem do CI; o padrão é montado em partes para o hook não acusar a si mesmo.
 marcador="content""Reference"
 vigiados=()
-while IFS= read -r f; do vigiados+=("$f"); done < <(printf '%s\n' "${arquivos[@]}" | grep -E '^(docs|backend/src|frontend/src)/' || true)
+while IFS= read -r f; do vigiados+=("$f"); done < <(printf '%s\n' "${arquivos[@]}" | grep -E '^(docs|backend/src|frontend/src|mobile/lib)/' || true)
 if [ "${#vigiados[@]}" -gt 0 ] && grep -n "$marcador" -- "${vigiados[@]}" 2>/dev/null; then
   echo "[pre-commit] Artefato de chat de IA ($marcador) nos arquivos acima." >&2
   falhou=1
@@ -49,7 +51,19 @@ if [ "$ts_frontend" -eq 1 ]; then
   npx --no-install tsc --noEmit || falhou=1
 fi
 
+if [ "${#dart_mobile[@]}" -gt 0 ]; then
+  if command -v flutter >/dev/null 2>&1; then
+    cd "$raiz/mobile"
+    etapa "dart format (${#dart_mobile[@]} arquivo(s) do mobile)"
+    dart format --output=none --set-exit-if-changed "${dart_mobile[@]}" || falhou=1
+    etapa "flutter analyze (mobile)"
+    flutter analyze --no-pub || falhou=1
+  else
+    echo "[pre-commit] Flutter não encontrado: checagem do mobile/ pulada (o CI roda)." >&2
+  fi
+fi
+
 if [ "$falhou" -ne 0 ]; then
-  printf '\n\033[31m[pre-commit] Commit bloqueado: corrija os erros acima (ruff: uv tool run ruff check --fix).\033[0m\n' >&2
+  printf '\n\033[31m[pre-commit] Commit bloqueado: corrija os erros acima (ruff: uv tool run ruff check --fix; Dart: dart format mobile/lib mobile/test).\033[0m\n' >&2
   exit 1
 fi

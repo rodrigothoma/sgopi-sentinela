@@ -6,6 +6,7 @@ Assegura que qualquer código gerado por IA ou desenvolvedores respeite:
 - Clean Code e Imutabilidade (RNF03)
 """
 import abc
+import enum
 import inspect
 from pathlib import Path
 
@@ -55,8 +56,8 @@ def test_portas_outbound_sao_interfaces_abstratas_abc():
     for mod in modulos_outbound:
         for name, cls in inspect.getmembers(mod, inspect.isclass):
             if cls.__module__.startswith("application.ports.outbound"):
-                # Se for dataclass (DTO/Value Object como DadosToken), verifica se é pura
-                if hasattr(cls, "__dataclass_fields__"):
+                # DTOs (dataclass, ex.: DadosToken) e enums do contrato (ex.: TipoDocumentoSequencial) são valores
+                if hasattr(cls, "__dataclass_fields__") or issubclass(cls, enum.Enum):
                     continue
                 # Classes de serviço/porta de saída devem ser contratos abstratos (ABC)
                 assert issubclass(cls, abc.ABC), (

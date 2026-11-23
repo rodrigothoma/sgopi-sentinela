@@ -8,7 +8,7 @@ from application.ports.inbound.interface_gerir_inqueritos import (
     InterfaceInstaurarInquerito,
     OcorrenciaResumoInqueritoOutput,
 )
-from application.ports.outbound.gerador_numero_inquerito import GeradorNumeroInquerito
+from application.ports.outbound.gerador_numero_sequencial import GeradorNumeroSequencial, TipoDocumentoSequencial
 from application.ports.outbound.porta_auditoria import PortaAuditoria
 from application.ports.outbound.relogio import Relogio
 from application.ports.outbound.repositorio_inquerito import RepositorioInquerito
@@ -25,7 +25,7 @@ class InstaurarInquerito(InterfaceInstaurarInquerito):
         self,
         repositorio_inquerito: RepositorioInquerito,
         repositorio_ocorrencia: RepositorioOcorrencia,
-        gerador_numero: GeradorNumeroInquerito,
+        gerador_numero: GeradorNumeroSequencial,
         relogio: Relogio,
         uow: UnidadeDeTrabalho,
         auditoria: PortaAuditoria,
@@ -41,7 +41,7 @@ class InstaurarInquerito(InterfaceInstaurarInquerito):
         ator.exigir(Permissao.GERIR_INQUERITOS, "Apenas o Delegado de Polícia possui competência para instaurar inquérito policial.", chave="inquerito.apenas_delegado")
 
         agora = self._relogio.agora()
-        numero = await self._gerador.proximo(agora.year)
+        numero = await self._gerador.proximo(TipoDocumentoSequencial.INQUERITO, agora.year)
 
         # Validar e carregar ocorrências iniciais se informadas
         ocorrencias_carregadas = []

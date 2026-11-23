@@ -23,7 +23,8 @@
     "publica_nao_devolvivel": "Citizen-filed reports cannot be returned for correction: validate, reject or archive them.",
     "prioridade_invalida": "Invalid priority (use BAIXA, MEDIA, ALTA or URGENTE)",
     "prioridade_status_invalido": "The priority cannot be changed in this status",
-    "prioridade_inalterada": "The occurrence already has this priority"
+    "prioridade_inalterada": "The occurrence already has this priority",
+    "nao_encontrada": "Incident report not found."
   },
   "envolvido": {
     "documento_tamanho_invalido": "Invalid document length: ID with 10 digits or CPF with 11 digits",
@@ -142,13 +143,51 @@
   },
   "medida": {
     "tipo_restricao_invalido": "Invalid restriction type.",
-    "destinatario_nao_cadastrado": "The recipient must be an e-mail registered for someone involved in the incident."
+    "destinatario_nao_cadastrado": "The recipient must be an e-mail registered for someone involved in the incident.",
+    "apenas_delegado": "Only the Police Chief can grant, renew, or revoke protective measures.",
+    "consulta_negada": "User lacks permission to query protective measures.",
+    "justificativa_curta": "The technical justification for extension must have at least 10 characters.",
+    "motivo_curto": "The reason for revocation must have at least 10 characters.",
+    "nao_encontrada": "Protective measure not found.",
+    "prazo_adicional_invalido": "The additional extension period must be between 1 and 365 days.",
+    "prazo_invalido": "The protective measure term must be between 1 and 730 days (2 years).",
+    "restricao_obrigatoria": "Provide at least one restriction type for the protective measure.",
+    "status_invalido_renovacao": "Only active protective measures can be renewed.",
+    "status_invalido_revogacao": "Only active protective measures can be revoked.",
+    "vitima_e_agressor_iguais": "The victim and the aggressor cannot be the same person."
   },
   "laudo": {
     "integridade_violada": "The report file does not match the hash recorded when it was attached.",
     "arquivo_ausente": "Report file unavailable in storage.",
     "arquivo_grande": "The report file exceeds the maximum allowed size.",
-    "sem_arquivo": "This report has no approved file attached yet."
+    "sem_arquivo": "This report has no approved file attached yet.",
+    "acesso_negado": "Unauthorized access to expert reports.",
+    "apenas_autoridade": "Only police authority or expert can request or initiate forensics.",
+    "apenas_perito": "Only the assigned Forensic Expert or Police Chief can approve and attach expert reports.",
+    "arquivo_vazio": "The expert report file cannot be empty.",
+    "conclusoes_curtas": "Technical conclusions must contain at least 10 characters.",
+    "descricao_curta": "The forensics questions description must have at least 10 characters.",
+    "formato_invalido": "The expert report document must be in PDF format.",
+    "hash_invalido": "Invalid SHA-256 file hash.",
+    "ja_concluido": "Expert report already approved or completed. Corrections require an amendment.",
+    "nao_encontrado": "Expert report not found.",
+    "status_invalido_analise": "Cannot start report analysis with the current status.",
+    "tipo_invalido": "Invalid forensics type.",
+    "vinculo_obrigatorio": "The forensics must be linked to at least one incident or investigation."
+  },
+  "inquerito": {
+    "acesso_negado": "Access restricted to police authority or supervision.",
+    "apenas_delegado": "Only the Police Chief has jurisdiction to manage police investigations.",
+    "ementa_curta": "The investigation summary must contain at least 10 characters.",
+    "ja_finalizado": "Only ongoing investigations can be concluded or archived.",
+    "motivo_curto": "The reason for archiving must contain at least 10 characters.",
+    "nao_encontrado": "Police investigation not found.",
+    "numero_obrigatorio": "Investigation number is required.",
+    "ocorrencia_ja_vinculada": "The incident report is already linked to another police investigation.",
+    "ocorrencia_nao_validada": "Only validated incidents can be linked to the investigation.",
+    "relatorio_curto": "The final conclusion report must contain at least 10 characters.",
+    "status_invalido_alteracao": "Cannot modify incidents in a completed or archived investigation.",
+    "status_invalido_vinculacao": "Cannot link incidents to a finished investigation."
   },
   "simulador": {
     "desabilitado_em_producao": "The telemetry simulator is a demo feature and is disabled in production."

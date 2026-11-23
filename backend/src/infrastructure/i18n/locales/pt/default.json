@@ -23,7 +23,8 @@
     "publica_nao_devolvivel": "Comunicação feita pelo cidadão não pode ser devolvida para correção: valide, rejeite ou arquive.",
     "prioridade_invalida": "Prioridade inválida (use BAIXA, MEDIA, ALTA ou URGENTE)",
     "prioridade_status_invalido": "A prioridade não pode ser alterada neste status",
-    "prioridade_inalterada": "A ocorrência já tem essa prioridade"
+    "prioridade_inalterada": "A ocorrência já tem essa prioridade",
+    "nao_encontrada": "Ocorrência não encontrada."
   },
   "envolvido": {
     "documento_tamanho_invalido": "Documento com tamanho inválido: RG com 10 dígitos ou CPF com 11 dígitos",
@@ -142,13 +143,51 @@
   },
   "medida": {
     "tipo_restricao_invalido": "Tipo de restrição inválido.",
-    "destinatario_nao_cadastrado": "O destinatário precisa ser um e-mail cadastrado para um envolvido da ocorrência."
+    "destinatario_nao_cadastrado": "O destinatário precisa ser um e-mail cadastrado para um envolvido da ocorrência.",
+    "apenas_delegado": "Apenas o Delegado de Polícia pode conceder, renovar ou revogar medidas protetivas.",
+    "consulta_negada": "Usuário sem permissão para consultar medidas protetivas.",
+    "justificativa_curta": "A justificativa técnica para prorrogação deve ter no mínimo 10 caracteres.",
+    "motivo_curto": "O motivo da revogação deve ter no mínimo 10 caracteres.",
+    "nao_encontrada": "Medida protetiva não encontrada.",
+    "prazo_adicional_invalido": "O prazo adicional de prorrogação deve ser entre 1 e 365 dias.",
+    "prazo_invalido": "O prazo da medida protetiva deve ser entre 1 e 730 dias (2 anos).",
+    "restricao_obrigatoria": "Informe ao menos um tipo de restrição para a medida protetiva.",
+    "status_invalido_renovacao": "Apenas medidas protetivas ativas podem ser renovadas.",
+    "status_invalido_revogacao": "Apenas medidas protetivas ativas podem ser revogadas.",
+    "vitima_e_agressor_iguais": "A vítima e o agressor não podem ser a mesma pessoa."
   },
   "laudo": {
     "integridade_violada": "O arquivo do laudo não confere com o hash registrado na anexação.",
     "arquivo_ausente": "Arquivo do laudo indisponível no armazenamento.",
     "arquivo_grande": "O arquivo do laudo excede o tamanho máximo permitido.",
-    "sem_arquivo": "Este laudo ainda não possui arquivo homologado anexado."
+    "sem_arquivo": "Este laudo ainda não possui arquivo homologado anexado.",
+    "acesso_negado": "Acesso não autorizado aos laudos periciais.",
+    "apenas_autoridade": "Apenas autoridade policial ou perito pode requisitar ou iniciar perícia.",
+    "apenas_perito": "Apenas o Perito Criminal responsável ou Delegado pode homologar e anexar laudo pericial.",
+    "arquivo_vazio": "O arquivo do laudo pericial não pode estar vazio.",
+    "conclusoes_curtas": "As conclusões técnicas devem conter no mínimo 10 caracteres.",
+    "descricao_curta": "A descrição dos quesitos da perícia deve ter no mínimo 10 caracteres.",
+    "formato_invalido": "O documento do laudo pericial deve estar obrigatoriamente no formato PDF.",
+    "hash_invalido": "Hash SHA-256 do arquivo inválido.",
+    "ja_concluido": "Laudo pericial já homologado ou concluído. Retificações exigem aditamento.",
+    "nao_encontrado": "Laudo pericial não encontrado.",
+    "status_invalido_analise": "Não é possível iniciar análise de laudo com o status atual.",
+    "tipo_invalido": "Tipo de perícia inválido.",
+    "vinculo_obrigatorio": "A perícia deve estar vinculada a pelo menos uma ocorrência ou inquérito."
+  },
+  "inquerito": {
+    "acesso_negado": "Acesso restrito à autoridade policial ou supervisão.",
+    "apenas_delegado": "Apenas o Delegado de Polícia possui competência para gerir inquérito policial.",
+    "ementa_curta": "A ementa do inquérito deve conter no mínimo 10 caracteres.",
+    "ja_finalizado": "Apenas inquéritos em andamento podem ser concluídos ou arquivados.",
+    "motivo_curto": "O motivo do arquivamento deve conter no mínimo 10 caracteres.",
+    "nao_encontrado": "Inquérito policial não encontrado.",
+    "numero_obrigatorio": "Número do inquérito é obrigatório.",
+    "ocorrencia_ja_vinculada": "A ocorrência já se encontra vinculada a outro inquérito policial.",
+    "ocorrencia_nao_validada": "Apenas ocorrências validadas podem ser vinculadas ao inquérito.",
+    "relatorio_curto": "O relatório final de conclusão deve conter no mínimo 10 caracteres.",
+    "status_invalido_alteracao": "Não é permitido alterar ocorrências de inquérito já concluído ou arquivado.",
+    "status_invalido_vinculacao": "Não é permitido vincular ocorrências a inquérito finalizado."
   },
   "simulador": {
     "desabilitado_em_producao": "O simulador de telemetria é recurso de demonstração e fica desabilitado em produção."

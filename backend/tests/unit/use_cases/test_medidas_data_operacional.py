@@ -8,8 +8,8 @@ from application.use_cases.medida_protetiva.consultar_medidas import ConsultarMe
 from domain.ocorrencia.entity import Envolvido, Ocorrencia, TipoEnvolvido
 from domain.shared.geo import Coordenada
 from tests.fakes.atores import DELEGADO
-from tests.fakes.portas_fake import AuditoriaFake, RelogioFake, UnidadeDeTrabalhoFake
-from tests.fakes.repositorio_medida_fake import GeradorNumeroMedidaFake, RepositorioMedidaProtetivaFake
+from tests.fakes.portas_fake import AuditoriaFake, GeradorNumeroSequencialFake, RelogioFake, UnidadeDeTrabalhoFake
+from tests.fakes.repositorio_medida_fake import RepositorioMedidaProtetivaFake
 from tests.fakes.repositorio_ocorrencia_fake import RepositorioOcorrenciaFake
 
 # 01h30 UTC de 09/11 = 22h30 de 08/11 em America/Sao_Paulo: a data UTC já "virou", a operacional não.
@@ -32,7 +32,7 @@ async def _conceder(prazo_dias: int = 30, data_inicio: date | None = None):
         envolvidos=[Envolvido(nome="Maria", tipo=TipoEnvolvido.VITIMA)],
     )
     await repo_oc.salvar(ocorrencia)
-    uc = ConcederMedida(repo_medida, repo_oc, GeradorNumeroMedidaFake(), relogio, UnidadeDeTrabalhoFake(), AuditoriaFake())
+    uc = ConcederMedida(repo_medida, repo_oc, GeradorNumeroSequencialFake(), relogio, UnidadeDeTrabalhoFake(), AuditoriaFake())
     saida = await uc.executar(
         DELEGADO,
         ConcederMedidaInput(
