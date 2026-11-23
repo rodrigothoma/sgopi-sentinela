@@ -28,6 +28,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
+from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
@@ -59,22 +60,24 @@ LIMITE_ORDENS_ATIVAS = 500
 LIMITE_OCORRENCIAS = 100
 OBSERVACOES_DESPACHO = "Despacho automático (simulação)"
 
-# Tipo do contexto entregue pela fábrica do composition root por ciclo de decisão.
-Contexto = tuple[
-    RepositorioViatura,
-    RepositorioOcorrencia,
-    RepositorioOrdemDespacho,
-    InterfaceDespacharViatura,
-    InterfaceEncerrarOcorrencia,
-    Ator | None,
-    Ator | None,
-]
+
+@dataclass(frozen=True)
+class ContextoDespacho:
+    """Dependências do ciclo na mesma sessão, com atores opcionais enquanto o seed está ausente."""
+
+    viaturas: RepositorioViatura
+    ocorrencias: RepositorioOcorrencia
+    ordens: RepositorioOrdemDespacho
+    despachar: InterfaceDespacharViatura
+    encerrar: InterfaceEncerrarOcorrencia
+    ator_operador: Ator | None
+    ator_delegado: Ator | None
 
 
 class OrquestradorDespacho:
     def __init__(
         self,
-        fabrica_contexto: Callable[[], AbstractAsyncContextManager[Contexto]],
+        fabrica_contexto: Callable[[], AbstractAsyncContextManager[ContextoDespacho]],
         relogio: Relogio,
         intervalo_segundos: float = 5.0,
         janela_carencia_segundos: int = 20,
@@ -121,8 +124,8 @@ class OrquestradorDespacho:
         if self.ligado:
             return True
         try:
-            async with self._fabrica() as (_, _, _, _, _, ator_operador, ator_delegado):
-                if ator_operador is None or ator_delegado is None:
+            async with self._fabrica() as contexto:
+                if contexto.ator_operador is None or contexto.ator_delegado is None:
                     log.warning("orquestrador: usuários 'simulador-operador'/'simulador-delegado' não encontrados — rode o seed; não iniciado")
                     return False
         except Exception:
@@ -172,17 +175,16 @@ class OrquestradorDespacho:
         agiu = False
         try:
             async with self._fabrica() as contexto:
-                viaturas, ocorrencias, ordens, despachar, encerrar = contexto[0], contexto[1], contexto[2], contexto[3], contexto[4]
-                ator_operador, ator_delegado = contexto[5], contexto[6]
+                ator_operador, ator_delegado = contexto.ator_operador, contexto.ator_delegado
                 if ator_operador is None or ator_delegado is None:
                     log.warning("orquestrador: atores do seed ausentes — rode o seed")
                     self.ticks += 1
                     self.ocioso += 1
                     return
-                ativas = await ordens.listar(None, somente_ativas=True, limit=LIMITE_ORDENS_ATIVAS)
-                if await self._processar_encerramentos(viaturas, encerrar, ator_delegado, ativas, agora):
+                ativas = await contexto.ordens.listar(None, somente_ativas=True, limit=LIMITE_ORDENS_ATIVAS)
+                if await self._processar_encerramentos(contexto.viaturas, contexto.encerrar, ator_delegado, ativas, agora):
                     agiu = True
-                if await self._processar_despachos(viaturas, ocorrencias, despachar, ator_operador, ativas, agora):
+                if await self._processar_despachos(contexto.viaturas, contexto.ocorrencias, contexto.despachar, ator_operador, ativas, agora):
                     agiu = True
         except Exception as exc:
             log.warning("orquestrador: ciclo falhou, tentando no próximo: %s", exc)

@@ -32,7 +32,7 @@ class ViaturaRepositorioSQLAlchemy(
 
     async def listar(self, situacoes: tuple[SituacaoViatura, ...] = ()) -> list[Viatura]:
         """Lista viaturas ordenadas por prefixo, com filtro opcional por situação operacional."""
-        stmt = select(ViaturaModel).order_by(ViaturaModel.prefixo)
+        stmt = select(ViaturaModel).where(ViaturaModel.ativo.is_(True)).order_by(ViaturaModel.prefixo)
         if situacoes:
             stmt = stmt.where(ViaturaModel.situacao.in_([s.value for s in situacoes]))
         models = (await self._session.execute(stmt)).scalars().all()

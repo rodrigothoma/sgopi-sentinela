@@ -125,3 +125,23 @@ async def test_viatura_escrita_concorrente_obsoleta_e_recusada(sessoes_viatura):
 
     async with sessoes_viatura() as s:
         assert (await s.repo.buscar_por_id(viatura.id)).situacao == SituacaoViatura.INDISPONIVEL
+
+
+@IMPLEMENTACOES
+async def test_viatura_excluida_sai_da_lista_e_preserva_identificacao(sessoes_viatura) -> None:
+    v = Viatura("VTR-01", "ABC1D23", responsavel="Ana")
+    async with sessoes_viatura() as s:
+        await s.repo.salvar(v)
+        await s.commit()
+    async with sessoes_viatura() as s:
+        lida = await s.repo.buscar_por_id(v.id)
+        lida.excluir(AGORA)
+        await s.repo.salvar(lida)
+        await s.commit()
+    async with sessoes_viatura() as s:
+        assert await s.repo.listar() == []
+        assert await s.repo.listar((SituacaoViatura.INDISPONIVEL,)) == []
+        historica = await s.repo.buscar_por_id(v.id)
+        assert historica is not None and not historica.ativo and historica.responsavel == "Ana"
+        assert (await s.repo.buscar_por_prefixo(v.prefixo)).id == v.id
+        assert (await s.repo.buscar_por_placa(v.placa)).id == v.id

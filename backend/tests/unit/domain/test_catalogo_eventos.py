@@ -22,6 +22,8 @@ OPERACOES_GRAVADAS = {
     "usuario.cadastrar", "usuario.alterar_papel", "usuario.desativar", "usuario.reativar",
     "viatura.cadastrar", "viatura.alterar_situacao", "viatura.chegada_ao_local", "viatura.emitir_credencial_telemetria",
 }
+OPERACOES_NOVAS_FROTA = {"viatura.editar", "viatura.excluir"}
+
 ENTIDADES_GRAVADAS = {
     "Ocorrencia", "Viatura", "OrdemDeDespacho", "Evidencia", "Usuario", "Exportacao", "ItemApreendido", "AutoApreensao",
     "DocumentoPolicial", "Rota", "inquerito", "laudo_pericial", "medida_protetiva", "comunicacoes_interagencias",
@@ -30,7 +32,7 @@ ENTIDADES_GRAVADAS = {
 
 
 def test_catalogo_gerado_tem_exatamente_as_operacoes_e_entidades_ja_gravadas():
-    assert {op for op, _ in catalogo_eventos.catalogo()} == OPERACOES_GRAVADAS
+    assert {op for op, _ in catalogo_eventos.catalogo()} == OPERACOES_GRAVADAS | OPERACOES_NOVAS_FROTA
     assert set(catalogo_eventos.entidades()) == ENTIDADES_GRAVADAS
 
 

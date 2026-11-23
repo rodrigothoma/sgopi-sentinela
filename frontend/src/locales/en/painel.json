@@ -54,7 +54,20 @@
     "disponibilizar": "Mark available",
     "indisponibilizar": "Mark unavailable",
     "marcada_disponivel": "{{prefixo}} marked as available.",
-    "marcada_indisponivel": "{{prefixo}} marked as unavailable."
+    "marcada_indisponivel": "{{prefixo}} marked as unavailable.",
+    "responsavel": "Responsible person (optional)",
+    "sem_responsavel": "No responsible person",
+    "editar": "Edit",
+    "salvar": "Save changes",
+    "cancelar": "Cancel editing",
+    "editando": "Editing {{prefixo}}",
+    "atualizada": "Vehicle registration updated.",
+    "excluir": "Delete",
+    "excluida": "Vehicle removed from the active fleet.",
+    "confirmar_exclusao": "Remove {{prefixo}} from the active fleet? History will be preserved.",
+    "acoes": "Actions",
+    "vazio": "No registered vehicles.",
+    "exclusao_bloqueada": "Close the assignment before deleting."
   },
   "manchas": {
     "mostrar": "Crime hotspots",
@@ -92,7 +105,9 @@
     "OcorrenciaArquivada": "Incident archived",
     "OcorrenciaExcluida": "Incident deleted",
     "desconhecido": "Update received",
-    "ultimo": "Last event: {{evento}} at {{hora}}"
+    "ultimo": "Last event: {{evento}} at {{hora}}",
+    "ViaturaCadastroAlterado": "Vehicle registration updated",
+    "ViaturaExcluida": "Vehicle removed from fleet"
   },
   "alerta": {
     "emitir": "Issue Alert",
@@ -133,5 +148,20 @@
     "titulo": "Criticality alert received",
     "recebido_em": "Received at {{hora}}",
     "dispensar": "Dismiss"
+  },
+  "inspecao": {
+    "titulo": "Vehicle inspection",
+    "fechar": "Close",
+    "placa": "License plate",
+    "coordenadas": "Coordinates",
+    "ultima_posicao": "Last position received",
+    "sem_registro": "No position recorded",
+    "sem_posicao": "No coordinates available",
+    "mapa_indisponivel": "The map is unavailable. Vehicle inspection remains available from the fleet.",
+    "posicao_desatualizada": "This is the last known position; the GPS signal is not up to date.",
+    "centralizar": "Center on map",
+    "inspecionar": "Inspect {{prefixo}}",
+    "responsavel": "Responsible person",
+    "sem_responsavel": "No responsible person"
   }
 }

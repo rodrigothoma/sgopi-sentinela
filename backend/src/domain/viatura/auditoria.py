@@ -26,13 +26,14 @@ class ViaturaCadastrada(EventoViatura):
 
     prefixo: str
     placa: str
+    responsavel: str | None = None
 
     @classmethod
     def de(cls, viatura: Viatura) -> Self:
-        return cls(viatura_id=viatura.id, prefixo=viatura.prefixo, placa=viatura.placa)
+        return cls(viatura_id=viatura.id, prefixo=viatura.prefixo, placa=viatura.placa, responsavel=viatura.responsavel)
 
     def dados_depois(self) -> dict[str, Any] | None:
-        return {"prefixo": self.prefixo, "placa": self.placa}
+        return {"prefixo": self.prefixo, "placa": self.placa, "responsavel": self.responsavel}
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -103,3 +104,41 @@ class CredencialTelemetriaEmitida(EventoViatura):
 
     def dados_depois(self) -> dict[str, Any] | None:
         return {"prefixo": self.prefixo}
+
+
+@dataclass(frozen=True, kw_only=True)
+class EventoCadastroViatura(EventoViatura):
+    """Snapshots do cadastro preservados na trilha, inclusive após retirada da frota."""
+
+    antes: dict[str, Any]
+    depois: dict[str, Any]
+
+    @classmethod
+    def de(cls, viatura: Viatura, antes: dict[str, Any]) -> Self:
+        """Captura identificação e exclusão sem depender da entidade mutável depois do ato."""
+        return cls(viatura_id=viatura.id, antes=dict(antes), depois={
+            "prefixo": viatura.prefixo, "placa": viatura.placa,
+            "responsavel": viatura.responsavel, "ativo": viatura.ativo,
+        })
+
+    def dados_antes(self) -> dict[str, Any]:
+        """Identificação vista pelo operador antes da alteração."""
+        return dict(self.antes)
+
+    def dados_depois(self) -> dict[str, Any]:
+        """Cadastro resultante, sem expor referências mutáveis dos snapshots."""
+        return dict(self.depois)
+
+
+@dataclass(frozen=True, kw_only=True)
+class CadastroViaturaEditado(EventoCadastroViatura):
+    """Edição versionada de identificação e responsável."""
+
+    OPERACAO: ClassVar[str] = "viatura.editar"
+
+
+@dataclass(frozen=True, kw_only=True)
+class CadastroViaturaExcluido(EventoCadastroViatura):
+    """Exclusão lógica com preservação do cadastro na trilha."""
+
+    OPERACAO: ClassVar[str] = "viatura.excluir"

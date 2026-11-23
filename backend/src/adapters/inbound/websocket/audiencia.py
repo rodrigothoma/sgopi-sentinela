@@ -32,6 +32,8 @@ EVENTOS_OPERACIONAIS = frozenset(
         "OrdemDeDespachoCriada",
         "PosicaoAtualizada",
         "ViaturaSituacaoAlterada",
+        "ViaturaCadastroAlterado",
+        "ViaturaExcluida",
         "ViaturaChegouAoLocal",
     }
 )

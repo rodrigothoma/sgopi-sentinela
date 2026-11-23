@@ -2,7 +2,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Query, Response
 from pydantic import BaseModel, Field
 
 from adapters.inbound.http.deps import ator_opcional, exigir_permissao
@@ -12,9 +12,13 @@ from application.ports.inbound.ator import Ator
 from application.ports.inbound.interface_gerir_viaturas import (
     AlterarSituacaoInput,
     CadastrarViaturaInput,
+    EditarViaturaInput,
+    ExcluirViaturaInput,
     InterfaceAlterarSituacaoViatura,
     InterfaceCadastrarViatura,
+    InterfaceEditarViatura,
     InterfaceEmitirCredencialTelemetria,
+    InterfaceExcluirViatura,
     InterfaceListarViaturas,
     InterfaceRegistrarPosicaoViatura,
     RegistrarPosicaoInput,
@@ -23,12 +27,15 @@ from application.ports.inbound.interface_gerir_viaturas import (
 from application.ports.outbound.credencial_dispositivo import CredencialDispositivo
 from domain.shared.exceptions import AcessoNegadoError, CredenciaisInvalidasError
 from domain.usuario.permissoes import Permissao
+from domain.viatura.entity import LIMITE_PLACA, LIMITE_PREFIXO, LIMITE_RESPONSAVEL
 from infrastructure.config.settings import settings
 from infrastructure.di import (
     get_alterar_situacao_viatura,
     get_cadastrar_viatura,
     get_credencial_dispositivo,
+    get_editar_viatura,
     get_emitir_credencial_telemetria,
+    get_excluir_viatura,
     get_listar_viaturas,
     get_orquestrador_despacho,
     get_registrar_posicao_viatura,
@@ -48,11 +55,20 @@ class ViaturaSchema(BaseModel):
     posicao_registrada_em: str | None
     sinal: str
     versao: int
+    responsavel: str | None = None
+    ativo: bool = True
 
 
 class CadastrarViaturaRequest(BaseModel):
-    prefixo: str = Field(min_length=1, max_length=20)
-    placa: str = Field(min_length=1, max_length=10)
+    prefixo: str = Field(min_length=1, max_length=LIMITE_PREFIXO)
+    placa: str = Field(min_length=1, max_length=LIMITE_PLACA)
+    responsavel: str | None = Field(default=None, max_length=LIMITE_RESPONSAVEL)
+
+
+class EditarViaturaRequest(CadastrarViaturaRequest):
+    """Campos do cadastro e versão original para detectar edições concorrentes."""
+
+    versao: int = Field(ge=1)
 
 
 class AlterarSituacaoRequest(BaseModel):
@@ -77,15 +93,36 @@ async def listar_viaturas(ator: Ator = Depends(exigir_permissao(Permissao.CONSUL
 
 
 @router.post("/v1/viaturas", response_model=ViaturaSchema, status_code=201)
-async def cadastrar_viatura(body: CadastrarViaturaRequest, ator: Ator = Depends(exigir_permissao(Permissao.GERIR_FROTA)), uc: InterfaceCadastrarViatura = Depends(get_cadastrar_viatura)):
+async def cadastrar_viatura(body: CadastrarViaturaRequest, ator: Ator = Depends(exigir_permissao(Permissao.GERIR_FROTA)), uc: InterfaceCadastrarViatura = Depends(get_cadastrar_viatura)) -> ViaturaSchema:
     """Cadastra viatura; prefixo/placa duplicados → 409 (RF02)."""
-    return _schema(await uc.executar(ator, CadastrarViaturaInput(prefixo=body.prefixo, placa=body.placa)))
+    return _schema(await uc.executar(ator, CadastrarViaturaInput(prefixo=body.prefixo, placa=body.placa, responsavel=body.responsavel)))
 
 
 @router.patch("/v1/viaturas/{viatura_id}/situacao", response_model=ViaturaSchema)
 async def alterar_situacao(viatura_id: UUID, body: AlterarSituacaoRequest, ator: Ator = Depends(exigir_permissao(Permissao.GERIR_FROTA)), uc: InterfaceAlterarSituacaoViatura = Depends(get_alterar_situacao_viatura)):
     """DISPONIVEL ⇄ INDISPONIVEL manual (RF02)."""
     return _schema(await uc.executar(ator, AlterarSituacaoInput(viatura_id=viatura_id, situacao=body.situacao)))
+
+
+@router.patch("/v1/viaturas/{viatura_id}", response_model=ViaturaSchema)
+async def editar_viatura(
+    viatura_id: UUID, body: EditarViaturaRequest,
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_FROTA)),
+    uc: InterfaceEditarViatura = Depends(get_editar_viatura),
+) -> ViaturaSchema:
+    """Edita identificação e responsável opcional sem alterar a telemetria."""
+    return _schema(await uc.executar(ator, EditarViaturaInput(viatura_id=viatura_id, **body.model_dump())))
+
+
+@router.delete("/v1/viaturas/{viatura_id}", status_code=204)
+async def excluir_viatura(
+    viatura_id: UUID, versao: int = Query(ge=1),
+    ator: Ator = Depends(exigir_permissao(Permissao.GERIR_FROTA)),
+    uc: InterfaceExcluirViatura = Depends(get_excluir_viatura),
+) -> Response:
+    """Retirada lógica: nunca executa DELETE no banco de dados."""
+    await uc.executar(ator, ExcluirViaturaInput(viatura_id=viatura_id, versao=versao))
+    return Response(status_code=204)
 
 
 CABECALHO_CREDENCIAL_DISPOSITIVO = "X-Credencial-Dispositivo"

@@ -19,10 +19,10 @@ const CORES: Record<string, string> = {
   SEM_SINAL: '#f59e0b', VALIDADA: '#dc2626', EM_ATENDIMENTO: '#ea580c',
 };
 
-export function iconeViatura(situacao: string, sinal: string, prefixo: string): L.DivIcon {
+export function iconeViatura(situacao: string, sinal: string, prefixo: string, selecionada = false): L.DivIcon {
   const cor = sinal === 'SEM_SINAL' ? CORES.SEM_SINAL : CORES[situacao] ?? '#111';
   return L.divIcon({
-    className: 'marker-viatura',
+    className: `marker-viatura${selecionada ? ' marker-viatura-selecionada' : ''}`,
     html: `<div class="marker-viatura-inner" style="background:${cor}">🚓<span>${escaparHtml(prefixo)}</span></div>`,
     iconSize: [64, 28],
     iconAnchor: [32, 14],

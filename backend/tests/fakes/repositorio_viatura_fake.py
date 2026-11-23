@@ -32,5 +32,5 @@ class RepositorioViaturaFake(RepositorioViatura):
         return next((self._copia(v) for v in self._store.values() if v.placa == placa.upper()), None)
 
     async def listar(self, situacoes: tuple[SituacaoViatura, ...] = ()) -> list[Viatura]:
-        itens = [v for v in self._store.values() if not situacoes or v.situacao in situacoes]
+        itens = [v for v in self._store.values() if v.ativo and (not situacoes or v.situacao in situacoes)]
         return [self._copia(v) for v in sorted(itens, key=lambda v: v.prefixo)]

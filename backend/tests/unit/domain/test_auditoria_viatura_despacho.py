@@ -36,7 +36,7 @@ def test_viatura_cadastrada_e_credencial():
     cadastro = ViaturaCadastrada.de(viatura).para_registro(CONTEXTO)
     credencial = CredencialTelemetriaEmitida.de(viatura).para_registro(CONTEXTO)
 
-    assert cadastro.entidade_id == str(viatura.id) and cadastro.dados_depois == {"prefixo": "VTR-01", "placa": "ABC1D23"}
+    assert cadastro.entidade_id == str(viatura.id) and cadastro.dados_depois == {"prefixo": "VTR-01", "placa": "ABC1D23", "responsavel": None}
     assert credencial.dados_depois == {"prefixo": "VTR-01"}
 
 

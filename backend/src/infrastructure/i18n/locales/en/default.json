@@ -102,7 +102,9 @@
     "prefixo_duplicado": "Prefix already registered",
     "placa_duplicada": "Plate already registered",
     "transicao_invalida": "Invalid vehicle status transition",
-    "situacao_manual_invalida": "Only DISPONIVEL or INDISPONIVEL can be set manually"
+    "situacao_manual_invalida": "Only DISPONIVEL or INDISPONIVEL can be set manually",
+    "cadastro_longo": "Vehicle registration exceeds the allowed length.",
+    "exclusao_em_atendimento": "Close the active assignment before deleting this vehicle."
   },
   "telemetria": {
     "timestamp_sem_fuso": "Timestamp without timezone",

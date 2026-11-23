@@ -102,7 +102,9 @@
     "prefixo_duplicado": "Prefixo já cadastrado",
     "placa_duplicada": "Placa já cadastrada",
     "transicao_invalida": "Transição de situação da viatura inválida",
-    "situacao_manual_invalida": "Somente DISPONIVEL ou INDISPONIVEL podem ser definidas manualmente"
+    "situacao_manual_invalida": "Somente DISPONIVEL ou INDISPONIVEL podem ser definidas manualmente",
+    "cadastro_longo": "Cadastro da viatura excede o tamanho permitido.",
+    "exclusao_em_atendimento": "Encerre o atendimento antes de excluir a viatura."
   },
   "telemetria": {
     "timestamp_sem_fuso": "Timestamp sem fuso horário",

@@ -2,10 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
-import type { OcorrenciaResumo, OrdemDespacho, Viatura } from '../../types/api';
+import type { FocoViatura, OcorrenciaResumo, OrdemDespacho, Viatura } from '../../types/api';
 import type { PontoCalor } from '../../utils/manchas';
 import type { AreaRisco } from '../../services/inteligenciaService';
 import { CENTRO_PADRAO, corrigirIconesLeaflet, iconeOcorrencia, iconeViatura } from './leaflet';
+import { posicaoDaViatura } from '../../utils/inspecaoViatura';
 import { escaparHtml } from '../../utils/html';
 import i18n from '../../i18n';
 
@@ -36,6 +37,9 @@ interface Props {
   ocorrencias: OcorrenciaResumo[];
   selecionada: string | null;
   onSelecionarOcorrencia: (id: string) => void;
+  viaturaSelecionadaId?: string | null;
+  onSelecionarViatura?: (id: string) => void;
+  focoViatura?: FocoViatura | null;
   /** Ordens ativas: desenha o trajeto viatura → ocorrência enquanto ela está EM_DESLOCAMENTO. */
   ordens?: OrdemDespacho[];
   heatAtivo: boolean;
@@ -54,6 +58,9 @@ export const MapaTatico: React.FC<Props> = ({
   ocorrencias,
   selecionada,
   onSelecionarOcorrencia,
+  viaturaSelecionadaId = null,
+  onSelecionarViatura,
+  focoViatura = null,
   ordens = [],
   heatAtivo,
   pontosCalor,
@@ -69,6 +76,8 @@ export const MapaTatico: React.FC<Props> = ({
   const heatRef = useRef<L.HeatLayer | null>(null);
   const selecionarRef = useRef(onSelecionarOcorrencia);
   selecionarRef.current = onSelecionarOcorrencia;
+  const selecionarViaturaRef = useRef(onSelecionarViatura);
+  selecionarViaturaRef.current = onSelecionarViatura;
   const disponibilidadeRef = useRef(onDisponibilidadeTiles);
   disponibilidadeRef.current = onDisponibilidadeTiles;
   const falhasTileRef = useRef(0);
@@ -111,17 +120,24 @@ export const MapaTatico: React.FC<Props> = ({
     if (!map) return;
     const vistos = new Set<string>();
     for (const v of viaturas) {
-      if (v.latitude === null || v.longitude === null) continue;
+      const posicao = posicaoDaViatura(v);
+      if (!posicao) continue;
       vistos.add(v.id);
-      const icone = iconeViatura(v.situacao, v.sinal, v.prefixo);
+      const icone = iconeViatura(v.situacao, v.sinal, v.prefixo, v.id === viaturaSelecionadaId);
       const existente = viaturasRef.current.get(v.id);
       if (existente) {
-        existente.setLatLng([v.latitude, v.longitude]).setIcon(icone);
+        existente.setLatLng(posicao).setIcon(icone);
+        existente.setTooltipContent(escaparHtml(`${v.prefixo} · ${v.placa}`));
       } else {
-        const m = L.marker([v.latitude, v.longitude], { icon: icone }).addTo(map);
+        const m = L.marker(posicao, { icon: icone, title: v.prefixo }).addTo(map);
+        m.on('click', () => selecionarViaturaRef.current?.(v.id));
         m.bindTooltip(escaparHtml(`${v.prefixo} · ${v.placa}`));
         viaturasRef.current.set(v.id, m);
       }
+      const marcador = viaturasRef.current.get(v.id);
+      marcador?.setZIndexOffset(v.id === viaturaSelecionadaId ? 1000 : 0);
+      marcador?.getElement()?.setAttribute('data-viatura-id', v.id);
+      marcador?.getElement()?.setAttribute('title', v.prefixo);
     }
     for (const [id, m] of viaturasRef.current) {
       if (!vistos.has(id)) {
@@ -129,7 +145,16 @@ export const MapaTatico: React.FC<Props> = ({
         viaturasRef.current.delete(id);
       }
     }
-  }, [viaturas]);
+  }, [viaturas, viaturaSelecionadaId]);
+
+  useEffect(() => {
+    if (!focoViatura) return;
+    const marcador = viaturasRef.current.get(focoViatura.viaturaId);
+    if (marcador && mapRef.current) {
+      mapRef.current.invalidateSize();
+      mapRef.current.panTo(marcador.getLatLng());
+    }
+  }, [focoViatura]);
 
   useEffect(() => {
     const map = mapRef.current;

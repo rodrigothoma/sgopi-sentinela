@@ -119,7 +119,7 @@ mobile/lib/
 
 * **Sem Deleções Físicas:** Nunca execute `DELETE` em tabelas de negócio (`ocorrencias`, `viaturas`, `evidencias`, entre outras). A retirada de registros é sempre lógica:
   * **Ocorrência:** transições de status `ARQUIVADA` ou `EXCLUIDA` (atos privativos do Delegado, com motivo obrigatório em `motivo_arquivamento`/`motivo_exclusao` e autoria em `arquivada_por_id`/`excluida_por_id`);
-  * **Viatura:** não é removida — sai de operação pela situação `INDISPONIVEL`;
+  * **Viatura:** indisponibilidade temporária usa `INDISPONIVEL`; exclusão de cadastro autorizada usa `ativo = false` e situação `INDISPONIVEL`, sem ordem ativa nem atendimento. A linha e seus vínculos são preservados;
   * **Evidências:** são vínculos permanentes da ocorrência (sem exclusão);
   * Tabelas que possuem a coluna `ativo` (ex.: `usuarios`, `envolvidos`, `inqueritos`, `laudos_periciais`, `medidas_protetivas`) usam `ativo = false`.
 * **Tabelas Append-Only:** As tabelas `registros_auditoria` e `historico_status_ocorrencia` são estritamente incrementais. Jamais execute `UPDATE` ou `DELETE` nelas.

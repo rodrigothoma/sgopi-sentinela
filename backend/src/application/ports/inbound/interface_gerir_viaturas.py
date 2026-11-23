@@ -11,6 +11,7 @@ from application.ports.inbound.ator import Ator
 class CadastrarViaturaInput:
     prefixo: str
     placa: str
+    responsavel: str | None = None
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,8 @@ class ViaturaOutput:
     posicao_registrada_em: str | None
     sinal: str  # OK | SEM_SINAL | SEM_POSICAO
     versao: int
+    responsavel: str | None = None
+    ativo: bool = True
 
 
 @dataclass(frozen=True)
@@ -67,3 +70,36 @@ class InterfaceEmitirCredencialTelemetria(ABC):
     @abstractmethod
     async def executar(self, ator: Ator, viatura_id: UUID) -> str:
         """Credencial do rastreador da viatura (ato auditado)."""
+
+
+@dataclass(frozen=True)
+class EditarViaturaInput:
+    """Cadastro completo com a versão que o operador visualizou antes de editar."""
+
+    viatura_id: UUID
+    prefixo: str
+    placa: str
+    responsavel: str | None
+    versao: int
+
+
+@dataclass(frozen=True)
+class ExcluirViaturaInput:
+    """Exclusão lógica condicionada à versão exibida na frota."""
+
+    viatura_id: UUID
+    versao: int
+
+
+class InterfaceEditarViatura(ABC):
+    """Edita apenas a identificação e o responsável, preservando os dados operacionais."""
+
+    @abstractmethod
+    async def executar(self, ator: Ator, input_dto: EditarViaturaInput) -> ViaturaOutput: ...
+
+
+class InterfaceExcluirViatura(ABC):
+    """Retira o cadastro da frota ativa sem apagar seu histórico."""
+
+    @abstractmethod
+    async def executar(self, ator: Ator, input_dto: ExcluirViaturaInput) -> None: ...
