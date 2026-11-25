@@ -48,8 +48,7 @@ function acharPorTermo(palavra: string, limite: number): Promise<OcorrenciaResum
  * qual módulo ele estava. A filtragem é do servidor — filtrar no cliente
  * limitaria o resultado à página baixada. Cada palavra digitada estreita o
  * resultado: "roubo andradas" devolve o roubo daquela rua, não os dois
- * conjuntos somados. O item abre o registro pela rota que já aceita
- * ``?ocorrencia=<id>``.
+ * conjuntos somados. O item abre o registro na rota de detalhe da própria lista.
  */
 export const BuscaGlobal: React.FC<{ onNavegar?: () => void }> = ({ onNavegar }) => {
   const { t } = useTranslation('common');
@@ -104,7 +103,7 @@ export const BuscaGlobal: React.FC<{ onNavegar?: () => void }> = ({ onNavegar })
     setAberto(false);
     setTermo('');
     onNavegar?.();
-    navigate(`${destino}?ocorrencia=${o.ocorrencia_id}`);
+    navigate(`${destino}/${o.ocorrencia_id}`);
   };
 
   return (

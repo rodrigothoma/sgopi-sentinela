@@ -39,7 +39,9 @@ describe('Issue #68 — Notificações em tempo real (sino + fila reativa)', () 
 
       // abrir o detalhe consuma o badge
       cy.contains('.lista.clicavel li', o.numero_protocolo).click();
+      cy.url().should('include', '/fila/');
       cy.get('.detalhe').should('contain.text', o.numero_protocolo);
+      cy.contains('a', 'Voltar à fila').click();
       cy.contains('.lista.clicavel li', o.numero_protocolo).find('.badge-nova').should('not.exist');
     });
   });
@@ -54,9 +56,9 @@ describe('Issue #68 — Notificações em tempo real (sino + fila reativa)', () 
       cy.get('.notification-badge', { timeout: 15000 }).should('be.visible');
       cy.get('.notification-bell-btn').click();
       cy.get('.notification-dropdown').should('contain.text', o.numero_protocolo);
-      // o clique navega pelo link da notificação (/fila?ocorrencia=<id>)
+      // o link legado da notificação é redirecionado para a rota do detalhe
       cy.contains('.notification-item', o.numero_protocolo).click();
-      cy.url().should('include', '/fila');
+      cy.url().should('include', '/fila/');
       cy.get('.detalhe').should('contain.text', o.numero_protocolo);
     });
   });

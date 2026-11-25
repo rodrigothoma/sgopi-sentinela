@@ -15,6 +15,7 @@ import { LandingPage } from './pages/LandingPage';
 const AutenticarDocumentoPage = lazy(() => import('./pages/AutenticarDocumentoPage').then((m) => ({ default: m.AutenticarDocumentoPage })));
 const ConsultaProtocoloPage = lazy(() => import('./pages/ConsultaProtocoloPage').then((m) => ({ default: m.ConsultaProtocoloPage })));
 const FilaDelegadoPage = lazy(() => import('./pages/FilaDelegadoPage').then((m) => ({ default: m.FilaDelegadoPage })));
+const FilaDelegadoDetalhePage = lazy(() => import('./pages/FilaDelegadoDetalhePage').then((m) => ({ default: m.FilaDelegadoDetalhePage })));
 const FrotaPage = lazy(() => import('./pages/FrotaPage').then((m) => ({ default: m.FrotaPage })));
 const InicioPage = lazy(() => import('./pages/InicioPage').then((m) => ({ default: m.InicioPage })));
 const InqueritosPage = lazy(() => import('./pages/InqueritosPage').then((m) => ({ default: m.InqueritosPage })));
@@ -22,6 +23,7 @@ const LaudosPage = lazy(() => import('./pages/LaudosPage').then((m) => ({ defaul
 const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const MedidasProtetivasPage = lazy(() => import('./pages/MedidasProtetivasPage').then((m) => ({ default: m.MedidasProtetivasPage })));
 const MinhasOcorrenciasPage = lazy(() => import('./pages/MinhasOcorrenciasPage').then((m) => ({ default: m.MinhasOcorrenciasPage })));
+const MinhasOcorrenciasDetalhePage = lazy(() => import('./pages/MinhasOcorrenciasDetalhePage').then((m) => ({ default: m.MinhasOcorrenciasDetalhePage })));
 const PainelTaticoPage = lazy(() => import('./pages/PainelTaticoPage').then((m) => ({ default: m.PainelTaticoPage })));
 const RegistrarOcorrenciaPage = lazy(() => import('./pages/RegistrarOcorrenciaPage').then((m) => ({ default: m.RegistrarOcorrenciaPage })));
 const RegistroCidadaoPage = lazy(() => import('./pages/RegistroCidadaoPage').then((m) => ({ default: m.RegistroCidadaoPage })));
@@ -58,7 +60,9 @@ export default function App() {
                   <Route path="/inicio" element={<InicioPage />} />
                   <Route path="/registrar" element={<RequireRole papeis={['AGENTE']}><RegistrarOcorrenciaPage /></RequireRole>} />
                   <Route path="/minhas" element={<RequireRole papeis={['AGENTE']}><MinhasOcorrenciasPage /></RequireRole>} />
+                  <Route path="/minhas/:ocorrenciaId" element={<RequireRole papeis={['AGENTE']}><MinhasOcorrenciasDetalhePage /></RequireRole>} />
                   <Route path="/fila" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><FilaDelegadoPage /></RequireRole>} />
+                  <Route path="/fila/:ocorrenciaId" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><FilaDelegadoDetalhePage /></RequireRole>} />
                   <Route path="/inqueritos" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR']}><InqueritosPage /></RequireRole>} />
                   <Route path="/laudos" element={<RequireRole papeis={['DELEGADO', 'PERITO', 'SUPERVISOR']}><LaudosPage /></RequireRole>} />
                   <Route path="/medidas" element={<RequireRole papeis={['DELEGADO', 'SUPERVISOR', 'AGENTE']}><MedidasProtetivasPage /></RequireRole>} />

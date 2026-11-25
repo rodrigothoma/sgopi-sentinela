@@ -22,6 +22,7 @@ function garantirPosicoesGps() {
 
 function abrirNaFila(protocolo: string) {
   cy.contains('.lista.clicavel li', protocolo).click();
+  cy.url().should('include', '/fila/');
   cy.get('.detalhe').should('contain.text', protocolo);
 }
 
@@ -37,6 +38,7 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
       cy.get('.detalhe').should('contain.text', 'Validada');
       cy.get('.detalhe').should('contain.text', DESPACHO_AUTORIDADE);
       cy.get('.historico').should('contain.text', DESPACHO_AUTORIDADE);
+      cy.contains('a', 'Voltar à fila').click();
       // sai do filtro "Aguardando revisão"
       cy.contains('.lista.clicavel li', o.numero_protocolo).should('not.exist');
       // aparece no filtro "Validadas / em atendimento"
@@ -50,6 +52,7 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
 
       cy.login('agente', '/minhas');
       cy.contains('.lista.clicavel li', o.numero_protocolo).click();
+      cy.url().should('include', '/minhas/');
       cy.get('.detalhe').should('contain.text', DESPACHO_AUTORIDADE);
     });
   });
@@ -94,6 +97,7 @@ describe('Issue #22 — Validação pelo Delegado (UC04)', () => {
       cy.contains('button', 'Rejeitar').click();
       cy.get('[role="alertdialog"]').contains('button', 'Confirmar').click();
       cy.get('.detalhe').should('contain.text', 'Rejeitada');
+      cy.contains('a', 'Voltar à fila').click();
       cy.contains('.tabs .tab', 'Rejeitadas').click();
       cy.contains('.lista.clicavel li', o.numero_protocolo).should('be.visible');
     });

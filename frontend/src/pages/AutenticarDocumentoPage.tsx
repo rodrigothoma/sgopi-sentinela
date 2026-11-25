@@ -86,8 +86,8 @@ export const AutenticarDocumentoPage: React.FC = () => {
     <div className="portal-wrap">
       <NavbarPublica />
 
-      <main className="pagina" style={{ maxWidth: 760, padding: '40px 20px' }}>
-        <div className="card" style={{ padding: '32px' }}>
+      <main className="pagina pagina-publico">
+        <div className="card card-publico">
           <h2>{t('publico:autenticar.titulo')}</h2>
           <p className="muted">{t('publico:autenticar.subtitulo')}</p>
 
@@ -168,7 +168,7 @@ export const AutenticarDocumentoPage: React.FC = () => {
             </div>
           )}
 
-          <div style={{ marginTop: 20, textAlign: 'right' }}>
+          <div className="publico-voltar">
             <Link to="/" className="btn btn-ghost">{t('publico:consulta.detalhes.voltar_inicio')}</Link>
           </div>
         </div>

@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FiltrosOcorrenciasBar } from '../components/ocorrencias/FiltrosOcorrencias';
-import { OcorrenciaDetalheView } from '../components/ocorrencias/OcorrenciaDetalhe';
-import { OcorrenciaForm, paraInputLocal, paraRequest, type ValoresOcorrencia } from '../components/ocorrencias/OcorrenciaForm';
 import { PrioridadeBadge } from '../components/PrioridadeBadge';
 import { StatusBadge } from '../components/StatusBadge';
 import { formatarNatureza } from '../utils/formatarNatureza';
@@ -11,132 +9,52 @@ import { useFiltrosOcorrenciasUrl } from '../hooks/useFiltrosOcorrenciasUrl';
 import { useToast } from '../hooks/useToast';
 import { mensagemDeErro } from '../services/api';
 import { ocorrenciasService } from '../services/ocorrenciasService';
-import type { OcorrenciaDetalhe, OcorrenciaResumo } from '../types/api';
+import type { OcorrenciaResumo } from '../types/api';
 import { temFiltroAtivo } from '../utils/filtrosOcorrencias';
+import { idOcorrenciaLegada, urlDoDetalhe } from '../utils/ocorrenciaDeepLink';
 
-/** Agente: minhas ocorrências + correção/reenvio das devolvidas (RF04). */
 export const MinhasOcorrenciasPage: React.FC = () => {
   const { t } = useTranslation(['ocorrencias', 'common']);
   const { avisar } = useToast();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const legado = idOcorrenciaLegada(searchParams);
   const [itens, setItens] = useState<OcorrenciaResumo[]>([]);
-  const [detalhe, setDetalhe] = useState<OcorrenciaDetalhe | null>(null);
-  const [editando, setEditando] = useState(false);
-  const [ocupado, setOcupado] = useState(false);
   const [filtros, aplicarFiltros] = useFiltrosOcorrenciasUrl();
 
-  const [searchParams] = useSearchParams();
-  const paramOcorrenciaId = searchParams.get('ocorrencia');
-
   const carregar = useCallback(async () => {
+    if (legado) return;
     try {
-      // As 100 mais recentes: inverter a lista no cliente escondia as novas quando havia mais de 100.
       setItens((await ocorrenciasService.listar([], 100, 0, true, filtros)).itens);
     } catch (err) {
       avisar(mensagemDeErro(err), 'erro');
     }
-  }, [filtros, avisar]);
+  }, [filtros, avisar, legado]);
 
   useEffect(() => {
-    carregar();
+    void carregar();
   }, [carregar]);
 
-  const abrir = useCallback(async (id: string) => {
-    setEditando(false);
-    try {
-      setDetalhe(await ocorrenciasService.buscarPorId(id));
-    } catch (err) {
-      avisar(mensagemDeErro(err), 'erro');
-    }
-  }, [avisar]);
+  const abrir = useCallback((id: string) => {
+    navigate(urlDoDetalhe('/minhas', id, searchParams));
+  }, [navigate, searchParams]);
 
-  useEffect(() => {
-    if (paramOcorrenciaId) {
-      abrir(paramOcorrenciaId);
-    }
-  }, [paramOcorrenciaId, abrir]);
-
-  const recarregarDetalhe = async () => {
-    if (!detalhe) return;
-    try {
-      setDetalhe(await ocorrenciasService.buscarPorId(detalhe.ocorrencia_id));
-    } catch (err) {
-      avisar(mensagemDeErro(err), 'erro');
-    }
-  };
-
-  const valoresDe = (o: OcorrenciaDetalhe): ValoresOcorrencia => ({
-    natureza: o.natureza, descricao: o.descricao, localizacao: o.localizacao, latitude: o.latitude, longitude: o.longitude,
-    dataHoraFatoLocal: paraInputLocal(new Date(o.data_hora_fato)),
-    envolvidos: o.envolvidos.map((e) => ({ nome: e.nome, tipo: e.tipo, documento: e.documento ?? undefined })),
-    tipificacoes: o.tipificacoes, evidencias: [], itensApreendidos: [],
-  });
-
-  const reenviar = async () => {
-    if (!detalhe) return;
-    setOcupado(true);
-    try {
-      setDetalhe(await ocorrenciasService.reenviar(detalhe.ocorrencia_id));
-      avisar(t('ocorrencias:correcao.reenviada'), 'sucesso');
-      carregar();
-    } catch (err) {
-      avisar(mensagemDeErro(err), 'erro');
-    } finally {
-      setOcupado(false);
-    }
-  };
+  if (legado) return <Navigate to={urlDoDetalhe('/minhas', legado, searchParams)} replace />;
 
   return (
-    <div className="pagina duas-colunas">
+    <div className="pagina">
       <section className="card">
         <h2>{t('ocorrencias:minhas.titulo')}</h2>
         <FiltrosOcorrenciasBar valor={filtros} onAplicar={aplicarFiltros} />
         {itens.length === 0 && <p className="muted">{t(temFiltroAtivo(filtros) ? 'ocorrencias:filtros.nenhum_resultado' : 'ocorrencias:minhas.vazio')}</p>}
         <ul className="lista clicavel">
           {itens.map((o) => (
-            <li key={o.ocorrencia_id} className={detalhe?.ocorrencia_id === o.ocorrencia_id ? 'ativo' : ''} onClick={() => abrir(o.ocorrencia_id)}>
+            <li key={o.ocorrencia_id} onClick={() => abrir(o.ocorrencia_id)}>
               <span><strong>{o.numero_protocolo}</strong> · {formatarNatureza(o.natureza, t)}</span>
               <span className="lista-badges"><StatusBadge status={o.status} /><PrioridadeBadge prioridade={o.prioridade} /></span>
             </li>
           ))}
         </ul>
-      </section>
-      <section className="card">
-        {!detalhe && <p className="muted">{t('ocorrencias:minhas.selecione')}</p>}
-        {detalhe && !editando && (
-          <>
-            <OcorrenciaDetalheView o={detalhe} onAlterada={() => void recarregarDetalhe()} />
-            {detalhe.status === 'EM_CORRECAO' && (
-              <div className="acoes">
-                <button className="btn" onClick={() => setEditando(true)}>{t('ocorrencias:correcao.editar')}</button>
-                <button className="btn btn-primary" disabled={ocupado} onClick={reenviar}>{t('ocorrencias:correcao.reenviar')}</button>
-              </div>
-            )}
-          </>
-        )}
-        {detalhe && editando && (
-          <>
-            <h2>{t('ocorrencias:correcao.titulo', { protocolo: detalhe.numero_protocolo })}</h2>
-            {detalhe.justificativa_revisao && <div className="callout"><strong>{t('ocorrencias:detalhe.justificativa')}:</strong> {detalhe.justificativa_revisao}</div>}
-            <OcorrenciaForm
-              inicial={valoresDe(detalhe)}
-              rotuloEnviar={t('ocorrencias:correcao.salvar')}
-              ocupado={ocupado}
-              onSubmit={async (v) => {
-                setOcupado(true);
-                try {
-                  setDetalhe(await ocorrenciasService.corrigir(detalhe.ocorrencia_id, paraRequest(v)));
-                  setEditando(false);
-                  avisar(t('ocorrencias:correcao.salva'), 'sucesso');
-                } catch (err) {
-                  avisar(mensagemDeErro(err), 'erro');
-                } finally {
-                  setOcupado(false);
-                }
-              }}
-            />
-            <button className="btn btn-ghost" onClick={() => setEditando(false)}>{t('common:actions.cancel')}</button>
-          </>
-        )}
       </section>
     </div>
   );

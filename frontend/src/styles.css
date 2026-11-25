@@ -230,6 +230,235 @@ code, kbd, samp, pre, .mono {
   margin: 0 auto;
 }
 
+.detalhe-pagina {
+  max-width: 1100px;
+}
+
+.detalhe-pagina,
+.detalhe-pagina .card,
+.detalhe-pagina .detalhe {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.detalhe-pagina .voltar {
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+  .detalhe-pagina .card {
+    padding: 16px 12px;
+  }
+
+  .detalhe-pagina dl.grid2 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .detalhe-pagina dl.grid2 dt {
+    margin-top: 10px;
+  }
+
+  .detalhe-pagina dl.grid2 dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .detalhe-pagina .detalhe-cabecalho {
+    align-items: flex-start;
+  }
+
+  .detalhe-pagina .detalhe-cabecalho h2 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .detalhe-pagina .badge {
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+}
+
+.portal-wrap,
+.portal-wrap .pagina,
+.portal-wrap .card,
+.portal-wrap fieldset,
+.portal-wrap form,
+.portal-wrap .grid2,
+.portal-wrap .grid2 > * {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.pagina.pagina-publico {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.pagina.pagina-publico--registro {
+  max-width: 860px;
+}
+
+.card.card-publico {
+  padding: 32px;
+}
+
+.card.card-publico--sucesso {
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.consulta-form {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.publico-acoes {
+  display: flex;
+  gap: 14px;
+  justify-content: flex-end;
+  margin-top: 28px;
+}
+
+.publico-voltar {
+  margin-top: 20px;
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .portal-wrap .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 16px;
+  }
+
+  .portal-wrap .brand {
+    font-size: 1.05rem;
+  }
+
+  .portal-wrap .topbar nav {
+    flex: none;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .portal-wrap .topbar nav a {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+
+  .portal-wrap .userbox {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .portal-wrap .userbox .glide-select-root {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .portal-wrap .userbox .btn {
+    flex: 1;
+  }
+
+  .portal-wrap .landing-hero {
+    padding: 48px 16px 40px;
+  }
+
+  .portal-wrap .hero-flap-wrapper {
+    --hero-title-font-size: 26px;
+  }
+
+  .portal-wrap .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .portal-wrap .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .portal-wrap .hero-actions .btn {
+    width: 100%;
+  }
+
+  .portal-wrap .hero-search-form {
+    flex-wrap: wrap;
+  }
+
+  .portal-wrap .hero-search-form input {
+    flex: 1 1 100%;
+  }
+
+  .portal-wrap .hero-search-form .btn {
+    width: 100%;
+  }
+
+  .portal-wrap .pagina.pagina-publico {
+    padding: 24px 16px;
+  }
+
+  .portal-wrap .card.card-publico {
+    padding: 20px 16px;
+  }
+
+  .portal-wrap .grid2,
+  .portal-wrap dl.grid2 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .portal-wrap dl.grid2 dt {
+    margin-top: 10px;
+  }
+
+  .portal-wrap dl.grid2 dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .portal-wrap .consulta-form,
+  .portal-wrap .autenticar-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .portal-wrap .consulta-form .btn,
+  .portal-wrap .autenticar-form .btn {
+    width: 100%;
+  }
+
+  .portal-wrap .publico-acoes {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .portal-wrap .publico-acoes .btn {
+    width: 100%;
+  }
+
+  .portal-wrap .publico-voltar {
+    text-align: left;
+  }
+
+  .portal-wrap .seletor-coordenada .mapa {
+    height: 220px;
+  }
+}
+
 .duas-colunas {
   display: grid;
   grid-template-columns: 1fr 1.4fr;
@@ -817,6 +1046,7 @@ dl.grid2 dd { margin: 0 0 8px; }
 }
 
 .hero-flap-wrapper {
+  --hero-title-font-size: 52px;
   margin: 0 0 28px;
   display: flex;
   justify-content: center;
@@ -1329,6 +1559,7 @@ dl.grid2 dd { margin: 0 0 8px; }
 }
 
 .mapa-pequeno { height: 280px; margin: 8px 0; }
+.seletor-coordenada .mapa { height: 300px; }
 .mapa-grande { height: calc(100vh - 290px); min-height: 480px; }
 
 .painel-barra {

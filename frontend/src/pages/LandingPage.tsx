@@ -103,7 +103,7 @@ export const LandingPage: React.FC = () => {
             <SplitFlapText
               words={splitWords}
               padTo={16}
-              fontSize={52}
+              style={{ fontSize: 'var(--hero-title-font-size, 52px)' }}
               flipsPerChar={6}
               cycleDelay={2800}
               charset="alpha"

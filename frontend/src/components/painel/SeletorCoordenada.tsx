@@ -105,7 +105,7 @@ export const SeletorCoordenada: React.FC<Props> = ({ latitude, longitude, onChan
       <div
         ref={divRef}
         className="mapa mapa-pequeno"
-        style={{ height: '300px', cursor: 'crosshair', position: 'relative' }}
+        style={{ cursor: 'crosshair', position: 'relative' }}
       />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '4px 0 8px', fontSize: '0.8rem', color: 'var(--muted)' }}>
         <span>📍 Clique no mapa para marcar o pin do local do fato (ou arraste o pin).</span>
